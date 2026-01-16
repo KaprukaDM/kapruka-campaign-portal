@@ -5,7 +5,7 @@
 
 // YOUR GOOGLE APPS SCRIPT WEB APP URL
 // TODO: Replace this after deploying your Apps Script
-const API_URL = 'https://script.google.com/macros/s/AKfycbx8-GghAdLB24QTuT-tzF_Y3lzkonbJJTSXYhqStEgl1yVkHsss8YHrjiw07X1AuR9xAg/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbyFD-HHEFIoKqsJMnOxIibj8MQXC3gvgwwM8m-eRFEtNRP_t97j2X8t-umaNyMmak9fng/exec';
 
 // Admin password (stored here for demo - in production use secure auth)
 const ADMIN_PASSWORD = 'Kapruka2026!Admin';
