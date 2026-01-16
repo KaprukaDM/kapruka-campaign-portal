@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Product Suggestion - Kapruka</title>
+  <title>Admin Dashboard - Kapruka</title>
   <link rel="icon" type="image/png" href="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
@@ -14,7 +14,7 @@
       min-height: 100vh;
       padding: 40px 20px;
     }
-    .container { max-width: 1200px; margin: 0 auto; }
+    .container { max-width: 1600px; margin: 0 auto; }
     .header {
       text-align: center;
       margin-bottom: 50px;
@@ -51,6 +51,50 @@
       letter-spacing: 3px;
       text-transform: uppercase;
     }
+    .login-card {
+      background: rgba(255,255,255,0.98);
+      padding: 50px;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      max-width: 450px;
+      margin: 0 auto;
+    }
+    .login-card h2 {
+      font-family: 'Playfair Display', serif;
+      color: #5e3a8e;
+      font-size: 28px;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+    .admin-content { display: none; }
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+    .tab-btn {
+      padding: 15px 30px;
+      background: rgba(255,255,255,0.2);
+      color: white;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 600;
+      transition: all 0.3s;
+    }
+    .tab-btn:hover {
+      background: rgba(255,215,0,0.2);
+      border-color: #FFD700;
+    }
+    .tab-btn.active {
+      background: linear-gradient(135deg, #5e3a8e, #3d2461);
+      border-color: #FFD700;
+      box-shadow: 0 8px 25px rgba(255,215,0,0.3);
+    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
     .card {
       background: rgba(255,255,255,0.98);
       padding: 35px;
@@ -64,162 +108,6 @@
       font-size: 28px;
       margin-bottom: 20px;
     }
-    .dashboard {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 20px;
-      margin-bottom: 30px;
-    }
-    .stat-card {
-      background: rgba(255,255,255,0.98);
-      padding: 30px;
-      border-radius: 20px;
-      box-shadow: 0 15px 50px rgba(0,0,0,0.2);
-      text-align: center;
-      border-left: 6px solid #FFD700;
-    }
-    .stat-icon {
-      font-size: 40px;
-      margin-bottom: 15px;
-    }
-    .stat-number {
-      font-size: 48px;
-      font-weight: bold;
-      color: #5e3a8e;
-      margin: 10px 0;
-      font-family: 'Playfair Display', serif;
-    }
-    .stat-label {
-      font-size: 14px;
-      color: #666;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      font-weight: 600;
-    }
-    .progress-container {
-      background: #f0f0f0;
-      height: 12px;
-      border-radius: 10px;
-      overflow: hidden;
-      margin-top: 15px;
-    }
-    .progress-bar {
-      background: linear-gradient(90deg, #5e3a8e, #FFD700);
-      height: 100%;
-      transition: width 0.8s ease;
-      border-radius: 10px;
-    }
-    .window-info {
-      background: linear-gradient(135deg, #4CAF50, #388E3C);
-      color: white;
-      padding: 20px;
-      border-radius: 15px;
-      margin-bottom: 30px;
-      text-align: center;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    }
-    .window-info strong {
-      color: #FFD700;
-      font-size: 18px;
-      display: block;
-      margin-bottom: 8px;
-    }
-    .window-info span {
-      font-size: 16px;
-      font-weight: 600;
-    }
-    .chart-container {
-      background: rgba(255,255,255,0.98);
-      padding: 35px;
-      border-radius: 20px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-      margin-bottom: 30px;
-    }
-    .chart-title {
-      font-family: 'Playfair Display', serif;
-      color: #5e3a8e;
-      font-size: 24px;
-      margin-bottom: 25px;
-      text-align: center;
-    }
-    .bar-chart {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-    }
-    .bar-item {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-    }
-    .bar-label {
-      min-width: 150px;
-      font-weight: 600;
-      color: #5e3a8e;
-      font-size: 14px;
-    }
-    .bar-container {
-      flex: 1;
-      background: #f0f0f0;
-      height: 30px;
-      border-radius: 15px;
-      overflow: hidden;
-      position: relative;
-    }
-    .bar-fill {
-      height: 100%;
-      background: linear-gradient(90deg, #5e3a8e, #FFD700);
-      border-radius: 15px;
-      transition: width 0.8s ease;
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      padding-right: 10px;
-      color: white;
-      font-weight: 700;
-      font-size: 13px;
-    }
-    .search-box {
-      background: rgba(255,255,255,0.98);
-      padding: 25px;
-      border-radius: 20px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-      margin-bottom: 30px;
-    }
-    .search-input {
-      width: 100%;
-      padding: 16px;
-      border: 2px solid #e8e8e8;
-      border-radius: 12px;
-      font-size: 15px;
-      font-family: 'Inter', sans-serif;
-    }
-    .search-input:focus {
-      outline: none;
-      border-color: #FFD700;
-    }
-    .search-results {
-      margin-top: 20px;
-      max-height: 300px;
-      overflow-y: auto;
-    }
-    .result-item {
-      padding: 15px;
-      background: #f9f9f9;
-      border-radius: 10px;
-      margin-bottom: 10px;
-      border-left: 4px solid #5e3a8e;
-    }
-    .result-item strong {
-      color: #5e3a8e;
-      display: block;
-      margin-bottom: 5px;
-    }
-    .result-item a {
-      color: #FFD700;
-      text-decoration: none;
-      font-size: 12px;
-    }
     .form-group { margin-bottom: 20px; }
     label {
       display: block;
@@ -228,77 +116,97 @@
       margin-bottom: 10px;
       font-size: 14px;
     }
-    input, textarea, select {
+    input, select, textarea {
       width: 100%;
       padding: 16px;
       border: 2px solid #e8e8e8;
       border-radius: 12px;
       font-size: 15px;
       font-family: 'Inter', sans-serif;
-      transition: border-color 0.3s;
     }
-    input:focus, textarea:focus, select:focus {
+    input:focus, select:focus, textarea:focus {
       outline: none;
       border-color: #FFD700;
-      box-shadow: 0 0 0 3px rgba(255,215,0,0.1);
     }
-    textarea { min-height: 100px; resize: vertical; }
-    .form-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-    }
-    .radio-group {
-      display: flex;
-      gap: 20px;
-      margin-top: 10px;
-    }
-    .radio-option {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 12px 20px;
-      border: 2px solid #e8e8e8;
-      border-radius: 10px;
+    .btn {
+      padding: 15px 30px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
       cursor: pointer;
       transition: all 0.3s;
     }
-    .radio-option:hover {
-      border-color: #FFD700;
-      background: rgba(255,215,0,0.05);
-    }
-    .radio-option input[type="radio"] {
-      width: 20px;
-      height: 20px;
-      cursor: pointer;
-      padding: 0;
-    }
-    .radio-option label {
-      margin: 0;
-      cursor: pointer;
-    }
-    .btn-submit {
-      width: 100%;
-      padding: 20px;
+    .btn-primary {
       background: linear-gradient(135deg, #5e3a8e, #3d2461);
       color: white;
-      border: none;
-      border-radius: 14px;
-      font-size: 18px;
-      font-weight: 700;
-      cursor: pointer;
-      text-transform: uppercase;
-      margin-top: 20px;
-      transition: all 0.3s;
     }
-    .btn-submit:hover {
+    .btn-primary:hover {
       transform: translateY(-2px);
       box-shadow: 0 10px 30px rgba(94,58,142,0.4);
     }
-    .btn-submit:disabled {
-      background: #ccc;
-      cursor: not-allowed;
-      transform: none;
+    .btn-warning {
+      background: linear-gradient(135deg, #FFA726, #F57C00);
+      color: white;
+    }
+    .btn-success {
+      background: linear-gradient(135deg, #66BB6A, #43A047);
+      color: white;
+    }
+    .btn-danger {
+      background: linear-gradient(135deg, #EF5350, #E53935);
+      color: white;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin-top: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    th {
+      background: linear-gradient(135deg, #5e3a8e, #3d2461);
+      color: white;
+      padding: 15px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    td {
+      padding: 15px;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 14px;
+    }
+    tr:hover {
+      background: #f9f9f9;
+    }
+    .badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .badge-working { background: #FFF9C4; color: #F57F17; }
+    .badge-live { background: #C8E6C9; color: #1B5E20; }
+    .badge-rejected { background: #FFCDD2; color: #C62828; }
+    .badge-pending { background: #FFF9C4; color: #F57F17; }
+    .badge-approved { background: #C8E6C9; color: #1B5E20; }
+    .action-btns {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .action-btns button {
+      padding: 8px 15px;
+      font-size: 12px;
     }
     .loading {
       position: fixed;
@@ -335,46 +243,32 @@
     }
     .modal-content {
       background: white;
-      padding: 50px;
+      padding: 40px;
       border-radius: 24px;
-      max-width: 550px;
-      text-align: center;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
     }
-    .modal-icon {
-      width: 80px;
-      height: 80px;
-      background: #4CAF50;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 25px;
-      font-size: 45px;
-      color: white;
-    }
-    .modal h2 {
+    .modal h3 {
       font-family: 'Playfair Display', serif;
       color: #5e3a8e;
-      font-size: 32px;
-      margin-bottom: 15px;
+      font-size: 24px;
+      margin-bottom: 20px;
     }
-    .modal-btn {
-      padding: 15px 40px;
-      background: linear-gradient(135deg, #5e3a8e, #3d2461);
-      color: white;
+    .close-modal {
+      float: right;
+      background: none;
       border: none;
-      border-radius: 12px;
-      font-size: 16px;
-      font-weight: 600;
+      font-size: 28px;
       cursor: pointer;
-      margin-top: 20px;
+      color: #999;
     }
     @media (max-width: 768px) {
       h1 { font-size: 32px; }
-      .form-row { grid-template-columns: 1fr; }
-      .dashboard { grid-template-columns: 1fr; }
-      .radio-group { flex-direction: column; }
-      .bar-label { min-width: 100px; font-size: 12px; }
+      .tabs { flex-direction: column; }
+      .tab-btn { width: 100%; }
+      table { font-size: 12px; }
+      th, td { padding: 10px; }
     }
   </style>
 </head>
@@ -387,115 +281,163 @@
       <div class="kapruka-logo">
         <img src="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw" alt="Kapruka">
       </div>
-      <h1>Product Suggestion</h1>
-      <p class="subtitle">Winning Product Ideas</p>
+      <h1>Admin Dashboard</h1>
+      <p class="subtitle">Campaign Management</p>
     </div>
 
-    <div class="window-info">
-      <strong>🟢 Current Ongoing Window</strong>
-      <span id="windowDates">Loading...</span>
-    </div>
-
-    <div class="dashboard">
-      <div class="stat-card">
-        <div class="stat-icon">🎯</div>
-        <div class="stat-number" id="targetCount">30</div>
-        <div class="stat-label">Target Products</div>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-icon">📦</div>
-        <div class="stat-number" id="actualCount">0</div>
-        <div class="stat-label">Submitted This Week</div>
-        <div class="progress-container">
-          <div id="progressBar" class="progress-bar" style="width: 0%"></div>
-        </div>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-icon">⭐</div>
-        <div class="stat-number" id="pickedCount">0</div>
-        <div class="stat-label">Approved Winners</div>
-      </div>
-    </div>
-
-    <div class="chart-container">
-      <div class="chart-title">📊 Product Suggestions by Category</div>
-      <div class="bar-chart" id="barChart">
-        <p style="text-align:center;color:#999;">Loading chart...</p>
-      </div>
-    </div>
-
-    <div class="search-box">
-      <h3 style="color:#5e3a8e;margin-bottom:15px;">🔍 Search Product Suggestions</h3>
-      <input type="text" id="searchInput" class="search-input" placeholder="Search by product link, category, or ID...">
-      <div class="search-results" id="searchResults"></div>
-    </div>
-
-    <div class="card">
-      <h2>💡 Submit Product Suggestion</h2>
-      
-      <form id="productForm">
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-card">
+      <h2>🔐 Admin Login</h2>
+      <form id="loginForm">
         <div class="form-group">
-          <label>🔗 Product Link *</label>
-          <input type="url" id="productLink" required placeholder="https://www.daraz.lk/products/...">
+          <label>Password</label>
+          <input type="password" id="adminPassword" required placeholder="Enter admin password">
         </div>
-
-        <div class="form-group">
-          <label>🏪 Kapruka or FC? *</label>
-          <div class="radio-group">
-            <div class="radio-option">
-              <input type="radio" id="kapruka" name="productType" value="Kapruka" checked>
-              <label for="kapruka">Kapruka</label>
-            </div>
-            <div class="radio-option">
-              <input type="radio" id="fc" name="productType" value="FC">
-              <label for="fc">FC (Fulfillment Center)</label>
-            </div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label>📂 Product Category *</label>
-            <select id="category" required>
-              <option value="">Select Category</option>
-              <option value="Electronics">Electronics</option>
-              <option value="Fashion">Fashion</option>
-              <option value="Home & Living">Home & Living</option>
-              <option value="Beauty & Health">Beauty & Health</option>
-              <option value="Sports & Outdoors">Sports & Outdoors</option>
-              <option value="Toys & Kids">Toys & Kids</option>
-              <option value="Books & Media">Books & Media</option>
-              <option value="Food & Beverages">Food & Beverages</option>
-              <option value="Automotive">Automotive</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>💰 Margin % *</label>
-            <input type="number" id="margin" required placeholder="e.g., 25" step="0.01" min="0" max="100">
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label>📦 Available Quantity *</label>
-          <input type="number" id="availableQty" required placeholder="e.g., 100" min="1">
-        </div>
-
-        <div class="form-group">
-          <label>🎨 Promotion Idea (Optional)</label>
-          <textarea id="promotionIdea" placeholder="Describe your promotion strategy (e.g., Flash Sale, Bundle Deal, Limited Time Offer)"></textarea>
-        </div>
-
-        <button type="submit" class="btn-submit" id="submitBtn">🚀 Submit Product</button>
+        <button type="submit" class="btn btn-primary" style="width:100%;">Login</button>
       </form>
+    </div>
+
+    <!-- Admin Content -->
+    <div id="adminContent" class="admin-content">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('requests')">📋 Campaign Requests</button>
+        <button class="tab-btn" onclick="switchTab('products')">💡 Product Suggestions</button>
+        <button class="tab-btn" onclick="switchTab('departments')">🏢 Department Config</button>
+        <button class="tab-btn" style="margin-left:auto;background:#d32f2f;" onclick="logout()">Logout</button>
+      </div>
+
+      <!-- Campaign Requests Tab -->
+      <div id="tab-requests" class="tab-content active">
+        <div class="card">
+          <h2>📋 Campaign Requests</h2>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Request ID</th>
+                  <th>Date</th>
+                  <th>Department</th>
+                  <th>Month</th>
+                  <th>Slot</th>
+                  <th>Campaign</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="requestsTable">
+                <tr><td colspan="8" style="text-align:center;padding:40px;">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Product Suggestions Tab -->
+      <div id="tab-products" class="tab-content">
+        <div class="card">
+          <h2>💡 Product Suggestions</h2>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Submission ID</th>
+                  <th>Date</th>
+                  <th>Product Link</th>
+                  <th>Category</th>
+                  <th>Margin %</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="productsTable">
+                <tr><td colspan="7" style="text-align:center;padding:40px;">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Department Config Tab -->
+      <div id="tab-departments" class="tab-content">
+        <div class="card">
+          <h2>🏢 Add Department</h2>
+          <form id="deptForm">
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
+              <div class="form-group">
+                <label>Month</label>
+                <select id="deptMonth" required>
+                  <option value="January 2026">January 2026</option>
+                  <option value="February 2026">February 2026</option>
+                  <option value="March 2026">March 2026</option>
+                  <option value="April 2026">April 2026</option>
+                  <option value="May 2026">May 2026</option>
+                  <option value="June 2026">June 2026</option>
+                  <option value="July 2026">July 2026</option>
+                  <option value="August 2026">August 2026</option>
+                  <option value="September 2026">September 2026</option>
+                  <option value="October 2026">October 2026</option>
+                  <option value="November 2026">November 2026</option>
+                  <option value="December 2026">December 2026</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Department Name</label>
+                <input type="text" id="deptName" required placeholder="e.g., Marketing">
+              </div>
+              <div class="form-group">
+                <label>Budget ($k)</label>
+                <input type="number" id="deptBudget" required placeholder="e.g., 200">
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
+              <div class="form-group">
+                <label>Slots</label>
+                <input type="number" id="deptSlots" required placeholder="e.g., 10">
+              </div>
+              <div class="form-group">
+                <label>Color</label>
+                <input type="color" id="deptColor" value="#E8F5E9">
+              </div>
+              <div class="form-group">
+                <label>Active</label>
+                <select id="deptActive">
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Department</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <h2>📋 Existing Departments</h2>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Month</th>
+                  <th>Department</th>
+                  <th>Budget</th>
+                  <th>Slots</th>
+                  <th>Active</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="deptsTable">
+                <tr><td colspan="6" style="text-align:center;padding:40px;">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
   <script src="js/supabase-api.js"></script>
   <script>
+    let isLoggedIn = false;
+
     function showLoading() {
       document.getElementById('loading').style.display = 'flex';
     }
@@ -504,144 +446,232 @@
       document.getElementById('loading').style.display = 'none';
     }
 
-    async function loadDashboard() {
-      try {
-        showLoading();
-        const data = await getProductDashboard();
-        
-        if (!data.window) {
-          document.getElementById('windowDates').textContent = 'No active window';
-          hideLoading();
-          return;
-        }
-        
-        document.getElementById('targetCount').textContent = data.target;
-        document.getElementById('actualCount').textContent = data.actual;
-        document.getElementById('pickedCount').textContent = data.picked;
-        
-        const progressPercent = Math.min((data.actual / data.target) * 100, 100);
-        document.getElementById('progressBar').style.width = progressPercent + '%';
-        
-        const startDate = new Date(data.window.start_date).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'});
-        const endDate = new Date(data.window.end_date).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'});
-        document.getElementById('windowDates').textContent = `${startDate} - ${endDate}`;
-        
-        renderBarChart(data.categories);
-        
-        hideLoading();
-      } catch (error) {
-        hideLoading();
-        console.error('Dashboard error:', error);
-        document.getElementById('windowDates').textContent = 'Error loading';
-      }
-    }
-
-    function renderBarChart(categories) {
-      const container = document.getElementById('barChart');
+    // Login
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const password = document.getElementById('adminPassword').value;
       
-      if (!categories || categories.length === 0) {
-        container.innerHTML = '<p style="text-align:center;color:#999;">No data yet</p>';
-        return;
+      if (verifyAdminPassword(password)) {
+        isLoggedIn = true;
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('adminContent').style.display = 'block';
+        loadAllData();
+      } else {
+        alert('Invalid password');
       }
-
-      const maxCount = Math.max(...categories.map(c => c.count));
-      
-      container.innerHTML = categories.map(cat => {
-        const percentage = (cat.count / maxCount) * 100;
-        return `
-          <div class="bar-item">
-            <div class="bar-label">${cat.category}</div>
-            <div class="bar-container">
-              <div class="bar-fill" style="width:${percentage}%">${cat.count}</div>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    let searchTimeout;
-    document.getElementById('searchInput').addEventListener('input', (e) => {
-      clearTimeout(searchTimeout);
-      const query = e.target.value.trim();
-      
-      if (query.length < 3) {
-        document.getElementById('searchResults').innerHTML = '';
-        return;
-      }
-
-      searchTimeout = setTimeout(async () => {
-        try {
-          const results = await searchProductSuggestions(query);
-          const container = document.getElementById('searchResults');
-          
-          if (results.length === 0) {
-            container.innerHTML = '<p style="text-align:center;color:#999;padding:20px;">No products found</p>';
-            return;
-          }
-
-          container.innerHTML = results.map(r => `
-            <div class="result-item">
-              <strong>${r.submission_id} - ${r.category}</strong>
-              <div>${new Date(r.timestamp).toLocaleDateString()}</div>
-              <a href="${r.product_link}" target="_blank">View Product →</a>
-              <div style="margin-top:5px;"><span style="background:#E8F5E9;padding:3px 8px;border-radius:5px;font-size:11px;font-weight:600;color:#2E7D32;">${r.status}</span></div>
-            </div>
-          `).join('');
-        } catch (error) {
-          console.error('Search error:', error);
-        }
-      }, 500);
     });
 
-    document.getElementById('productForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
+    function logout() {
+      isLoggedIn = false;
+      document.getElementById('loginScreen').style.display = 'block';
+      document.getElementById('adminContent').style.display = 'none';
+      document.getElementById('adminPassword').value = '';
+    }
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
       
-      const btn = document.getElementById('submitBtn');
-      btn.disabled = true;
-      btn.textContent = 'Submitting...';
-      showLoading();
+      event.target.classList.add('active');
+      document.getElementById('tab-' + tab).classList.add('active');
+    }
+
+    async function loadAllData() {
+      loadRequests();
+      loadProducts();
+      loadDepartments();
+    }
+
+    // Load Campaign Requests
+    async function loadRequests() {
+      try {
+        const requests = await getAllRequests();
+        const tbody = document.getElementById('requestsTable');
+        
+        if (requests.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;">No requests yet</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = requests.map(r => {
+          let badgeClass = 'badge-working';
+          if (r.status === 'Live') badgeClass = 'badge-live';
+          if (r.status === 'Rejected') badgeClass = 'badge-rejected';
+
+          return `
+            <tr>
+              <td>${r.requestId}</td>
+              <td>${new Date(r.timestamp).toLocaleDateString()}</td>
+              <td>${r.department}</td>
+              <td>${r.month}</td>
+              <td>${r.slot}</td>
+              <td>${r.campaign}</td>
+              <td><span class="badge ${badgeClass}">${r.status}</span></td>
+              <td>
+                <div class="action-btns">
+                  <button class="btn btn-warning" onclick="updateStatus(${r.row}, 'Working')">Working</button>
+                  <button class="btn btn-success" onclick="updateStatus(${r.row}, 'Live')">Live</button>
+                  <button class="btn btn-danger" onclick="updateStatus(${r.row}, 'Rejected')">Reject</button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch (error) {
+        document.getElementById('requestsTable').innerHTML = 
+          '<tr><td colspan="8" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
+      }
+    }
+
+    async function updateStatus(row, status) {
+      const reviewer = prompt('Enter your name:');
+      if (!reviewer) return;
+
+      const comments = status === 'Rejected' ? prompt('Rejection reason (optional):') : '';
 
       try {
-        const formData = {
-          productLink: document.getElementById('productLink').value,
-          productType: document.querySelector('input[name="productType"]:checked').value,
-          category: document.getElementById('category').value,
-          margin: document.getElementById('margin').value,
-          availableQty: document.getElementById('availableQty').value,
-          promotionIdea: document.getElementById('promotionIdea').value
-        };
-        
-        const result = await submitProductSuggestion(formData);
-        
-        btn.disabled = false;
-        btn.textContent = '🚀 Submit Product';
+        showLoading();
+        await updateRequestStatus(row, status, reviewer, comments || '');
         hideLoading();
-
-        document.getElementById('modalContent').innerHTML = `
-          <div class="modal-icon">✓</div>
-          <h2>Success!</h2>
-          <p>Product suggestion submitted successfully!</p>
-          <div style="background:#f5f5f5;padding:12px;border-radius:10px;margin:20px 0;font-weight:600;">${result.submissionId}</div>
-          <button class="modal-btn" onclick="closeModal()">Close</button>
-        `;
-        document.getElementById('modal').style.display = 'flex';
-        
-        document.getElementById('productForm').reset();
-        loadDashboard();
-        
+        alert(`Status updated to: ${status}`);
+        loadRequests();
       } catch (error) {
-        btn.disabled = false;
-        btn.textContent = '🚀 Submit Product';
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    }
+
+    // Load Product Suggestions
+    async function loadProducts() {
+      try {
+        const products = await getAllProductSuggestions();
+        const tbody = document.getElementById('productsTable');
+        
+        if (products.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;">No products yet</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = products.map(p => {
+          let badgeClass = p.status === 'Approved' ? 'badge-approved' : 
+                          p.status === 'Rejected' ? 'badge-rejected' : 'badge-pending';
+
+          return `
+            <tr>
+              <td>${p.submissionId}</td>
+              <td>${p.timestamp}</td>
+              <td><a href="${p.productLink}" target="_blank" style="color:#5e3a8e;">View</a></td>
+              <td>${p.category}</td>
+              <td>${p.margin}%</td>
+              <td><span class="badge ${badgeClass}">${p.status}</span></td>
+              <td>
+                <div class="action-btns">
+                  <button class="btn btn-success" onclick="reviewProduct(${p.row}, 'Approved')">Approve</button>
+                  <button class="btn btn-danger" onclick="reviewProduct(${p.row}, 'Rejected')">Reject</button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch (error) {
+        document.getElementById('productsTable').innerHTML = 
+          '<tr><td colspan="7" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
+      }
+    }
+
+    async function reviewProduct(row, status) {
+      const reviewerName = prompt('Enter your name:');
+      if (!reviewerName) return;
+
+      const reviewData = { status, reviewerName };
+
+      if (status === 'Approved') {
+        reviewData.assignedPage = prompt('Assigned Page (optional):') || '';
+        reviewData.goLiveDate = prompt('Go Live Date (YYYY-MM-DD, optional):') || '';
+      } else {
+        reviewData.rejectionReason = prompt('Rejection Reason (optional):') || '';
+      }
+
+      try {
+        showLoading();
+        await updateProductReview(row, reviewData);
+        hideLoading();
+        alert('Product review updated!');
+        loadProducts();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    }
+
+    // Department Management
+    document.getElementById('deptForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const config = {
+        month: document.getElementById('deptMonth').value,
+        department: document.getElementById('deptName').value,
+        budget: document.getElementById('deptBudget').value,
+        slots: document.getElementById('deptSlots').value,
+        color: document.getElementById('deptColor').value,
+        active: document.getElementById('deptActive').value
+      };
+
+      try {
+        showLoading();
+        await addDepartment(config);
+        hideLoading();
+        alert('Department added!');
+        document.getElementById('deptForm').reset();
+        loadDepartments();
+      } catch (error) {
         hideLoading();
         alert('Error: ' + error.message);
       }
     });
 
-    function closeModal() {
-      document.getElementById('modal').style.display = 'none';
+    async function loadDepartments() {
+      try {
+        const depts = await getAllDepartments();
+        const tbody = document.getElementById('deptsTable');
+        
+        if (depts.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;">No departments yet</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = depts.map(d => `
+          <tr>
+            <td>${d.month}</td>
+            <td>${d.department}</td>
+            <td>$${d.budget}k</td>
+            <td>${d.slots}</td>
+            <td>${d.active}</td>
+            <td>
+              <button class="btn btn-danger" onclick="removeDepartment(${d.row})">Delete</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (error) {
+        document.getElementById('deptsTable').innerHTML = 
+          '<tr><td colspan="6" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
+      }
     }
 
-    window.onload = loadDashboard;
+    async function removeDepartment(row) {
+      if (!confirm('Delete this department?')) return;
+
+      try {
+        showLoading();
+        await deleteDepartment(row);
+        hideLoading();
+        alert('Department deleted!');
+        loadDepartments();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    }
   </script>
 </body>
 </html>
