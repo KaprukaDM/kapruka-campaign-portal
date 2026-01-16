@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - Kapruka</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="icon" type="image/png" href="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw">
+  <style>
+    /* Admin-specific styles */
+    .login-screen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 80vh;
+    }
+    
+    .login-box {
+      background: white;
+      padding: 50px;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+    }
+    
+    .login-logo {
+      width: 100px;
+      height: 100px;
+      margin: 0 auto 30px;
+      border-radius: 50%;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(94,58,142,0.3);
+    }
+    
+    .login-logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .login-box h1 {
+      color: #1d1d1f;
+      font-size: 28px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    
+    .login-box p {
+      color: #6e6e73;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+    
+    .login-input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid #d2d2d7;
+      border-radius: 8px;
+      font-size: 15px;
+      margin-bottom: 20px;
+      transition: all 0.2s;
+    }
+    
+    .login-input:focus {
+      outline: none;
+      border-color: #5e3a8e;
+      box-shadow: 0 0 0 3px rgba(94,58,142,0.1);
+    }
+    
+    .login-btn {
+      width: 100%;
+      padding: 14px;
+      background: #5e3a8e;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .login-btn:hover {
+      background: #4a2d70;
+      transform: translateY(-1px);
+    }
+    
+    .error {
+      color: #d32f2f;
+      background: #ffebee;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      display: none;
+      font-size: 13px;
+    }
+    
+    .admin-container {
+      max-width: 1600px;
+      margin: 0 auto;
+      display: none;
+    }
+    
+    .logout-btn {
+      padding: 10px 24px;
+      background: #d32f2f;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    
+    .logout-btn:hover {
+      background: #b71c1c;
+    }
+    
+    .tabs {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+    
+    .tab-btn {
+      padding: 12px 24px;
+      background: rgba(255,255,255,0.2);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    
+    .tab-btn:hover {
+      background: rgba(255,255,255,0.3);
+    }
+    
+    .tab-btn.active {
+      background: white;
+      color: #5e3a8e;
+    }
+    
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 25px;
+    }
+    
+    .btn-success { background: #4CAF50; color: white; }
+    .btn-success:hover { background: #45a049; }
+    
+    .btn-danger { background: #d32f2f; color: white; }
+    .btn-danger:hover { background: #b71c1c; }
+    
+    .btn-warning { background: #FF9800; color: white; }
+    .btn-warning:hover { background: #e68900; }
+    
+    .btn-info { background: #2196F3; color: white; }
+    .btn-info:hover { background: #0b7dda; }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: white;
+      font-size: 13px;
+    }
+    
+    thead {
+      background: #5e3a8e;
+      color: white;
+    }
+    
+    th {
+      padding: 12px 15px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 13px;
+    }
+    
+    td {
+      padding: 12px 15px;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 13px;
+    }
+    
+    tbody tr:hover {
+      background: #f9f9f9;
+    }
+    
+    .badge {
+      padding: 5px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      display: inline-block;
+    }
+    
+    .badge-yes { background: #E8F5E9; color: #2E7D32; }
+    .badge-no { background: #FFEBEE; color: #C62828; }
+    .badge-pending { background: #FFF3CD; color: #F57C00; }
+    .badge-approved { background: #E8F5E9; color: #2E7D32; }
+    .badge-rejected { background: #FFEBEE; color: #C62828; }
+    
+    .action-btns {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #6e6e73;
+    }
+    
+    .review-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.85);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+    }
+    
+    .review-modal.show {
+      display: flex;
+    }
+    
+    .review-modal-content {
+      background: white;
+      padding: 35px;
+      border-radius: 16px;
+      max-width: 700px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    
+    .review-modal-content h3 {
+      color: #1d1d1f;
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 25px;
+    }
+    
+    .modal-btns {
+      display: flex;
+      gap: 12px;
+      margin-top: 25px;
+    }
+    
+    .detail-box {
+      background: #f9f9f9;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      border-left: 4px solid #5e3a8e;
+    }
+    
+    .detail-row {
+      display: flex;
+      padding: 8px 0;
+      border-bottom: 1px solid #e5e5e7;
+    }
+    
+    .detail-row:last-child {
+      border-bottom: none;
+    }
+    
+    .detail-label {
+      font-weight: 600;
+      color: #5e3a8e;
+      width: 180px;
+      font-size: 12px;
+    }
+    
+    .detail-value {
+      flex: 1;
+      color: #1d1d1f;
+      font-size: 13px;
+      word-break: break-word;
+    }
+    
+    @media (max-width: 768px) {
+      .page-header { flex-direction: column; gap: 15px; }
+      .form-row { grid-template-columns: 1fr; }
+      table { font-size: 11px; }
+      th, td { padding: 8px 10px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Loading Spinner -->
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Success/Error Modal -->
+  <div class="modal" id="modal">
+    <div class="modal-content" id="modalContent"></div>
+  </div>
+
+  <!-- Review Modal -->
+  <div class="review-modal" id="reviewModal">
+    <div class="review-modal-content" id="reviewModalContent"></div>
+  </div>
+
+  <!-- Login Screen -->
+  <div class="login-screen" id="loginScreen">
+    <div class="login-box">
+      <div class="login-logo">
+        <img src="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw" alt="Kapruka">
+      </div>
+      <h1>Admin Panel</h1>
+      <p>Digital Marketing Manager</p>
+      <div class="error" id="error"></div>
+      <input type="password" class="login-input" id="password" placeholder="Enter Admin Password">
+      <button class="login-btn" onclick="login()">Login</button>
+    </div>
+  </div>
+
+  <!-- Admin Dashboard -->
+  <div class="admin-container" id="admin">
+    <div class="page-header">
+      <div class="header-left">
+        <div class="header-logo">
+          <img src="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw" alt="Kapruka">
+        </div>
+        <h1>Admin Dashboard</h1>
+      </div>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('depts')">Departments</button>
+      <button class="tab-btn" onclick="switchTab('requests')">Campaign Requests</button>
+      <button class="tab-btn" onclick="switchTab('products')">Product Suggestions</button>
+    </div>
+
+    <!-- DEPARTMENTS TAB -->
+    <div class="tab-content active" id="deptsTab">
+      <div class="card">
+        <h2>Add Department</h2>
+        <form id="deptForm">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Select Month <span class="required">*</span></label>
+              <select id="monthSelect" required>
+                <option value="">-- Select Month --</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Department Name <span class="required">*</span></label>
+              <input type="text" id="deptName" placeholder="Partner Central" required>
+            </div>
+            <div class="form-group">
+              <label>Budget ($) <span class="required">*</span></label>
+              <input type="number" id="budget" placeholder="200" min="0" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Number of Slots <span class="required">*</span></label>
+              <input type="number" id="slots" placeholder="10" min="1" max="50" required>
+            </div>
+            <div class="form-group">
+              <label>Active Status</label>
+              <select id="active">
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+              </select>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-success">Add Department</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>All Departments</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th>Department</th>
+              <th>Budget</th>
+              <th>Slots</th>
+              <th>Active</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="deptTable">
+            <tr><td colspan="6" class="empty-state">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- CAMPAIGN REQUESTS TAB -->
+    <div class="tab-content" id="requestsTab">
+      <div class="card">
+        <h2>Campaign Requests</h2>
+        <div style="margin-bottom:20px;">
+          <button class="btn btn-info" onclick="loadRequests()">Refresh Requests</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Request ID</th>
+              <th>Department</th>
+              <th>Month</th>
+              <th>Slot</th>
+              <th>Campaign</th>
+              <th>Requestor</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="reqTable">
+            <tr><td colspan="8" class="empty-state">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PRODUCT SUGGESTIONS TAB -->
+    <div class="tab-content" id="productsTab">
+      <div class="card">
+        <h2>Product Suggestions</h2>
+        <div style="margin-bottom:20px;display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn btn-info" onclick="loadProducts()">Refresh Products</button>
+          <button class="btn btn-warning" onclick="filterProducts('Pending')">Pending Only</button>
+          <button class="btn btn-success" onclick="filterProducts('Approved')">Approved Only</button>
+          <button class="btn" onclick="loadProducts()" style="background:#6e6e73;color:white;">Show All</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Product Link</th>
+              <th>Type</th>
+              <th>Category</th>
+              <th>Margin %</th>
+              <th>Qty</th>
+              <th>Submitted By</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="productTable">
+            <tr><td colspan="9" class="empty-state">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load API Connection -->
+  <script src="js/api.js"></script>
+
+  <!-- Page Logic -->
+  <script>
+    let allDepts = [];
+    let allRequests = [];
+    let allProducts = [];
+    let availableMonths = [];
+    let statusOptions = [];
+    let isLoggedIn = false;
+
+    // Check if already logged in (session storage)
+    window.addEventListener('DOMContentLoaded', () => {
+      // Always show login on page load/refresh
+      document.getElementById('loginScreen').style.display = 'flex';
+      document.getElementById('admin').style.display = 'none';
+    });
+
+    // Login
+    async function login() {
+      const pwd = document.getElementById('password').value;
+      const err = document.getElementById('error');
+
+      if (!pwd) {
+        err.textContent = 'Please enter password';
+        err.style.display = 'block';
+        return;
+      }
+
+      err.style.display = 'none';
+
+      try {
+        showLoading();
+        const result = await verifyAdminPassword(pwd);
+        hideLoading();
+
+        if (result === true || result.success === true) {
+          isLoggedIn = true;
+          document.getElementById('loginScreen').style.display = 'none';
+          document.getElementById('admin').style.display = 'block';
+          await loadInitialData();
+        } else {
+          err.textContent = 'Incorrect password';
+          err.style.display = 'block';
+        }
+      } catch (error) {
+        hideLoading();
+        err.textContent = 'Connection error: ' + error.message;
+        err.style.display = 'block';
+      }
+    }
+
+    // Logout
+    function logout() {
+      isLoggedIn = false;
+      document.getElementById('loginScreen').style.display = 'flex';
+      document.getElementById('admin').style.display = 'none';
+      document.getElementById('password').value = '';
+    }
+
+    // Load initial data
+    async function loadInitialData() {
+      try {
+        showLoading();
+        availableMonths = await getAvailableMonths();
+        statusOptions = await getStatusOptions();
+        
+        // Populate month dropdown
+        const select = document.getElementById('monthSelect');
+        select.innerHTML = '<option value="">-- Select Month --</option>';
+        availableMonths.forEach(m => {
+          const opt = document.createElement('option');
+          opt.value = m;
+          opt.textContent = m;
+          select.appendChild(opt);
+        });
+
+        await loadDepartments();
+        hideLoading();
+      } catch (error) {
+        hideLoading();
+        console.error('Init error:', error);
+      }
+    }
+
+    // Switch tabs
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById(tab + 'Tab').classList.add('active');
+
+      if (tab === 'depts') loadDepartments();
+      else if (tab === 'requests') loadRequests();
+      else if (tab === 'products') loadProducts();
+    }
+
+    // Load departments
+    async function loadDepartments() {
+      const tbody = document.getElementById('deptTable');
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Loading...</td></tr>';
+
+      try {
+        allDepts = await getAllDepartments();
+        displayDepartments(allDepts);
+      } catch (error) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Error loading departments</td></tr>';
+      }
+    }
+
+    function displayDepartments(depts) {
+      const tbody = document.getElementById('deptTable');
+      tbody.innerHTML = '';
+
+      if (!depts || depts.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No departments yet. Add one above!</td></tr>';
+        return;
+      }
+
+      depts.forEach(d => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${d.month}</strong></td>
+          <td>${d.department}</td>
+          <td>$${d.budget}</td>
+          <td>${d.slots}</td>
+          <td><span class="badge badge-${d.active.toLowerCase()}">${d.active}</span></td>
+          <td>
+            <div class="action-btns">
+              <button class="btn btn-danger" onclick="deleteDept(${d.row}, '${d.department.replace(/'/g, "\\'")}')">Delete</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Add department
+    document.getElementById('deptForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const month = document.getElementById('monthSelect').value;
+      if (!month) {
+        alert('Please select a month');
+        return;
+      }
+
+      const config = {
+        month: month,
+        department: document.getElementById('deptName').value,
+        budget: parseInt(document.getElementById('budget').value),
+        slots: parseInt(document.getElementById('slots').value),
+        color: '#E8F5E9',
+        active: document.getElementById('active').value
+      };
+
+      try {
+        showLoading();
+        const result = await addDepartment(config);
+        hideLoading();
+
+        if (result && result.success) {
+          showModal('Success!', 'Department added successfully', true);
+          document.getElementById('deptForm').reset();
+          await loadDepartments();
+        } else {
+          showModal('Error', result?.error || 'Failed to add department', false);
+        }
+      } catch (error) {
+        hideLoading();
+        showModal('Error', error.message, false);
+      }
+    });
+
+    // Delete department
+    async function deleteDept(row, name) {
+      if (!confirm(`Delete "${name}"?`)) return;
+
+      try {
+        showLoading();
+        const result = await deleteDepartment(row);
+        hideLoading();
+
+        if (result && result.success) {
+          showModal('Success!', 'Department deleted', true);
+          await loadDepartments();
+        } else {
+          showModal('Error', result?.error || 'Failed to delete', false);
+        }
+      } catch (error) {
+        hideLoading();
+        showModal('Error', error.message, false);
+      }
+    }
+
+    // Load campaign requests
+    async function loadRequests() {
+      const tbody = document.getElementById('reqTable');
+      tbody.innerHTML = '<tr><td colspan="8" class="empty-state">Loading...</td></tr>';
+
+      try {
+        allRequests = await getAllRequests();
+        displayRequests(allRequests);
+      } catch (error) {
+        tbody.innerHTML = '<tr><td colspan="8" class="empty-state">Error loading requests</td></tr>';
+      }
+    }
+
+    function displayRequests(reqs) {
+      const tbody = document.getElementById('reqTable');
+      tbody.innerHTML = '';
+
+      if (!reqs || reqs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No campaign requests yet</td></tr>';
+        return;
+      }
+
+      reqs.forEach(r => {
+        const campaignShort = r.campaign ? (r.campaign.substring(0, 30) + (r.campaign.length > 30 ? '...' : '')) : 'N/A';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><code style="background:#f5f5f5;padding:4px 8px;border-radius:4px;font-size:11px;">${r.requestId}</code></td>
+          <td>${r.department}</td>
+          <td>${r.month}</td>
+          <td><strong>${r.slot}</strong></td>
+          <td title="${r.campaign || ''}">${campaignShort}</td>
+          <td>${r.name || r.email}</td>
+          <td>${r.status || 'Requested'}</td>
+          <td>
+            <button class="btn btn-info" onclick="openRequestReview(${r.row})">Update</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Open request review modal
+    function openRequestReview(row) {
+      const req = allRequests.find(r => r.row === row);
+      if (!req) return;
+
+      const modalContent = document.getElementById('reviewModalContent');
+      modalContent.innerHTML = `
+        <h3>Update Campaign Status</h3>
+        <div class="detail-box">
+          <div class="detail-row">
+            <div class="detail-label">Request ID:</div>
+            <div class="detail-value">${req.requestId}</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Department:</div>
+            <div class="detail-value">${req.department}</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Campaign:</div>
+            <div class="detail-value">${req.campaign || 'N/A'}</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Requestor:</div>
+            <div class="detail-value">${req.name} (${req.email})</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="reqStatus">
+            ${statusOptions.map(s => `<option value="${s}" ${s === req.status ? 'selected' : ''}>${s}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Reviewer Name</label>
+          <input type="text" id="reqReviewer" value="${req.reviewer || ''}" placeholder="Your name">
+        </div>
+        <div class="form-group">
+          <label>Comments (Optional)</label>
+          <textarea id="reqComments" placeholder="Add any notes...">${req.comments || ''}</textarea>
+        </div>
+        <div class="modal-btns">
+          <button class="btn btn-success" onclick="saveRequestStatus(${row})" style="flex:1;">Save</button>
+          <button class="btn btn-danger" onclick="closeReviewModal()" style="flex:1;">Cancel</button>
+        </div>
+      `;
+
+      document.getElementById('reviewModal').classList.add('show');
+    }
+
+    // Save request status
+    async function saveRequestStatus(row) {
+      const status = document.getElementById('reqStatus').value;
+      const reviewer = document.getElementById('reqReviewer').value;
+      const comments = document.getElementById('reqComments').value;
+
+      if (!reviewer) {
+        alert('Please enter reviewer name');
+        return;
+      }
+
+      try {
+        showLoading();
+        const result = await updateRequestStatus(row, status, reviewer, comments);
+        hideLoading();
+
+        if (result && result.success) {
+          showModal('Success!', 'Status updated successfully', true);
+          closeReviewModal();
+          await loadRequests();
+        } else {
+          showModal('Error', result?.error || 'Failed to update', false);
+        }
+      } catch (error) {
+        hideLoading();
+        showModal('Error', error.message, false);
+      }
+    }
+
+    // Load products
+    async function loadProducts() {
+      const tbody = document.getElementById('productTable');
+      tbody.innerHTML = '<tr><td colspan="9" class="empty-state">Loading...</td></tr>';
+
+      try {
+        allProducts = await getAllProducts();
+        displayProducts(allProducts);
+      } catch (error) {
+        tbody.innerHTML = '<tr><td colspan="9" class="empty-state">Error loading products</td></tr>';
+      }
+    }
+
+    function filterProducts(status) {
+      const filtered = allProducts.filter(p => p.status === status);
+      displayProducts(filtered);
+    }
+
+    function displayProducts(products) {
+      const tbody = document.getElementById('productTable');
+      tbody.innerHTML = '';
+
+      if (!products || products.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No product suggestions yet</td></tr>';
+        return;
+      }
+
+      products.forEach(p => {
+        const linkShort = p.productLink.substring(0, 35) + '...';
+        const statusBadge = p.status === 'Approved' ? 'approved' : p.status === 'Rejected' ? 'rejected' : 'pending';
+        
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><code style="background:#f5f5f5;padding:4px 8px;border-radius:4px;font-size:11px;">${p.submissionId}</code></td>
+          <td title="${p.productLink}"><a href="${p.productLink}" target="_blank" style="color:#2196F3;">${linkShort}</a></td>
+          <td>${p.productType || 'N/A'}</td>
+          <td>${p.category}</td>
+          <td>${p.margin}%</td>
+          <td>${p.availableQty}</td>
+          <td>${p.name}</td>
+          <td><span class="badge badge-${statusBadge}">${p.status}</span></td>
+          <td>
+            <button class="btn btn-info" onclick="openProductReview(${p.row})">Review</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Open product review modal
+    function openProductReview(row) {
+      const product = allProducts.find(p => p.row === row);
+      if (!product) return;
+
+      const modalContent = document.getElementById('reviewModalContent');
+      modalContent.innerHTML = `
+        <h3>Review Product Suggestion</h3>
+        <div class="detail-box">
+          <div class="detail-row">
+            <div class="detail-label">Submission ID:</div>
+            <div class="detail-value">${product.submissionId}</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Product Link:</div>
+            <div class="detail-value"><a href="${product.productLink}" target="_blank">${product.productLink}</a></div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Type:</div>
+            <div class="detail-value">${product.productType || 'N/A'}</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Category:</div>
+            <div class="detail-value">${product.category}</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Margin:</div>
+            <div class="detail-value">${product.margin}%</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Available Qty:</div>
+            <div class="detail-value">${product.availableQty}</div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">Submitted By:</div>
+            <div class="detail-value">${product.name} (${product.email})</div>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>Action</label>
+          <select id="prodAction" onchange="toggleProductFields()">
+            <option value="Approve" ${product.status === 'Approved' ? 'selected' : ''}>Approve</option>
+            <option value="Reject" ${product.status === 'Rejected' ? 'selected' : ''}>Reject</option>
+          </select>
+        </div>
+
+        <div id="approveFields" style="display:none;">
+          <div class="form-group">
+            <label>Assign to Page</label>
+            <select id="assignedPage">
+              <option value="">-- Select Page --</option>
+              <option value="Kapruka FB">Kapruka FB</option>
+              <option value="Electronic Factory">Electronic Factory</option>
+              <option value="Social Mart">Social Mart</option>
+              <option value="Fashion Factory">Fashion Factory</option>
+              <option value="Handbag Factory">Handbag Factory</option>
+              <option value="Toys Factory">Toys Factory</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Go Live Date</label>
+            <input type="date" id="goLiveDate" value="${product.goLiveDate || ''}">
+          </div>
+        </div>
+
+        <div id="rejectFields" style="display:none;">
+          <div class="form-group">
+            <label>Rejection Reason</label>
+            <select id="rejectionReason">
+              <option value="Out of stock">Out of stock</option>
+              <option value="Price too high">Price too high</option>
+              <option value="Low margin">Low margin</option>
+              <option value="Duplicate suggestion">Duplicate suggestion</option>
+              <option value="Not matching page theme">Not matching page theme</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Additional Notes</label>
+            <textarea id="rejectionNotes" placeholder="Optional additional details...">${product.rejectionReason || ''}</textarea>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Reviewer Name</label>
+          <input type="text" id="prodReviewer" placeholder="Your name" value="${product.reviewerName || ''}">
+        </div>
+
+        <div class="modal-btns">
+          <button class="btn btn-success" onclick="saveProductReview(${row})" style="flex:1;">Save Review</button>
+          <button class="btn btn-danger" onclick="closeReviewModal()" style="flex:1;">Cancel</button>
+        </div>
+      `;
+
+      // Set assigned page if approved
+      if (product.status === 'Approved' && product.assignedPage) {
+        setTimeout(() => {
+          document.getElementById('assignedPage').value = product.assignedPage;
+        }, 100);
+      }
+
+      document.getElementById('reviewModal').classList.add('show');
+      toggleProductFields();
+    }
+
+    function toggleProductFields() {
+      const action = document.getElementById('prodAction').value;
+      if (action === 'Reject') {
+        document.getElementById('approveFields').style.display = 'none';
+        document.getElementById('rejectFields').style.display = 'block';
+      } else {
+        document.getElementById('approveFields').style.display = 'block';
+        document.getElementById('rejectFields').style.display = 'none';
+      }
+    }
+
+    // Save product review
+    async function saveProductReview(row) {
+      const action = document.getElementById('prodAction').value;
+      const reviewer = document.getElementById('prodReviewer').value;
+
+      if (!reviewer) {
+        alert('Please enter reviewer name');
+        return;
+      }
+
+      const reviewData = {
+        status: action === 'Approve' ? 'Approved' : 'Rejected',
+        reviewerName: reviewer
+      };
+
+      if (action === 'Approve') {
+        reviewData.assignedPage = document.getElementById('assignedPage').value;
+        reviewData.goLiveDate = document.getElementById('goLiveDate').value;
+        
+        if (!reviewData.assignedPage) {
+          alert('Please assign a page');
+          return;
+        }
+      } else {
+        const reason = document.getElementById('rejectionReason').value;
+        const notes = document.getElementById('rejectionNotes').value;
+        reviewData.rejectionReason = reason === 'Other' ? notes : reason;
+      }
+
+      try {
+        showLoading();
+        const result = await updateProductReview(row, reviewData);
+        hideLoading();
+
+        if (result && result.success) {
+          showModal('Success!', 'Review saved successfully', true);
+          closeReviewModal();
+          await loadProducts();
+        } else {
+          showModal('Error', result?.error || 'Failed to save review', false);
+        }
+      } catch (error) {
+        hideLoading();
+        showModal('Error', error.message, false);
+      }
+    }
+
+    function closeReviewModal() {
+      document.getElementById('reviewModal').classList.remove('show');
+    }
+
+    // Enter key support for password
+    document.getElementById('password').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') login();
+    });
+  </script>
+</body>
+</html>
