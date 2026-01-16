@@ -3,428 +3,305 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Product Suggestions - Kapruka</title>
+  <title>Product Suggestion - Kapruka</title>
   <link rel="stylesheet" href="css/styles.css">
   <link rel="icon" type="image/png" href="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw">
   <style>
-    /* Product-specific styles */
-    .dashboard-grid {
+    .dashboard {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 20px;
       margin-bottom: 30px;
     }
-    
-    .metric-card {
-      background: linear-gradient(135deg, #f9f9f9, #fff);
-      padding: 24px;
+
+    .stat-card {
+      background: white;
+      padding: 20px;
       border-radius: 12px;
-      border-left: 4px solid #5e3a8e;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      text-align: center;
     }
-    
-    .metric-label {
-      font-size: 12px;
-      color: #6e6e73;
+
+    .stat-number {
+      font-size: 36px;
+      font-weight: bold;
+      color: #422B73;
+      margin: 10px 0;
+    }
+
+    .stat-label {
+      font-size: 14px;
+      color: #666;
       text-transform: uppercase;
-      font-weight: 500;
-      margin-bottom: 8px;
       letter-spacing: 0.5px;
     }
-    
-    .metric-value {
-      font-size: 36px;
-      font-weight: 700;
-      color: #5e3a8e;
+
+    .progress-container {
+      background: #f0f0f0;
+      height: 20px;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 10px;
     }
-    
-    .category-breakdown {
-      margin-top: 20px;
-      padding: 20px;
-      background: #f9f9f9;
-      border-radius: 12px;
+
+    .progress-bar {
+      background: linear-gradient(90deg, #422B73, #5a3a9e);
+      height: 100%;
+      transition: width 0.5s;
     }
-    
-    .category-breakdown h3 {
-      color: #1d1d1f;
-      font-size: 16px;
-      font-weight: 600;
-      margin-bottom: 15px;
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
     }
-    
-    .category-item {
+
+    .radio-group {
       display: flex;
-      justify-content: space-between;
-      padding: 10px 0;
-      border-bottom: 1px solid #e5e5e7;
+      gap: 20px;
+      margin-top: 10px;
     }
-    
-    .category-item:last-child {
-      border-bottom: none;
-    }
-    
-    .search-bar {
+
+    .radio-option {
       display: flex;
-      gap: 12px;
-      margin-bottom: 30px;
+      align-items: center;
+      gap: 8px;
     }
-    
-    .search-input {
-      flex: 1;
-      padding: 12px 16px;
-      border: 1px solid #d2d2d7;
-      border-radius: 8px;
-      font-size: 15px;
-      transition: all 0.2s;
-    }
-    
-    .search-input:focus {
-      outline: none;
-      border-color: #5e3a8e;
-      box-shadow: 0 0 0 3px rgba(94,58,142,0.1);
-    }
-    
-    .search-btn {
-      padding: 12px 24px;
-      background: #5e3a8e;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-weight: 500;
+
+    .radio-option input[type="radio"] {
+      width: 18px;
+      height: 18px;
       cursor: pointer;
-      transition: all 0.2s;
     }
-    
-    .search-btn:hover {
-      background: #4a2d70;
-      transform: translateY(-1px);
-    }
-    
-    .result-item {
-      background: #f9f9f9;
+
+    .window-info {
+      background: #E3F2FD;
       padding: 15px;
-      border-radius: 10px;
-      margin-bottom: 10px;
-      border-left: 4px solid #5e3a8e;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      text-align: center;
     }
-    
-    .result-header {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 8px;
+
+    .window-info strong {
+      color: #422B73;
     }
-    
-    .result-category {
-      font-weight: 600;
-      color: #1d1d1f;
-    }
-    
-    .result-status {
-      padding: 4px 12px;
-      border-radius: 12px;
-      font-size: 12px;
-      font-weight: 600;
-    }
-    
-    .status-approved { background: #E8F5E9; color: #2E7D32; }
-    .status-rejected { background: #FFEBEE; color: #C62828; }
-    .status-pending { background: #FFF3CD; color: #F57C00; }
-    
-    .result-link {
-      font-size: 14px;
-      color: #2196F3;
-      margin-bottom: 5px;
-      word-break: break-all;
-    }
-    
-    .result-date {
-      font-size: 13px;
-      color: #6e6e73;
-    }
-    
-    .rejection-item {
-      background: #fff3cd;
-      padding: 15px;
-      border-radius: 10px;
-      margin-bottom: 10px;
-      border-left: 4px solid #ffc107;
-    }
-    
-    .rejection-item strong {
-      color: #1d1d1f;
-      display: block;
-      margin-bottom: 5px;
-      font-size: 14px;
-    }
-    
-    .rejection-reason {
-      color: #6e6e73;
-      font-size: 13px;
-    }
-    
+
     @media (max-width: 768px) {
-      .dashboard-grid { grid-template-columns: 1fr; }
-      .search-bar { flex-direction: column; }
+      .form-row {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
-   <script>
-    const API_BASE_URL = 'https://script.google.com/macros/s/AKfycbwJKgZvrvuGLvpbc9_QYVAzJhMi1PexkudLIly2Y375x4FAFMUtmA1rkaZuF8e_w14ZDQ/exec';
-  </script>
 </head>
 <body>
-  <!-- Loading Spinner -->
-  <div class="loading" id="loading">
+  <div class="navbar">
+    <div class="nav-brand">
+      <img src="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw" alt="Kapruka">
+      <span>Kapruka Campaign Portal</span>
+    </div>
+    <div class="nav-links">
+      <a href="campaign-booking.html">📅 Campaign Booking</a>
+      <a href="product-suggestion.html" class="active">💡 Product Suggestion</a>
+      <a href="admin-dashboard.html">⚙️ Admin Dashboard</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="header">
+      <h1>💡 Product Suggestion</h1>
+      <p>Submit your winning product ideas for the weekly campaign</p>
+    </div>
+
+    <div class="window-info">
+      <p><strong>Current Submission Window:</strong> <span id="windowDates">Loading...</span></p>
+    </div>
+
+    <div class="dashboard">
+      <div class="stat-card">
+        <div class="stat-label">Target</div>
+        <div class="stat-number" id="targetCount">30</div>
+        <div class="stat-label">Products</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">Submitted</div>
+        <div class="stat-number" id="actualCount">0</div>
+        <div class="stat-label">This Week</div>
+        <div class="progress-container">
+          <div id="progressBar" class="progress-bar" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">Picked</div>
+        <div class="stat-number" id="pickedCount">0</div>
+        <div class="stat-label">Winners</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Submit Product Suggestion</h2>
+      
+      <form id="productForm">
+        <div class="form-group">
+          <label>Your Name *</label>
+          <input type="text" id="submitterName" required placeholder="Enter your name">
+        </div>
+
+        <div class="form-group">
+          <label>Product Link *</label>
+          <input type="url" id="productLink" required placeholder="https://www.daraz.lk/products/...">
+        </div>
+
+        <div class="form-group">
+          <label>Kapruka or FC? *</label>
+          <div class="radio-group">
+            <div class="radio-option">
+              <input type="radio" id="kapruka" name="productType" value="Kapruka" checked>
+              <label for="kapruka">Kapruka</label>
+            </div>
+            <div class="radio-option">
+              <input type="radio" id="fc" name="productType" value="FC">
+              <label for="fc">FC (Fulfillment Center)</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Product Category *</label>
+            <input type="text" id="category" required placeholder="e.g., Electronics, Fashion, Home">
+          </div>
+
+          <div class="form-group">
+            <label>Margin % *</label>
+            <input type="number" id="margin" required placeholder="e.g., 25" step="0.01">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Promotion Idea (Optional)</label>
+          <textarea id="promotionIdea" rows="3" placeholder="Describe your promotion strategy..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Available Quantity *</label>
+          <input type="number" id="availableQty" required placeholder="e.g., 100">
+        </div>
+
+        <button type="submit" class="btn btn-primary">Submit Product Suggestion</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div id="loading" class="loading">
     <div class="spinner"></div>
   </div>
 
-  <!-- Success/Error Modal -->
-  <div class="modal" id="modal">
-    <div class="modal-content" id="modalContent"></div>
+  <!-- Success Message -->
+  <div id="successMessage" class="message success">
+    <span id="successText"></span>
   </div>
 
-  <div class="page-container">
-    <!-- Header -->
-    <div class="page-header">
-      <div class="header-left">
-        <div class="header-logo">
-          <img src="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw" alt="Kapruka">
-        </div>
-        <h1>Product Suggestions</h1>
-      </div>
-      <a href="index.html" class="back-btn">← Back</a>
-    </div>
-
-    <!-- Dashboard -->
-    <div class="card">
-      <h2>Submission Dashboard</h2>
-      <div class="dashboard-grid" id="dashboardMetrics">
-        <div class="metric-card">
-          <div class="metric-label">Target Suggestions</div>
-          <div class="metric-value" id="targetValue">30</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-label">Actual Suggested</div>
-          <div class="metric-value" id="actualValue">0</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-label">Picked (Approved)</div>
-          <div class="metric-value" id="pickedValue">0</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-label">Reserve Pool</div>
-          <div class="metric-value" id="reserveValue">0</div>
-        </div>
-      </div>
-
-      <div class="category-breakdown">
-        <h3>Category Breakdown</h3>
-        <div id="categoryList">
-          <p style="text-align:center;color:#999;">No submissions yet</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Search Bar -->
-    <div class="card">
-      <h2>Search Existing Products</h2>
-      <div class="search-bar">
-        <input type="text" class="search-input" id="searchInput" placeholder="Search by product link, category, or submission ID...">
-        <button class="search-btn" onclick="searchExistingProducts()">Search</button>
-      </div>
-      <div id="searchResults"></div>
-    </div>
-
-        <!-- Submission Form -->
-    <div class="card">
-      <h2>Submit Product Suggestion</h2>
-      <form id="productForm">
-        <div class="form-group">
-          <label>Product Link <span class="required">*</span></label>
-          <input type="url" id="productLink" placeholder="https://www.kapruka.lk/..." required>
-        </div>
-
-        <div class="form-group">
-          <label>Kapruka or FC? <span class="required">*</span></label>
-          <select id="productType" required>
-            <option value="">-- Select --</option>
-            <option value="Kapruka Product">Kapruka Product</option>
-            <option value="Partner Owner">Partner Owner</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label>Product Category <span class="required">*</span></label>
-          <select id="productCategory" required>
-            <option value="">-- Select Category --</option>
-            <option value="Home and Lifestyle">Home and Lifestyle</option>
-            <option value="Fashion and Cosmetics">Fashion and Cosmetics</option>
-            <option value="Electronics">Electronics</option>
-            <option value="Mother & Baby">Mother & Baby</option>
-            <option value="Kids Toys and Soft Toys">Kids Toys and Soft Toys</option>
-            <option value="Handling">Handling</option>
-            <option value="Other Categories">Other Categories</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label>Margin % <span class="required">*</span></label>
-          <input type="number" id="margin" placeholder="e.g., 25" min="0" max="100" step="0.1" required>
-        </div>
-
-        <div class="form-group">
-          <label>Available Quantity <span class="required">*</span></label>
-          <input type="number" id="availableQty" placeholder="e.g., 100" min="1" required>
-        </div>
-
-        <button type="submit" class="btn btn-primary" id="submitBtn">Submit Product Suggestion</button>
-      </form>
-    </div>
-
-    <!-- Top Rejections -->
-    <div class="card">
-      <h2>Top 5 Rejections (This Week)</h2>
-      <div id="rejectionList">
-        <p style="text-align:center;color:#999;padding:20px;">No rejections yet this week</p>
-      </div>
-    </div>
+  <!-- Error Message -->
+  <div id="errorMessage" class="message error">
+    <span id="errorText"></span>
   </div>
 
-  <!-- Load API Connection -->
-  <script src="js/api.js"></script>
-
-  <!-- Page Logic -->
+  <script src="js/supabase-api.js"></script>
   <script>
-    // Load dashboard on page load
-    window.addEventListener('DOMContentLoaded', async () => {
-      await loadDashboard();
-    });
+  // ═══════════════════════════════════════════════════════════════
+  // PRODUCT SUGGESTION - FRONTEND LOGIC
+  // ═══════════════════════════════════════════════════════════════
 
-    async function loadDashboard() {
-      try {
-        showLoading();
-        const data = await getProductDashboard();
-        hideLoading();
-        updateDashboard(data);
-      } catch (error) {
-        hideLoading();
-        console.error('Dashboard error:', error);
-      }
-    }
+  function showLoading() {
+    document.getElementById('loading').style.display = 'flex';
+  }
 
-    function updateDashboard(data) {
-      document.getElementById('targetValue').textContent = data.target || 30;
-      document.getElementById('actualValue').textContent = data.actual || 0;
-      document.getElementById('pickedValue').textContent = data.picked || 0;
+  function hideLoading() {
+    document.getElementById('loading').style.display = 'none';
+  }
+
+  function showSuccess(message) {
+    const successDiv = document.getElementById('successMessage');
+    const messageText = document.getElementById('successText');
+    messageText.textContent = message;
+    successDiv.style.display = 'block';
+    setTimeout(() => { successDiv.style.display = 'none'; }, 5000);
+  }
+
+  function showError(message) {
+    const errorDiv = document.getElementById('errorMessage');
+    const messageText = document.getElementById('errorText');
+    messageText.textContent = message;
+    errorDiv.style.display = 'block';
+    setTimeout(() => { errorDiv.style.display = 'none'; }, 5000);
+  }
+
+  // Load Dashboard Stats
+  async function loadDashboard() {
+    try {
+      showLoading();
+      const data = await getProductDashboard();
       
-      const reserve = Math.max(0, (data.actual || 0) - (data.target || 30));
-      document.getElementById('reserveValue').textContent = reserve;
-
-      // Category breakdown
-      const categoryDiv = document.getElementById('categoryList');
-      if (data.categories && data.categories.length > 0) {
-        categoryDiv.innerHTML = data.categories.map(cat => `
-          <div class="category-item">
-            <span><strong>${cat.category}</strong></span>
-            <span>${cat.count} products</span>
-          </div>
-        `).join('');
-      } else {
-        categoryDiv.innerHTML = '<p style="text-align:center;color:#999;">No submissions yet</p>';
-      }
-
-      // Top rejections
-      const rejectDiv = document.getElementById('rejectionList');
-      if (data.rejections && data.rejections.length > 0) {
-        rejectDiv.innerHTML = data.rejections.slice(0, 5).map(rej => `
-          <div class="rejection-item">
-            <strong>${rej.productName || 'Product'}</strong>
-            <div class="rejection-reason">Reason: ${rej.reason || 'Not specified'}</div>
-          </div>
-        `).join('');
-      } else {
-        rejectDiv.innerHTML = '<p style="text-align:center;color:#999;padding:20px;">No rejections yet this week</p>';
-      }
-    }
-
-    async function searchExistingProducts() {
-      const query = document.getElementById('searchInput').value.trim();
-      if (!query) {
-        alert('Please enter a search term');
+      if (!data.window) {
+        showError('No active submission window');
+        hideLoading();
         return;
       }
-
-      try {
-        showLoading();
-        const results = await searchProducts(query);
-        hideLoading();
-        displaySearchResults(results);
-      } catch (error) {
-        hideLoading();
-        alert('Search error: ' + error.message);
-      }
+      
+      document.getElementById('targetCount').textContent = data.target;
+      document.getElementById('actualCount').textContent = data.actual;
+      document.getElementById('pickedCount').textContent = data.picked;
+      
+      const progressPercent = Math.min((data.actual / data.target) * 100, 100);
+      document.getElementById('progressBar').style.width = progressPercent + '%';
+      
+      // Window dates
+      const startDate = new Date(data.window.start_date).toLocaleDateString();
+      const endDate = new Date(data.window.end_date).toLocaleDateString();
+      document.getElementById('windowDates').textContent = `${startDate} - ${endDate}`;
+      
+      hideLoading();
+    } catch (error) {
+      hideLoading();
+      showError('Failed to load dashboard: ' + error.message);
     }
+  }
 
-    function displaySearchResults(results) {
-      const div = document.getElementById('searchResults');
-      if (!results || results.length === 0) {
-        div.innerHTML = '<p style="padding:20px;text-align:center;color:#999;">No matching products found</p>';
-        return;
-      }
-
-      div.innerHTML = `
-        <h3 style="color:#1d1d1f;margin:20px 0 15px;font-size:16px;">Found ${results.length} product(s)</h3>
-        ${results.map(r => `
-          <div class="result-item">
-            <div class="result-header">
-              <span class="result-category">${r.category}</span>
-              <span class="result-status status-${r.status.toLowerCase()}">${r.status}</span>
-            </div>
-            <div class="result-link">${r.productLink}</div>
-            <div class="result-date">Submitted: ${r.timestamp}</div>
-          </div>
-        `).join('')}
-      `;
-    }
-
-    // Submit form
-    document.getElementById('productForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-           const formData = {
+  // Submit Product Form
+  document.getElementById('productForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    try {
+      showLoading();
+      
+      const formData = {
+        name: document.getElementById('submitterName').value,
         productLink: document.getElementById('productLink').value,
-        productType: document.getElementById('productType').value,
-        category: document.getElementById('productCategory').value,
-        margin: parseFloat(document.getElementById('margin').value),
-        availableQty: parseInt(document.getElementById('availableQty').value)
+        productType: document.querySelector('input[name="productType"]:checked').value,
+        category: document.getElementById('category').value,
+        margin: document.getElementById('margin').value,
+        promotionIdea: document.getElementById('promotionIdea').value,
+        availableQty: document.getElementById('availableQty').value
       };
+      
+      const result = await submitProductSuggestion(formData);
+      
+      hideLoading();
+      showSuccess(`Product submitted! ID: ${result.submissionId}`);
+      document.getElementById('productForm').reset();
+      loadDashboard();
+      
+    } catch (error) {
+      hideLoading();
+      showError(error.message);
+    }
+  });
 
-      const btn = document.getElementById('submitBtn');
-      btn.disabled = true;
-      btn.textContent = 'Submitting...';
-
-      try {
-        showLoading();
-        const result = await submitProductSuggestion(formData);
-        hideLoading();
-        btn.disabled = false;
-        btn.textContent = 'Submit Product Suggestion';
-
-        if (result.success) {
-          showModal('Success!', `Product suggestion submitted: ${result.submissionId}`, true);
-          document.getElementById('productForm').reset();
-          await loadDashboard(); // Reload dashboard
-        } else {
-          showModal('Error', result.error || 'Submission failed', false);
-        }
-      } catch (error) {
-        hideLoading();
-        btn.disabled = false;
-        btn.textContent = 'Submit Product Suggestion';
-        showModal('Error', error.message, false);
-      }
-    });
+  // Initialize
+  document.addEventListener('DOMContentLoaded', loadDashboard);
   </script>
 </body>
 </html>
-
-
