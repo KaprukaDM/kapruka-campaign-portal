@@ -6,6 +6,9 @@ const SUPABASE_URL = 'https://ivllhheqqiseagmctfyp.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml2bGxoaGVxcWlzZWFnbWN0ZnlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1NzQzMzksImV4cCI6MjA4NDE1MDMzOX0.OnkYNACtdknKDY2KqLfiGN0ORXpKaW906fD0TtSJlIk';
 const ADMIN_PASSWORD = 'Kapruka2026!Admin';
 
+// Valid status options (only 3 now)
+const VALID_STATUSES = ['Working', 'Live', 'Rejected'];
+
 // ═══════════════════════════════════════════════════════════════
 // HELPER FUNCTIONS
 // ═══════════════════════════════════════════════════════════════
@@ -56,24 +59,20 @@ async function getInitialData() {
 }
 
 async function getSlotsForMonth(month) {
-  // Get department configs for this month
   const configs = await supabaseQuery(`department_config?month=eq.${encodeURIComponent(month)}&active=eq.Yes`);
   
   if (configs.length === 0) return [];
 
-  // Get all requests for this month
   const requests = await supabaseQuery(`request_log?month=eq.${encodeURIComponent(month)}`);
 
   return configs.map(dept => {
     const slots = [];
     const bookedSlots = {};
 
-    // Find booked slots for this department
     requests.forEach(req => {
       if (req.department === dept.department && 
           req.status && 
-          !req.status.includes('Rejected') && 
-          !req.status.includes('Cancelled')) {
+          req.status !== 'Rejected') {
         bookedSlots[req.slot] = {
           requestId: req.request_id,
           campaign: req.campaign || 'N/A',
@@ -85,7 +84,6 @@ async function getSlotsForMonth(month) {
       }
     });
 
-    // Create slot array
     for (let i = 1; i <= dept.slots; i++) {
       const slotName = `Slot ${i}`;
       slots.push({
@@ -107,13 +105,12 @@ async function getSlotsForMonth(month) {
 }
 
 async function submitCampaignRequest(formData) {
-  // Check if slot is already booked
   const existing = await supabaseQuery(
     `request_log?department=eq.${encodeURIComponent(formData.department)}&month=eq.${encodeURIComponent(formData.month)}&slot=eq.${encodeURIComponent(formData.slot)}`
   );
 
   const alreadyBooked = existing.some(req => 
-    req.status && !req.status.includes('Rejected') && !req.status.includes('Cancelled')
+    req.status && req.status !== 'Rejected'
   );
 
   if (alreadyBooked) {
@@ -131,7 +128,7 @@ async function submitCampaignRequest(formData) {
     duration: formData.duration,
     start_date: formData.startDate,
     end_date: formData.endDate,
-    status: 'Requested'
+    status: 'Working'
   };
 
   const result = await supabaseQuery('request_log', 'POST', requestData);
@@ -142,52 +139,80 @@ async function submitCampaignRequest(formData) {
 // PRODUCT SUGGESTION API
 // ═══════════════════════════════════════════════════════════════
 
-async function getProductDashboard() {
+async function getActiveWindow() {
   const windows = await supabaseQuery('submission_windows?status=eq.Active&order=created_at.desc&limit=1');
   
   if (windows.length === 0) {
+    // Create new window if none exists
+    const today = new Date();
+    const nextWeek = new Date(today);
+    nextWeek.setDate(today.getDate() + 7);
+    
+    const newWindow = {
+      window_id: generateId('WIN'),
+      start_date: today.toISOString().split('T')[0],
+      end_date: nextWeek.toISOString().split('T')[0],
+      target_suggestions: 30,
+      status: 'Active'
+    };
+    
+    const result = await supabaseQuery('submission_windows', 'POST', newWindow);
+    return result[0];
+  }
+  
+  return windows[0];
+}
+
+async function getProductDashboard() {
+  try {
+    const window = await getActiveWindow();
+    
+    if (!window) {
+      return { window: null, target: 30, actual: 0, picked: 0, categories: [], rejections: [] };
+    }
+
+    const products = await supabaseQuery(
+      `product_suggestions?timestamp=gte.${window.start_date}T00:00:00&timestamp=lte.${window.end_date}T23:59:59`
+    );
+
+    const categoryCount = {};
+    const rejections = [];
+    let picked = 0;
+
+    products.forEach(p => {
+      categoryCount[p.category] = (categoryCount[p.category] || 0) + 1;
+      if (p.status === 'Approved') picked++;
+      if (p.status === 'Rejected') {
+        rejections.push({
+          productName: p.product_link.split('/').pop().replace(/-/g, ' ').substring(0, 40),
+          reason: p.rejection_reason || 'Not specified'
+        });
+      }
+    });
+
+    const categories = Object.keys(categoryCount).map(cat => ({
+      category: cat,
+      count: categoryCount[cat]
+    })).sort((a, b) => b.count - a.count);
+
+    return {
+      window: window,
+      target: window.target_suggestions,
+      actual: products.length,
+      picked: picked,
+      categories: categories,
+      rejections: rejections.slice(0, 5)
+    };
+  } catch (error) {
+    console.error('getProductDashboard error:', error);
     return { window: null, target: 30, actual: 0, picked: 0, categories: [], rejections: [] };
   }
-
-  const window = windows[0];
-  const products = await supabaseQuery(
-    `product_suggestions?timestamp=gte.${window.start_date}&timestamp=lte.${window.end_date}`
-  );
-
-  const categoryCount = {};
-  const rejections = [];
-  let picked = 0;
-
-  products.forEach(p => {
-    categoryCount[p.category] = (categoryCount[p.category] || 0) + 1;
-    if (p.status === 'Approved') picked++;
-    if (p.status === 'Rejected') {
-      rejections.push({
-        productName: p.product_link.split('/').pop().replace(/-/g, ' ').substring(0, 40),
-        reason: p.rejection_reason || 'Not specified'
-      });
-    }
-  });
-
-  const categories = Object.keys(categoryCount).map(cat => ({
-    category: cat,
-    count: categoryCount[cat]
-  })).sort((a, b) => b.count - a.count);
-
-  return {
-    window: window,
-    target: window.target_suggestions,
-    actual: products.length,
-    picked: picked,
-    categories: categories,
-    rejections: rejections.slice(0, 5)
-  };
 }
 
 async function submitProductSuggestion(formData) {
-  const windows = await supabaseQuery('submission_windows?status=eq.Active&limit=1');
+  const window = await getActiveWindow();
   
-  if (windows.length === 0) {
+  if (!window) {
     throw new Error('No active submission window');
   }
 
@@ -206,6 +231,17 @@ async function submitProductSuggestion(formData) {
 
   const result = await supabaseQuery('product_suggestions', 'POST', submissionData);
   return { success: true, submissionId: result[0].submission_id };
+}
+
+async function searchProductSuggestions(query) {
+  const products = await supabaseQuery('product_suggestions?order=timestamp.desc');
+  const searchLower = query.toLowerCase();
+  
+  return products.filter(p => 
+    p.product_link.toLowerCase().includes(searchLower) ||
+    p.category.toLowerCase().includes(searchLower) ||
+    p.submission_id.toLowerCase().includes(searchLower)
+  ).slice(0, 20);
 }
 
 // ═══════════════════════════════════════════════════════════════
