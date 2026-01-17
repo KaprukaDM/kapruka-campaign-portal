@@ -263,6 +263,16 @@
       cursor: pointer;
       color: #999;
     }
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+    }
+    .checkbox-label input {
+      width: auto;
+      padding: 0;
+    }
     @media (max-width: 768px) {
       h1 { font-size: 32px; }
       .tabs { flex-direction: column; }
@@ -302,6 +312,7 @@
       <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('requests')">📋 Campaign Requests</button>
         <button class="tab-btn" onclick="switchTab('products')">💡 Product Suggestions</button>
+        <button class="tab-btn" onclick="switchTab('content')">📅 Content Calendar</button>
         <button class="tab-btn" onclick="switchTab('departments')">🏢 Department Config</button>
         <button class="tab-btn" style="margin-left:auto;background:#d32f2f;" onclick="logout()">Logout</button>
       </div>
@@ -351,6 +362,91 @@
               </thead>
               <tbody id="productsTable">
                 <tr><td colspan="7" style="text-align:center;padding:40px;">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Content Calendar Tab (NEW) -->
+      <div id="tab-content" class="tab-content">
+        <div class="card">
+          <h2>📅 Add Content Theme</h2>
+          <form id="themeForm">
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px;">
+              <div class="form-group">
+                <label>Theme Name</label>
+                <input type="text" id="themeName" required placeholder="e.g., Valentine's Day">
+              </div>
+              <div class="form-group">
+                <label>Slots Per Day</label>
+                <input type="number" id="slotsPerDay" required placeholder="e.g., 3" min="1" max="10" value="3">
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px;">
+              <div class="form-group">
+                <label>Start Date</label>
+                <input type="date" id="themeStart" required>
+              </div>
+              <div class="form-group">
+                <label>End Date</label>
+                <input type="date" id="themeEnd" required>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px;">
+              <div class="form-group">
+                <label>Theme Color</label>
+                <input type="color" id="themeColor" value="#422B73">
+              </div>
+              <div class="form-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="isSeasonal">
+                  <span>Seasonal Theme (no categories)</span>
+                </label>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Theme</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <h2>🗂️ Content Bookings</h2>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Slot</th>
+                  <th>Category</th>
+                  <th>Product Code</th>
+                  <th>Status</th>
+                  <th>Go Live</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="contentTable">
+                <tr><td colspan="7" style="text-align:center;padding:40px;">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>🎨 Themes</h2>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Theme</th>
+                  <th>Start</th>
+                  <th>End</th>
+                  <th>Slots/Day</th>
+                  <th>Type</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="themesTable">
+                <tr><td colspan="6" style="text-align:center;padding:40px;">Loading...</td></tr>
               </tbody>
             </table>
           </div>
@@ -474,6 +570,10 @@
       
       event.target.classList.add('active');
       document.getElementById('tab-' + tab).classList.add('active');
+
+      if (tab === 'content') {
+        loadContentData();
+      }
     }
 
     async function loadAllData() {
@@ -598,6 +698,154 @@
         hideLoading();
         alert('Product review updated!');
         loadProducts();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    }
+
+    // CONTENT CALENDAR MANAGEMENT (NEW)
+    document.getElementById('themeForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const themeData = {
+        themeName: document.getElementById('themeName').value,
+        startDate: document.getElementById('themeStart').value,
+        endDate: document.getElementById('themeEnd').value,
+        slotsPerDay: document.getElementById('slotsPerDay').value,
+        themeColor: document.getElementById('themeColor').value,
+        isSeasonal: document.getElementById('isSeasonal').checked
+      };
+
+      try {
+        showLoading();
+        await addTheme(themeData);
+        hideLoading();
+        alert('Theme added successfully!');
+        document.getElementById('themeForm').reset();
+        loadContentData();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    });
+
+    async function loadContentData() {
+      loadContentBookings();
+      loadThemes();
+    }
+
+    async function loadContentBookings() {
+      try {
+        const bookings = await getAllContentBookings();
+        const tbody = document.getElementById('contentTable');
+        
+        if (bookings.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;">No bookings yet</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = bookings.map(b => {
+          let badgeClass = b.status === 'Approved' ? 'badge-approved' : 
+                          b.status === 'Rejected' ? 'badge-rejected' : 'badge-pending';
+
+          return `
+            <tr>
+              <td>${b.date}</td>
+              <td>${b.slotNumber}</td>
+              <td>${b.category}</td>
+              <td>${b.productCode}</td>
+              <td><span class="badge ${badgeClass}">${b.status}</span></td>
+              <td>${b.goLiveDate || '-'}</td>
+              <td>
+                <div class="action-btns">
+                  <button class="btn btn-success" onclick="approveContent(${b.id})">Approve</button>
+                  <button class="btn btn-danger" onclick="rejectContent(${b.id})">Reject</button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch (error) {
+        document.getElementById('contentTable').innerHTML = 
+          '<tr><td colspan="7" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
+      }
+    }
+
+    async function approveContent(id) {
+      const reviewer = prompt('Enter your name:');
+      if (!reviewer) return;
+
+      const goLiveDate = prompt('Go Live Date (YYYY-MM-DD):');
+      if (!goLiveDate) return;
+
+      try {
+        showLoading();
+        await updateContentBooking(id, { status: 'Approved', reviewer, goLiveDate });
+        hideLoading();
+        alert('Content approved!');
+        loadContentBookings();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    }
+
+    async function rejectContent(id) {
+      const reviewer = prompt('Enter your name:');
+      if (!reviewer) return;
+
+      const rejectionReason = prompt('Rejection reason:');
+
+      try {
+        showLoading();
+        await updateContentBooking(id, { status: 'Rejected', reviewer, rejectionReason });
+        hideLoading();
+        alert('Content rejected!');
+        loadContentBookings();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    }
+
+    async function loadThemes() {
+      try {
+        const themes = await getAllThemes();
+        const tbody = document.getElementById('themesTable');
+        
+        if (themes.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;">No themes yet</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = themes.map(t => `
+          <tr>
+            <td>${t.theme_name}</td>
+            <td>${t.start_date}</td>
+            <td>${t.end_date}</td>
+            <td>${t.slots_per_day}</td>
+            <td>${t.is_seasonal ? 'Seasonal' : 'Daily Post'}</td>
+            <td>
+              <button class="btn btn-danger" onclick="removeTheme(${t.id})">Delete</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (error) {
+        document.getElementById('themesTable').innerHTML = 
+          '<tr><td colspan="6" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
+      }
+    }
+
+    async function removeTheme(id) {
+      if (!confirm('Delete this theme?')) return;
+
+      try {
+        showLoading();
+        await deleteTheme(id);
+        hideLoading();
+        alert('Theme deleted!');
+        loadThemes();
       } catch (error) {
         hideLoading();
         alert('Error: ' + error.message);
