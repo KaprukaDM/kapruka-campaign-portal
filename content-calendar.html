@@ -461,22 +461,45 @@
       }
     }
 
+    // ═══════════════════════════════════════════════════════════════
+    // FIXED: createDayCell (Issues #3 and #4)
+    // ═══════════════════════════════════════════════════════════════
     function createDayCell(day, dateStr, dayBookings) {
       const cell = document.createElement('div');
       cell.className = 'day-cell';
 
-      const theme = calendarData.themes.find(t => dateStr >= t.start_date && dateStr <= t.end_date);
+      // FIXED ISSUE #4: Get ALL themes for this date (not just first one)
+      const themes = calendarData.themes.filter(t => dateStr >= t.start_date && dateStr <= t.end_date);
       
-      if (theme && theme.is_seasonal) {
+      // Apply seasonal styling if ANY theme is seasonal
+      const hasSeasonal = themes.some(t => t.is_seasonal);
+      if (hasSeasonal) {
         cell.classList.add('seasonal');
       }
 
+      // FIXED ISSUE #4: Display all theme names joined with " + "
+      const themeNames = themes.map(t => t.theme_name).join(' + ');
+      
       cell.innerHTML = `
         <div class="day-number">${day}</div>
-        ${theme ? `<div class="day-theme">${theme.theme_name}</div>` : ''}
+        ${themes.length > 0 ? `<div class="day-theme">${themeNames}</div>` : ''}
       `;
 
       const availableSlots = calendarData.categorySlots.filter(s => s.date === dateStr);
+
+      // FIXED ISSUE #3: Check if ALL slots are filled
+      const allSlotsFilled = availableSlots.length > 0 && 
+        availableSlots.every(slot => 
+          dayBookings.some(b => b.slot_number === slot.slot_number && 
+                               (b.status === 'Approved' || b.status === 'Pending'))
+        );
+
+      // FIXED ISSUE #3: Apply filled slot styling
+      if (allSlotsFilled) {
+        cell.style.background = 'linear-gradient(135deg, #C8E6C9, #A5D6A7)';
+        cell.style.borderColor = '#4CAF50';
+        cell.style.borderWidth = '3px';
+      }
 
       if (dayBookings.length > 0) {
         dayBookings.forEach(booking => {
@@ -511,18 +534,23 @@
         !dayBookings.some(b => b.slot_number === slot.slot_number)
       );
 
-      if (theme && hasAvailableSlots) {
+      if (themes.length > 0 && hasAvailableSlots) {
         cell.style.cursor = 'pointer';
-        cell.onclick = () => openBookingModal(dateStr, theme, availableSlots, dayBookings);
-      } else if (!theme || availableSlots.length === 0) {
+        cell.onclick = () => openBookingModal(dateStr, themes, availableSlots, dayBookings);
+      } else if (themes.length === 0 || availableSlots.length === 0 || allSlotsFilled) {
         cell.style.cursor = 'default';
-        cell.style.opacity = '0.7';
+        if (!allSlotsFilled) {
+          cell.style.opacity = '0.7';
+        }
       }
 
       return cell;
     }
 
-    function openBookingModal(date, theme, slots, bookings) {
+    // ═══════════════════════════════════════════════════════════════
+    // FIXED: openBookingModal (Issue #4 - handle multiple themes)
+    // ═══════════════════════════════════════════════════════════════
+    function openBookingModal(date, themes, slots, bookings) {
       selectedDate = date;
       const modal = document.getElementById('modal');
       const content = document.getElementById('modalContent');
@@ -535,6 +563,11 @@
         day: 'numeric'
       });
 
+      // FIXED ISSUE #4: Handle array of themes
+      const themeNames = Array.isArray(themes) 
+        ? themes.map(t => t.theme_name).join(' + ') 
+        : themes.theme_name;
+
       content.innerHTML = `
         <div class="modal-header">
           <h2>Book Content Slot</h2>
@@ -543,7 +576,7 @@
         
         <div class="date-info">
           <strong>${formattedDate}</strong>
-          <div style="margin-top:5px;font-size:14px;">${theme.theme_name}</div>
+          <div style="margin-top:5px;font-size:14px;">${themeNames}</div>
         </div>
 
         <div class="slots-container" id="slotsContainer"></div>
