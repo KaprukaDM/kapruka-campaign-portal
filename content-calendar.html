@@ -113,6 +113,8 @@
       transition: all 0.3s;
       border: 2px solid transparent;
       position: relative;
+      display: flex;
+      flex-direction: column;
     }
     .day-cell:hover {
       transform: translateY(-3px);
@@ -132,6 +134,7 @@
       font-size: 16px;
       color: #5e3a8e;
       margin-bottom: 8px;
+      flex-shrink: 0;
     }
     .day-theme {
       font-size: 10px;
@@ -139,6 +142,7 @@
       margin-bottom: 5px;
       font-weight: 600;
       text-transform: uppercase;
+      flex-shrink: 0;
     }
     .slot-preview {
       font-size: 9px;
@@ -316,49 +320,45 @@
       .day-number { font-size: 12px; }
       .slot-preview { font-size: 8px; }
     }
+    
     /* Allow multiple posts per day */
-.calendar-day {
-  min-height: 120px;
-  display: flex;
-  flex-direction: column;
-}
+    .posts-container {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      overflow-y: auto;
+      max-height: 90px;
+      margin-top: 8px;
+      flex: 1;
+    }
 
-.posts-container {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  overflow-y: auto;
-  max-height: 90px;
-  margin-top: 8px;
-}
+    .calendar-post {
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.3s;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
 
-.calendar-post {
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-size: 11px;
-  cursor: pointer;
-  transition: all 0.3s;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+    .calendar-post:hover {
+      transform: scale(1.03);
+    }
 
-.calendar-post:hover {
-  transform: scale(1.03);
-}
+    .calendar-post.seasonal {
+      background: linear-gradient(135deg, #FFD700, #FFA500);
+      color: #5e3a8e;
+      font-weight: 700;
+      border: 2px solid #5e3a8e;
+    }
 
-.calendar-post.seasonal {
-  background: linear-gradient(135deg, #FFD700, #FFA500);
-  color: #5e3a8e;
-  font-weight: 700;
-  border: 2px solid #5e3a8e;
-}
-
-.calendar-post.daily {
-  background: linear-gradient(135deg, #E3F2FD, #90CAF9);
-  color: #1976D2;
-  border: 2px solid #64B5F6;
-}
+    .calendar-post.daily {
+      background: linear-gradient(135deg, #E3F2FD, #90CAF9);
+      color: #1976D2;
+      border: 2px solid #64B5F6;
+    }
   </style>
 </head>
 <body>
@@ -462,15 +462,24 @@
         grid.appendChild(cell);
       }
 
+      // Group bookings by date for multiple posts per day
+      const bookingsByDate = {};
+      calendarData.bookings.forEach(booking => {
+        if (!bookingsByDate[booking.date]) {
+          bookingsByDate[booking.date] = [];
+        }
+        bookingsByDate[booking.date].push(booking);
+      });
+
       // Current month days
       for (let day = 1; day <= totalDays; day++) {
         const dateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        const cell = createDayCell(day, dateStr);
+        const cell = createDayCell(day, dateStr, bookingsByDate[dateStr] || []);
         grid.appendChild(cell);
       }
     }
 
-    function createDayCell(day, dateStr) {
+    function createDayCell(day, dateStr, dayBookings = []) {
       const cell = document.createElement('div');
       cell.className = 'day-cell';
 
@@ -488,26 +497,32 @@
 
       // Get slots for this date
       const slots = calendarData.categorySlots.filter(s => s.date === dateStr);
-      const bookings = calendarData.bookings.filter(b => b.date === dateStr);
 
-      slots.forEach(slot => {
-        const booking = bookings.find(b => b.slot_number === slot.slot_number);
-        const slotDiv = document.createElement('div');
-        slotDiv.className = 'slot-preview';
-        
-        if (booking) {
+      // Show ALL bookings for this date (multiple posts per day)
+      if (dayBookings.length > 0) {
+        dayBookings.forEach(booking => {
+          const slotDiv = document.createElement('div');
+          slotDiv.className = 'slot-preview';
           slotDiv.classList.add(booking.status === 'Approved' ? 'booked' : 'pending');
-          slotDiv.innerHTML = `<span>${slot.category}</span><span>●</span>`;
-        } else {
+          slotDiv.innerHTML = `<span>${booking.category}</span><span>●</span>`;
+          cell.appendChild(slotDiv);
+        });
+      }
+
+      // Show available slots that aren't booked yet
+      slots.forEach(slot => {
+        const isBooked = dayBookings.some(b => b.slot_number === slot.slot_number);
+        if (!isBooked) {
+          const slotDiv = document.createElement('div');
+          slotDiv.className = 'slot-preview';
           slotDiv.innerHTML = `<span>${slot.category}</span><span>○</span>`;
+          cell.appendChild(slotDiv);
         }
-        
-        cell.appendChild(slotDiv);
       });
 
-      // Click to book (only for non-seasonal days with slots)
-      if (theme && !theme.is_seasonal && slots.length > 0) {
-        cell.onclick = () => openBookingModal(dateStr, theme, slots, bookings);
+      // Click to book (only for days with available slots)
+      if (theme && slots.length > 0) {
+        cell.onclick = () => openBookingModal(dateStr, theme, slots, dayBookings);
       }
 
       return cell;
@@ -558,7 +573,7 @@
             <div class="slot-title">Slot ${slot.slot_number}</div>
             <div class="slot-category">${slot.category}</div>
           </div>
-          ${isBooked ? `<div style="font-size:12px;color:#666;">Already booked</div>` : ''}
+          ${isBooked ? `<div style="font-size:12px;color:#666;">Already booked by ${booking.submitted_by || 'someone'}</div>` : ''}
         `;
 
         if (!isBooked) {
