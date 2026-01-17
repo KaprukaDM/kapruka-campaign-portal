@@ -356,3 +356,296 @@ async function deleteDepartment(row) {
   await supabaseQuery(`department_config?id=eq.${row}`, 'DELETE');
   return { success: true };
 }
+// ═══════════════════════════════════════════════════════════════
+// CONTENT CALENDAR API
+// ═══════════════════════════════════════════════════════════════
+
+// Category list (20 categories from Kapruka)
+const CATEGORIES = [
+  'Cakes',
+  'Flowers',
+  'Chocolates',
+  'Clothing',
+  'Electronics',
+  'Fashion',
+  'Food & Restaurants',
+  'Fruits',
+  'Soft Toys & Kids Toys',
+  'Grocery & Hampers',
+  'Greeting Cards & Party Supplies',
+  'Sports and Bicycles',
+  'Mother and Baby',
+  'Jewellery and Watches',
+  'Cosmetics & Perfumes',
+  'Customized Gifts',
+  'Health and Wellness',
+  'Home & Lifestyle',
+  'Combo and Gift Sets',
+  'Books & Stationery'
+];
+
+// Get calendar data for a specific month
+async function getCalendarData(month, year) {
+  try {
+    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+    const lastDay = new Date(year, month, 0).getDate();
+    const endDate = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
+
+    // Get themes for this month
+    const themes = await supabaseQuery(
+      `theme_config?start_date=lte.${endDate}&end_date=gte.${startDate}`
+    );
+
+    // Get category slots for this month
+    const monthYear = `${year}-${String(month).padStart(2, '0')}`;
+    const categorySlots = await supabaseQuery(
+      `category_slots?month_year=eq.${monthYear}`
+    );
+
+    // Get bookings for this month
+    const bookings = await supabaseQuery(
+      `content_calendar?date=gte.${startDate}&date=lte.${endDate}`
+    );
+
+    return {
+      themes: themes,
+      categorySlots: categorySlots,
+      bookings: bookings
+    };
+  } catch (error) {
+    console.error('getCalendarData error:', error);
+    return { themes: [], categorySlots: [], bookings: [] };
+  }
+}
+
+// Get theme for a specific date
+async function getThemeForDate(date) {
+  try {
+    const themes = await supabaseQuery(
+      `theme_config?start_date=lte.${date}&end_date=gte.${date}`
+    );
+    return themes.length > 0 ? themes[0] : null;
+  } catch (error) {
+    console.error('getThemeForDate error:', error);
+    return null;
+  }
+}
+
+// Get category slots for a specific date
+async function getCategorySlotsForDate(date) {
+  try {
+    const slots = await supabaseQuery(
+      `category_slots?date=eq.${date}&order=slot_number.asc`
+    );
+    return slots;
+  } catch (error) {
+    console.error('getCategorySlotsForDate error:', error);
+    return [];
+  }
+}
+
+// Submit content booking
+async function submitContentBooking(bookingData) {
+  try {
+    // Check if slot is already booked
+    const existing = await supabaseQuery(
+      `content_calendar?date=eq.${bookingData.date}&slot_number=eq.${bookingData.slotNumber}`
+    );
+
+    if (existing.length > 0 && existing[0].status !== 'Rejected') {
+      throw new Error('This slot is already booked');
+    }
+
+    const booking = {
+      date: bookingData.date,
+      slot_number: bookingData.slotNumber,
+      category: bookingData.category,
+      product_code: bookingData.productCode,
+      product_link: bookingData.productLink || '',
+      status: 'Pending',
+      submitted_by: bookingData.submittedBy || 'User',
+      theme: bookingData.theme || 'Daily Post'
+    };
+
+    const result = await supabaseQuery('content_calendar', 'POST', booking);
+    return { success: true, bookingId: result[0].id };
+  } catch (error) {
+    throw error;
+  }
+}
+
+// Get all content bookings (for admin)
+async function getAllContentBookings() {
+  try {
+    const bookings = await supabaseQuery('content_calendar?order=date.desc,slot_number.asc');
+    return bookings.map(b => ({
+      id: b.id,
+      date: b.date,
+      slotNumber: b.slot_number,
+      category: b.category,
+      productCode: b.product_code,
+      productLink: b.product_link,
+      status: b.status,
+      submittedBy: b.submitted_by,
+      theme: b.theme,
+      scheduleDate: b.schedule_date,
+      goLiveDate: b.go_live_date,
+      reviewer: b.reviewer,
+      rejectionReason: b.rejection_reason,
+      createdAt: b.created_at
+    }));
+  } catch (error) {
+    console.error('getAllContentBookings error:', error);
+    return [];
+  }
+}
+
+// Update content booking status (admin)
+async function updateContentBooking(id, updateData) {
+  try {
+    const data = {
+      status: updateData.status,
+      reviewer: updateData.reviewer,
+      updated_at: new Date().toISOString()
+    };
+
+    if (updateData.status === 'Approved') {
+      data.go_live_date = updateData.goLiveDate || null;
+    } else if (updateData.status === 'Rejected') {
+      data.rejection_reason = updateData.rejectionReason || '';
+    }
+
+    await supabaseQuery(`content_calendar?id=eq.${id}`, 'PATCH', data);
+    return { success: true };
+  } catch (error) {
+    throw error;
+  }
+}
+
+// Get all themes (for admin)
+async function getAllThemes() {
+  try {
+    const themes = await supabaseQuery('theme_config?order=start_date.desc');
+    return themes;
+  } catch (error) {
+    console.error('getAllThemes error:', error);
+    return [];
+  }
+}
+
+// Add new theme (admin)
+async function addTheme(themeData) {
+  try {
+    const theme = {
+      theme_name: themeData.themeName,
+      start_date: themeData.startDate,
+      end_date: themeData.endDate,
+      slots_per_day: parseInt(themeData.slotsPerDay),
+      theme_color: themeData.themeColor || '#422B73',
+      is_seasonal: themeData.isSeasonal || false
+    };
+
+    const result = await supabaseQuery('theme_config', 'POST', theme);
+
+    // If it's a Daily Post theme, generate category slots
+    if (!themeData.isSeasonal) {
+      await generateCategorySlots(themeData.startDate, themeData.endDate, themeData.slotsPerDay);
+    }
+
+    return { success: true, themeId: result[0].id };
+  } catch (error) {
+    throw error;
+  }
+}
+
+// Generate category slots for a date range (admin)
+async function generateCategorySlots(startDate, endDate, slotsPerDay) {
+  try {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const slots = [];
+
+    // Shuffle categories for variety
+    const shuffledCategories = [...CATEGORIES].sort(() => Math.random() - 0.5);
+    let categoryIndex = 0;
+
+    let currentDate = new Date(start);
+    let weekNumber = Math.floor((currentDate.getDate() - 1) / 7) + 1;
+
+    while (currentDate <= end) {
+      const dateStr = currentDate.toISOString().split('T')[0];
+      const monthYear = dateStr.substring(0, 7);
+
+      // Reshuffle every week (7 days)
+      if (currentDate.getDay() === 0 && currentDate > start) {
+        shuffledCategories.sort(() => Math.random() - 0.5);
+        categoryIndex = 0;
+        weekNumber++;
+      }
+
+      // Create slots for this day
+      for (let slotNum = 1; slotNum <= slotsPerDay; slotNum++) {
+        slots.push({
+          date: dateStr,
+          slot_number: slotNum,
+          category: shuffledCategories[categoryIndex % shuffledCategories.length],
+          week_number: weekNumber,
+          month_year: monthYear
+        });
+        categoryIndex++;
+      }
+
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    // Batch insert
+    if (slots.length > 0) {
+      await supabaseQuery('category_slots', 'POST', slots);
+    }
+
+    return { success: true, slotsCreated: slots.length };
+  } catch (error) {
+    console.error('generateCategorySlots error:', error);
+    throw error;
+  }
+}
+
+// Delete theme (admin)
+async function deleteTheme(themeId) {
+  try {
+    await supabaseQuery(`theme_config?id=eq.${themeId}`, 'DELETE');
+    return { success: true };
+  } catch (error) {
+    throw error;
+  }
+}
+
+// Refresh category slots for a month (admin - for monthly refresh)
+async function refreshCategorySlotsForMonth(month, year) {
+  try {
+    const monthYear = `${year}-${String(month).padStart(2, '0')}`;
+    
+    // Delete existing slots for this month
+    await supabaseQuery(`category_slots?month_year=eq.${monthYear}`, 'DELETE');
+
+    // Get Daily Post themes for this month
+    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+    const lastDay = new Date(year, month, 0).getDate();
+    const endDate = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
+
+    const themes = await supabaseQuery(
+      `theme_config?start_date=lte.${endDate}&end_date=gte.${startDate}&is_seasonal=eq.false`
+    );
+
+    // Regenerate slots for each Daily Post theme
+    for (const theme of themes) {
+      const themeStart = theme.start_date > startDate ? theme.start_date : startDate;
+      const themeEnd = theme.end_date < endDate ? theme.end_date : endDate;
+      await generateCategorySlots(themeStart, themeEnd, theme.slots_per_day);
+    }
+
+    return { success: true };
+  } catch (error) {
+    throw error;
+  }
+}
