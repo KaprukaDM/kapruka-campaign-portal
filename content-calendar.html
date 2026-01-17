@@ -109,11 +109,10 @@
       border-radius: 12px;
       min-height: 120px;
       padding: 10px;
+      cursor: pointer;
       transition: all 0.3s;
       border: 2px solid transparent;
       position: relative;
-      display: flex;
-      flex-direction: column;
     }
     .day-cell:hover {
       transform: translateY(-3px);
@@ -124,11 +123,6 @@
       opacity: 0.3;
       cursor: default;
     }
-    .day-cell.other-month:hover {
-      transform: none;
-      box-shadow: none;
-      border-color: transparent;
-    }
     .day-cell.seasonal {
       background: linear-gradient(135deg, #FFE5E5, #FFF0F0);
       border-color: #FF69B4;
@@ -138,7 +132,6 @@
       font-size: 16px;
       color: #5e3a8e;
       margin-bottom: 8px;
-      flex-shrink: 0;
     }
     .day-theme {
       font-size: 10px;
@@ -146,7 +139,6 @@
       margin-bottom: 5px;
       font-weight: 600;
       text-transform: uppercase;
-      flex-shrink: 0;
     }
     .slot-preview {
       font-size: 9px;
@@ -227,10 +219,6 @@
       font-size: 28px;
       cursor: pointer;
       color: #999;
-      transition: color 0.3s;
-    }
-    .close-btn:hover {
-      color: #5e3a8e;
     }
     .date-info {
       background: linear-gradient(135deg, #5e3a8e, #3d2461);
@@ -243,7 +231,6 @@
     .slots-container {
       display: grid;
       gap: 15px;
-      margin-bottom: 20px;
     }
     .slot-card {
       border: 2px solid #e8e8e8;
@@ -264,10 +251,6 @@
       background: #f5f5f5;
       cursor: not-allowed;
       opacity: 0.6;
-    }
-    .slot-card.booked:hover {
-      border-color: #e8e8e8;
-      box-shadow: none;
     }
     .slot-header {
       display: flex;
@@ -305,7 +288,6 @@
       border-radius: 10px;
       font-size: 14px;
       font-family: 'Inter', sans-serif;
-      transition: border-color 0.3s;
     }
     input:focus, textarea:focus {
       outline: none;
@@ -322,16 +304,10 @@
       font-weight: 700;
       cursor: pointer;
       text-transform: uppercase;
-      transition: all 0.3s;
-    }
-    .btn-submit:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(94,58,142,0.4);
     }
     .btn-submit:disabled {
       background: #ccc;
       cursor: not-allowed;
-      transform: none;
     }
     @media (max-width: 768px) {
       h1 { font-size: 28px; }
@@ -339,7 +315,6 @@
       .day-cell { min-height: 80px; padding: 5px; }
       .day-number { font-size: 12px; }
       .slot-preview { font-size: 8px; }
-      .modal-content { padding: 20px; }
     }
   </style>
 </head>
@@ -410,14 +385,13 @@
         document.getElementById('monthDisplay').textContent = `${monthNames[currentMonth - 1]} ${currentYear}`;
 
         calendarData = await getCalendarData(currentMonth, currentYear);
-        console.log('Calendar Data:', calendarData); // Debug
         renderCalendar();
         
         hideLoading();
       } catch (error) {
         hideLoading();
         console.error('Calendar load error:', error);
-        alert('Error loading calendar: ' + error.message);
+        alert('Error loading calendar');
       }
     }
 
@@ -445,28 +419,15 @@
         grid.appendChild(cell);
       }
 
-      // Group bookings by date
-      const bookingsByDate = {};
-      if (calendarData.bookings && calendarData.bookings.length > 0) {
-        calendarData.bookings.forEach(booking => {
-          const dateKey = booking.date;
-          if (!bookingsByDate[dateKey]) {
-            bookingsByDate[dateKey] = [];
-          }
-          bookingsByDate[dateKey].push(booking);
-        });
-      }
-
       // Current month days
       for (let day = 1; day <= totalDays; day++) {
         const dateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        const dayBookings = bookingsByDate[dateStr] || [];
-        const cell = createDayCell(day, dateStr, dayBookings);
+        const cell = createDayCell(day, dateStr);
         grid.appendChild(cell);
       }
     }
 
-    function createDayCell(day, dateStr, dayBookings) {
+    function createDayCell(day, dateStr) {
       const cell = document.createElement('div');
       cell.className = 'day-cell';
 
@@ -482,52 +443,28 @@
         ${theme ? `<div class="day-theme">${theme.theme_name}</div>` : ''}
       `;
 
-      // Get available slots for this date
-      const availableSlots = calendarData.categorySlots.filter(s => s.date === dateStr);
+      // Get slots for this date
+      const slots = calendarData.categorySlots.filter(s => s.date === dateStr);
+      const bookings = calendarData.bookings.filter(b => b.date === dateStr);
 
-      // Display ALL bookings for this day
-      if (dayBookings.length > 0) {
-        dayBookings.forEach(booking => {
-          const slotDiv = document.createElement('div');
-          slotDiv.className = 'slot-preview';
-          
-          if (booking.status === 'Approved') {
-            slotDiv.classList.add('booked');
-          } else if (booking.status === 'Pending') {
-            slotDiv.classList.add('pending');
-          }
-          
-          slotDiv.innerHTML = `<span>${booking.category}</span><span>●</span>`;
-          cell.appendChild(slotDiv);
-        });
-      }
+      slots.forEach(slot => {
+        const booking = bookings.find(b => b.slot_number === slot.slot_number);
+        const slotDiv = document.createElement('div');
+        slotDiv.className = 'slot-preview';
+        
+        if (booking) {
+          slotDiv.classList.add(booking.status === 'Approved' ? 'booked' : 'pending');
+          slotDiv.innerHTML = `<span>${slot.category}</span><span>●</span>`;
+        } else {
+          slotDiv.innerHTML = `<span>${slot.category}</span><span>○</span>`;
+        }
+        
+        cell.appendChild(slotDiv);
+      });
 
-      // Show remaining available slots
-      if (availableSlots.length > 0) {
-        availableSlots.forEach(slot => {
-          // Check if this specific slot is already booked
-          const isSlotBooked = dayBookings.some(b => b.slot_number === slot.slot_number);
-          
-          if (!isSlotBooked) {
-            const slotDiv = document.createElement('div');
-            slotDiv.className = 'slot-preview';
-            slotDiv.innerHTML = `<span>${slot.category}</span><span>○</span>`;
-            cell.appendChild(slotDiv);
-          }
-        });
-      }
-
-      // Allow booking if theme exists and there are available slots
-      const hasAvailableSlots = availableSlots.some(slot => 
-        !dayBookings.some(b => b.slot_number === slot.slot_number)
-      );
-
-      if (theme && hasAvailableSlots) {
-        cell.style.cursor = 'pointer';
-        cell.onclick = () => openBookingModal(dateStr, theme, availableSlots, dayBookings);
-      } else if (!theme || availableSlots.length === 0) {
-        cell.style.cursor = 'default';
-        cell.style.opacity = '0.7';
+      // Click to book (only for non-seasonal days with slots)
+      if (theme && !theme.is_seasonal && slots.length > 0) {
+        cell.onclick = () => openBookingModal(dateStr, theme, slots, bookings);
       }
 
       return cell;
@@ -538,14 +475,6 @@
       const modal = document.getElementById('modal');
       const content = document.getElementById('modalContent');
 
-      const dateObj = new Date(date + 'T00:00:00');
-      const formattedDate = dateObj.toLocaleDateString('en-US', {
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric'
-      });
-
       content.innerHTML = `
         <div class="modal-header">
           <h2>Book Content Slot</h2>
@@ -553,7 +482,7 @@
         </div>
         
         <div class="date-info">
-          <strong>${formattedDate}</strong>
+          <strong>${new Date(date).toLocaleDateString('en-US', {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'})}</strong>
           <div style="margin-top:5px;font-size:14px;">${theme.theme_name}</div>
         </div>
 
@@ -576,8 +505,8 @@
       const slotsContainer = document.getElementById('slotsContainer');
       
       slots.forEach(slot => {
-        const existingBooking = bookings.find(b => b.slot_number === slot.slot_number);
-        const isBooked = existingBooking && existingBooking.status !== 'Rejected';
+        const booking = bookings.find(b => b.slot_number === slot.slot_number);
+        const isBooked = booking && booking.status !== 'Rejected';
         
         const slotCard = document.createElement('div');
         slotCard.className = 'slot-card' + (isBooked ? ' booked' : '');
@@ -586,7 +515,7 @@
             <div class="slot-title">Slot ${slot.slot_number}</div>
             <div class="slot-category">${slot.category}</div>
           </div>
-          ${isBooked ? `<div style="font-size:12px;color:#666;">✓ Booked by ${existingBooking.submitted_by || 'someone'}</div>` : ''}
+          ${isBooked ? `<div style="font-size:12px;color:#666;">Already booked</div>` : ''}
         `;
 
         if (!isBooked) {
@@ -626,7 +555,7 @@
           slotNumber: selectedSlot.slot_number,
           category: selectedSlot.category,
           productCode: productCode,
-          productLink: document.getElementById('productLink').value.trim(),
+          productLink: document.getElementById('productLink').value,
           submittedBy: 'User'
         };
 
@@ -639,7 +568,6 @@
         
       } catch (error) {
         hideLoading();
-        console.error('Submit error:', error);
         alert('Error: ' + error.message);
       }
     }
@@ -647,14 +575,6 @@
     function closeModal() {
       document.getElementById('modal').style.display = 'none';
       selectedSlot = null;
-    }
-
-    // Close modal when clicking outside
-    window.onclick = function(event) {
-      const modal = document.getElementById('modal');
-      if (event.target === modal) {
-        closeModal();
-      }
     }
 
     window.onload = loadCalendar;
