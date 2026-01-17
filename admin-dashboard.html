@@ -368,7 +368,7 @@
         </div>
       </div>
 
-      <!-- Content Calendar Tab (NEW) -->
+      <!-- Content Calendar Tab -->
       <div id="tab-content" class="tab-content">
         <div class="card">
           <h2>📅 Add Content Theme</h2>
@@ -659,7 +659,7 @@
           return `
             <tr>
               <td>${p.submissionId}</td>
-              <td>${p.timestamp}</td>
+              <td>${new Date(p.timestamp).toLocaleDateString()}</td>
               <td><a href="${p.productLink}" target="_blank" style="color:#5e3a8e;">View</a></td>
               <td>${p.category}</td>
               <td>${p.margin}%</td>
@@ -704,7 +704,7 @@
       }
     }
 
-    // CONTENT CALENDAR MANAGEMENT (NEW)
+    // CONTENT CALENDAR MANAGEMENT
     document.getElementById('themeForm').addEventListener('submit', async (e) => {
       e.preventDefault();
 
@@ -721,7 +721,7 @@
         showLoading();
         await addTheme(themeData);
         hideLoading();
-        alert('Theme added successfully!');
+        alert('✅ Theme added successfully!');
         document.getElementById('themeForm').reset();
         loadContentData();
       } catch (error) {
@@ -783,7 +783,7 @@
         showLoading();
         await updateContentBooking(id, { status: 'Approved', reviewer, goLiveDate });
         hideLoading();
-        alert('Content approved!');
+        alert('✅ Content approved!');
         loadContentBookings();
       } catch (error) {
         hideLoading();
@@ -837,18 +837,29 @@
       }
     }
 
+    // ═══════════════════════════════════════════════════════════════
+    // FIXED: removeTheme function (Issue #1)
+    // ═══════════════════════════════════════════════════════════════
     async function removeTheme(id) {
-      if (!confirm('Delete this theme?')) return;
+      if (!confirm('⚠️ Delete this theme?\n\nThis will also remove all associated category slots and may affect the content calendar.')) return;
 
       try {
         showLoading();
-        await deleteTheme(id);
+        const result = await deleteTheme(id);
         hideLoading();
-        alert('Theme deleted!');
+        
+        if (result.slotsDeleted > 0) {
+          alert(`✅ Theme deleted successfully!\n\n${result.slotsDeleted} category slots were also removed.`);
+        } else {
+          alert('✅ Theme deleted successfully!');
+        }
+        
+        // Refresh both tables
         loadThemes();
+        loadContentBookings();
       } catch (error) {
         hideLoading();
-        alert('Error: ' + error.message);
+        alert('❌ Error: ' + error.message);
       }
     }
 
@@ -869,7 +880,7 @@
         showLoading();
         await addDepartment(config);
         hideLoading();
-        alert('Department added!');
+        alert('✅ Department added!');
         document.getElementById('deptForm').reset();
         loadDepartments();
       } catch (error) {
@@ -913,7 +924,7 @@
         showLoading();
         await deleteDepartment(row);
         hideLoading();
-        alert('Department deleted!');
+        alert('✅ Department deleted!');
         loadDepartments();
       } catch (error) {
         hideLoading();
