@@ -74,7 +74,7 @@
     }
     .search-form {
       display: grid;
-      grid-template-columns: 2fr 1fr 1fr auto;
+      grid-template-columns: 1fr auto;
       gap: 15px;
       align-items: end;
     }
@@ -336,20 +336,12 @@
       <p class="subtitle">Meta Ads Analytics Dashboard</p>
     </div>
 
-    <!-- Search Section -->
+    <!-- Search Section - NO DATE FILTERS -->
     <div class="search-card">
       <form class="search-form" id="searchForm">
         <div class="form-group">
           <label>🔍 Search Keyword</label>
           <input type="text" id="searchKeyword" placeholder="Product code, campaign name, or keyword..." required>
-        </div>
-        <div class="form-group">
-          <label>📅 Start Date</label>
-          <input type="date" id="startDate">
-        </div>
-        <div class="form-group">
-          <label>📅 End Date</label>
-          <input type="date" id="endDate">
         </div>
         <button type="submit" class="btn-search">Search</button>
       </form>
@@ -412,15 +404,13 @@
         <div class="icon">🔍</div>
         <h3 style="color:#999;margin-bottom:10px;">No Results Found</h3>
         <p>No performance data found for "<span id="searchedKeyword"></span>"</p>
-        <p style="margin-top:10px;font-size:13px;">Try searching with different keywords or check your date range.</p>
+        <p style="margin-top:10px;font-size:13px;">Try searching with different keywords.</p>
       </div>
     </div>
   </div>
 
   <script src="js/supabase-api.js"></script>
   <script>
-    let dateRange = { minDate: null, maxDate: null };
-
     function showLoading() {
       document.getElementById('loading').style.display = 'flex';
     }
@@ -430,7 +420,9 @@
     }
 
     function formatCurrency(value) {
-      return '$ ' + parseFloat(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      // Convert INR to USD (approximate rate: 1 USD = 83 INR)
+      const usd = parseFloat(value) / 83;
+      return '$' + usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
     function formatNumber(value) {
@@ -447,35 +439,10 @@
       return 'objective-conversions';
     }
 
-    async function initializeDateInputs() {
-      try {
-        dateRange = await getDateRangeOptions();
-
-        if (dateRange.minDate) {
-          document.getElementById('startDate').min = dateRange.minDate;
-          document.getElementById('startDate').max = dateRange.maxDate;
-          document.getElementById('endDate').min = dateRange.minDate;
-          document.getElementById('endDate').max = dateRange.maxDate;
-
-          // Set default to last 30 days
-          const end = new Date(dateRange.maxDate);
-          const start = new Date(end);
-          start.setDate(start.getDate() - 30);
-
-          document.getElementById('endDate').value = dateRange.maxDate;
-          document.getElementById('startDate').value = start.toISOString().split('T')[0];
-        }
-      } catch (error) {
-        console.error('Error initializing dates:', error);
-      }
-    }
-
     document.getElementById('searchForm').addEventListener('submit', async (e) => {
       e.preventDefault();
 
       const keyword = document.getElementById('searchKeyword').value.trim();
-      const startDate = document.getElementById('startDate').value;
-      const endDate = document.getElementById('endDate').value;
 
       if (!keyword) {
         alert('Please enter a search keyword');
@@ -485,7 +452,8 @@
       try {
         showLoading();
 
-        const results = await searchProductPerformance(keyword, startDate, endDate);
+        // Search without date filters
+        const results = await searchProductPerformance(keyword, null, null);
 
         hideLoading();
 
@@ -596,10 +564,6 @@
         </tr>
       `).join('');
     }
-
-    window.onload = async () => {
-      await initializeDateInputs();
-    };
   </script>
 </body>
 </html>
