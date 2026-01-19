@@ -688,30 +688,41 @@ async function refreshCategorySlotsForMonth(month, year) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// PRODUCT PERFORMANCE API (ALTERNATIVE APPROACH)
+// PRODUCT PERFORMANCE API - FIXED
 // ═══════════════════════════════════════════════════════════════
 
 async function searchProductPerformance(keyword, startDate = null, endDate = null) {
   try {
-    // Build query parts
-    let query = 'meta_ads_performance?';
+    // Build URL with date range
+    let url = `${SUPABASE_URL}/rest/v1/meta_ads_performance?`;
     
-    // Add search filter
-    const searchFilter = `or=(campaign_name.ilike.*${keyword}*,adset_name.ilike.*${keyword}*,ad_name.ilike.*${keyword}*)`;
-    query += searchFilter;
-    
-    // Add date filters if provided
-    if (startDate) {
-      query += `&date=gte.${startDate}`;
-    }
-    if (endDate) {
-      query += `&date=lte.${endDate}`;
+    if (startDate && endDate) {
+      url += `date=gte.${startDate}&date=lte.${endDate}&`;
     }
     
-    // Add ordering
-    query += '&order=date.desc';
+    url += `order=date.desc`;
     
-    const results = await supabaseQuery(query);
+    // Fetch all data in date range
+    const response = await fetch(url, {
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status}`);
+    }
+    
+    const allData = await response.json();
+    
+    // Filter by keyword
+    const keywordLower = keyword.toLowerCase();
+    const results = allData.filter(row => 
+      (row.campaign_name && row.campaign_name.toLowerCase().includes(keywordLower)) ||
+      (row.adset_name && row.adset_name.toLowerCase().includes(keywordLower)) ||
+      (row.ad_name && row.ad_name.toLowerCase().includes(keywordLower))
+    );
 
     if (results.length === 0) {
       return { level: 'none', data: [], aggregated: [] };
@@ -719,15 +730,15 @@ async function searchProductPerformance(keyword, startDate = null, endDate = nul
 
     // Determine aggregation level (Campaign > Adset > Ad)
     const campaignMatches = results.filter(r => 
-      r.campaign_name && r.campaign_name.toLowerCase().includes(keyword.toLowerCase())
+      r.campaign_name && r.campaign_name.toLowerCase().includes(keywordLower)
     );
     
     const adsetMatches = results.filter(r => 
-      r.adset_name && r.adset_name.toLowerCase().includes(keyword.toLowerCase())
+      r.adset_name && r.adset_name.toLowerCase().includes(keywordLower)
     );
 
     const adMatches = results.filter(r => 
-      r.ad_name && r.ad_name.toLowerCase().includes(keyword.toLowerCase())
+      r.ad_name && r.ad_name.toLowerCase().includes(keywordLower)
     );
 
     let aggregationLevel = 'ad';
@@ -771,7 +782,7 @@ async function searchProductPerformance(keyword, startDate = null, endDate = nul
       grouped[key].impression += parseInt(row.impression || 0);
       grouped[key].clicks += parseInt(row.clicks || 0);
       grouped[key].results += parseInt(row.results || 0);
-      grouped[key].direct_orders += parseInt(row.direct_orders || 0);
+      grouped[key].direct_orders += parseInt(row.if_direct_orders || 0);
       grouped[key].dates.push(row.date);
     });
 
@@ -811,7 +822,7 @@ async function searchProductPerformance(keyword, startDate = null, endDate = nul
 
 async function getDateRangeOptions() {
   try {
-    const results = await supabaseQuery('meta_ads_performance?select=date&order=date.desc&limit=1000');
+    const results = await supabaseQuery('meta_ads_performance?select=date&order=date.desc.nullslast&limit=1000');
     
     if (results.length === 0) {
       return { minDate: null, maxDate: null };
