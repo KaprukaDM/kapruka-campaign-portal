@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product Performance - Kapruka</title>
+  <link rel="icon" type="image/png" href="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #1a0b2e 0%, #3d2461 50%, #5e3a8e 100%);
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    .container { max-width: 1600px; margin: 0 auto; }
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .kapruka-logo {
+      width: 100px;
+      height: 100px;
+      margin: 0 auto 20px;
+      border-radius: 50%;
+      overflow: hidden;
+      box-shadow: 0 15px 50px rgba(0,0,0,0.5);
+    }
+    .kapruka-logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 42px;
+      background: linear-gradient(135deg, #FFD700, #FFF, #FFD700);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      color: rgba(255,255,255,0.8);
+      font-size: 14px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.1);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 12px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.3s;
+      margin-bottom: 30px;
+      border: 2px solid rgba(255,255,255,0.2);
+    }
+    .back-btn:hover {
+      background: rgba(255,215,0,0.2);
+      border-color: #FFD700;
+      transform: translateX(-5px);
+    }
+    .search-card {
+      background: rgba(255,255,255,0.98);
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      margin-bottom: 30px;
+    }
+    .search-form {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr auto;
+      gap: 15px;
+      align-items: end;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+    label {
+      color: #5e3a8e;
+      font-weight: 600;
+      margin-bottom: 8px;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    input {
+      padding: 14px 18px;
+      border: 2px solid #e8e8e8;
+      border-radius: 12px;
+      font-size: 15px;
+      font-family: 'Inter', sans-serif;
+      transition: all 0.3s;
+    }
+    input:focus {
+      outline: none;
+      border-color: #FFD700;
+      box-shadow: 0 0 0 3px rgba(255,215,0,0.1);
+    }
+    .btn-search {
+      padding: 14px 32px;
+      background: linear-gradient(135deg, #5e3a8e, #3d2461);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .btn-search:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(94,58,142,0.4);
+    }
+    .results-section {
+      display: none;
+    }
+    .results-section.active {
+      display: block;
+    }
+    .aggregation-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: linear-gradient(135deg, #5e3a8e, #3d2461);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-weight: 700;
+      margin-bottom: 25px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .aggregation-badge .icon {
+      font-size: 20px;
+    }
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    .metric-card {
+      background: white;
+      padding: 25px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      border-left: 5px solid #FFD700;
+      transition: all 0.3s;
+    }
+    .metric-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+    }
+    .metric-label {
+      color: #666;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+    .metric-value {
+      color: #5e3a8e;
+      font-size: 32px;
+      font-weight: 700;
+      font-family: 'Playfair Display', serif;
+    }
+    .metric-subtext {
+      color: #999;
+      font-size: 11px;
+      margin-top: 8px;
+      font-weight: 500;
+    }
+    .performance-card {
+      background: rgba(255,255,255,0.98);
+      padding: 35px;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      margin-bottom: 30px;
+    }
+    .performance-card h2 {
+      font-family: 'Playfair Display', serif;
+      color: #5e3a8e;
+      font-size: 28px;
+      margin-bottom: 25px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    .objective-badge {
+      display: inline-block;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-left: auto;
+    }
+    .objective-conversions { background: #E8F5E9; color: #2E7D32; }
+    .objective-traffic { background: #E3F2FD; color: #1565C0; }
+    .objective-awareness { background: #FFF3E0; color: #E65100; }
+    .objective-engagement { background: #F3E5F5; color: #6A1B9A; }
+    .objective-leads { background: #FCE4EC; color: #C2185B; }
+    .performance-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+    .performance-table th {
+      background: linear-gradient(135deg, #5e3a8e, #3d2461);
+      color: white;
+      padding: 16px 12px;
+      text-align: left;
+      font-weight: 700;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .performance-table td {
+      padding: 16px 12px;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 14px;
+      color: #333;
+    }
+    .performance-table tr:hover {
+      background: #f9f9f9;
+    }
+    .performance-table tr:last-child td {
+      border-bottom: none;
+    }
+    .date-range {
+      color: #666;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .loading {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.85);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .spinner {
+      width: 60px;
+      height: 60px;
+      border: 5px solid rgba(255,215,0,0.3);
+      border-top-color: #FFD700;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .no-results {
+      text-align: center;
+      padding: 60px 20px;
+      color: #999;
+    }
+    .no-results .icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+      opacity: 0.3;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 80px 20px;
+      color: rgba(255,255,255,0.7);
+    }
+    .empty-state .icon {
+      font-size: 80px;
+      margin-bottom: 20px;
+    }
+    .empty-state h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 28px;
+      color: white;
+      margin-bottom: 15px;
+    }
+    .stat-highlight {
+      background: linear-gradient(135deg, #FFD700, #FFA000);
+      color: #1a0b2e;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 13px;
+    }
+    @media (max-width: 768px) {
+      h1 { font-size: 28px; }
+      .search-form {
+        grid-template-columns: 1fr;
+      }
+      .metrics-grid {
+        grid-template-columns: 1fr;
+      }
+      .performance-table {
+        font-size: 11px;
+      }
+      .performance-table th,
+      .performance-table td {
+        padding: 10px 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="loading" id="loading"><div class="spinner"></div></div>
+
+  <div class="container">
+    <a href="index.html" class="back-btn">
+      ← Back to Home
+    </a>
+
+    <div class="header">
+      <div class="kapruka-logo">
+        <img src="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw" alt="Kapruka">
+      </div>
+      <h1>Product Performance</h1>
+      <p class="subtitle">Meta Ads Analytics Dashboard</p>
+    </div>
+
+    <!-- Search Section -->
+    <div class="search-card">
+      <form class="search-form" id="searchForm">
+        <div class="form-group">
+          <label>🔍 Search Keyword</label>
+          <input type="text" id="searchKeyword" placeholder="Product code, campaign name, or keyword..." required>
+        </div>
+        <div class="form-group">
+          <label>📅 Start Date</label>
+          <input type="date" id="startDate">
+        </div>
+        <div class="form-group">
+          <label>📅 End Date</label>
+          <input type="date" id="endDate">
+        </div>
+        <button type="submit" class="btn-search">Search</button>
+      </form>
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="empty-state">
+      <div class="icon">📊</div>
+      <h3>Search for Product Performance</h3>
+      <p>Enter a product code, campaign name, or keyword to view detailed performance metrics</p>
+    </div>
+
+    <!-- Results Section -->
+    <div id="resultsSection" class="results-section">
+      <!-- Aggregation Level Badge -->
+      <div class="aggregation-badge" id="aggregationBadge">
+        <span class="icon">📈</span>
+        <span id="aggregationText">Loading...</span>
+      </div>
+
+      <!-- Key Metrics -->
+      <div class="metrics-grid" id="metricsGrid"></div>
+
+      <!-- Performance Details -->
+      <div class="performance-card">
+        <h2>
+          <span>Performance Details</span>
+          <span class="objective-badge" id="objectiveBadge"></span>
+        </h2>
+        <div style="overflow-x: auto;">
+          <table class="performance-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Date Range</th>
+                <th>Days</th>
+                <th>Spent</th>
+                <th>Reach</th>
+                <th>Impressions</th>
+                <th>Clicks</th>
+                <th>CTR</th>
+                <th>Results</th>
+                <th>Orders</th>
+                <th>Conv. Rate</th>
+                <th>CPC</th>
+                <th>CPM</th>
+              </tr>
+            </thead>
+            <tbody id="performanceTableBody">
+              <tr><td colspan="13" style="text-align:center;padding:40px;">No data</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- No Results -->
+    <div id="noResults" class="performance-card" style="display:none;">
+      <div class="no-results">
+        <div class="icon">🔍</div>
+        <h3 style="color:#999;margin-bottom:10px;">No Results Found</h3>
+        <p>No performance data found for "<span id="searchedKeyword"></span>"</p>
+        <p style="margin-top:10px;font-size:13px;">Try searching with different keywords or check your date range.</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/supabase-api.js"></script>
+  <script>
+    let dateRange = { minDate: null, maxDate: null };
+
+    function showLoading() {
+      document.getElementById('loading').style.display = 'flex';
+    }
+
+    function hideLoading() {
+      document.getElementById('loading').style.display = 'none';
+    }
+
+    function formatCurrency(value) {
+      return 'Rs. ' + parseFloat(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function formatNumber(value) {
+      return parseInt(value).toLocaleString('en-US');
+    }
+
+    function getObjectiveClass(objective) {
+      const lower = objective.toLowerCase();
+      if (lower.includes('conversion') || lower.includes('sales')) return 'objective-conversions';
+      if (lower.includes('traffic') || lower.includes('link')) return 'objective-traffic';
+      if (lower.includes('awareness') || lower.includes('reach')) return 'objective-awareness';
+      if (lower.includes('engagement')) return 'objective-engagement';
+      if (lower.includes('lead')) return 'objective-leads';
+      return 'objective-conversions';
+    }
+
+    async function initializeDateInputs() {
+      try {
+        dateRange = await getDateRangeOptions();
+
+        if (dateRange.minDate) {
+          document.getElementById('startDate').min = dateRange.minDate;
+          document.getElementById('startDate').max = dateRange.maxDate;
+          document.getElementById('endDate').min = dateRange.minDate;
+          document.getElementById('endDate').max = dateRange.maxDate;
+
+          // Set default to last 30 days
+          const end = new Date(dateRange.maxDate);
+          const start = new Date(end);
+          start.setDate(start.getDate() - 30);
+
+          document.getElementById('endDate').value = dateRange.maxDate;
+          document.getElementById('startDate').value = start.toISOString().split('T')[0];
+        }
+      } catch (error) {
+        console.error('Error initializing dates:', error);
+      }
+    }
+
+    document.getElementById('searchForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const keyword = document.getElementById('searchKeyword').value.trim();
+      const startDate = document.getElementById('startDate').value;
+      const endDate = document.getElementById('endDate').value;
+
+      if (!keyword) {
+        alert('Please enter a search keyword');
+        return;
+      }
+
+      try {
+        showLoading();
+
+        const results = await searchProductPerformance(keyword, startDate, endDate);
+
+        hideLoading();
+
+        if (results.level === 'none' || results.aggregated.length === 0) {
+          // Show no results
+          document.getElementById('emptyState').style.display = 'none';
+          document.getElementById('resultsSection').classList.remove('active');
+          document.getElementById('noResults').style.display = 'block';
+          document.getElementById('searchedKeyword').textContent = keyword;
+        } else {
+          // Show results
+          document.getElementById('emptyState').style.display = 'none';
+          document.getElementById('noResults').style.display = 'none';
+          document.getElementById('resultsSection').classList.add('active');
+
+          displayResults(results, keyword);
+        }
+
+      } catch (error) {
+        hideLoading();
+        console.error('Search error:', error);
+        alert('Error searching: ' + error.message);
+      }
+    });
+
+    function displayResults(results, keyword) {
+      const { level, aggregated } = results;
+
+      // Update aggregation badge
+      const levelIcons = {
+        campaign: '🎯',
+        adset: '📁',
+        ad: '📄'
+      };
+      const levelText = {
+        campaign: 'Campaign Level',
+        adset: 'Ad Set Level',
+        ad: 'Ad Level'
+      };
+
+      document.getElementById('aggregationBadge').innerHTML = `
+        <span class="icon">${levelIcons[level]}</span>
+        <span>Showing ${levelText[level]} Performance</span>
+      `;
+
+      // Calculate totals for metrics
+      const totals = aggregated.reduce((acc, item) => {
+        acc.spent += parseFloat(item.amount_spent);
+        acc.reach += parseInt(item.reach);
+        acc.impressions += parseInt(item.impression);
+        acc.clicks += parseInt(item.clicks);
+        acc.results += parseInt(item.results);
+        acc.orders += parseInt(item.direct_orders);
+        return acc;
+      }, { spent: 0, reach: 0, impressions: 0, clicks: 0, results: 0, orders: 0 });
+
+      const avgCTR = totals.impressions > 0 ? ((totals.clicks / totals.impressions) * 100).toFixed(2) : 0;
+      const avgConvRate = totals.clicks > 0 ? ((totals.orders / totals.clicks) * 100).toFixed(2) : 0;
+
+      // Display metrics
+      const metricsGrid = document.getElementById('metricsGrid');
+      metricsGrid.innerHTML = `
+        <div class="metric-card" style="border-left-color: #E53935;">
+          <div class="metric-label">Total Spent</div>
+          <div class="metric-value">${formatCurrency(totals.spent)}</div>
+          <div class="metric-subtext">${aggregated.length} ${level}(s)</div>
+        </div>
+        <div class="metric-card" style="border-left-color: #43A047;">
+          <div class="metric-label">Total Reach</div>
+          <div class="metric-value">${formatNumber(totals.reach)}</div>
+          <div class="metric-subtext">${formatNumber(totals.impressions)} impressions</div>
+        </div>
+        <div class="metric-card" style="border-left-color: #1E88E5;">
+          <div class="metric-label">Total Clicks</div>
+          <div class="metric-value">${formatNumber(totals.clicks)}</div>
+          <div class="metric-subtext">${avgCTR}% CTR</div>
+        </div>
+        <div class="metric-card" style="border-left-color: #FFD700;">
+          <div class="metric-label">Direct Orders</div>
+          <div class="metric-value">${formatNumber(totals.orders)}</div>
+          <div class="metric-subtext">${avgConvRate}% conversion rate</div>
+        </div>
+      `;
+
+      // Display objective badge (using first item's objective)
+      const objective = aggregated[0].objective || 'N/A';
+      const objectiveBadge = document.getElementById('objectiveBadge');
+      objectiveBadge.className = 'objective-badge ' + getObjectiveClass(objective);
+      objectiveBadge.textContent = objective;
+
+      // Display table
+      const tbody = document.getElementById('performanceTableBody');
+      tbody.innerHTML = aggregated.map(item => `
+        <tr>
+          <td style="font-weight:600;color:#5e3a8e;">${item.name}</td>
+          <td class="date-range">${item.dateRange}</td>
+          <td>${item.dayCount}</td>
+          <td>${formatCurrency(item.amount_spent)}</td>
+          <td>${formatNumber(item.reach)}</td>
+          <td>${formatNumber(item.impression)}</td>
+          <td>${formatNumber(item.clicks)}</td>
+          <td><span class="stat-highlight">${item.ctr}%</span></td>
+          <td>${formatNumber(item.results)}</td>
+          <td><strong>${formatNumber(item.direct_orders)}</strong></td>
+          <td><span class="stat-highlight">${item.conversionRate}%</span></td>
+          <td>${formatCurrency(item.cpc)}</td>
+          <td>${formatCurrency(item.cpm)}</td>
+        </tr>
+      `).join('');
+    }
+
+    window.onload = async () => {
+      await initializeDateInputs();
+    };
+  </script>
+</body>
+</html>
