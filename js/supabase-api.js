@@ -686,6 +686,7 @@ async function refreshCategorySlotsForMonth(month, year) {
     throw error;
   }
 }
+
 // ═══════════════════════════════════════════════════════════════
 // PRODUCT PERFORMANCE API
 // ═══════════════════════════════════════════════════════════════
@@ -703,7 +704,7 @@ async function searchProductPerformance(keyword, startDate = null, endDate = nul
     );
 
     if (results.length === 0) {
-      return { level: 'none', data: [], aggregated: null };
+      return { level: 'none', data: [], aggregated: [] };
     }
 
     // Determine aggregation level (Campaign > Adset > Ad)
