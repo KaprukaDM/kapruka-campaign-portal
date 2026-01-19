@@ -686,3 +686,135 @@ async function refreshCategorySlotsForMonth(month, year) {
     throw error;
   }
 }
+// ═══════════════════════════════════════════════════════════════
+// PRODUCT PERFORMANCE API
+// ═══════════════════════════════════════════════════════════════
+
+async function searchProductPerformance(keyword, startDate = null, endDate = null) {
+  try {
+    let dateFilter = '';
+    if (startDate && endDate) {
+      dateFilter = `&date=gte.${startDate}&date=lte.${endDate}`;
+    }
+
+    // Search across all levels
+    const results = await supabaseQuery(
+      `meta_ads_performance?or=(campaign_name.ilike.%${encodeURIComponent(keyword)}%,adset_name.ilike.%${encodeURIComponent(keyword)}%,ad_name.ilike.%${encodeURIComponent(keyword)}%)${dateFilter}&order=date.desc`
+    );
+
+    if (results.length === 0) {
+      return { level: 'none', data: [], aggregated: null };
+    }
+
+    // Determine aggregation level (Campaign > Adset > Ad)
+    const campaignMatches = results.filter(r => 
+      r.campaign_name && r.campaign_name.toLowerCase().includes(keyword.toLowerCase())
+    );
+    
+    const adsetMatches = results.filter(r => 
+      r.adset_name && r.adset_name.toLowerCase().includes(keyword.toLowerCase())
+    );
+
+    const adMatches = results.filter(r => 
+      r.ad_name && r.ad_name.toLowerCase().includes(keyword.toLowerCase())
+    );
+
+    let aggregationLevel = 'ad';
+    let dataToAggregate = adMatches;
+    let groupBy = 'ad_name';
+
+    if (campaignMatches.length > 0) {
+      aggregationLevel = 'campaign';
+      dataToAggregate = campaignMatches;
+      groupBy = 'campaign_name';
+    } else if (adsetMatches.length > 0) {
+      aggregationLevel = 'adset';
+      dataToAggregate = adsetMatches;
+      groupBy = 'adset_name';
+    }
+
+    // Aggregate by groupBy field
+    const grouped = {};
+    dataToAggregate.forEach(row => {
+      const key = row[groupBy] || 'Unknown';
+      if (!grouped[key]) {
+        grouped[key] = {
+          name: key,
+          campaign_name: row.campaign_name || 'N/A',
+          adset_name: row.adset_name || 'N/A',
+          ad_name: row.ad_name || 'N/A',
+          objective: row.objective || 'N/A',
+          amount_spent: 0,
+          reach: 0,
+          impression: 0,
+          clicks: 0,
+          results: 0,
+          direct_orders: 0,
+          dates: [],
+          ad_account_id: row.ad_account_id || 'N/A'
+        };
+      }
+
+      grouped[key].amount_spent += parseFloat(row.amount_spent || 0);
+      grouped[key].reach += parseInt(row.reach || 0);
+      grouped[key].impression += parseInt(row.impression || 0);
+      grouped[key].clicks += parseInt(row.clicks || 0);
+      grouped[key].results += parseInt(row.results || 0);
+      grouped[key].direct_orders += parseInt(row.direct_orders || 0);
+      grouped[key].dates.push(row.date);
+    });
+
+    // Calculate metrics
+    const aggregated = Object.values(grouped).map(item => {
+      const cpc = item.clicks > 0 ? (item.amount_spent / item.clicks).toFixed(2) : 0;
+      const cpm = item.impression > 0 ? ((item.amount_spent / item.impression) * 1000).toFixed(2) : 0;
+      const ctr = item.impression > 0 ? ((item.clicks / item.impression) * 100).toFixed(2) : 0;
+      const conversionRate = item.clicks > 0 ? ((item.direct_orders / item.clicks) * 100).toFixed(2) : 0;
+
+      const sortedDates = item.dates.sort();
+      const dateRange = `${sortedDates[0]} to ${sortedDates[sortedDates.length - 1]}`;
+
+      return {
+        ...item,
+        cpc,
+        cpm,
+        ctr,
+        conversionRate,
+        dateRange,
+        dayCount: new Set(item.dates).size
+      };
+    });
+
+    return {
+      level: aggregationLevel,
+      data: results,
+      aggregated: aggregated,
+      totalRecords: results.length
+    };
+
+  } catch (error) {
+    console.error('searchProductPerformance error:', error);
+    throw error;
+  }
+}
+
+async function getDateRangeOptions() {
+  try {
+    const results = await supabaseQuery('meta_ads_performance?select=date&order=date.desc.nullslast&limit=1000');
+    
+    if (results.length === 0) {
+      return { minDate: null, maxDate: null };
+    }
+
+    const dates = results.map(r => r.date).filter(d => d);
+    dates.sort();
+
+    return {
+      minDate: dates[0],
+      maxDate: dates[dates.length - 1]
+    };
+  } catch (error) {
+    console.error('getDateRangeOptions error:', error);
+    return { minDate: null, maxDate: null };
+  }
+}
