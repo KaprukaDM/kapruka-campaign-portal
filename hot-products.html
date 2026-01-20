@@ -379,14 +379,16 @@
 
   <script src="js/supabase-api.js"></script>
   <script>
-    // CATEGORIES array - declared ONCE
-    const CATEGORIES = [
-      'Cakes', 'Flowers', 'Chocolates', 'Clothing', 'Electronics', 'Fashion',
-      'Food & Restaurants', 'Fruits', 'Soft Toys & Kids Toys', 'Grocery & Hampers',
-      'Greeting Cards & Party Supplies', 'Sports and Bicycles', 'Mother and Baby',
-      'Jewellery and Watches', 'Cosmetics & Perfumes', 'Customized Gifts',
-      'Health and Wellness', 'Home & Lifestyle', 'Combo and Gift Sets', 'Books & Stationery'
-    ];
+    // Check if CATEGORIES exists globally, if not define it locally
+    if (typeof CATEGORIES === 'undefined') {
+      var CATEGORIES = [
+        'Cakes', 'Flowers', 'Chocolates', 'Clothing', 'Electronics', 'Fashion',
+        'Food & Restaurants', 'Fruits', 'Soft Toys & Kids Toys', 'Grocery & Hampers',
+        'Greeting Cards & Party Supplies', 'Sports and Bicycles', 'Mother and Baby',
+        'Jewellery and Watches', 'Cosmetics & Perfumes', 'Customized Gifts',
+        'Health and Wellness', 'Home & Lifestyle', 'Combo and Gift Sets', 'Books & Stationery'
+      ];
+    }
 
     let selectedCategory = null;
     let currentProducts = [];
