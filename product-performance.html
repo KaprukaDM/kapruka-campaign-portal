@@ -74,7 +74,7 @@
     }
     .search-form {
       display: grid;
-      grid-template-columns: 1fr auto;
+      grid-template-columns: 1fr 1fr 1fr auto;
       gap: 15px;
       align-items: end;
     }
@@ -336,12 +336,20 @@
       <p class="subtitle">Meta Ads Analytics Dashboard</p>
     </div>
 
-    <!-- Search Section - NO DATE FILTERS -->
+    <!-- Search Section WITH DATE FILTERS -->
     <div class="search-card">
       <form class="search-form" id="searchForm">
         <div class="form-group">
           <label>🔍 Search Keyword</label>
           <input type="text" id="searchKeyword" placeholder="Product code, campaign name, or keyword..." required>
+        </div>
+        <div class="form-group">
+          <label>📅 Start Date</label>
+          <input type="date" id="startDate" required>
+        </div>
+        <div class="form-group">
+          <label>📅 End Date</label>
+          <input type="date" id="endDate" required>
         </div>
         <button type="submit" class="btn-search">Search</button>
       </form>
@@ -351,7 +359,7 @@
     <div id="emptyState" class="empty-state">
       <div class="icon">📊</div>
       <h3>Search for Product Performance</h3>
-      <p>Enter a product code, campaign name, or keyword to view detailed performance metrics</p>
+      <p>Enter a product code, campaign name, or keyword with date range to view detailed performance metrics</p>
     </div>
 
     <!-- Results Section -->
@@ -404,7 +412,7 @@
         <div class="icon">🔍</div>
         <h3 style="color:#999;margin-bottom:10px;">No Results Found</h3>
         <p>No performance data found for "<span id="searchedKeyword"></span>"</p>
-        <p style="margin-top:10px;font-size:13px;">Try searching with different keywords.</p>
+        <p style="margin-top:10px;font-size:13px;">Try searching with different keywords or date range.</p>
       </div>
     </div>
   </div>
@@ -420,9 +428,9 @@
     }
 
     function formatCurrency(value) {
-  // Display as dollars without conversion (LKR amounts shown as $)
-  return '$' + parseFloat(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
+      return '$' + parseFloat(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
     function formatNumber(value) {
       return parseInt(value).toLocaleString('en-US');
     }
@@ -437,32 +445,52 @@
       return 'objective-conversions';
     }
 
+    // Set default dates (last 30 days)
+    window.addEventListener('load', async () => {
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(endDate.getDate() - 30);
+
+      document.getElementById('endDate').value = endDate.toISOString().split('T')[0];
+      document.getElementById('startDate').value = startDate.toISOString().split('T')[0];
+    });
+
     document.getElementById('searchForm').addEventListener('submit', async (e) => {
       e.preventDefault();
 
       const keyword = document.getElementById('searchKeyword').value.trim();
+      const startDate = document.getElementById('startDate').value;
+      const endDate = document.getElementById('endDate').value;
 
       if (!keyword) {
         alert('Please enter a search keyword');
         return;
       }
 
+      if (!startDate || !endDate) {
+        alert('Please select both start and end dates');
+        return;
+      }
+
+      if (new Date(startDate) > new Date(endDate)) {
+        alert('Start date must be before end date');
+        return;
+      }
+
       try {
         showLoading();
 
-        // Search without date filters
-        const results = await searchProductPerformance(keyword, null, null);
+        // Search WITH date filters
+        const results = await searchProductPerformance(keyword, startDate, endDate);
 
         hideLoading();
 
         if (results.level === 'none' || results.aggregated.length === 0) {
-          // Show no results
           document.getElementById('emptyState').style.display = 'none';
           document.getElementById('resultsSection').classList.remove('active');
           document.getElementById('noResults').style.display = 'block';
           document.getElementById('searchedKeyword').textContent = keyword;
         } else {
-          // Show results
           document.getElementById('emptyState').style.display = 'none';
           document.getElementById('noResults').style.display = 'none';
           document.getElementById('resultsSection').classList.add('active');
@@ -482,11 +510,13 @@
 
       // Update aggregation badge
       const levelIcons = {
+        account: '🏢',
         campaign: '🎯',
         adset: '📁',
         ad: '📄'
       };
       const levelText = {
+        account: 'Account Level',
         campaign: 'Campaign Level',
         adset: 'Ad Set Level',
         ad: 'Ad Level'
