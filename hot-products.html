@@ -379,16 +379,14 @@
 
   <script src="js/supabase-api.js"></script>
   <script>
-    // Check if CATEGORIES exists globally, if not define it locally
-    if (typeof CATEGORIES === 'undefined') {
-      var CATEGORIES = [
-        'Cakes', 'Flowers', 'Chocolates', 'Clothing', 'Electronics', 'Fashion',
-        'Food & Restaurants', 'Fruits', 'Soft Toys & Kids Toys', 'Grocery & Hampers',
-        'Greeting Cards & Party Supplies', 'Sports and Bicycles', 'Mother and Baby',
-        'Jewellery and Watches', 'Cosmetics & Perfumes', 'Customized Gifts',
-        'Health and Wellness', 'Home & Lifestyle', 'Combo and Gift Sets', 'Books & Stationery'
-      ];
-    }
+    // Use a DIFFERENT variable name to avoid conflicts - PRODUCT_CATEGORIES instead of CATEGORIES
+    const PRODUCT_CATEGORIES = [
+      'Cakes', 'Flowers', 'Chocolates', 'Clothing', 'Electronics', 'Fashion',
+      'Food & Restaurants', 'Fruits', 'Soft Toys & Kids Toys', 'Grocery & Hampers',
+      'Greeting Cards & Party Supplies', 'Sports and Bicycles', 'Mother and Baby',
+      'Jewellery and Watches', 'Cosmetics & Perfumes', 'Customized Gifts',
+      'Health and Wellness', 'Home & Lifestyle', 'Combo and Gift Sets', 'Books & Stationery'
+    ];
 
     let selectedCategory = null;
     let currentProducts = [];
@@ -425,7 +423,7 @@
       const grid = document.getElementById('categoryGrid');
       grid.innerHTML = '';
 
-      CATEGORIES.forEach(cat => {
+      PRODUCT_CATEGORIES.forEach(cat => {
         const btn = document.createElement('div');
         btn.className = 'category-btn';
         btn.textContent = cat;
