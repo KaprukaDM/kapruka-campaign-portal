@@ -688,20 +688,20 @@ async function refreshCategorySlotsForMonth(month, year) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// PRODUCT PERFORMANCE API - FIXED
+// PRODUCT PERFORMANCE API - UPDATED WITH ACCOUNT LEVEL
 // ═══════════════════════════════════════════════════════════════
 
-async function searchProductPerformance(keyword, startDate = null, endDate = null) {
+async function searchProductPerformance(keyword, startDate, endDate) {
   try {
-    // Build URL with date range
+    // Build URL with date range (dates are required now)
     let url = `${SUPABASE_URL}/rest/v1/meta_ads_performance?`;
-    
+
     if (startDate && endDate) {
       url += `date=gte.${startDate}&date=lte.${endDate}&`;
     }
-    
+
     url += `order=date.desc`;
-    
+
     // Fetch all data in date range
     const response = await fetch(url, {
       headers: {
@@ -709,13 +709,13 @@ async function searchProductPerformance(keyword, startDate = null, endDate = nul
         'Authorization': `Bearer ${SUPABASE_KEY}`
       }
     });
-    
+
     if (!response.ok) {
       throw new Error(`API Error: ${response.status}`);
     }
-    
+
     const allData = await response.json();
-    
+
     // Filter by keyword
     const keywordLower = keyword.toLowerCase();
     const results = allData.filter(row => 
@@ -728,31 +728,52 @@ async function searchProductPerformance(keyword, startDate = null, endDate = nul
       return { level: 'none', data: [], aggregated: [] };
     }
 
-    // Determine aggregation level (Campaign > Adset > Ad)
-    const campaignMatches = results.filter(r => 
-      r.campaign_name && r.campaign_name.toLowerCase().includes(keywordLower)
-    );
-    
-    const adsetMatches = results.filter(r => 
-      r.adset_name && r.adset_name.toLowerCase().includes(keywordLower)
-    );
-
-    const adMatches = results.filter(r => 
-      r.ad_name && r.ad_name.toLowerCase().includes(keywordLower)
-    );
+    // Priority Order: Account > Campaign > Adset > Ad
+    // Check if multiple ad accounts match
+    const uniqueAccounts = [...new Set(results.map(r => r.ad_account_id).filter(Boolean))];
 
     let aggregationLevel = 'ad';
-    let dataToAggregate = adMatches;
+    let dataToAggregate = results;
     let groupBy = 'ad_name';
 
-    if (campaignMatches.length > 0) {
-      aggregationLevel = 'campaign';
-      dataToAggregate = campaignMatches;
-      groupBy = 'campaign_name';
-    } else if (adsetMatches.length > 0) {
-      aggregationLevel = 'adset';
-      dataToAggregate = adsetMatches;
-      groupBy = 'adset_name';
+    // 1. Check Account level (if multiple accounts)
+    if (uniqueAccounts.length > 1) {
+      aggregationLevel = 'account';
+      groupBy = 'ad_account_id';
+    }
+    // 2. Check Campaign level
+    else {
+      const campaignMatches = results.filter(r => 
+        r.campaign_name && r.campaign_name.toLowerCase().includes(keywordLower)
+      );
+
+      if (campaignMatches.length > 0) {
+        aggregationLevel = 'campaign';
+        dataToAggregate = campaignMatches;
+        groupBy = 'campaign_name';
+      } 
+      // 3. Check Adset level
+      else {
+        const adsetMatches = results.filter(r => 
+          r.adset_name && r.adset_name.toLowerCase().includes(keywordLower)
+        );
+
+        if (adsetMatches.length > 0) {
+          aggregationLevel = 'adset';
+          dataToAggregate = adsetMatches;
+          groupBy = 'adset_name';
+        }
+        // 4. Default to Ad level
+        else {
+          const adMatches = results.filter(r => 
+            r.ad_name && r.ad_name.toLowerCase().includes(keywordLower)
+          );
+
+          if (adMatches.length > 0) {
+            dataToAggregate = adMatches;
+          }
+        }
+      }
     }
 
     // Aggregate by groupBy field
@@ -794,7 +815,9 @@ async function searchProductPerformance(keyword, startDate = null, endDate = nul
       const conversionRate = item.clicks > 0 ? ((item.direct_orders / item.clicks) * 100).toFixed(2) : 0;
 
       const sortedDates = item.dates.sort();
-      const dateRange = `${sortedDates[0]} to ${sortedDates[sortedDates.length - 1]}`;
+      const dateRange = sortedDates.length > 0 
+        ? `${sortedDates[0]} to ${sortedDates[sortedDates.length - 1]}` 
+        : 'N/A';
 
       return {
         ...item,
@@ -817,26 +840,5 @@ async function searchProductPerformance(keyword, startDate = null, endDate = nul
   } catch (error) {
     console.error('searchProductPerformance error:', error);
     throw error;
-  }
-}
-
-async function getDateRangeOptions() {
-  try {
-    const results = await supabaseQuery('meta_ads_performance?select=date&order=date.desc.nullslast&limit=1000');
-    
-    if (results.length === 0) {
-      return { minDate: null, maxDate: null };
-    }
-
-    const dates = results.map(r => r.date).filter(d => d);
-    dates.sort();
-
-    return {
-      minDate: dates[0],
-      maxDate: dates[dates.length - 1]
-    };
-  } catch (error) {
-    console.error('getDateRangeOptions error:', error);
-    return { minDate: null, maxDate: null };
   }
 }
