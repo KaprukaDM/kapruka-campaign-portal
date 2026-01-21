@@ -7,7 +7,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const ADMIN_PASSWORD = 'Kapruka2026!Admin';
 
 // Valid status options (only 3 now)
-const VALID_STATUSES = ['Working', 'Live', 'Rejected'];
+const VALID_STATUSES = ['Working', 'Live', 'Rejected','Completed'];
 
 // ═══════════════════════════════════════════════════════════════
 // HELPER FUNCTIONS
