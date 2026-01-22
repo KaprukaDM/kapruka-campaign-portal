@@ -14,7 +14,7 @@
       min-height: 100vh;
       padding: 40px 20px;
     }
-    .container { max-width: 1600px; margin: 0 auto; }
+    .container { max-width: 1800px; margin: 0 auto; }
     .header {
       text-align: center;
       margin-bottom: 50px;
@@ -246,14 +246,16 @@
       align-items: center;
       justify-content: center;
       z-index: 10000;
+      padding: 20px;
     }
     .modal-content {
       background: white;
       padding: 40px;
       border-radius: 24px;
-      max-width: 600px;
+      max-width: 800px;
       max-height: 90vh;
       overflow-y: auto;
+      position: relative;
     }
     .modal h3 {
       font-family: 'Playfair Display', serif;
@@ -262,13 +264,17 @@
       margin-bottom: 20px;
     }
     .close-modal {
-      float: right;
+      position: absolute;
+      top: 20px;
+      right: 20px;
       background: none;
       border: none;
-      font-size: 28px;
+      font-size: 32px;
       cursor: pointer;
       color: #999;
+      line-height: 1;
     }
+    .close-modal:hover { color: #333; }
     .checkbox-label {
       display: flex;
       align-items: center;
@@ -289,18 +295,195 @@
       padding: 20px;
       border-radius: 12px;
     }
+    .radio-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .radio-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      padding: 10px;
+      border: 2px solid #e8e8e8;
+      border-radius: 8px;
+      transition: all 0.3s;
+    }
+    .radio-label:hover {
+      border-color: #FFD700;
+      background: #fffef0;
+    }
+    .radio-label input {
+      width: auto;
+      padding: 0;
+    }
+
+    /* STUDIO CALENDAR STYLES */
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+    .month-nav {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .month-nav button {
+      background: #5e3a8e;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .month-nav h3 {
+      font-size: 24px;
+      color: #5e3a8e;
+      min-width: 200px;
+      text-align: center;
+    }
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .calendar-day-header {
+      background: #5e3a8e;
+      color: white;
+      padding: 10px;
+      text-align: center;
+      font-weight: 600;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .calendar-day {
+      background: white;
+      border: 2px solid #e8e8e8;
+      border-radius: 12px;
+      min-height: 120px;
+      padding: 10px;
+      cursor: pointer;
+      transition: all 0.3s;
+      position: relative;
+    }
+    .calendar-day:hover {
+      border-color: #FFD700;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .calendar-day.empty {
+      background: #f5f5f5;
+      cursor: default;
+    }
+    .calendar-day.empty:hover {
+      transform: none;
+      box-shadow: none;
+    }
+    .day-number {
+      font-weight: 700;
+      color: #5e3a8e;
+      font-size: 16px;
+      margin-bottom: 8px;
+    }
+    .day-content-item {
+      background: #E8F5E9;
+      padding: 6px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .day-content-item.completed {
+      background: #C8E6C9;
+      border-left: 3px solid #43A047;
+    }
+    .day-content-item.pending {
+      background: #FFF9C4;
+      border-left: 3px solid #F57C00;
+    }
+    .content-list-item {
+      background: #f9f9f9;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 15px;
+      border: 2px solid #e8e8e8;
+      transition: all 0.3s;
+    }
+    .content-list-item:hover {
+      border-color: #5e3a8e;
+      background: #fff;
+    }
+    .content-list-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .content-list-title {
+      font-weight: 700;
+      color: #5e3a8e;
+      font-size: 16px;
+    }
+    .content-list-badge {
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .status-completed { background: #C8E6C9; color: #1B5E20; }
+    .status-pending { background: #FFF9C4; color: #F57F17; }
+    .detail-row {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .detail-row:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+    .detail-label {
+      font-weight: 600;
+      color: #5e3a8e;
+      font-size: 13px;
+    }
+    .detail-value {
+      color: #333;
+      font-size: 14px;
+      word-wrap: break-word;
+    }
+
     @media (max-width: 768px) {
       h1 { font-size: 32px; }
       .tabs { flex-direction: column; }
       .tab-btn { width: 100%; }
       table { font-size: 12px; }
       th, td { padding: 10px; }
+      .calendar-grid {
+        grid-template-columns: 1fr;
+      }
+      .calendar-day {
+        min-height: auto;
+      }
     }
   </style>
 </head>
 <body>
   <div class="loading" id="loading"><div class="spinner"></div></div>
-  <div class="modal" id="modal"><div class="modal-content" id="modalContent"></div></div>
+  <div class="modal" id="modal">
+    <div class="modal-content" id="modalContent"></div>
+  </div>
 
   <div class="container">
     <div class="header">
@@ -329,6 +512,7 @@
         <button class="tab-btn active" onclick="switchTab('requests')">📋 Campaign Requests</button>
         <button class="tab-btn" onclick="switchTab('products')">💡 Product Suggestions</button>
         <button class="tab-btn" onclick="switchTab('content')">📅 Content Calendar</button>
+        <button class="tab-btn" onclick="switchTab('studio')">🎬 Studio Calendar</button>
         <button class="tab-btn" onclick="switchTab('hotproducts')">🔥 Hot Products</button>
         <button class="tab-btn" onclick="switchTab('departments')">🏢 Department Config</button>
         <button class="tab-btn" style="margin-left:auto;background:#d32f2f;" onclick="logout()">Logout</button>
@@ -472,13 +656,38 @@
         </div>
       </div>
 
+      <!-- STUDIO CALENDAR TAB (NEW) -->
+      <div id="tab-studio" class="tab-content">
+        <div class="card">
+          <div class="calendar-header">
+            <h2 style="margin:0;">🎬 Studio Calendar</h2>
+            <button class="btn btn-success" onclick="openAddExtraContentModal()">➕ Add Extra Content</button>
+          </div>
+
+          <div class="month-nav">
+            <button onclick="changeStudioMonth(-1)">◀ Previous</button>
+            <h3 id="studioMonthTitle">January 2026</h3>
+            <button onclick="changeStudioMonth(1)">Next ▶</button>
+          </div>
+
+          <div class="calendar-grid" id="studioCalendarGrid">
+            <div class="calendar-day-header">Sun</div>
+            <div class="calendar-day-header">Mon</div>
+            <div class="calendar-day-header">Tue</div>
+            <div class="calendar-day-header">Wed</div>
+            <div class="calendar-day-header">Thu</div>
+            <div class="calendar-day-header">Fri</div>
+            <div class="calendar-day-header">Sat</div>
+          </div>
+        </div>
+      </div>
+
       <!-- HOT PRODUCTS TAB -->
       <div id="tab-hotproducts" class="tab-content">
         <div class="card">
           <h2>🔥 Hot Products Management</h2>
           <p style="color:#666;margin-bottom:25px;">Add and manage hot product suggestions by category</p>
-          
-          <!-- Stats Overview -->
+
           <div class="stats-grid">
             <div class="stat-card" style="background:#E8F5E9;">
               <div style="color:#2E7D32;font-size:12px;font-weight:600;text-transform:uppercase;margin-bottom:8px;">Total Products</div>
@@ -494,7 +703,6 @@
             </div>
           </div>
 
-          <!-- Add Product Form -->
           <div style="background:#f9f9f9;padding:25px;border-radius:12px;margin-bottom:30px;">
             <h3 style="color:#5e3a8e;margin-bottom:20px;">➕ Add New Product</h3>
             <form id="addHotProductForm" style="display:grid;gap:15px;">
@@ -540,7 +748,6 @@
             </form>
           </div>
 
-          <!-- Filter and Search -->
           <div style="display:flex;gap:15px;margin-bottom:20px;flex-wrap:wrap;">
             <select id="filterCategory" onchange="filterHotProducts()" style="padding:12px;border:2px solid #e8e8e8;border-radius:8px;font-size:14px;flex:1;min-width:200px;">
               <option value="">All Categories</option>
@@ -575,7 +782,6 @@
             </button>
           </div>
 
-          <!-- Products Table -->
           <div style="overflow-x:auto;">
             <table style="width:100%;border-collapse:collapse;">
               <thead>
@@ -679,6 +885,18 @@
   <script>
     let isLoggedIn = false;
     let allHotProducts = [];
+    let currentStudioMonth = 1;
+    let currentStudioYear = 2026;
+    let studioCalendarData = [];
+
+    const PAGE_NAMES = [
+      'Kapruka FB',
+      'Kapruka TikTok', 
+      'Electronic Factory',
+      'Social Mart',
+      'Kapruka Daily Deals',
+      'Kapruka Offers'
+    ];
 
     function showLoading() {
       document.getElementById('loading').style.display = 'flex';
@@ -686,6 +904,15 @@
 
     function hideLoading() {
       document.getElementById('loading').style.display = 'none';
+    }
+
+    function showModal(content) {
+      document.getElementById('modalContent').innerHTML = content;
+      document.getElementById('modal').style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('modal').style.display = 'none';
     }
 
     // Login
@@ -720,6 +947,8 @@
         loadContentData();
       } else if (tab === 'hotproducts') {
         loadHotProducts();
+      } else if (tab === 'studio') {
+        loadStudioCalendar();
       }
     }
 
@@ -744,12 +973,9 @@
 
         tbody.innerHTML = requests.map(r => {
           let badgeClass = 'badge-working';
-          
-          if (r.status === 'Request Submitted') badgeClass = 'badge-submitted';
-          else if (r.status === 'Working') badgeClass = 'badge-working';
-          else if (r.status === 'Live') badgeClass = 'badge-live';
-          else if (r.status === 'Completed') badgeClass = 'badge-completed';
-          else if (r.status === 'Rejected') badgeClass = 'badge-rejected';
+          if (r.status === 'Live') badgeClass = 'badge-live';
+          if (r.status === 'Rejected') badgeClass = 'badge-rejected';
+          if (r.status === 'Completed') badgeClass = 'badge-completed';
 
           return `
             <tr>
@@ -796,7 +1022,7 @@
     }
 
     // ═══════════════════════════════════════════════════════════
-    // PRODUCT SUGGESTIONS WITH EDIT FUNCTION
+    // PRODUCT SUGGESTIONS
     // ═══════════════════════════════════════════════════════════
     async function loadProducts() {
       try {
@@ -812,6 +1038,13 @@
           let badgeClass = p.status === 'Approved' ? 'badge-approved' : 
                           p.status === 'Rejected' ? 'badge-rejected' : 'badge-pending';
 
+          const actions = p.status === 'Approved' 
+            ? `<button class="btn btn-warning" onclick="editProduct(${p.row})">Edit</button>`
+            : `
+              <button class="btn btn-success" onclick="reviewProduct(${p.row}, 'Approved')">Approve</button>
+              <button class="btn btn-danger" onclick="reviewProduct(${p.row}, 'Rejected')">Reject</button>
+            `;
+
           return `
             <tr>
               <td>${p.submissionId}</td>
@@ -824,13 +1057,7 @@
               <td>${p.goLiveDate || '-'}</td>
               <td>
                 <div class="action-btns">
-                  ${p.status === 'Pending' ? `
-                    <button class="btn btn-success" onclick="reviewProduct(${p.row}, 'Approved')">Approve</button>
-                    <button class="btn btn-danger" onclick="reviewProduct(${p.row}, 'Rejected')">Reject</button>
-                  ` : ''}
-                  ${p.status === 'Approved' ? `
-                    <button class="btn btn-primary" onclick="editProductDetails(${p.row}, '${p.assignedPage || ''}', '${p.goLiveDate || ''}')">Edit</button>
-                  ` : ''}
+                  ${actions}
                 </div>
               </td>
             </tr>
@@ -843,126 +1070,22 @@
     }
 
     async function reviewProduct(row, status) {
+      const reviewerName = prompt('Enter your name:');
+      if (!reviewerName) return;
+
       if (status === 'Approved') {
-        // Show approval modal with radio buttons and date picker
-        document.getElementById('modalContent').innerHTML = `
-          <h3>✅ Approve Product</h3>
-          <form id="approveForm">
-            <div class="form-group">
-              <label>📄 Select Page</label>
-              <div style="display:flex;flex-direction:column;gap:12px;margin-top:10px;">
-                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:12px;border:2px solid #e8e8e8;border-radius:8px;transition:all 0.3s;">
-                  <input type="radio" name="page" value="Kapruka FB" required style="width:20px;height:20px;">
-                  <span style="font-weight:600;">Kapruka FB</span>
-                </label>
-                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:12px;border:2px solid #e8e8e8;border-radius:8px;transition:all 0.3s;">
-                  <input type="radio" name="page" value="Electronic Factory" style="width:20px;height:20px;">
-                  <span style="font-weight:600;">Electronic Factory</span>
-                </label>
-                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:12px;border:2px solid #e8e8e8;border-radius:8px;transition:all 0.3s;">
-                  <input type="radio" name="page" value="Social Mart" style="width:20px;height:20px;">
-                  <span style="font-weight:600;">Social Mart</span>
-                </label>
-                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:12px;border:2px solid #e8e8e8;border-radius:8px;transition:all 0.3s;">
-                  <input type="radio" name="page" value="Handbag Factory" style="width:20px;height:20px;">
-                  <span style="font-weight:600;">Handbag Factory</span>
-                </label>
-                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:12px;border:2px solid #e8e8e8;border-radius:8px;transition:all 0.3s;">
-                  <input type="radio" name="page" value="Toys Factory" style="width:20px;height:20px;">
-                  <span style="font-weight:600;">Toys Factory</span>
-                </label>
-                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:12px;border:2px solid #e8e8e8;border-radius:8px;transition:all 0.3s;">
-                  <input type="radio" name="page" value="Fashion Factory" style="width:20px;height:20px;">
-                  <span style="font-weight:600;">Fashion Factory</span>
-                </label>
-              </div>
-            </div>
-            <div class="form-group" style="margin-top:20px;">
-              <label>📅 Go Live Date</label>
-              <input type="date" id="goLiveDate" required style="width:100%;padding:16px;border:2px solid #e8e8e8;border-radius:12px;font-size:15px;">
-            </div>
-            <div class="form-group" style="margin-top:20px;">
-              <label>👤 Your Name</label>
-              <input type="text" id="reviewerName" required placeholder="Enter your name" style="width:100%;padding:16px;border:2px solid #e8e8e8;border-radius:12px;font-size:15px;">
-            </div>
-            <div style="display:flex;gap:10px;margin-top:20px;">
-              <button type="submit" class="btn btn-success" style="flex:1;">✅ Approve</button>
-              <button type="button" class="btn btn-danger" onclick="closeModal()">Cancel</button>
-            </div>
-          </form>
-        `;
-
-        document.getElementById('modal').style.display = 'flex';
-
-        // Add hover effect to radio buttons
-        document.querySelectorAll('input[name="page"]').forEach(radio => {
-          radio.parentElement.addEventListener('mouseenter', function() {
-            if (!this.querySelector('input').checked) {
-              this.style.borderColor = '#FFD700';
-              this.style.background = '#f9f9f9';
-            }
-          });
-          radio.parentElement.addEventListener('mouseleave', function() {
-            if (!this.querySelector('input').checked) {
-              this.style.borderColor = '#e8e8e8';
-              this.style.background = 'white';
-            }
-          });
-          radio.addEventListener('change', function() {
-            document.querySelectorAll('input[name="page"]').forEach(r => {
-              r.parentElement.style.borderColor = '#e8e8e8';
-              r.parentElement.style.background = 'white';
-            });
-            if (this.checked) {
-              this.parentElement.style.borderColor = '#5e3a8e';
-              this.parentElement.style.background = '#f3e5f5';
-            }
-          });
-        });
-
-        document.getElementById('approveForm').addEventListener('submit', async (e) => {
-          e.preventDefault();
-
-          const selectedPage = document.querySelector('input[name="page"]:checked').value;
-          const goLiveDate = document.getElementById('goLiveDate').value;
-          const reviewerName = document.getElementById('reviewerName').value;
-
-          const reviewData = {
-            status: 'Approved',
-            reviewerName: reviewerName,
-            assignedPage: selectedPage,
-            goLiveDate: goLiveDate
-          };
-
-          try {
-            showLoading();
-            await updateProductReview(row, reviewData);
-            hideLoading();
-            closeModal();
-            alert('✅ Product approved successfully!');
-            loadProducts();
-          } catch (error) {
-            hideLoading();
-            alert('Error: ' + error.message);
-          }
-        });
-
+        showApprovalModal(row, reviewerName);
       } else {
-        // Rejection flow
-        const reviewerName = prompt('Enter your name:');
-        if (!reviewerName) return;
-
-        const rejectionReason = prompt('Rejection Reason (optional):') || '';
-
-        const reviewData = {
-          status: 'Rejected',
-          reviewerName: reviewerName,
-          rejectionReason: rejectionReason
-        };
+        const rejectionReason = prompt('Rejection Reason:');
+        if (!rejectionReason) return;
 
         try {
           showLoading();
-          await updateProductReview(row, reviewData);
+          await updateProductReview(row, {
+            status: 'Rejected',
+            reviewerName,
+            rejectionReason
+          });
           hideLoading();
           alert('Product rejected!');
           loadProducts();
@@ -973,105 +1096,55 @@
       }
     }
 
-    // ✅ EDIT PRODUCT DETAILS FUNCTION
-    async function editProductDetails(row, currentPage, currentDate) {
-      document.getElementById('modalContent').innerHTML = `
-        <h3>✏️ Edit Product Details</h3>
-        <form id="editProductForm">
+    function showApprovalModal(row, reviewerName) {
+      const radioButtons = PAGE_NAMES.map(page => `
+        <label class="radio-label">
+          <input type="radio" name="pageName" value="${page}" required>
+          <span>${page}</span>
+        </label>
+      `).join('');
+
+      const content = `
+        <button class="close-modal" onclick="closeModal()">×</button>
+        <h3>✅ Approve Product</h3>
+        <form id="approvalForm">
           <div class="form-group">
-            <label>📄 Select Page</label>
-            <div style="display:flex;flex-direction:column;gap:12px;margin-top:10px;">
-              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:12px;border:2px solid #e8e8e8;border-radius:8px;transition:all 0.3s;">
-                <input type="radio" name="editPage" value="Kapruka FB" ${currentPage === 'Kapruka FB' ? 'checked' : ''} required style="width:20px;height:20px;">
-                <span style="font-weight:600;">Kapruka FB</span>
-              </label>
-              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:12px;border:2px solid #e8e8e8;border-radius:8px;transition:all 0.3s;">
-                <input type="radio" name="editPage" value="Electronic Factory" ${currentPage === 'Electronic Factory' ? 'checked' : ''} style="width:20px;height:20px;">
-                <span style="font-weight:600;">Electronic Factory</span>
-              </label>
-              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:12px;border:2px solid #e8e8e8;border-radius:8px;transition:all 0.3s;">
-                <input type="radio" name="editPage" value="Social Mart" ${currentPage === 'Social Mart' ? 'checked' : ''} style="width:20px;height:20px;">
-                <span style="font-weight:600;">Social Mart</span>
-              </label>
-              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:12px;border:2px solid #e8e8e8;border-radius:8px;transition:all 0.3s;">
-                <input type="radio" name="editPage" value="Handbag Factory" ${currentPage === 'Handbag Factory' ? 'checked' : ''} style="width:20px;height:20px;">
-                <span style="font-weight:600;">Handbag Factory</span>
-              </label>
-              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:12px;border:2px solid #e8e8e8;border-radius:8px;transition:all 0.3s;">
-                <input type="radio" name="editPage" value="Toys Factory" ${currentPage === 'Toys Factory' ? 'checked' : ''} style="width:20px;height:20px;">
-                <span style="font-weight:600;">Toys Factory</span>
-              </label>
-              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:12px;border:2px solid #e8e8e8;border-radius:8px;transition:all 0.3s;">
-                <input type="radio" name="editPage" value="Fashion Factory" ${currentPage === 'Fashion Factory' ? 'checked' : ''} style="width:20px;height:20px;">
-                <span style="font-weight:600;">Fashion Factory</span>
-              </label>
+            <label>Select Page</label>
+            <div class="radio-group">
+              ${radioButtons}
             </div>
           </div>
-          <div class="form-group" style="margin-top:20px;">
-            <label>📅 Go Live Date</label>
-            <input type="date" id="editGoLiveDate" value="${currentDate || ''}" required style="width:100%;padding:16px;border:2px solid #e8e8e8;border-radius:12px;font-size:15px;">
+          <div class="form-group">
+            <label>Go Live Date</label>
+            <input type="date" id="goLiveDate" required>
           </div>
-          <div style="display:flex;gap:10px;margin-top:20px;">
-            <button type="submit" class="btn btn-primary" style="flex:1;">💾 Save Changes</button>
-            <button type="button" class="btn btn-danger" onclick="closeModal()">Cancel</button>
-          </div>
+          <button type="submit" class="btn btn-success" style="width:100%;">Approve</button>
         </form>
       `;
 
-      document.getElementById('modal').style.display = 'flex';
+      showModal(content);
 
-      // Set initial selected radio style
-      const checkedRadio = document.querySelector('input[name="editPage"]:checked');
-      if (checkedRadio) {
-        checkedRadio.parentElement.style.borderColor = '#5e3a8e';
-        checkedRadio.parentElement.style.background = '#f3e5f5';
-      }
-
-      // Add hover and click effects
-      document.querySelectorAll('input[name="editPage"]').forEach(radio => {
-        radio.parentElement.addEventListener('mouseenter', function() {
-          if (!this.querySelector('input').checked) {
-            this.style.borderColor = '#FFD700';
-            this.style.background = '#f9f9f9';
-          }
-        });
-        radio.parentElement.addEventListener('mouseleave', function() {
-          if (!this.querySelector('input').checked) {
-            this.style.borderColor = '#e8e8e8';
-            this.style.background = 'white';
-          }
-        });
-        radio.addEventListener('change', function() {
-          document.querySelectorAll('input[name="editPage"]').forEach(r => {
-            r.parentElement.style.borderColor = '#e8e8e8';
-            r.parentElement.style.background = 'white';
-          });
-          if (this.checked) {
-            this.parentElement.style.borderColor = '#5e3a8e';
-            this.parentElement.style.background = '#f3e5f5';
-          }
-        });
-      });
-
-      document.getElementById('editProductForm').addEventListener('submit', async (e) => {
+      document.getElementById('approvalForm').addEventListener('submit', async (e) => {
         e.preventDefault();
+        const assignedPage = document.querySelector('input[name="pageName"]:checked')?.value;
+        const goLiveDate = document.getElementById('goLiveDate').value;
 
-        const selectedPage = document.querySelector('input[name="editPage"]:checked').value;
-        const goLiveDate = document.getElementById('editGoLiveDate').value;
-
-        const reviewData = {
-          status: 'Approved',
-          reviewerName: 'Updated',
-          assignedPage: selectedPage,
-          goLiveDate: goLiveDate
-        };
+        if (!assignedPage) {
+          alert('Please select a page');
+          return;
+        }
 
         try {
           showLoading();
-          await updateProductReview(row, reviewData);
+          await updateProductReview(row, {
+            status: 'Approved',
+            reviewerName,
+            assignedPage,
+            goLiveDate
+          });
           hideLoading();
           closeModal();
-          alert('✅ Product details updated successfully!');
+          alert('✅ Product approved!');
           loadProducts();
         } catch (error) {
           hideLoading();
@@ -1080,12 +1153,69 @@
       });
     }
 
-    function closeModal() {
-      document.getElementById('modal').style.display = 'none';
+    async function editProduct(row) {
+      const products = await getAllProductSuggestions();
+      const product = products.find(p => p.row === row);
+
+      if (!product) {
+        alert('Product not found');
+        return;
+      }
+
+      const radioButtons = PAGE_NAMES.map(page => `
+        <label class="radio-label">
+          <input type="radio" name="pageName" value="${page}" ${product.assignedPage === page ? 'checked' : ''}>
+          <span>${page}</span>
+        </label>
+      `).join('');
+
+      const content = `
+        <button class="close-modal" onclick="closeModal()">×</button>
+        <h3>✏️ Edit Product</h3>
+        <form id="editProductForm">
+          <div class="form-group">
+            <label>Select Page</label>
+            <div class="radio-group">
+              ${radioButtons}
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Go Live Date</label>
+            <input type="date" id="editGoLiveDate" value="${product.goLiveDate || ''}" required>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%;">Update</button>
+        </form>
+      `;
+
+      showModal(content);
+
+      document.getElementById('editProductForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const assignedPage = document.querySelector('input[name="pageName"]:checked')?.value;
+        const goLiveDate = document.getElementById('editGoLiveDate').value;
+
+        try {
+          showLoading();
+          await updateProductReview(row, {
+            status: 'Approved',
+            reviewerName: product.reviewerName,
+            assignedPage,
+            goLiveDate
+          });
+          hideLoading();
+          closeModal();
+          alert('✅ Product updated!');
+          loadProducts();
+          loadStudioCalendar();
+        } catch (error) {
+          hideLoading();
+          alert('Error: ' + error.message);
+        }
+      });
     }
 
     // ═══════════════════════════════════════════════════════════
-    // CONTENT CALENDAR MANAGEMENT
+    // CONTENT CALENDAR
     // ═══════════════════════════════════════════════════════════
     document.getElementById('themeForm').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -1141,8 +1271,12 @@
               <td>${b.goLiveDate || '-'}</td>
               <td>
                 <div class="action-btns">
-                  <button class="btn btn-success" onclick="approveContent(${b.id})">Approve</button>
-                  <button class="btn btn-danger" onclick="rejectContent(${b.id})">Reject</button>
+                  ${b.status === 'Pending' ? `
+                    <button class="btn btn-success" onclick="approveContent(${b.id})">Approve</button>
+                    <button class="btn btn-danger" onclick="rejectContent(${b.id})">Reject</button>
+                  ` : `
+                    <button class="btn btn-warning" onclick="editContentBooking(${b.id})">Edit</button>
+                  `}
                 </div>
               </td>
             </tr>
@@ -1167,6 +1301,7 @@
         hideLoading();
         alert('✅ Content approved!');
         loadContentBookings();
+        loadStudioCalendar();
       } catch (error) {
         hideLoading();
         alert('Error: ' + error.message);
@@ -1189,6 +1324,52 @@
         hideLoading();
         alert('Error: ' + error.message);
       }
+    }
+
+    async function editContentBooking(id) {
+      const bookings = await getAllContentBookings();
+      const booking = bookings.find(b => b.id === id);
+
+      if (!booking) {
+        alert('Booking not found');
+        return;
+      }
+
+      const content = `
+        <button class="close-modal" onclick="closeModal()">×</button>
+        <h3>✏️ Edit Content Booking</h3>
+        <form id="editBookingForm">
+          <div class="form-group">
+            <label>Go Live Date</label>
+            <input type="date" id="editBookingDate" value="${booking.goLiveDate || ''}" required>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%;">Update</button>
+        </form>
+      `;
+
+      showModal(content);
+
+      document.getElementById('editBookingForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const goLiveDate = document.getElementById('editBookingDate').value;
+
+        try {
+          showLoading();
+          await updateContentBooking(id, {
+            status: 'Approved',
+            reviewer: booking.reviewer,
+            goLiveDate
+          });
+          hideLoading();
+          closeModal();
+          alert('✅ Booking updated!');
+          loadContentBookings();
+          loadStudioCalendar();
+        } catch (error) {
+          hideLoading();
+          alert('Error: ' + error.message);
+        }
+      });
     }
 
     async function loadThemes() {
@@ -1220,7 +1401,7 @@
     }
 
     async function removeTheme(id) {
-      if (!confirm('⚠️ Delete this theme?\n\nThis will also remove all associated category slots and may affect the content calendar.')) return;
+      if (!confirm('⚠️ Delete this theme?')) return;
 
       try {
         showLoading();
@@ -1242,7 +1423,290 @@
     }
 
     // ═══════════════════════════════════════════════════════════
-    // HOT PRODUCTS MANAGEMENT
+    // STUDIO CALENDAR
+    // ═══════════════════════════════════════════════════════════
+    async function loadStudioCalendar() {
+      try {
+        showLoading();
+        const data = await getStudioCalendarForMonth(currentStudioYear, currentStudioMonth);
+        studioCalendarData = data;
+
+        const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+        document.getElementById('studioMonthTitle').textContent = `${monthNames[currentStudioMonth - 1]} ${currentStudioYear}`;
+
+        renderStudioCalendar();
+        hideLoading();
+      } catch (error) {
+        hideLoading();
+        alert('Error loading studio calendar: ' + error.message);
+      }
+    }
+
+    function renderStudioCalendar() {
+      const grid = document.getElementById('studioCalendarGrid');
+
+      // Keep headers, clear days
+      while (grid.children.length > 7) {
+        grid.removeChild(grid.lastChild);
+      }
+
+      const firstDay = new Date(currentStudioYear, currentStudioMonth - 1, 1);
+      const lastDay = new Date(currentStudioYear, currentStudioMonth, 0);
+      const startDay = firstDay.getDay();
+      const daysInMonth = lastDay.getDate();
+
+      // Empty cells before month starts
+      for (let i = 0; i < startDay; i++) {
+        const emptyDiv = document.createElement('div');
+        emptyDiv.className = 'calendar-day empty';
+        grid.appendChild(emptyDiv);
+      }
+
+      // Days of month
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${currentStudioYear}-${String(currentStudioMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const dayData = studioCalendarData.filter(item => item.date === dateStr);
+
+        const dayDiv = document.createElement('div');
+        dayDiv.className = 'calendar-day';
+        dayDiv.onclick = () => showDateContents(dateStr);
+
+        let html = `<div class="day-number">${day}</div>`;
+
+        dayData.forEach(item => {
+          const status = item.completion_status === 'Completed' ? 'completed' : 'pending';
+          const icon = item.completion_status === 'Completed' ? '✅' : '⏳';
+          html += `<div class="day-content-item ${status}">${icon} ${item.product_code || item.page_name || 'Content'}</div>`;
+        });
+
+        dayDiv.innerHTML = html;
+        grid.appendChild(dayDiv);
+      }
+    }
+
+    function changeStudioMonth(delta) {
+      currentStudioMonth += delta;
+      if (currentStudioMonth < 1) {
+        currentStudioMonth = 12;
+        currentStudioYear--;
+      } else if (currentStudioMonth > 12) {
+        currentStudioMonth = 1;
+        currentStudioYear++;
+      }
+      loadStudioCalendar();
+    }
+
+    function showDateContents(date) {
+      const items = studioCalendarData.filter(item => item.date === date);
+
+      if (items.length === 0) {
+        alert('No content scheduled for this date');
+        return;
+      }
+
+      const listHtml = items.map((item, index) => {
+        const statusClass = item.completion_status === 'Completed' ? 'status-completed' : 'status-pending';
+        const icon = item.completion_status === 'Completed' ? '✅' : '⏳';
+
+        return `
+          <div class="content-list-item" onclick="showContentDetails(${item.id})">
+            <div class="content-list-header">
+              <div class="content-list-title">${icon} ${item.product_code || item.page_name || `Content ${index + 1}`}</div>
+              <div class="content-list-badge ${statusClass}">${item.completion_status || 'Not Started'}</div>
+            </div>
+            <div style="font-size:12px;color:#666;">
+              ${item.page_name || ''} • ${item.format || ''} • ${item.source_type}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      const content = `
+        <button class="close-modal" onclick="closeModal()">×</button>
+        <h3>📅 ${date} - Content List</h3>
+        <div style="margin-top:20px;">
+          ${listHtml}
+        </div>
+      `;
+
+      showModal(content);
+    }
+
+    async function showContentDetails(id) {
+      try {
+        showLoading();
+        const item = await getStudioCalendarItem(id);
+        hideLoading();
+
+        if (!item) {
+          alert('Content not found');
+          return;
+        }
+
+        const content = `
+          <button class="close-modal" onclick="closeModal()">×</button>
+          <h3>📦 Content Details</h3>
+
+          <div style="margin-top:25px;">
+            ${item.product_code ? `<div class="detail-row">
+              <div class="detail-label">Product Code:</div>
+              <div class="detail-value">${item.product_code}</div>
+            </div>` : ''}
+
+            <div class="detail-row">
+              <div class="detail-label">Page Name:</div>
+              <div class="detail-value">${item.page_name || '-'}</div>
+            </div>
+
+            <div class="detail-row">
+              <div class="detail-label">Format:</div>
+              <div class="detail-value">${item.format || '-'}</div>
+            </div>
+
+            <div class="detail-row">
+              <div class="detail-label">Details:</div>
+              <div class="detail-value">${item.content_details || '-'}</div>
+            </div>
+
+            <div class="detail-row">
+              <div class="detail-label">Reference Links:</div>
+              <div class="detail-value">${item.reference_links ? `<a href="${item.reference_links}" target="_blank">${item.reference_links}</a>` : '-'}</div>
+            </div>
+
+            <div class="detail-row">
+              <div class="detail-label">Source:</div>
+              <div class="detail-value">${item.source_type}</div>
+            </div>
+          </div>
+
+          <hr style="margin:25px 0;border:none;border-top:2px solid #f0f0f0;">
+
+          <h3 style="font-size:18px;margin-bottom:15px;">✅ Completion Status</h3>
+
+          <form id="completionForm">
+            <div class="form-group">
+              <label>Status</label>
+              <select id="completionStatus" style="padding:12px;">
+                <option value="Not Started" ${item.completion_status === 'Not Started' ? 'selected' : ''}>Not Started</option>
+                <option value="In Progress" ${item.completion_status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                <option value="Completed" ${item.completion_status === 'Completed' ? 'selected' : ''}>Completed</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>📎 Content Link (Published Post)</label>
+              <input type="url" id="contentLink" placeholder="https://facebook.com/post/123" value="${item.content_link || ''}" style="padding:12px;">
+            </div>
+
+            <button type="submit" class="btn btn-success" style="width:100%;">💾 Save</button>
+          </form>
+        `;
+
+        showModal(content);
+
+        document.getElementById('completionForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+
+          const completionStatus = document.getElementById('completionStatus').value;
+          const contentLink = document.getElementById('contentLink').value;
+
+          try {
+            showLoading();
+            await updateStudioCompletion(id, { completion_status: completionStatus, content_link: contentLink });
+            hideLoading();
+            closeModal();
+            alert('✅ Status updated!');
+            loadStudioCalendar();
+          } catch (error) {
+            hideLoading();
+            alert('Error: ' + error.message);
+          }
+        });
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    }
+
+    function openAddExtraContentModal() {
+      const radioButtons = PAGE_NAMES.map(page => `
+        <label class="radio-label">
+          <input type="radio" name="extraPageName" value="${page}" required>
+          <span>${page}</span>
+        </label>
+      `).join('');
+
+      const content = `
+        <button class="close-modal" onclick="closeModal()">×</button>
+        <h3>➕ Add Extra Content</h3>
+        <form id="extraContentForm">
+          <div class="form-group">
+            <label>Content Details</label>
+            <textarea id="extraDetails" required placeholder="Describe the content..." rows="3"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Format</label>
+            <input type="text" id="extraFormat" required placeholder="e.g., Single Image, Carousel, Video">
+          </div>
+
+          <div class="form-group">
+            <label>Page Name</label>
+            <div class="radio-group">
+              ${radioButtons}
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="extraDate" required>
+          </div>
+
+          <div class="form-group">
+            <label>Reference Links</label>
+            <textarea id="extraLinks" placeholder="Add reference URLs..." rows="2"></textarea>
+          </div>
+
+          <button type="submit" class="btn btn-success" style="width:100%;">Add Content</button>
+        </form>
+      `;
+
+      showModal(content);
+
+      document.getElementById('extraContentForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const pageName = document.querySelector('input[name="extraPageName"]:checked')?.value;
+        if (!pageName) {
+          alert('Please select a page');
+          return;
+        }
+
+        const extraData = {
+          content_details: document.getElementById('extraDetails').value,
+          format: document.getElementById('extraFormat').value,
+          page_name: pageName,
+          date: document.getElementById('extraDate').value,
+          reference_links: document.getElementById('extraLinks').value,
+          created_by: 'Admin'
+        };
+
+        try {
+          showLoading();
+          await addExtraContent(extraData);
+          hideLoading();
+          closeModal();
+          alert('✅ Extra content added!');
+          loadStudioCalendar();
+        } catch (error) {
+          hideLoading();
+          alert('Error: ' + error.message);
+        }
+      });
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // HOT PRODUCTS
     // ═══════════════════════════════════════════════════════════
     document.getElementById('addHotProductForm').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -1258,16 +1722,13 @@
 
       try {
         showLoading();
-
         await addHotProduct({
           category: category,
           productLink: productLink,
           salesCount: salesCount
         });
-
         hideLoading();
         alert('✓ Product added successfully!');
-
         document.getElementById('addHotProductForm').reset();
         loadHotProducts();
       } catch (error) {
@@ -1279,7 +1740,6 @@
     async function loadHotProducts() {
       try {
         showLoading();
-
         allHotProducts = await getAllHotProducts();
         const stats = await getHotProductsStats();
 
@@ -1337,45 +1797,54 @@
               </span>
             </td>
             <td style="padding:12px;">
-              <a href="${p.product_link}" target="_blank" style="color:#5e3a8e;text-decoration:none;font-weight:500;" title="${p.product_link}">
+              <a href="${p.product_link}" target="_blank" style="color:#5e3a8e;text-decoration:none;" title="${p.product_link}">
                 ${shortLink}
               </a>
             </td>
-            <td style="padding:12px;text-align:center;font-weight:600;">${p.sales_count}</td>
+            <td style="padding:12px;text-align:center;font-weight:600;">${p.sales_count || 0}</td>
             <td style="padding:12px;text-align:center;">
-              ${p.listed 
-                ? '<span style="background:#C8E6C9;color:#1B5E20;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;">LISTED</span>' 
-                : '<span style="background:#FFCDD2;color:#C62828;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;">UNLISTED</span>'}
+              <input type="checkbox" ${p.listed ? 'checked' : ''} onchange="toggleListed(${p.id}, this.checked)" style="width:20px;height:20px;cursor:pointer;">
             </td>
             <td style="padding:12px;">
-              ${p.kapruka_link 
-                ? `<a href="${p.kapruka_link}" target="_blank" style="color:#5e3a8e;" title="${p.kapruka_link}">${kaprukaShort}</a>` 
-                : '-'}
+              ${p.kapruka_link ? 
+                `<a href="${p.kapruka_link}" target="_blank" style="color:#5e3a8e;text-decoration:none;" title="${p.kapruka_link}">${kaprukaShort}</a>` 
+                : '<span style="color:#999;">-</span>'}
             </td>
             <td style="padding:12px;text-align:center;color:#666;font-size:12px;">${createdDate}</td>
-            <td style="padding:12px;">
-              <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
-                ${!p.listed 
-                  ? `<button onclick="markAsListed(${p.id})" style="padding:6px 12px;background:#43A047;color:white;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;">Mark Listed</button>` 
-                  : `<button onclick="markAsUnlisted(${p.id})" style="padding:6px 12px;background:#E65100;color:white;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;">Unlist</button>`}
-                <button onclick="editKaprukaLink(${p.id}, '${p.kapruka_link || ''}')" style="padding:6px 12px;background:#1976D2;color:white;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;">Edit Link</button>
-                <button onclick="deleteHotProductRow(${p.id})" style="padding:6px 12px;background:#E53935;color:white;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;">Delete</button>
-              </div>
+            <td style="padding:12px;text-align:center;">
+              <button onclick="editHotProduct(${p.id})" style="background:#FFA726;color:white;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;margin-right:5px;">
+                Edit
+              </button>
+              <button onclick="deleteHotProductItem(${p.id})" style="background:#EF5350;color:white;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;">
+                Delete
+              </button>
             </td>
           </tr>
         `;
       }).join('');
     }
 
-    async function markAsListed(productId) {
-      const kaprukaLink = prompt('Enter Kapruka product link:');
-      if (!kaprukaLink) return;
+    async function toggleListed(id, listed) {
+      try {
+        await updateHotProduct(id, { listed });
+        loadHotProducts();
+      } catch (error) {
+        alert('Error updating product: ' + error.message);
+      }
+    }
+
+    async function editHotProduct(id) {
+      const product = allHotProducts.find(p => p.id === id);
+      if (!product) return;
+
+      const kaprukaLink = prompt('Enter Kapruka Link:', product.kapruka_link || '');
+      if (kaprukaLink === null) return;
 
       try {
         showLoading();
-        await updateHotProduct(productId, { listed: true, kapruka_link: kaprukaLink });
+        await updateHotProduct(id, { kapruka_link: kaprukaLink });
         hideLoading();
-        alert('✓ Product marked as listed!');
+        alert('✓ Product updated!');
         loadHotProducts();
       } catch (error) {
         hideLoading();
@@ -1383,43 +1852,12 @@
       }
     }
 
-    async function markAsUnlisted(productId) {
-      if (!confirm('Mark this product as unlisted?')) return;
+    async function deleteHotProductItem(id) {
+      if (!confirm('Delete this product?')) return;
 
       try {
         showLoading();
-        await updateHotProduct(productId, { listed: false });
-        hideLoading();
-        alert('✓ Product marked as unlisted!');
-        loadHotProducts();
-      } catch (error) {
-        hideLoading();
-        alert('Error: ' + error.message);
-      }
-    }
-
-    async function editKaprukaLink(productId, currentLink) {
-      const newLink = prompt('Enter Kapruka product link:', currentLink);
-      if (newLink === null) return;
-
-      try {
-        showLoading();
-        await updateHotProduct(productId, { kapruka_link: newLink || null });
-        hideLoading();
-        alert('✓ Kapruka link updated!');
-        loadHotProducts();
-      } catch (error) {
-        hideLoading();
-        alert('Error: ' + error.message);
-      }
-    }
-
-    async function deleteHotProductRow(productId) {
-      if (!confirm('⚠️ Delete this product permanently?')) return;
-
-      try {
-        showLoading();
-        await deleteHotProduct(productId);
+        await deleteHotProduct(id);
         hideLoading();
         alert('✓ Product deleted!');
         loadHotProducts();
@@ -1430,7 +1868,7 @@
     }
 
     // ═══════════════════════════════════════════════════════════
-    // DEPARTMENT MANAGEMENT
+    // DEPARTMENTS
     // ═══════════════════════════════════════════════════════════
     document.getElementById('deptForm').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -1448,7 +1886,7 @@
         showLoading();
         await addDepartment(config);
         hideLoading();
-        alert('✅ Department added!');
+        alert('✅ Department added successfully!');
         document.getElementById('deptForm').reset();
         loadDepartments();
       } catch (error) {
@@ -1473,7 +1911,7 @@
             <td>${d.department}</td>
             <td>$${d.budget}k</td>
             <td>${d.slots}</td>
-            <td>${d.active}</td>
+            <td><span class="badge ${d.active === 'Yes' ? 'badge-approved' : 'badge-rejected'}">${d.active}</span></td>
             <td>
               <button class="btn btn-danger" onclick="removeDept(${d.row})">Delete</button>
             </td>
