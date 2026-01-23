@@ -656,7 +656,7 @@
         </div>
       </div>
 
-      <!-- STUDIO CALENDAR TAB (NEW) -->
+      <!-- STUDIO CALENDAR TAB -->
       <div id="tab-studio" class="tab-content">
         <div class="card">
           <div class="calendar-header">
@@ -889,13 +889,14 @@
     let currentStudioYear = 2026;
     let studioCalendarData = [];
 
+    // UPDATED PAGE NAMES - Your actual Facebook pages
     const PAGE_NAMES = [
-      'Kapruka FB',
-      'Kapruka TikTok', 
-      'Electronic Factory',
+      'Kapruka',
       'Social Mart',
-      'Kapruka Daily Deals',
-      'Kapruka Offers'
+      'Electronic Factory',
+      'Fashion Factory',
+      'Toys Factory',
+      'Handbag Factory'
     ];
 
     function showLoading() {
@@ -1215,7 +1216,7 @@
     }
 
     // ═══════════════════════════════════════════════════════════
-    // CONTENT CALENDAR
+    // CONTENT CALENDAR (FIXED - NOW ASKS FOR DATE)
     // ═══════════════════════════════════════════════════════════
     document.getElementById('themeForm').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -1274,9 +1275,9 @@
                   ${b.status === 'Pending' ? `
                     <button class="btn btn-success" onclick="approveContent(${b.id})">Approve</button>
                     <button class="btn btn-danger" onclick="rejectContent(${b.id})">Reject</button>
-                  ` : `
+                  ` : b.status === 'Approved' ? `
                     <button class="btn btn-warning" onclick="editContentBooking(${b.id})">Edit</button>
-                  `}
+                  ` : ''}
                 </div>
               </td>
             </tr>
@@ -1288,24 +1289,43 @@
       }
     }
 
+    // FIXED - Now asks for date with calendar picker
     async function approveContent(id) {
       const reviewer = prompt('Enter your name:');
       if (!reviewer) return;
 
-      const goLiveDate = prompt('Go Live Date (YYYY-MM-DD):');
-      if (!goLiveDate) return;
+      // Show modal with date picker instead of prompt
+      const content = `
+        <button class="close-modal" onclick="closeModal()">×</button>
+        <h3>✅ Approve Content Booking</h3>
+        <form id="approveContentForm">
+          <div class="form-group">
+            <label>Go Live Date</label>
+            <input type="date" id="contentGoLiveDate" required>
+          </div>
+          <button type="submit" class="btn btn-success" style="width:100%;">Approve</button>
+        </form>
+      `;
 
-      try {
-        showLoading();
-        await updateContentBooking(id, { status: 'Approved', reviewer, goLiveDate });
-        hideLoading();
-        alert('✅ Content approved!');
-        loadContentBookings();
-        loadStudioCalendar();
-      } catch (error) {
-        hideLoading();
-        alert('Error: ' + error.message);
-      }
+      showModal(content);
+
+      document.getElementById('approveContentForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const goLiveDate = document.getElementById('contentGoLiveDate').value;
+
+        try {
+          showLoading();
+          await updateContentBooking(id, { status: 'Approved', reviewer, goLiveDate });
+          hideLoading();
+          closeModal();
+          alert('✅ Content approved!');
+          loadContentBookings();
+          loadStudioCalendar();
+        } catch (error) {
+          hideLoading();
+          alert('Error: ' + error.message);
+        }
+      });
     }
 
     async function rejectContent(id) {
@@ -1326,6 +1346,7 @@
       }
     }
 
+    // FIXED - Added edit function for approved bookings
     async function editContentBooking(id) {
       const bookings = await getAllContentBookings();
       const booking = bookings.find(b => b.id === id);
@@ -1445,7 +1466,6 @@
     function renderStudioCalendar() {
       const grid = document.getElementById('studioCalendarGrid');
 
-      // Keep headers, clear days
       while (grid.children.length > 7) {
         grid.removeChild(grid.lastChild);
       }
@@ -1455,14 +1475,12 @@
       const startDay = firstDay.getDay();
       const daysInMonth = lastDay.getDate();
 
-      // Empty cells before month starts
       for (let i = 0; i < startDay; i++) {
         const emptyDiv = document.createElement('div');
         emptyDiv.className = 'calendar-day empty';
         grid.appendChild(emptyDiv);
       }
 
-      // Days of month
       for (let day = 1; day <= daysInMonth; day++) {
         const dateStr = `${currentStudioYear}-${String(currentStudioMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         const dayData = studioCalendarData.filter(item => item.date === dateStr);
