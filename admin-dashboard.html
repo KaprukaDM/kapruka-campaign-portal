@@ -205,6 +205,8 @@
     .badge-rejected { background: #FFCDD2; color: #C62828; }
     .badge-pending { background: #FFF9C4; color: #F57F17; }
     .badge-approved { background: #C8E6C9; color: #1B5E20; }
+    .badge-received { background: #E3F2FD; color: #1565C0; }
+    .badge-review { background: #FFF3E0; color: #E65100; }
     .action-btns {
       display: flex;
       gap: 8px;
@@ -319,149 +321,138 @@
       padding: 0;
     }
 
-    /* STUDIO CALENDAR STYLES */
-    .calendar-header {
+    /* NEW STUDIO CALENDAR VERTICAL VIEW STYLES */
+    .studio-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+    .studio-stat-card {
+      padding: 18px;
+      border-radius: 12px;
+      text-align: center;
+    }
+    .studio-stat-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      opacity: 0.8;
+    }
+    .studio-stat-value {
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .studio-day-section {
+      background: white;
+      border-radius: 16px;
+      margin-bottom: 25px;
+      overflow: hidden;
+      border: 2px solid #e8e8e8;
+    }
+    .studio-day-header {
+      background: linear-gradient(135deg, #5e3a8e, #3d2461);
+      color: white;
+      padding: 18px 25px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 30px;
     }
-    .month-nav {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-    }
-    .month-nav button {
-      background: #5e3a8e;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-    .month-nav h3 {
-      font-size: 24px;
-      color: #5e3a8e;
-      min-width: 200px;
-      text-align: center;
-    }
-    .calendar-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 10px;
-      margin-top: 20px;
-    }
-    .calendar-day-header {
-      background: #5e3a8e;
-      color: white;
-      padding: 10px;
-      text-align: center;
-      font-weight: 600;
-      border-radius: 8px;
-      font-size: 14px;
-    }
-    .calendar-day {
-      background: white;
-      border: 2px solid #e8e8e8;
-      border-radius: 12px;
-      min-height: 120px;
-      padding: 10px;
-      cursor: pointer;
-      transition: all 0.3s;
-      position: relative;
-    }
-    .calendar-day:hover {
-      border-color: #FFD700;
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    }
-    .calendar-day.empty {
-      background: #f5f5f5;
-      cursor: default;
-    }
-    .calendar-day.empty:hover {
-      transform: none;
-      box-shadow: none;
-    }
-    .day-number {
+    .studio-day-title {
+      font-size: 18px;
       font-weight: 700;
-      color: #5e3a8e;
-      font-size: 16px;
-      margin-bottom: 8px;
     }
-    .day-content-item {
-      background: #E8F5E9;
-      padding: 6px 8px;
-      border-radius: 6px;
-      font-size: 11px;
-      margin-bottom: 4px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    .studio-day-date {
+      font-size: 14px;
+      opacity: 0.9;
     }
-    .day-content-item.completed {
-      background: #C8E6C9;
-      border-left: 3px solid #43A047;
+    .studio-day-slots {
+      padding: 20px;
     }
-    .day-content-item.pending {
-      background: #FFF9C4;
-      border-left: 3px solid #F57C00;
-    }
-    .content-list-item {
+    .studio-slot-item {
       background: #f9f9f9;
       padding: 20px;
       border-radius: 12px;
       margin-bottom: 15px;
-      border: 2px solid #e8e8e8;
+      border-left: 4px solid #e8e8e8;
       transition: all 0.3s;
     }
-    .content-list-item:hover {
-      border-color: #5e3a8e;
+    .studio-slot-item:hover {
       background: #fff;
+      border-left-color: #5e3a8e;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
     }
-    .content-list-header {
+    .studio-slot-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 10px;
+      margin-bottom: 15px;
     }
-    .content-list-title {
+    .studio-slot-title {
       font-weight: 700;
       color: #5e3a8e;
-      font-size: 16px;
+      font-size: 15px;
     }
-    .content-list-badge {
-      padding: 4px 12px;
+    .studio-slot-badges {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .studio-slot-badge {
+      padding: 4px 10px;
       border-radius: 12px;
       font-size: 11px;
       font-weight: 600;
       text-transform: uppercase;
     }
-    .status-completed { background: #C8E6C9; color: #1B5E20; }
-    .status-pending { background: #FFF9C4; color: #F57F17; }
-    .detail-row {
+    .badge-empty { background: #F5F5F5; color: #757575; }
+    .badge-user-booked { background: #E3F2FD; color: #1565C0; }
+    .badge-admin-approved { background: #E8F5E9; color: #2E7D32; }
+    .badge-studio-received { background: #FFF3E0; color: #E65100; }
+    .badge-studio-working { background: #FFF9C4; color: #F57F17; }
+    .badge-studio-review { background: #FFE0B2; color: #EF6C00; }
+    .badge-studio-approved { background: #C8E6C9; color: #1B5E20; }
+
+    .studio-slot-details {
       display: grid;
       grid-template-columns: 120px 1fr;
-      gap: 10px;
-      margin-bottom: 12px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid #f0f0f0;
-    }
-    .detail-row:last-child {
-      border-bottom: none;
-      margin-bottom: 0;
-      padding-bottom: 0;
-    }
-    .detail-label {
-      font-weight: 600;
-      color: #5e3a8e;
+      gap: 12px;
       font-size: 13px;
     }
-    .detail-value {
+    .studio-slot-label {
+      font-weight: 600;
+      color: #666;
+    }
+    .studio-slot-value {
       color: #333;
-      font-size: 14px;
-      word-wrap: break-word;
+    }
+    .studio-slot-actions {
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid #e8e8e8;
+      display: flex;
+      gap: 10px;
+    }
+    .studio-slot-actions select {
+      padding: 10px;
+      font-size: 13px;
+      flex: 1;
+    }
+    .studio-slot-actions button {
+      padding: 10px 20px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .slot-link {
+      color: #5e3a8e;
+      text-decoration: none;
+      word-break: break-all;
+    }
+    .slot-link:hover {
+      text-decoration: underline;
     }
 
     @media (max-width: 768px) {
@@ -470,11 +461,8 @@
       .tab-btn { width: 100%; }
       table { font-size: 12px; }
       th, td { padding: 10px; }
-      .calendar-grid {
+      .studio-slot-details {
         grid-template-columns: 1fr;
-      }
-      .calendar-day {
-        min-height: auto;
       }
     }
   </style>
@@ -560,11 +548,12 @@
                   <th>Status</th>
                   <th>Page Name</th>
                   <th>Go Live Date</th>
+                  <th>Slot</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody id="productsTable">
-                <tr><td colspan="9" style="text-align:center;padding:40px;">Loading...</td></tr>
+                <tr><td colspan="10" style="text-align:center;padding:40px;">Loading...</td></tr>
               </tbody>
             </table>
           </div>
@@ -656,28 +645,25 @@
         </div>
       </div>
 
-      <!-- STUDIO CALENDAR TAB -->
+      <!-- STUDIO CALENDAR TAB - NEW VERTICAL VIEW -->
       <div id="tab-studio" class="tab-content">
         <div class="card">
-          <div class="calendar-header">
-            <h2 style="margin:0;">🎬 Studio Calendar</h2>
-            <button class="btn btn-success" onclick="openAddExtraContentModal()">➕ Add Extra Content</button>
+          <h2 style="margin-bottom:25px;">🎬 Studio Calendar - Vertical View</h2>
+
+          <div class="studio-stats" id="studioStats">
+            <!-- Stats will be loaded here -->
           </div>
 
-          <div class="month-nav">
-            <button onclick="changeStudioMonth(-1)">◀ Previous</button>
-            <h3 id="studioMonthTitle">January 2026</h3>
-            <button onclick="changeStudioMonth(1)">Next ▶</button>
+          <div style="margin-bottom:20px;display:flex;gap:15px;align-items:center;">
+            <button class="btn btn-primary" onclick="changeStudioDateRange(-7)">← Previous Week</button>
+            <span id="studioDateRange" style="color:#5e3a8e;font-weight:700;font-size:16px;flex:1;text-align:center;">Loading...</span>
+            <button class="btn btn-primary" onclick="changeStudioDateRange(7)">Next Week →</button>
           </div>
 
-          <div class="calendar-grid" id="studioCalendarGrid">
-            <div class="calendar-day-header">Sun</div>
-            <div class="calendar-day-header">Mon</div>
-            <div class="calendar-day-header">Tue</div>
-            <div class="calendar-day-header">Wed</div>
-            <div class="calendar-day-header">Thu</div>
-            <div class="calendar-day-header">Fri</div>
-            <div class="calendar-day-header">Sat</div>
+          <div id="studioCalendarVertical">
+            <div style="text-align:center;padding:60px;color:#999;">
+              Loading studio calendar...
+            </div>
           </div>
         </div>
       </div>
@@ -881,17 +867,17 @@
     </div>
   </div>
 
-  <script src="js/supabase-api.js"></script>
+  <script src="supabase-api.js"></script>
   <script>
     let isLoggedIn = false;
     let allHotProducts = [];
-    let currentStudioMonth = 1;
-    let currentStudioYear = 2026;
-    let studioCalendarData = [];
+    let studioStartDate = new Date();
+    studioStartDate.setDate(studioStartDate.getDate() - (studioStartDate.getDay() || 7));
+    let studioEndDate = new Date(studioStartDate);
+    studioEndDate.setDate(studioEndDate.getDate() + 6);
 
-    // UPDATED PAGE NAMES - Your actual Facebook pages
     const PAGE_NAMES = [
-      'Kapruka',
+      'Kapruka FB Leads',
       'Social Mart',
       'Electronic Factory',
       'Fashion Factory',
@@ -1023,7 +1009,7 @@
     }
 
     // ═══════════════════════════════════════════════════════════
-    // PRODUCT SUGGESTIONS
+    // PRODUCT SUGGESTIONS WITH SLOT AVAILABILITY
     // ═══════════════════════════════════════════════════════════
     async function loadProducts() {
       try {
@@ -1031,7 +1017,7 @@
         const tbody = document.getElementById('productsTable');
 
         if (products.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;">No products yet</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:40px;">No products yet</td></tr>';
           return;
         }
 
@@ -1056,6 +1042,7 @@
               <td><span class="badge ${badgeClass}">${p.status}</span></td>
               <td>${p.assignedPage || '-'}</td>
               <td>${p.goLiveDate || '-'}</td>
+              <td>${p.slotNumber || '-'}</td>
               <td>
                 <div class="action-btns">
                   ${actions}
@@ -1066,7 +1053,7 @@
         }).join('');
       } catch (error) {
         document.getElementById('productsTable').innerHTML = 
-          '<tr><td colspan="9" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
+          '<tr><td colspan="10" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
       }
     }
 
@@ -1075,7 +1062,7 @@
       if (!reviewerName) return;
 
       if (status === 'Approved') {
-        showApprovalModal(row, reviewerName);
+        showApprovalModalWithSlots(row, reviewerName);
       } else {
         const rejectionReason = prompt('Rejection Reason:');
         if (!rejectionReason) return;
@@ -1097,13 +1084,18 @@
       }
     }
 
-    function showApprovalModal(row, reviewerName) {
+    async function showApprovalModalWithSlots(row, reviewerName) {
+      showLoading();
+
+      // Create page selection first
       const radioButtons = PAGE_NAMES.map(page => `
         <label class="radio-label">
-          <input type="radio" name="pageName" value="${page}" required>
+          <input type="radio" name="pageName" value="${page}" required onchange="loadAvailableSlots('${page}')">
           <span>${page}</span>
         </label>
       `).join('');
+
+      hideLoading();
 
       const content = `
         <button class="close-modal" onclick="closeModal()">×</button>
@@ -1115,9 +1107,11 @@
               ${radioButtons}
             </div>
           </div>
-          <div class="form-group">
-            <label>Go Live Date</label>
-            <input type="date" id="goLiveDate" required>
+          <div class="form-group" id="slotSelectionGroup" style="display:none;">
+            <label>Available Slots (Next 2 Weeks)</label>
+            <select id="slotSelection" required style="padding:12px;font-size:14px;">
+              <option value="">Select an available slot</option>
+            </select>
           </div>
           <button type="submit" class="btn btn-success" style="width:100%;">Approve</button>
         </form>
@@ -1125,15 +1119,49 @@
 
       showModal(content);
 
+      // Make loadAvailableSlots globally accessible
+      window.loadAvailableSlots = async function(pageName) {
+        try {
+          showLoading();
+          const slotsData = await getAvailableSlotsForPage(pageName);
+          hideLoading();
+
+          const slotSelect = document.getElementById('slotSelection');
+          const slotGroup = document.getElementById('slotSelectionGroup');
+
+          if (slotsData.slots.length === 0) {
+            slotSelect.innerHTML = '<option value="">No available slots for next 2 weeks</option>';
+            alert(`No available slots for ${pageName} in the next 2 weeks`);
+          } else {
+            slotSelect.innerHTML = '<option value="">Select an available slot</option>' +
+              slotsData.slots.map(slot => 
+                `<option value="${slot.date}|${slot.slotNumber}">${slot.displayLabel}</option>`
+              ).join('');
+          }
+
+          slotGroup.style.display = 'block';
+        } catch (error) {
+          hideLoading();
+          alert('Error loading slots: ' + error.message);
+        }
+      };
+
       document.getElementById('approvalForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const assignedPage = document.querySelector('input[name="pageName"]:checked')?.value;
-        const goLiveDate = document.getElementById('goLiveDate').value;
+        const slotValue = document.getElementById('slotSelection').value;
 
         if (!assignedPage) {
           alert('Please select a page');
           return;
         }
+
+        if (!slotValue) {
+          alert('Please select an available slot');
+          return;
+        }
+
+        const [goLiveDate, slotNumber] = slotValue.split('|');
 
         try {
           showLoading();
@@ -1141,12 +1169,17 @@
             status: 'Approved',
             reviewerName,
             assignedPage,
-            goLiveDate
+            goLiveDate,
+            slotNumber: parseInt(slotNumber)
           });
           hideLoading();
           closeModal();
-          alert('✅ Product approved!');
+          alert('✅ Product approved and assigned to slot!');
           loadProducts();
+          // Refresh studio calendar if on that tab
+          if (document.getElementById('tab-studio').classList.contains('active')) {
+            loadStudioCalendar();
+          }
         } catch (error) {
           hideLoading();
           alert('Error: ' + error.message);
@@ -1163,60 +1196,11 @@
         return;
       }
 
-      const radioButtons = PAGE_NAMES.map(page => `
-        <label class="radio-label">
-          <input type="radio" name="pageName" value="${page}" ${product.assignedPage === page ? 'checked' : ''}>
-          <span>${page}</span>
-        </label>
-      `).join('');
-
-      const content = `
-        <button class="close-modal" onclick="closeModal()">×</button>
-        <h3>✏️ Edit Product</h3>
-        <form id="editProductForm">
-          <div class="form-group">
-            <label>Select Page</label>
-            <div class="radio-group">
-              ${radioButtons}
-            </div>
-          </div>
-          <div class="form-group">
-            <label>Go Live Date</label>
-            <input type="date" id="editGoLiveDate" value="${product.goLiveDate || ''}" required>
-          </div>
-          <button type="submit" class="btn btn-primary" style="width:100%;">Update</button>
-        </form>
-      `;
-
-      showModal(content);
-
-      document.getElementById('editProductForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const assignedPage = document.querySelector('input[name="pageName"]:checked')?.value;
-        const goLiveDate = document.getElementById('editGoLiveDate').value;
-
-        try {
-          showLoading();
-          await updateProductReview(row, {
-            status: 'Approved',
-            reviewerName: product.reviewerName,
-            assignedPage,
-            goLiveDate
-          });
-          hideLoading();
-          closeModal();
-          alert('✅ Product updated!');
-          loadProducts();
-          loadStudioCalendar();
-        } catch (error) {
-          hideLoading();
-          alert('Error: ' + error.message);
-        }
-      });
+      showApprovalModalWithSlots(row, product.reviewerName);
     }
 
     // ═══════════════════════════════════════════════════════════
-    // CONTENT CALENDAR (FIXED - NOW ASKS FOR DATE)
+    // CONTENT CALENDAR
     // ═══════════════════════════════════════════════════════════
     document.getElementById('themeForm').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -1289,12 +1273,10 @@
       }
     }
 
-    // FIXED - Now asks for date with calendar picker
     async function approveContent(id) {
       const reviewer = prompt('Enter your name:');
       if (!reviewer) return;
 
-      // Show modal with date picker instead of prompt
       const content = `
         <button class="close-modal" onclick="closeModal()">×</button>
         <h3>✅ Approve Content Booking</h3>
@@ -1320,7 +1302,9 @@
           closeModal();
           alert('✅ Content approved!');
           loadContentBookings();
-          loadStudioCalendar();
+          if (document.getElementById('tab-studio').classList.contains('active')) {
+            loadStudioCalendar();
+          }
         } catch (error) {
           hideLoading();
           alert('Error: ' + error.message);
@@ -1346,7 +1330,6 @@
       }
     }
 
-    // FIXED - Added edit function for approved bookings
     async function editContentBooking(id) {
       const bookings = await getAllContentBookings();
       const booking = bookings.find(b => b.id === id);
@@ -1385,7 +1368,9 @@
           closeModal();
           alert('✅ Booking updated!');
           loadContentBookings();
-          loadStudioCalendar();
+          if (document.getElementById('tab-studio').classList.contains('active')) {
+            loadStudioCalendar();
+          }
         } catch (error) {
           hideLoading();
           alert('Error: ' + error.message);
@@ -1444,283 +1429,278 @@
     }
 
     // ═══════════════════════════════════════════════════════════
-    // STUDIO CALENDAR
+    // NEW STUDIO CALENDAR - VERTICAL VIEW
     // ═══════════════════════════════════════════════════════════
     async function loadStudioCalendar() {
       try {
         showLoading();
-        const data = await getStudioCalendarForMonth(currentStudioYear, currentStudioMonth);
-        studioCalendarData = data;
+        
+        const startStr = studioStartDate.toISOString().split('T')[0];
+        const endStr = studioEndDate.toISOString().split('T')[0];
 
-        const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-        document.getElementById('studioMonthTitle').textContent = `${monthNames[currentStudioMonth - 1]} ${currentStudioYear}`;
+        const calendarData = await getStudioCalendarVertical(startStr, endStr);
+        const stats = await getStudioCalendarStats(startStr, endStr);
 
-        renderStudioCalendar();
+        // Update date range display
+        document.getElementById('studioDateRange').textContent = 
+          `${studioStartDate.toLocaleDateString()} - ${studioEndDate.toLocaleDateString()}`;
+
+        // Update stats
+        renderStudioStats(stats);
+
+        // Render calendar
+        renderStudioVertical(calendarData);
+
         hideLoading();
       } catch (error) {
         hideLoading();
-        alert('Error loading studio calendar: ' + error.message);
+        document.getElementById('studioCalendarVertical').innerHTML = 
+          `<div style="text-align:center;padding:60px;color:#d32f2f;">Error: ${error.message}</div>`;
       }
     }
 
-    function renderStudioCalendar() {
-      const grid = document.getElementById('studioCalendarGrid');
-
-      while (grid.children.length > 7) {
-        grid.removeChild(grid.lastChild);
-      }
-
-      const firstDay = new Date(currentStudioYear, currentStudioMonth - 1, 1);
-      const lastDay = new Date(currentStudioYear, currentStudioMonth, 0);
-      const startDay = firstDay.getDay();
-      const daysInMonth = lastDay.getDate();
-
-      for (let i = 0; i < startDay; i++) {
-        const emptyDiv = document.createElement('div');
-        emptyDiv.className = 'calendar-day empty';
-        grid.appendChild(emptyDiv);
-      }
-
-      for (let day = 1; day <= daysInMonth; day++) {
-        const dateStr = `${currentStudioYear}-${String(currentStudioMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        const dayData = studioCalendarData.filter(item => item.date === dateStr);
-
-        const dayDiv = document.createElement('div');
-        dayDiv.className = 'calendar-day';
-        dayDiv.onclick = () => showDateContents(dateStr);
-
-        let html = `<div class="day-number">${day}</div>`;
-
-        dayData.forEach(item => {
-          const status = item.completion_status === 'Completed' ? 'completed' : 'pending';
-          const icon = item.completion_status === 'Completed' ? '✅' : '⏳';
-          html += `<div class="day-content-item ${status}">${icon} ${item.product_code || item.page_name || 'Content'}</div>`;
-        });
-
-        dayDiv.innerHTML = html;
-        grid.appendChild(dayDiv);
-      }
+    function renderStudioStats(stats) {
+      const statsHTML = `
+        <div class="studio-stat-card" style="background:#E8F5E9;">
+          <div class="studio-stat-label" style="color:#2E7D32;">Total Slots</div>
+          <div class="studio-stat-value" style="color:#1B5E20;">${stats.totalSlots}</div>
+        </div>
+        <div class="studio-stat-card" style="background:#FFF3E0;">
+          <div class="studio-stat-label" style="color:#E65100;">Empty Slots</div>
+          <div class="studio-stat-value" style="color:#BF360C;">${stats.emptySlots}</div>
+        </div>
+        <div class="studio-stat-card" style="background:#E3F2FD;">
+          <div class="studio-stat-label" style="color:#1565C0;">Pending Approval</div>
+          <div class="studio-stat-value" style="color:#0D47A1;">${stats.pendingApproval}</div>
+        </div>
+        <div class="studio-stat-card" style="background:#C8E6C9;">
+          <div class="studio-stat-label" style="color:#2E7D32;">Approved</div>
+          <div class="studio-stat-value" style="color:#1B5E20;">${stats.approved}</div>
+        </div>
+        <div class="studio-stat-card" style="background:#FFE0B2;">
+          <div class="studio-stat-label" style="color:#EF6C00;">Needs Review</div>
+          <div class="studio-stat-value" style="color:#E65100;">${stats.needsReview}</div>
+        </div>
+        <div class="studio-stat-card" style="background:#D1C4E9;">
+          <div class="studio-stat-label" style="color:#5E35B1;">Head Approved</div>
+          <div class="studio-stat-value" style="color:#4527A0;">${stats.contentHeadApproved}</div>
+        </div>
+      `;
+      
+      document.getElementById('studioStats').innerHTML = statsHTML;
     }
 
-    function changeStudioMonth(delta) {
-      currentStudioMonth += delta;
-      if (currentStudioMonth < 1) {
-        currentStudioMonth = 12;
-        currentStudioYear--;
-      } else if (currentStudioMonth > 12) {
-        currentStudioMonth = 1;
-        currentStudioYear++;
-      }
-      loadStudioCalendar();
-    }
+    function renderStudioVertical(data) {
+      const container = document.getElementById('studioCalendarVertical');
 
-    function showDateContents(date) {
-      const items = studioCalendarData.filter(item => item.date === date);
-
-      if (items.length === 0) {
-        alert('No content scheduled for this date');
+      if (data.length === 0) {
+        container.innerHTML = '<div style="text-align:center;padding:60px;color:#999;">No slots found for this date range</div>';
         return;
       }
 
-      const listHtml = items.map((item, index) => {
-        const statusClass = item.completion_status === 'Completed' ? 'status-completed' : 'status-pending';
-        const icon = item.completion_status === 'Completed' ? '✅' : '⏳';
+      const html = data.map(day => {
+        const slotsHTML = day.slots.map(slot => renderSlotItem(slot, day.date)).join('');
 
         return `
-          <div class="content-list-item" onclick="showContentDetails(${item.id})">
-            <div class="content-list-header">
-              <div class="content-list-title">${icon} ${item.product_code || item.page_name || `Content ${index + 1}`}</div>
-              <div class="content-list-badge ${statusClass}">${item.completion_status || 'Not Started'}</div>
+          <div class="studio-day-section">
+            <div class="studio-day-header">
+              <div>
+                <div class="studio-day-title">${day.dayOfWeek}</div>
+                <div class="studio-day-date">${day.date}</div>
+              </div>
+              <div style="font-size:14px;">${day.slots.length} Slots</div>
             </div>
-            <div style="font-size:12px;color:#666;">
-              ${item.page_name || ''} • ${item.format || ''} • ${item.source_type}
+            <div class="studio-day-slots">
+              ${slotsHTML}
             </div>
           </div>
         `;
       }).join('');
 
-      const content = `
-        <button class="close-modal" onclick="closeModal()">×</button>
-        <h3>📅 ${date} - Content List</h3>
-        <div style="margin-top:20px;">
-          ${listHtml}
+      container.innerHTML = html;
+    }
+
+    function renderSlotItem(slot, date) {
+      let slotTypeLabel = '';
+      let slotTypeColor = '#e8e8e8';
+
+      if (slot.slotType === 'content_calendar') {
+        slotTypeLabel = `📅 Daily Post #${slot.slotNumber}`;
+        slotTypeColor = '#5e3a8e';
+      } else if (slot.slotType === 'product_suggestion') {
+        slotTypeLabel = `💡 ${slot.pageName} - Slot ${slot.slotNumber}`;
+        slotTypeColor = '#2E7D32';
+      } else if (slot.slotType === 'tiktok') {
+        slotTypeLabel = `🎬 TikTok Video`;
+        slotTypeColor = '#E65100';
+      }
+
+      let badges = '';
+
+      // Booking status badges
+      if (slot.bookingStatus === 'empty') {
+        badges += '<span class="studio-slot-badge badge-empty">Empty</span>';
+      } else if (slot.userBooked && !slot.adminApproved) {
+        badges += '<span class="studio-slot-badge badge-user-booked">User Booked</span>';
+      } else if (slot.adminApproved) {
+        badges += '<span class="studio-slot-badge badge-admin-approved">Admin Approved</span>';
+      }
+
+      // Studio status badges
+      if (slot.studioStatus === 'Received') {
+        badges += '<span class="studio-slot-badge badge-studio-received">Received</span>';
+      } else if (slot.studioStatus === 'Working') {
+        badges += '<span class="studio-slot-badge badge-studio-working">Working</span>';
+      } else if (slot.studioStatus === 'Submitted for Review') {
+        badges += '<span class="studio-slot-badge badge-studio-review">Needs Review</span>';
+      } else if (slot.studioStatus === 'Approved') {
+        badges += '<span class="studio-slot-badge badge-studio-approved">Head Approved</span>';
+      }
+
+      let detailsHTML = '';
+
+      if (slot.category) {
+        detailsHTML += `
+          <div class="studio-slot-label">Category:</div>
+          <div class="studio-slot-value">${slot.category}</div>
+        `;
+      }
+
+      if (slot.theme) {
+        detailsHTML += `
+          <div class="studio-slot-label">Theme:</div>
+          <div class="studio-slot-value">${slot.theme}</div>
+        `;
+      }
+
+      if (slot.productCode) {
+        detailsHTML += `
+          <div class="studio-slot-label">Product Code:</div>
+          <div class="studio-slot-value">${slot.productCode}</div>
+        `;
+      }
+
+      if (slot.productLink) {
+        detailsHTML += `
+          <div class="studio-slot-label">Product Link:</div>
+          <div class="studio-slot-value"><a href="${slot.productLink}" target="_blank" class="slot-link">${slot.productLink.substring(0, 50)}...</a></div>
+        `;
+      }
+
+      if (slot.submittedBy) {
+        detailsHTML += `
+          <div class="studio-slot-label">Submitted By:</div>
+          <div class="studio-slot-value">${slot.submittedBy}</div>
+        `;
+      }
+
+      if (slot.contentLink) {
+        detailsHTML += `
+          <div class="studio-slot-label">Content Link:</div>
+          <div class="studio-slot-value"><a href="${slot.contentLink}" target="_blank" class="slot-link">${slot.contentLink}</a></div>
+        `;
+      }
+
+      if (slot.approvedBy) {
+        detailsHTML += `
+          <div class="studio-slot-label">Approved By:</div>
+          <div class="studio-slot-value">${slot.approvedBy}</div>
+        `;
+      }
+
+      // Only show actions if slot is not empty
+      let actionsHTML = '';
+      if (slot.bookingStatus !== 'empty') {
+        actionsHTML = `
+          <div class="studio-slot-actions">
+            <select id="status-${date}-${slot.slotNumber}-${slot.slotType}" class="studio-status-select">
+              <option value="Received" ${slot.studioStatus === 'Received' ? 'selected' : ''}>Received</option>
+              <option value="Working" ${slot.studioStatus === 'Working' ? 'selected' : ''}>Working</option>
+              <option value="Submitted for Review" ${slot.studioStatus === 'Submitted for Review' ? 'selected' : ''}>Submitted for Review</option>
+              <option value="Approved" ${slot.studioStatus === 'Approved' ? 'selected' : ''}>Approved</option>
+            </select>
+            <button class="btn btn-primary" onclick="updateSlotStatus('${date}', ${slot.slotNumber}, '${slot.slotType}')">Update</button>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="studio-slot-item" style="border-left-color:${slotTypeColor};">
+          <div class="studio-slot-header">
+            <div class="studio-slot-title">${slotTypeLabel}</div>
+            <div class="studio-slot-badges">${badges}</div>
+          </div>
+          ${detailsHTML ? `<div class="studio-slot-details">${detailsHTML}</div>` : '<div style="color:#999;font-style:italic;font-size:13px;">No content assigned to this slot</div>'}
+          ${actionsHTML}
         </div>
       `;
-
-      showModal(content);
     }
 
-    async function showContentDetails(id) {
-      try {
-        showLoading();
-        const item = await getStudioCalendarItem(id);
-        hideLoading();
+    async function updateSlotStatus(date, slotNumber, slotType) {
+      const selectId = `status-${date}-${slotNumber}-${slotType}`;
+      const newStatus = document.getElementById(selectId).value;
 
-        if (!item) {
-          alert('Content not found');
+      if (newStatus === 'Submitted for Review') {
+        const contentLink = prompt('Enter the content link (published post URL):');
+        if (!contentLink) {
+          alert('Content link is required for submission');
           return;
         }
-
-        const content = `
-          <button class="close-modal" onclick="closeModal()">×</button>
-          <h3>📦 Content Details</h3>
-
-          <div style="margin-top:25px;">
-            ${item.product_code ? `<div class="detail-row">
-              <div class="detail-label">Product Code:</div>
-              <div class="detail-value">${item.product_code}</div>
-            </div>` : ''}
-
-            <div class="detail-row">
-              <div class="detail-label">Page Name:</div>
-              <div class="detail-value">${item.page_name || '-'}</div>
-            </div>
-
-            <div class="detail-row">
-              <div class="detail-label">Format:</div>
-              <div class="detail-value">${item.format || '-'}</div>
-            </div>
-
-            <div class="detail-row">
-              <div class="detail-label">Details:</div>
-              <div class="detail-value">${item.content_details || '-'}</div>
-            </div>
-
-            <div class="detail-row">
-              <div class="detail-label">Reference Links:</div>
-              <div class="detail-value">${item.reference_links ? `<a href="${item.reference_links}" target="_blank">${item.reference_links}</a>` : '-'}</div>
-            </div>
-
-            <div class="detail-row">
-              <div class="detail-label">Source:</div>
-              <div class="detail-value">${item.source_type}</div>
-            </div>
-          </div>
-
-          <hr style="margin:25px 0;border:none;border-top:2px solid #f0f0f0;">
-
-          <h3 style="font-size:18px;margin-bottom:15px;">✅ Completion Status</h3>
-
-          <form id="completionForm">
-            <div class="form-group">
-              <label>Status</label>
-              <select id="completionStatus" style="padding:12px;">
-                <option value="Not Started" ${item.completion_status === 'Not Started' ? 'selected' : ''}>Not Started</option>
-                <option value="In Progress" ${item.completion_status === 'In Progress' ? 'selected' : ''}>In Progress</option>
-                <option value="Completed" ${item.completion_status === 'Completed' ? 'selected' : ''}>Completed</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label>📎 Content Link (Published Post)</label>
-              <input type="url" id="contentLink" placeholder="https://facebook.com/post/123" value="${item.content_link || ''}" style="padding:12px;">
-            </div>
-
-            <button type="submit" class="btn btn-success" style="width:100%;">💾 Save</button>
-          </form>
-        `;
-
-        showModal(content);
-
-        document.getElementById('completionForm').addEventListener('submit', async (e) => {
-          e.preventDefault();
-
-          const completionStatus = document.getElementById('completionStatus').value;
-          const contentLink = document.getElementById('contentLink').value;
-
-          try {
-            showLoading();
-            await updateStudioCompletion(id, { completion_status: completionStatus, content_link: contentLink });
-            hideLoading();
-            closeModal();
-            alert('✅ Status updated!');
-            loadStudioCalendar();
-          } catch (error) {
-            hideLoading();
-            alert('Error: ' + error.message);
-          }
-        });
-      } catch (error) {
-        hideLoading();
-        alert('Error: ' + error.message);
-      }
-    }
-
-    function openAddExtraContentModal() {
-      const radioButtons = PAGE_NAMES.map(page => `
-        <label class="radio-label">
-          <input type="radio" name="extraPageName" value="${page}" required>
-          <span>${page}</span>
-        </label>
-      `).join('');
-
-      const content = `
-        <button class="close-modal" onclick="closeModal()">×</button>
-        <h3>➕ Add Extra Content</h3>
-        <form id="extraContentForm">
-          <div class="form-group">
-            <label>Content Details</label>
-            <textarea id="extraDetails" required placeholder="Describe the content..." rows="3"></textarea>
-          </div>
-
-          <div class="form-group">
-            <label>Format</label>
-            <input type="text" id="extraFormat" required placeholder="e.g., Single Image, Carousel, Video">
-          </div>
-
-          <div class="form-group">
-            <label>Page Name</label>
-            <div class="radio-group">
-              ${radioButtons}
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>Date</label>
-            <input type="date" id="extraDate" required>
-          </div>
-
-          <div class="form-group">
-            <label>Reference Links</label>
-            <textarea id="extraLinks" placeholder="Add reference URLs..." rows="2"></textarea>
-          </div>
-
-          <button type="submit" class="btn btn-success" style="width:100%;">Add Content</button>
-        </form>
-      `;
-
-      showModal(content);
-
-      document.getElementById('extraContentForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        const pageName = document.querySelector('input[name="extraPageName"]:checked')?.value;
-        if (!pageName) {
-          alert('Please select a page');
-          return;
-        }
-
-        const extraData = {
-          content_details: document.getElementById('extraDetails').value,
-          format: document.getElementById('extraFormat').value,
-          page_name: pageName,
-          date: document.getElementById('extraDate').value,
-          reference_links: document.getElementById('extraLinks').value,
-          created_by: 'Admin'
-        };
 
         try {
           showLoading();
-          await addExtraContent(extraData);
+          await updateStudioApprovalStatus(date, slotNumber, slotType, {
+            approvalStatus: newStatus,
+            contentLink: contentLink
+          });
           hideLoading();
-          closeModal();
-          alert('✅ Extra content added!');
+          alert('✅ Status updated to "Submitted for Review"');
           loadStudioCalendar();
         } catch (error) {
           hideLoading();
           alert('Error: ' + error.message);
         }
-      });
+      } else if (newStatus === 'Approved') {
+        const password = prompt('Enter content head password:');
+        if (!password) return;
+
+        const approvedBy = prompt('Enter your name:');
+        if (!approvedBy) return;
+
+        try {
+          showLoading();
+          await updateStudioApprovalStatus(date, slotNumber, slotType, {
+            approvalStatus: newStatus,
+            password: password,
+            approvedBy: approvedBy
+          });
+          hideLoading();
+          alert('✅ Content approved by head!');
+          loadStudioCalendar();
+        } catch (error) {
+          hideLoading();
+          alert('Error: ' + error.message);
+        }
+      } else {
+        try {
+          showLoading();
+          await updateStudioApprovalStatus(date, slotNumber, slotType, {
+            approvalStatus: newStatus
+          });
+          hideLoading();
+          alert(`✅ Status updated to "${newStatus}"`);
+          loadStudioCalendar();
+        } catch (error) {
+          hideLoading();
+          alert('Error: ' + error.message);
+        }
+      }
+    }
+
+    function changeStudioDateRange(days) {
+      studioStartDate.setDate(studioStartDate.getDate() + days);
+      studioEndDate.setDate(studioEndDate.getDate() + days);
+      loadStudioCalendar();
     }
 
     // ═══════════════════════════════════════════════════════════
