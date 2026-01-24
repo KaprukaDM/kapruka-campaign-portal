@@ -305,9 +305,7 @@
       padding: 0;
     }
 
-    /* ═══════════════════════════════════════════════════════════ */
     /* STUDIO CALENDAR STYLES */
-    /* ═══════════════════════════════════════════════════════════ */
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -633,7 +631,6 @@
         <div class="card">
           <h2 style="margin-bottom:30px;">🎬 Studio Calendar</h2>
 
-          <!-- DASHBOARD STATS -->
           <div class="stats-grid">
             <div class="stat-card" style="background:linear-gradient(135deg,#E8F5E9,#C8E6C9);">
               <div class="stat-label" style="color:#2E7D32;">Total Content</div>
@@ -674,7 +671,6 @@
             <div class="calendar-day-header">Fri</div>
             <div class="calendar-day-header">Sat</div>
             <div id="studioCalendarGrid" style="grid-column:1/-1;display:grid;grid-template-columns:repeat(7,1fr);gap:8px;">
-              <!-- Calendar days will be injected here -->
             </div>
           </div>
         </div>
@@ -705,16 +701,8 @@
     let currentStudioYear = new Date().getFullYear();
     let studioCalendarData = null;
 
-    // Page schedule: which page gets which day
-    const PAGE_SCHEDULE = {
-      1: 'Kapruka FB Leads',      // Monday
-      2: 'Electronic Factory',    // Tuesday
-      3: 'Social Mart',          // Wednesday
-      4: 'Fashion Factory',       // Thursday
-      5: 'Toys Factory',         // Friday
-      6: 'Handbag Factory',      // Saturday
-      0: 'TikTok Video'          // Sunday
-    };
+    // Hardcoded password check (from API file)
+    const ADMIN_PASSWORD = 'admin123';
 
     function showLoading() {
       document.getElementById('loading').style.display = 'flex';
@@ -733,15 +721,12 @@
       document.getElementById('modal').style.display = 'none';
     }
 
-    // ═══════════════════════════════════════════════════════════
     // LOGIN
-    // ═══════════════════════════════════════════════════════════
-
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const password = document.getElementById('adminPassword').value;
 
-      if (verifyAdminPassword(password)) {
+      if (password === ADMIN_PASSWORD || (typeof verifyAdminPassword === 'function' && verifyAdminPassword(password))) {
         isLoggedIn = true;
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('adminContent').style.display = 'block';
@@ -780,10 +765,7 @@
       loadProducts();
     }
 
-    // ═══════════════════════════════════════════════════════════
     // CAMPAIGN REQUESTS
-    // ═══════════════════════════════════════════════════════════
-    
     async function loadRequests() {
       try {
         const requests = await getAllRequests();
@@ -845,10 +827,7 @@
       }
     }
 
-    // ═══════════════════════════════════════════════════════════
-    // PRODUCT SUGGESTIONS WITH SLOT SELECTION
-    // ═══════════════════════════════════════════════════════════
-
+    // PRODUCT SUGGESTIONS
     async function loadProducts() {
       try {
         const products = await getAllProductSuggestions();
@@ -1088,10 +1067,7 @@
       }
     }
 
-    // ═══════════════════════════════════════════════════════════
-    // CONTENT CALENDAR WITH APPROVE/REJECT
-    // ═══════════════════════════════════════════════════════════
-    
+    // CONTENT CALENDAR
     async function loadContentData() {
       try {
         const bookings = await getAllContentBookings();
@@ -1169,7 +1145,7 @@
         hideLoading();
         alert('✅ Content booking approved!');
         loadContentData();
-        loadStudioCalendar(); // Refresh studio calendar
+        loadStudioCalendar();
       } catch (error) {
         hideLoading();
         alert('Error: ' + error.message);
@@ -1236,10 +1212,7 @@
       }
     }
 
-    // ═══════════════════════════════════════════════════════════
-    // STUDIO CALENDAR - SHOWS CONTENT CALENDAR + ASSIGNED PAGE
-    // ═══════════════════════════════════════════════════════════
-
+    // STUDIO CALENDAR
     async function loadStudioCalendar() {
       try {
         showLoading();
@@ -1296,7 +1269,6 @@
       // Group calendar items by date
       const itemsByDate = {};
       if (studioCalendarData && studioCalendarData.calendarItems) {
-        // Only show approved items
         studioCalendarData.calendarItems.filter(item => item.status === 'booked').forEach(item => {
           if (!itemsByDate[item.date]) {
             itemsByDate[item.date] = [];
@@ -1356,7 +1328,6 @@
         themeDiv.title = dayThemes.map(t => t.theme_name).join(', ');
         cell.appendChild(themeDiv);
 
-        // Apply theme color
         const theme = dayThemes[0];
         if (theme.theme_color) {
           cell.style.borderColor = theme.theme_color;
@@ -1364,11 +1335,19 @@
         }
       }
 
-      // Get assigned page for this day
-      const assignedPage = PAGE_SCHEDULE[dayOfWeek];
+      // Get assigned page for this day based on weekday
+      const pageSchedule = {
+        1: 'Kapruka FB Leads',
+        2: 'Electronic Factory',
+        3: 'Social Mart',
+        4: 'Fashion Factory',
+        5: 'Toys Factory',
+        6: 'Handbag Factory',
+        0: 'TikTok Video'
+      };
+      const assignedPage = pageSchedule[dayOfWeek];
 
       if (assignedPage) {
-        // Show assigned page header
         const pageDiv = document.createElement('div');
         pageDiv.style.cssText = 'font-size:9px;color:#5e3a8e;margin:5px 0 5px 0;font-weight:700;padding:3px 5px;background:rgba(94,58,142,0.1);border-radius:4px;text-align:center;';
         pageDiv.textContent = `📱 ${assignedPage}`;
