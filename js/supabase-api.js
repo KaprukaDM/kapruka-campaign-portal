@@ -9,6 +9,20 @@ const ADMIN_PASSWORD = 'Kapruka2026!Admin';
 const VALID_STATUSES = ['Request Submitted', 'Working', 'Live', 'Completed', 'Rejected'];
 
 // ═══════════════════════════════════════════════════════════════
+// PAGE SCHEDULE CONFIGURATION
+// ═══════════════════════════════════════════════════════════════
+
+const PAGE_SCHEDULE = {
+  'Kapruka FB Leads': { day: 1, slots: 3 },      // Monday
+  'Electronic Factory': { day: 2, slots: 3 },    // Tuesday
+  'Social Mart': { day: 3, slots: 3 },          // Wednesday
+  'Fashion Factory': { day: 4, slots: 3 },       // Thursday
+  'Toys Factory': { day: 5, slots: 3 },         // Friday
+  'Handbag Factory': { day: 6, slots: 3 },      // Saturday
+  'TikTok Video': { day: 0, slots: 1 }          // Sunday (weekly)
+};
+
+// ═══════════════════════════════════════════════════════════════
 // HELPER FUNCTIONS
 // ═══════════════════════════════════════════════════════════════
 
@@ -42,8 +56,237 @@ function generateId(prefix) {
   return `${prefix}-${Date.now()}`;
 }
 
+function getAllPageNames() {
+  return Object.keys(PAGE_SCHEDULE);
+}
+
 // ═══════════════════════════════════════════════════════════════
-// STUDIO CALENDAR + EXTRA CONTENT CORE
+// ENHANCED STUDIO CALENDAR - SHOW ALL CONTENT CALENDAR SLOTS
+// ═══════════════════════════════════════════════════════════════
+
+async function getStudioCalendarData(month, year) {
+  try {
+    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+    const lastDay = new Date(year, month, 0).getDate();
+    const endDate = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
+
+    // Get all content themes
+    const themes = await supabaseQuery(
+      `theme_config?start_date=lte.${endDate}&end_date=gte.${startDate}`
+    );
+
+    // Get all category slots (this defines ALL possible slots)
+    const categorySlots = await supabaseQuery(
+      `category_slots?date=gte.${startDate}&date=lte.${endDate}&order=date.asc,slot_number.asc`
+    );
+
+    // Get all content bookings
+    const contentBookings = await supabaseQuery(
+      `content_calendar?date=gte.${startDate}&date=lte.${endDate}`
+    );
+
+    // Get approved product suggestions that have been assigned
+    const productSuggestions = await supabaseQuery(
+      `product_suggestions?status=eq.Approved&go_live_date=gte.${startDate}&go_live_date=lte.${endDate}`
+    );
+
+    // Get existing studio calendar entries
+    const studioEntries = await supabaseQuery(
+      `studio_calendar?date=gte.${startDate}&date=lte.${endDate}`
+    );
+
+    // Combine all data
+    const calendarItems = [];
+
+    // Process ALL category slots (both empty and booked)
+    categorySlots.forEach(slot => {
+      // Check if this slot is booked in content_calendar
+      const booking = contentBookings.find(b => 
+        b.date === slot.date && 
+        b.slot_number === slot.slot_number &&
+        (b.status === 'Approved' || b.status === 'Pending')
+      );
+
+      // Check if there's a studio entry for this
+      const studioEntry = studioEntries.find(s => 
+        s.date === slot.date && 
+        s.source_type === 'content_booking' &&
+        s.source_id === booking?.id
+      );
+
+      calendarItems.push({
+        date: slot.date,
+        slotNumber: slot.slot_number,
+        category: slot.category,
+        type: 'content_slot',
+        status: booking ? (booking.status === 'Approved' ? 'booked' : 'pending') : 'empty',
+        productCode: booking?.product_code || null,
+        productLink: booking?.product_link || null,
+        theme: booking?.theme || '',
+        submittedBy: booking?.submitted_by || null,
+        studioStatus: studioEntry?.completion_status || 'pending',
+        studioLink: studioEntry?.content_link || null,
+        studioId: studioEntry?.id || null,
+        bookingId: booking?.id || null
+      });
+    });
+
+    // Add TikTok Video slots for every Sunday
+    const currentDate = new Date(startDate);
+    const endDateObj = new Date(endDate);
+    
+    while (currentDate <= endDateObj) {
+      if (currentDate.getDay() === 0) { // Sunday
+        const dateStr = currentDate.toISOString().split('T')[0];
+        
+        const tiktokEntry = studioEntries.find(s => 
+          s.date === dateStr && 
+          s.page_name === 'TikTok Video'
+        );
+
+        calendarItems.push({
+          date: dateStr,
+          slotNumber: 1,
+          category: 'TikTok Video',
+          type: 'tiktok_slot',
+          status: tiktokEntry ? 'booked' : 'empty',
+          productCode: tiktokEntry?.product_code || null,
+          pageName: 'TikTok Video',
+          studioStatus: tiktokEntry?.completion_status || 'pending',
+          studioLink: tiktokEntry?.content_link || null,
+          studioId: tiktokEntry?.id || null,
+          contentDetails: tiktokEntry?.content_details || null
+        });
+      }
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    // Add product suggestions
+    productSuggestions.forEach(product => {
+      const existingStudio = studioEntries.find(s => 
+        s.source_type === 'product_suggestion' && 
+        s.source_id === product.id
+      );
+
+      calendarItems.push({
+        date: product.go_live_date,
+        slotNumber: product.slot_number || null,
+        type: 'product_suggestion',
+        status: 'booked',
+        productLink: product.product_link,
+        pageName: product.assigned_page,
+        category: product.category,
+        promotionIdea: product.promotion_idea,
+        studioStatus: existingStudio?.completion_status || 'pending',
+        studioLink: existingStudio?.content_link || null,
+        studioId: existingStudio?.id || null,
+        productSuggestionId: product.id
+      });
+    });
+
+    return {
+      themes: themes || [],
+      calendarItems: calendarItems.sort((a, b) => {
+        if (a.date === b.date) {
+          return (a.slotNumber || 0) - (b.slotNumber || 0);
+        }
+        return a.date.localeCompare(b.date);
+      })
+    };
+  } catch (error) {
+    console.error('getStudioCalendarData error:', error);
+    throw error;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// GET AVAILABLE SLOTS FOR PAGE (Next 3 Weeks)
+// ═══════════════════════════════════════════════════════════════
+
+async function getAvailableSlotsForPage(pageName) {
+  try {
+    if (!PAGE_SCHEDULE[pageName]) {
+      throw new Error(`Invalid page name: ${pageName}`);
+    }
+
+    const schedule = PAGE_SCHEDULE[pageName];
+    const targetDay = schedule.day; // 0=Sunday, 1=Monday, etc.
+    const slotsPerDay = schedule.slots;
+
+    // Get dates for next 3 weeks for this specific weekday
+    const dates = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Find next occurrence of the target day
+    let currentDate = new Date(today);
+    const daysUntilTarget = (targetDay - currentDate.getDay() + 7) % 7;
+    if (daysUntilTarget === 0) {
+      // If today is the target day, start from next week
+      currentDate.setDate(currentDate.getDate() + 7);
+    } else {
+      currentDate.setDate(currentDate.getDate() + daysUntilTarget);
+    }
+
+    // Get next 3 occurrences of this weekday
+    for (let i = 0; i < 3; i++) {
+      dates.push(currentDate.toISOString().split('T')[0]);
+      currentDate.setDate(currentDate.getDate() + 7);
+    }
+
+    // Get existing bookings for these dates and page
+    const contentBookings = await supabaseQuery(
+      `content_calendar?page_name=eq.${encodeURIComponent(pageName)}`
+    );
+
+    // Check product_suggestions bookings
+    const productBookings = await supabaseQuery(
+      `product_suggestions?assigned_page=eq.${encodeURIComponent(pageName)}&status=eq.Approved`
+    );
+
+    // Build slot availability for each date
+    const slotAvailability = [];
+
+    dates.forEach(date => {
+      for (let slotNum = 1; slotNum <= slotsPerDay; slotNum++) {
+        // Check if slot is booked in content_calendar
+        const contentBooked = contentBookings.find(b => 
+          b.date === date && 
+          b.slot_number === slotNum &&
+          (b.status === 'Approved' || b.status === 'Pending')
+        );
+
+        // Check if slot is booked in product_suggestions
+        const productBooked = productBookings.find(p => 
+          p.slot_date === date && 
+          p.slot_number === slotNum
+        );
+
+        const isBooked = !!(contentBooked || productBooked);
+
+        slotAvailability.push({
+          date: date,
+          slotNumber: slotNum,
+          available: !isBooked,
+          bookedBy: contentBooked ? `Content: ${contentBooked.product_code}` : 
+                    productBooked ? `Product: ${productBooked.submission_id}` : null
+        });
+      }
+    });
+
+    return {
+      pageName: pageName,
+      weekday: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][targetDay],
+      slots: slotAvailability
+    };
+  } catch (error) {
+    console.error('getAvailableSlotsForPage error:', error);
+    throw error;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STUDIO CALENDAR + EXTRA CONTENT CORE (LEGACY FUNCTIONS)
 // ═══════════════════════════════════════════════════════════════
 
 async function upsertStudioCalendarEntry(entry) {
@@ -450,48 +693,65 @@ async function getAllProductSuggestions() {
     status: p.status,
     assignedPage: p.assigned_page || '',
     goLiveDate: p.go_live_date || '',
+    slotDate: p.slot_date || '',
+    slotNumber: p.slot_number || null,
     reviewerName: p.reviewer_name || '',
     rejectionReason: p.rejection_reason || ''
   }));
 }
 
-async function updateProductReview(row, reviewData) {
-  const updateData = {
-    status: reviewData.status,
-    reviewer_name: reviewData.reviewerName
-  };
+async function updateProductReviewWithSlot(row, reviewData) {
+  try {
+    const updateData = {
+      status: reviewData.status,
+      reviewer_name: reviewData.reviewerName
+    };
 
-  if (reviewData.status === 'Approved') {
-    updateData.assigned_page = reviewData.assignedPage || '';
-    updateData.go_live_date = reviewData.goLiveDate || null;
-    updateData.rejection_reason = '';
-  } else {
-    updateData.assigned_page = '';
-    updateData.go_live_date = null;
-    updateData.rejection_reason = reviewData.rejectionReason || '';
-  }
-
-  await supabaseQuery(`product_suggestions?id=eq.${row}`, 'PATCH', updateData);
-
-  if (reviewData.status === 'Approved') {
-    const rows = await supabaseQuery(`product_suggestions?id=eq.${row}`);
-    if (rows.length) {
-      const p = rows[0];
-
-      await upsertStudioCalendarEntry({
-        date: reviewData.goLiveDate || p.go_live_date,
-        source_type: 'product_suggestion',
-        source_id: p.id,
-        product_code: p.product_code || null,
-        page_name: reviewData.assignedPage || p.assigned_page || null,
-        format: 'Product Suggestion',
-        content_details: p.promotion_idea || p.product_link,
-        reference_links: p.product_link
-      });
+    if (reviewData.status === 'Approved') {
+      updateData.assigned_page = reviewData.assignedPage || '';
+      updateData.go_live_date = reviewData.goLiveDate || null;
+      updateData.slot_date = reviewData.slotDate || reviewData.goLiveDate;
+      updateData.slot_number = reviewData.slotNumber || null;
+      updateData.rejection_reason = '';
+    } else {
+      updateData.assigned_page = '';
+      updateData.go_live_date = null;
+      updateData.slot_date = null;
+      updateData.slot_number = null;
+      updateData.rejection_reason = reviewData.rejectionReason || '';
     }
-  }
 
-  return { success: true };
+    await supabaseQuery(`product_suggestions?id=eq.${row}`, 'PATCH', updateData);
+
+    // Add to studio calendar if approved
+    if (reviewData.status === 'Approved') {
+      const rows = await supabaseQuery(`product_suggestions?id=eq.${row}`);
+      if (rows.length) {
+        const p = rows[0];
+
+        await upsertStudioCalendarEntry({
+          date: reviewData.slotDate || reviewData.goLiveDate || p.go_live_date,
+          source_type: 'product_suggestion',
+          source_id: p.id,
+          product_code: p.product_code || p.submission_id,
+          page_name: reviewData.assignedPage || p.assigned_page || null,
+          format: 'Product Suggestion',
+          content_details: p.promotion_idea || p.product_link,
+          reference_links: p.product_link
+        });
+      }
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('updateProductReviewWithSlot error:', error);
+    throw error;
+  }
+}
+
+// Keep the old function for backward compatibility
+async function updateProductReview(row, reviewData) {
+  return await updateProductReviewWithSlot(row, reviewData);
 }
 
 async function getAllDepartments() {
@@ -655,6 +915,7 @@ async function getAllContentBookings() {
       status: b.status,
       submittedBy: b.submitted_by,
       theme: b.theme,
+      pageName: b.page_name,
       scheduleDate: b.schedule_date,
       goLiveDate: b.go_live_date,
       reviewer: b.reviewer,
@@ -692,7 +953,7 @@ async function updateContentBooking(id, updateData) {
           source_type: 'content_booking',
           source_id: b.id,
           product_code: b.product_code,
-          page_name: null,
+          page_name: b.page_name || null,
           format: 'Content Calendar',
           content_details: `${b.theme || ''} - ${b.category || ''}`.trim(),
           reference_links: b.product_link || ''
