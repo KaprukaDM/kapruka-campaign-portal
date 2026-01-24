@@ -138,6 +138,7 @@
     .btn-warning { background: linear-gradient(135deg, #FFA726, #F57C00); color: white; }
     .btn-success { background: linear-gradient(135deg, #66BB6A, #43A047); color: white; }
     .btn-danger { background: linear-gradient(135deg, #EF5350, #E53935); color: white; }
+    .btn-sm { padding: 8px 15px; font-size: 13px; }
     .table-container { overflow-x: auto; margin-top: 20px; }
     table {
       width: 100%;
@@ -178,7 +179,6 @@
     .badge-pending { background: #FFF9C4; color: #F57F17; }
     .badge-approved { background: #C8E6C9; color: #1B5E20; }
     .action-btns { display: flex; gap: 8px; flex-wrap: wrap; }
-    .action-btns button { padding: 8px 15px; font-size: 12px; }
     .loading {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -347,7 +347,7 @@
       <form id="loginForm">
         <div class="form-group">
           <label>Password</label>
-          <input type="password" id="adminPassword" required placeholder="Enter password (207)">
+          <input type="password" id="adminPassword" required placeholder="Enter password" autofocus>
         </div>
         <button type="submit" class="btn btn-primary" style="width:100%;">Login</button>
       </form>
@@ -362,7 +362,7 @@
         <button class="tab-btn" onclick="switchTab('studio')">🎬 Studio Calendar</button>
         <button class="tab-btn" onclick="switchTab('hotproducts')">🔥 Hot Products</button>
         <button class="tab-btn" onclick="switchTab('departments')">🏢 Departments</button>
-        <button class="tab-btn" style="margin-left:auto;background:#d32f2f;" onclick="logout()">Logout</button>
+        <button class="tab-btn" style="margin-left:auto;background:#d32f2f;color:white;" onclick="doLogout()">Logout</button>
       </div>
 
       <!-- TAB 1: CAMPAIGN REQUESTS -->
@@ -375,9 +375,9 @@
                 <tr>
                   <th>Request ID</th>
                   <th>Date</th>
+                  <th>Name</th>
                   <th>Department</th>
                   <th>Month</th>
-                  <th>Slot</th>
                   <th>Campaign</th>
                   <th>Status</th>
                   <th>Actions</th>
@@ -401,12 +401,12 @@
                 <tr>
                   <th>Submission ID</th>
                   <th>Date</th>
+                  <th>Name</th>
                   <th>Product Link</th>
                   <th>Category</th>
                   <th>Margin %</th>
                   <th>Status</th>
                   <th>Assigned Page</th>
-                  <th>Slot</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -421,77 +421,20 @@
       <!-- TAB 3: CONTENT CALENDAR -->
       <div id="tab-content" class="tab-content">
         <div class="card">
-          <h2>📅 Add Content Theme</h2>
-          <form id="themeForm">
-            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px;">
-              <div class="form-group">
-                <label>Theme Name</label>
-                <input type="text" id="themeName" required placeholder="e.g., Valentine's Day">
-              </div>
-              <div class="form-group">
-                <label>Slots Per Day</label>
-                <input type="number" id="slotsPerDay" required value="3" min="1" max="10">
-              </div>
-              <div class="form-group">
-                <label>Start Date</label>
-                <input type="date" id="themeStart" required>
-              </div>
-              <div class="form-group">
-                <label>End Date</label>
-                <input type="date" id="themeEnd" required>
-              </div>
-              <div class="form-group">
-                <label>Theme Color</label>
-                <input type="color" id="themeColor" value="#422B73">
-              </div>
-              <div class="form-group">
-                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-                  <input type="checkbox" id="isSeasonal" style="width:auto;padding:0;">
-                  <span>Seasonal Theme</span>
-                </label>
-              </div>
-            </div>
-            <button type="submit" class="btn btn-primary">Add Theme</button>
-          </form>
-        </div>
-
-        <div class="card">
-          <h2>🗂️ Content Bookings</h2>
+          <h2>📅 Content Calendar Bookings</h2>
           <div class="table-container">
             <table>
               <thead>
                 <tr>
                   <th>Date</th>
-                  <th>Slot</th>
-                  <th>Category</th>
-                  <th>Product Code</th>
                   <th>Page</th>
-                  <th>Status</th>
+                  <th>Format</th>
+                  <th>Product Code</th>
+                  <th>Details</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody id="contentTable">
-                <tr><td colspan="7" style="text-align:center;padding:40px;">Loading...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="card">
-          <h2>🎨 Themes</h2>
-          <div class="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Theme</th>
-                  <th>Start</th>
-                  <th>End</th>
-                  <th>Slots/Day</th>
-                  <th>Type</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="themesTable">
                 <tr><td colspan="6" style="text-align:center;padding:40px;">Loading...</td></tr>
               </tbody>
             </table>
@@ -502,7 +445,6 @@
       <!-- TAB 4: STUDIO CALENDAR -->
       <div id="tab-studio" class="tab-content">
         <div class="card">
-          <!-- Stats Dashboard -->
           <div class="stats-grid">
             <div class="stat-card" style="background:#E8F5E9;">
               <div class="stat-number" style="color:#1B5E20;" id="totalSlots">0</div>
@@ -513,16 +455,12 @@
               <div class="stat-label" style="color:#1565C0;">Filled Slots</div>
             </div>
             <div class="stat-card" style="background:#FFF3E0;">
-              <div class="stat-number" style="color:#E65100;" id="completedItems">0</div>
-              <div class="stat-label" style="color:#F57C00;">Completed</div>
+              <div class="stat-number" style="color:#E65100;" id="approvedItems">0</div>
+              <div class="stat-label" style="color:#F57C00;">Approved</div>
             </div>
             <div class="stat-card" style="background:#F3E5F5;">
-              <div class="stat-number" style="color:#6A1B9A;" id="approvedItems">0</div>
-              <div class="stat-label" style="color:#7B1FA2;">Approved by Head</div>
-            </div>
-            <div class="stat-card" style="background:#E0F2F1;">
-              <div class="stat-number" style="color:#00695C;" id="completionRate">0%</div>
-              <div class="stat-label" style="color:#00897B;">Completion Rate</div>
+              <div class="stat-number" style="color:#6A1B9A;" id="completionRate">0%</div>
+              <div class="stat-label" style="color:#7B1FA2;">Completion Rate</div>
             </div>
           </div>
 
@@ -538,7 +476,6 @@
             </select>
           </div>
 
-          <!-- Calendar Grid -->
           <div class="calendar-grid" id="studioCalendarGrid">
             <div class="calendar-day-header">Sun</div>
             <div class="calendar-day-header">Mon</div>
@@ -565,17 +502,13 @@
               <div class="stat-number" style="color:#0D47A1;" id="adminListedProducts">0</div>
               <div class="stat-label" style="color:#1565C0;">Listed Products</div>
             </div>
-            <div class="stat-card" style="background:#FFF3E0;">
-              <div class="stat-number" style="color:#BF360C;" id="adminCategoryCount">0</div>
-              <div class="stat-label" style="color:#E65100;">Categories</div>
-            </div>
           </div>
 
           <div style="background:#f9f9f9;padding:25px;border-radius:12px;margin-bottom:30px;">
             <h3 style="color:#5e3a8e;margin-bottom:20px;">➕ Add New Product</h3>
             <form id="addHotProductForm">
               <div style="display:grid;grid-template-columns:1fr 2fr 1fr;gap:15px;">
-                <div class="form-group">
+                <div class="form-group" style="margin:0;">
                   <label>Category</label>
                   <select id="hotProductCategory" required>
                     <option value="">Select Category</option>
@@ -583,38 +516,19 @@
                     <option value="Flowers">Flowers</option>
                     <option value="Chocolates">Chocolates</option>
                     <option value="Electronics">Electronics</option>
-                    <option value="Fashion">Fashion</option>
-                    <option value="Food & Restaurants">Food & Restaurants</option>
                   </select>
                 </div>
-                <div class="form-group">
+                <div class="form-group" style="margin:0;">
                   <label>Product Link</label>
                   <input type="url" id="hotProductLink" required placeholder="https://example.com/product">
                 </div>
-                <div class="form-group">
+                <div class="form-group" style="margin:0;">
                   <label>Sales Count</label>
                   <input type="number" id="hotProductSales" value="0" min="0">
                 </div>
               </div>
-              <button type="submit" class="btn btn-primary">➕ Add Product</button>
+              <button type="submit" class="btn btn-primary" style="margin-top:15px;">➕ Add Product</button>
             </form>
-          </div>
-
-          <div style="display:flex;gap:15px;margin-bottom:20px;">
-            <select id="filterCategory" onchange="filterHotProducts()" style="padding:12px;border:2px solid #e8e8e8;border-radius:8px;flex:1;">
-              <option value="">All Categories</option>
-              <option value="Cakes">Cakes</option>
-              <option value="Flowers">Flowers</option>
-              <option value="Chocolates">Chocolates</option>
-              <option value="Electronics">Electronics</option>
-              <option value="Fashion">Fashion</option>
-            </select>
-            <select id="filterListed" onchange="filterHotProducts()" style="padding:12px;border:2px solid #e8e8e8;border-radius:8px;">
-              <option value="">All Status</option>
-              <option value="true">Listed Only</option>
-              <option value="false">Unlisted Only</option>
-            </select>
-            <button onclick="loadHotProducts()" class="btn btn-primary">🔄 Refresh</button>
           </div>
 
           <div class="table-container">
@@ -627,12 +541,11 @@
                   <th>Sales</th>
                   <th>Listed</th>
                   <th>Kapruka Link</th>
-                  <th>Created</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody id="hotProductsTableBody">
-                <tr><td colspan="8" style="text-align:center;padding:40px;">Loading...</td></tr>
+                <tr><td colspan="7" style="text-align:center;padding:40px;">Loading...</td></tr>
               </tbody>
             </table>
           </div>
@@ -642,32 +555,7 @@
       <!-- TAB 6: DEPARTMENTS -->
       <div id="tab-departments" class="tab-content">
         <div class="card">
-          <h2>🏢 Add Department</h2>
-          <form id="deptForm">
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
-              <div class="form-group">
-                <label>Month</label>
-                <select id="deptMonth" required>
-                  <option value="January 2026">January 2026</option>
-                  <option value="February 2026">February 2026</option>
-                  <option value="March 2026">March 2026</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label>Department Name</label>
-                <input type="text" id="deptName" required placeholder="e.g., Marketing">
-              </div>
-              <div class="form-group">
-                <label>Budget ($k)</label>
-                <input type="number" id="deptBudget" required placeholder="e.g., 200">
-              </div>
-            </div>
-            <button type="submit" class="btn btn-primary">Add Department</button>
-          </form>
-        </div>
-
-        <div class="card">
-          <h2>📋 Existing Departments</h2>
+          <h2>🏢 Departments Configuration</h2>
           <div class="table-container">
             <table>
               <thead>
@@ -677,11 +565,10 @@
                   <th>Budget</th>
                   <th>Slots</th>
                   <th>Active</th>
-                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody id="deptsTable">
-                <tr><td colspan="6" style="text-align:center;padding:40px;">Loading...</td></tr>
+                <tr><td colspan="5" style="text-align:center;padding:40px;">Loading...</td></tr>
               </tbody>
             </table>
           </div>
@@ -733,7 +620,7 @@ function formatDate(dateStr) {
 }
 
 function getBadgeClass(status) {
-  const map = {
+  const statusMap = {
     'Request Submitted': 'submitted',
     'Working': 'working',
     'Live': 'live',
@@ -742,27 +629,32 @@ function getBadgeClass(status) {
     'Pending': 'pending',
     'Approved': 'approved'
   };
-  return map[status] || 'pending';
+  return statusMap[status] || 'pending';
 }
 
 // ═══════════════════════════════════════════════════════════════
 // AUTHENTICATION
 // ═══════════════════════════════════════════════════════════════
 
-document.getElementById('loginForm').addEventListener('submit', function(e) {
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
   e.preventDefault();
   const password = document.getElementById('adminPassword').value;
 
-  if (password === '207') {
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('adminContent').style.display = 'block';
-    loadAllData();
-  } else {
-    alert('❌ Invalid password');
+  try {
+    if (verifyAdminPassword(password)) {
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('adminContent').style.display = 'block';
+      await loadAllData();
+    } else {
+      alert('❌ Invalid password');
+      document.getElementById('adminPassword').value = '';
+    }
+  } catch (error) {
+    alert('❌ Authentication error: ' + error.message);
   }
 });
 
-function logout() {
+function doLogout() {
   document.getElementById('loginScreen').style.display = 'block';
   document.getElementById('adminContent').style.display = 'none';
   document.getElementById('adminPassword').value = '';
@@ -801,16 +693,17 @@ document.getElementById('modal').addEventListener('click', function(e) {
 // ═══════════════════════════════════════════════════════════════
 
 async function loadAllData() {
-  loadCampaignRequests();
-  loadProductSuggestions();
-  loadContentBookings();
-  loadThemes();
-  loadDepartments();
-  loadHotProducts();
+  await Promise.all([
+    loadCampaignRequests(),
+    loadProductSuggestions(),
+    loadContentCalendar(),
+    loadDepartments(),
+    loadHotProducts()
+  ]);
 
   const currentMonth = new Date().getMonth() + 1;
   document.getElementById('studioMonthSelect').value = currentMonth;
-  loadStudioCalendar();
+  await loadStudioCalendar();
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -820,52 +713,54 @@ async function loadAllData() {
 async function loadCampaignRequests() {
   try {
     showLoading();
-    const requests = await getAllCampaignRequests();
+    const requests = await getAllRequests();
     const tbody = document.getElementById('requestsTable');
 
     if (!requests || requests.length === 0) {
       tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:#999;">No campaign requests found</td></tr>';
-      hideLoading();
       return;
     }
 
     tbody.innerHTML = requests.map(r => `
       <tr>
-        <td><strong>${r.request_id || ''}</strong></td>
+        <td><strong>${r.requestId || ''}</strong></td>
         <td>${formatDate(r.timestamp)}</td>
+        <td>${r.name || ''}</td>
         <td>${r.department || ''}</td>
         <td>${r.month || ''}</td>
-        <td>${r.slot || ''}</td>
         <td>${r.campaign || ''}</td>
         <td><span class="badge badge-${getBadgeClass(r.status)}">${r.status || 'Pending'}</span></td>
         <td>
           <div class="action-btns">
-            ${r.status === 'Request Submitted' ? `<button class="btn btn-warning" onclick="updateRequestStatus('${r.request_id}', 'Working')">Working</button>` : ''}
-            ${r.status === 'Working' ? `<button class="btn btn-success" onclick="updateRequestStatus('${r.request_id}', 'Live')">Set Live</button>` : ''}
-            ${r.status === 'Live' ? `<button class="btn btn-primary" onclick="updateRequestStatus('${r.request_id}', 'Completed')">Complete</button>` : ''}
-            <button class="btn btn-danger" onclick="updateRequestStatus('${r.request_id}', 'Rejected')">Reject</button>
+            ${r.status === 'Request Submitted' ? 
+              `<button class="btn btn-warning btn-sm" onclick="updateRequestStatusTo(${r.row}, 'Working')">Working</button>` : ''}
+            ${r.status === 'Working' ? 
+              `<button class="btn btn-success btn-sm" onclick="updateRequestStatusTo(${r.row}, 'Live')">Set Live</button>` : ''}
+            ${r.status === 'Live' ? 
+              `<button class="btn btn-primary btn-sm" onclick="updateRequestStatusTo(${r.row}, 'Completed')">Complete</button>` : ''}
+            <button class="btn btn-danger btn-sm" onclick="updateRequestStatusTo(${r.row}, 'Rejected')">Reject</button>
           </div>
         </td>
       </tr>
     `).join('');
-
-    hideLoading();
   } catch (error) {
-    hideLoading();
     console.error('Error loading requests:', error);
-    document.getElementById('requestsTable').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:#f44336;">Error loading data</td></tr>';
+    document.getElementById('requestsTable').innerHTML = 
+      '<tr><td colspan="8" style="text-align:center;padding:40px;color:#f44336;">Error: ' + error.message + '</td></tr>';
+  } finally {
+    hideLoading();
   }
 }
 
-async function updateRequestStatus(requestId, newStatus) {
+async function updateRequestStatusTo(row, newStatus) {
   if (!confirm(`Update status to: ${newStatus}?`)) return;
 
   try {
     showLoading();
-    await updateCampaignRequest(requestId, { status: newStatus });
+    await updateRequestStatus(row, newStatus, 'Admin', '');
     hideLoading();
     alert('✅ Status updated!');
-    loadCampaignRequests();
+    await loadCampaignRequests();
   } catch (error) {
     hideLoading();
     alert('Error: ' + error.message);
@@ -884,43 +779,42 @@ async function loadProductSuggestions() {
 
     if (!products || products.length === 0) {
       tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:#999;">No product suggestions found</td></tr>';
-      hideLoading();
       return;
     }
 
     tbody.innerHTML = products.map(p => `
       <tr>
-        <td><strong>${p.submission_id || ''}</strong></td>
-        <td>${formatDate(p.submitted_at)}</td>
-        <td><a href="${p.product_link || '#'}" target="_blank" style="color:#1976D2;">View Product</a></td>
+        <td><strong>${p.submissionId || ''}</strong></td>
+        <td>${formatDate(p.timestamp)}</td>
+        <td>${p.name || ''}</td>
+        <td><a href="${p.productLink || '#'}" target="_blank" style="color:#1976D2;">View Product</a></td>
         <td>${p.category || ''}</td>
         <td>${p.margin || 0}%</td>
         <td><span class="badge badge-${getBadgeClass(p.status)}">${p.status || 'Pending'}</span></td>
-        <td>${p.assigned_page || '-'}</td>
-        <td>${p.slot_date ? formatDate(p.slot_date) + ' #' + p.slot_number : '-'}</td>
+        <td>${p.assignedPage || '-'}</td>
         <td>
           <div class="action-btns">
             ${p.status === 'Pending' ? `
-              <button class="btn btn-success" onclick="approveProduct('${p.submission_id}')">Approve</button>
-              <button class="btn btn-danger" onclick="rejectProduct('${p.submission_id}')">Reject</button>
+              <button class="btn btn-success btn-sm" onclick="approveProductSuggestion(${p.row})">Approve</button>
+              <button class="btn btn-danger btn-sm" onclick="rejectProductSuggestion(${p.row})">Reject</button>
             ` : ''}
             ${p.status === 'Approved' ? `
-              <button class="btn btn-warning" onclick="editProductApproval('${p.submission_id}')">Edit</button>
+              <button class="btn btn-warning btn-sm" onclick="editProductSuggestion(${p.row})">Edit</button>
             ` : ''}
           </div>
         </td>
       </tr>
     `).join('');
-
-    hideLoading();
   } catch (error) {
-    hideLoading();
     console.error('Error loading products:', error);
-    document.getElementById('productsTable').innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:#f44336;">Error loading data</td></tr>';
+    document.getElementById('productsTable').innerHTML = 
+      '<tr><td colspan="9" style="text-align:center;padding:40px;color:#f44336;">Error: ' + error.message + '</td></tr>';
+  } finally {
+    hideLoading();
   }
 }
 
-function approveProduct(submissionId) {
+function approveProductSuggestion(row) {
   const pageOptions = Object.keys(APP_CONFIG.PAGE_SCHEDULE).map(p => 
     `<option value="${p}">${p}</option>`
   ).join('');
@@ -928,25 +822,55 @@ function approveProduct(submissionId) {
   showModal(`
     <button class="close-modal" onclick="closeModal()">×</button>
     <h3>✅ Approve Product</h3>
-    <form id="approveForm">
+    <form id="approveProductForm">
       <div class="form-group">
         <label>Assign to Page</label>
-        <select id="assignPage" required onchange="loadAvailableSlots()">
+        <select id="assignPage" required onchange="loadPageSlots()">
           <option value="">Select Page</option>
           ${pageOptions}
         </select>
       </div>
       <div class="form-group" id="slotSelection" style="display:none;">
-        <label>Select Slot</label>
+        <label>Select Slot Date & Number</label>
         <select id="assignSlot" required>
-          <option value="">Loading...</option>
+          <option value="">Select slot...</option>
         </select>
       </div>
       <button type="submit" class="btn btn-success">Approve & Assign</button>
     </form>
   `);
 
-  document.getElementById('approveForm').addEventListener('submit', async function(e) {
+  window.loadPageSlots = function() {
+    const page = document.getElementById('assignPage').value;
+    if (!page) return;
+
+    const schedule = APP_CONFIG.PAGE_SCHEDULE[page];
+    const slotSelect = document.getElementById('assignSlot');
+    const slotSection = document.getElementById('slotSelection');
+
+    slotSection.style.display = 'block';
+
+    const slots = [];
+    const today = new Date();
+
+    for (let i = 0; i < 21; i++) {
+      const checkDate = new Date(today);
+      checkDate.setDate(today.getDate() + i);
+
+      if (checkDate.getDay() === schedule.day) {
+        for (let s = 1; s <= schedule.slots; s++) {
+          const dateStr = checkDate.toISOString().split('T')[0];
+          slots.push(`<option value="${dateStr}|${s}">${formatDate(dateStr)} - Slot ${s}</option>`);
+        }
+      }
+    }
+
+    slotSelect.innerHTML = slots.length > 0 ? 
+      slots.join('') : 
+      '<option value="">No slots available</option>';
+  };
+
+  document.getElementById('approveProductForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     const page = document.getElementById('assignPage').value;
     const slotInfo = document.getElementById('assignSlot').value;
@@ -960,19 +884,19 @@ function approveProduct(submissionId) {
 
     try {
       showLoading();
-      await updateProductSuggestion(submissionId, {
+      await updateProductReviewWithSlot(row, {
         status: 'Approved',
-        assigned_page: page,
-        slot_date: slotDate,
-        slot_number: parseInt(slotNumber),
-        reviewer_name: 'Admin',
-        reviewed_at: new Date().toISOString()
+        assignedPage: page,
+        goLiveDate: slotDate,
+        slotDate: slotDate,
+        slotNumber: parseInt(slotNumber),
+        reviewerName: 'Admin'
       });
       hideLoading();
       closeModal();
       alert('✅ Product approved and assigned!');
-      loadProductSuggestions();
-      loadStudioCalendar();
+      await loadProductSuggestions();
+      await loadStudioCalendar();
     } catch (error) {
       hideLoading();
       alert('Error: ' + error.message);
@@ -980,55 +904,24 @@ function approveProduct(submissionId) {
   });
 }
 
-function loadAvailableSlots() {
-  const page = document.getElementById('assignPage').value;
-  if (!page) return;
-
-  const schedule = APP_CONFIG.PAGE_SCHEDULE[page];
-  const slotSelect = document.getElementById('assignSlot');
-  const slotSection = document.getElementById('slotSelection');
-
-  slotSection.style.display = 'block';
-
-  const slots = [];
-  const today = new Date();
-
-  for (let i = 0; i < 14; i++) {
-    const checkDate = new Date(today);
-    checkDate.setDate(today.getDate() + i);
-
-    if (checkDate.getDay() === schedule.day) {
-      for (let s = 1; s <= schedule.slots; s++) {
-        const dateStr = checkDate.toISOString().split('T')[0];
-        slots.push(`<option value="${dateStr}|${s}">${formatDate(dateStr)} - Slot ${s}</option>`);
-      }
-    }
-  }
-
-  slotSelect.innerHTML = slots.length > 0 ? 
-    slots.join('') : 
-    '<option value="">No slots available</option>';
+function editProductSuggestion(row) {
+  approveProductSuggestion(row);
 }
 
-function editProductApproval(submissionId) {
-  approveProduct(submissionId);
-}
-
-async function rejectProduct(submissionId) {
+async function rejectProductSuggestion(row) {
   const reason = prompt('Rejection reason:');
   if (!reason) return;
 
   try {
     showLoading();
-    await updateProductSuggestion(submissionId, {
+    await updateProductReview(row, {
       status: 'Rejected',
-      rejection_reason: reason,
-      reviewer_name: 'Admin',
-      reviewed_at: new Date().toISOString()
+      rejectionReason: reason,
+      reviewerName: 'Admin'
     });
     hideLoading();
     alert('✅ Product rejected');
-    loadProductSuggestions();
+    await loadProductSuggestions();
   } catch (error) {
     hideLoading();
     alert('Error: ' + error.message);
@@ -1039,221 +932,35 @@ async function rejectProduct(submissionId) {
 // CONTENT CALENDAR
 // ═══════════════════════════════════════════════════════════════
 
-document.getElementById('themeForm').addEventListener('submit', async function(e) {
-  e.preventDefault();
-
+async function loadContentCalendar() {
   try {
     showLoading();
-    await createTheme({
-      theme_name: document.getElementById('themeName').value,
-      start_date: document.getElementById('themeStart').value,
-      end_date: document.getElementById('themeEnd').value,
-      slots_per_day: parseInt(document.getElementById('slotsPerDay').value),
-      theme_color: document.getElementById('themeColor').value,
-      is_seasonal: document.getElementById('isSeasonal').checked
-    });
-    hideLoading();
-    alert('✅ Theme created successfully!');
-    this.reset();
-    loadThemes();
-  } catch (error) {
-    hideLoading();
-    alert('Error: ' + error.message);
-  }
-});
-
-async function loadContentBookings() {
-  try {
-    showLoading();
-    const bookings = await getAllContentBookings();
+    const content = await getAllStudioCalendar();
     const tbody = document.getElementById('contentTable');
 
-    if (!bookings || bookings.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:#999;">No content bookings found</td></tr>';
-      hideLoading();
+    if (!content || content.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:#999;">No content bookings found</td></tr>';
       return;
     }
 
-    tbody.innerHTML = bookings.map(b => `
+    tbody.innerHTML = content.map(c => `
       <tr>
-        <td>${formatDate(b.date)}</td>
-        <td>Slot ${b.slot_number || ''}</td>
-        <td>${b.category || ''}</td>
-        <td>${b.product_code || '-'}</td>
-        <td>${b.page_name || '-'}</td>
-        <td><span class="badge badge-${getBadgeClass(b.status)}">${b.status || 'Pending'}</span></td>
+        <td>${formatDate(c.date)}</td>
+        <td>${c.pageName || '-'}</td>
+        <td>${c.format || '-'}</td>
+        <td>${c.productCode || '-'}</td>
+        <td>${(c.contentDetails || '').substring(0, 50)}...</td>
         <td>
-          <div class="action-btns">
-            ${b.status === 'Pending' ? `
-              <button class="btn btn-success" onclick="approveBooking(${b.id})">Approve</button>
-              <button class="btn btn-danger" onclick="rejectBooking(${b.id})">Reject</button>
-            ` : ''}
-            ${b.status === 'Approved' ? `
-              <button class="btn btn-warning" onclick="editBooking(${b.id})">Edit</button>
-            ` : ''}
-          </div>
+          <a href="${c.referenceLinks || '#'}" target="_blank" class="btn btn-primary btn-sm">View</a>
         </td>
       </tr>
     `).join('');
-
-    hideLoading();
   } catch (error) {
+    console.error('Error loading content:', error);
+    document.getElementById('contentTable').innerHTML = 
+      '<tr><td colspan="6" style="text-align:center;padding:40px;color:#f44336;">Error: ' + error.message + '</td></tr>';
+  } finally {
     hideLoading();
-    console.error('Error loading bookings:', error);
-    document.getElementById('contentTable').innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:#f44336;">Error loading data</td></tr>';
-  }
-}
-
-async function approveBooking(bookingId) {
-  try {
-    showLoading();
-    await updateContentBooking(bookingId, { 
-      status: 'Approved',
-      reviewer: 'Admin',
-      reviewed_at: new Date().toISOString()
-    });
-    hideLoading();
-    alert('✅ Booking approved!');
-    loadContentBookings();
-    loadStudioCalendar();
-  } catch (error) {
-    hideLoading();
-    alert('Error: ' + error.message);
-  }
-}
-
-function editBooking(bookingId) {
-  showModal(`
-    <button class="close-modal" onclick="closeModal()">×</button>
-    <h3>✏️ Edit Booking</h3>
-    <form id="editBookingForm">
-      <div class="form-group">
-        <label>Product Code</label>
-        <input type="text" id="editProductCode" placeholder="PRODUCT001">
-      </div>
-      <div class="form-group">
-        <label>Or Reject with Reason</label>
-        <textarea id="editRejectReason" placeholder="Reason for rejection"></textarea>
-      </div>
-      <div style="display:flex;gap:10px;">
-        <button type="button" class="btn btn-success" onclick="saveBookingEdit(${bookingId})">Save Changes</button>
-        <button type="button" class="btn btn-danger" onclick="saveBookingReject(${bookingId})">Reject</button>
-      </div>
-    </form>
-  `);
-}
-
-async function saveBookingEdit(bookingId) {
-  const productCode = document.getElementById('editProductCode').value;
-  if (!productCode) {
-    alert('Enter product code');
-    return;
-  }
-
-  try {
-    showLoading();
-    await updateContentBooking(bookingId, { 
-      product_code: productCode,
-      status: 'Approved',
-      reviewer: 'Admin'
-    });
-    hideLoading();
-    closeModal();
-    alert('✅ Booking updated!');
-    loadContentBookings();
-  } catch (error) {
-    hideLoading();
-    alert('Error: ' + error.message);
-  }
-}
-
-async function saveBookingReject(bookingId) {
-  const reason = document.getElementById('editRejectReason').value;
-  if (!reason) {
-    alert('Enter rejection reason');
-    return;
-  }
-
-  try {
-    showLoading();
-    await updateContentBooking(bookingId, { 
-      status: 'Rejected',
-      rejection_reason: reason,
-      reviewer: 'Admin'
-    });
-    hideLoading();
-    closeModal();
-    alert('✅ Booking rejected');
-    loadContentBookings();
-  } catch (error) {
-    hideLoading();
-    alert('Error: ' + error.message);
-  }
-}
-
-async function rejectBooking(bookingId) {
-  const reason = prompt('Rejection reason:');
-  if (!reason) return;
-
-  try {
-    showLoading();
-    await updateContentBooking(bookingId, { 
-      status: 'Rejected',
-      rejection_reason: reason,
-      reviewer: 'Admin'
-    });
-    hideLoading();
-    alert('✅ Booking rejected');
-    loadContentBookings();
-  } catch (error) {
-    hideLoading();
-    alert('Error: ' + error.message);
-  }
-}
-
-async function loadThemes() {
-  try {
-    showLoading();
-    const themes = await getAllThemes();
-    const tbody = document.getElementById('themesTable');
-
-    if (!themes || themes.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:#999;">No themes found</td></tr>';
-      hideLoading();
-      return;
-    }
-
-    tbody.innerHTML = themes.map(t => `
-      <tr>
-        <td><strong>${t.theme_name || ''}</strong></td>
-        <td>${formatDate(t.start_date)}</td>
-        <td>${formatDate(t.end_date)}</td>
-        <td>${t.slots_per_day || 0}</td>
-        <td>${t.is_seasonal ? 'Seasonal' : 'Daily'}</td>
-        <td><button class="btn btn-danger" onclick="deleteTheme(${t.id})">Delete</button></td>
-      </tr>
-    `).join('');
-
-    hideLoading();
-  } catch (error) {
-    hideLoading();
-    console.error('Error loading themes:', error);
-    document.getElementById('themesTable').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:#f44336;">Error loading data</td></tr>';
-  }
-}
-
-async function deleteTheme(themeId) {
-  if (!confirm('Delete this theme?')) return;
-
-  try {
-    showLoading();
-    await deleteThemeById(themeId);
-    hideLoading();
-    alert('✅ Theme deleted');
-    loadThemes();
-  } catch (error) {
-    hideLoading();
-    alert('Error: ' + error.message);
   }
 }
 
@@ -1268,35 +975,31 @@ async function loadStudioCalendar() {
     const year = 2026;
 
     const products = await getAllProductSuggestions();
-    const bookings = await getAllContentBookings();
+    const studioContent = await getAllStudioCalendar();
 
     const approvedProducts = products.filter(p => 
       p.status === 'Approved' && 
-      p.slot_date && 
-      new Date(p.slot_date).getMonth() + 1 === month
+      p.slotDate && 
+      new Date(p.slotDate).getMonth() + 1 === month
     );
 
-    const approvedBookings = bookings.filter(b => 
-      b.status === 'Approved' && 
-      b.date && 
-      new Date(b.date).getMonth() + 1 === month
+    const monthContent = studioContent.filter(c => 
+      c.date && 
+      new Date(c.date).getMonth() + 1 === month
     );
 
-    renderStudioCalendar(year, month, approvedProducts, approvedBookings);
-    updateStudioStats(year, month, approvedProducts, approvedBookings);
-
-    hideLoading();
+    renderStudioCalendar(year, month, approvedProducts, monthContent);
+    updateStudioStats(approvedProducts, monthContent);
   } catch (error) {
-    hideLoading();
     console.error('Error loading studio calendar:', error);
-    alert('Error loading calendar: ' + error.message);
+  } finally {
+    hideLoading();
   }
 }
 
-function renderStudioCalendar(year, month, products, bookings) {
+function renderStudioCalendar(year, month, products, content) {
   const grid = document.getElementById('studioCalendarGrid');
 
-  // Clear existing days (keep headers)
   while (grid.children.length > 7) {
     grid.removeChild(grid.lastChild);
   }
@@ -1304,20 +1007,17 @@ function renderStudioCalendar(year, month, products, bookings) {
   const firstDay = new Date(year, month - 1, 1).getDay();
   const daysInMonth = new Date(year, month, 0).getDate();
 
-  // Empty cells before month starts
   for (let i = 0; i < firstDay; i++) {
     const emptyDiv = document.createElement('div');
     emptyDiv.className = 'calendar-day empty';
     grid.appendChild(emptyDiv);
   }
 
-  // Days of the month
   for (let day = 1; day <= daysInMonth; day++) {
     const date = new Date(year, month - 1, day);
     const dateStr = date.toISOString().split('T')[0];
     const dayOfWeek = date.getDay();
 
-    // Get page for this day
     const pageInfo = Object.entries(APP_CONFIG.PAGE_SCHEDULE).find(
       ([name, info]) => info.day === dayOfWeek
     );
@@ -1331,10 +1031,9 @@ function renderStudioCalendar(year, month, products, bookings) {
       const [pageName, schedule] = pageInfo;
       dayHtml += `<div class="day-page">${pageName}</div>`;
 
-      // Show 3 lead form slots
       for (let slot = 1; slot <= schedule.slots; slot++) {
         const product = products.find(p => 
-          p.slot_date === dateStr && p.slot_number === slot
+          p.slotDate === dateStr && p.slotNumber === slot
         );
 
         if (product) {
@@ -1344,10 +1043,9 @@ function renderStudioCalendar(year, month, products, bookings) {
         }
       }
 
-      // Show content calendar items
-      const contentItems = bookings.filter(b => b.date === dateStr);
+      const contentItems = content.filter(c => c.date === dateStr);
       contentItems.forEach(c => {
-        dayHtml += `<div class="slot-badge content">${c.product_code || 'Content'}</div>`;
+        dayHtml += `<div class="slot-badge content">${c.productCode || 'Content'}</div>`;
       });
     }
 
@@ -1356,37 +1054,15 @@ function renderStudioCalendar(year, month, products, bookings) {
   }
 }
 
-function updateStudioStats(year, month, products, bookings) {
-  // Calculate total lead form slots for the month
-  const daysInMonth = new Date(year, month, 0).getDate();
-  let totalLeadSlots = 0;
-
-  for (let day = 1; day <= daysInMonth; day++) {
-    const date = new Date(year, month - 1, day);
-    const dayOfWeek = date.getDay();
-    const pageInfo = Object.entries(APP_CONFIG.PAGE_SCHEDULE).find(
-      ([name, info]) => info.day === dayOfWeek
-    );
-    if (pageInfo) {
-      totalLeadSlots += pageInfo[1].slots;
-    }
-  }
-
-  const filledLeadSlots = products.length;
-  const contentItems = bookings.length;
-  const totalSlots = totalLeadSlots + contentItems;
-  const filledSlots = filledLeadSlots + contentItems;
-
-  // Mock completion data (extend with actual status tracking)
-  const completedItems = Math.floor(filledSlots * 0.6);
-  const approvedItems = Math.floor(filledSlots * 0.4);
-  const completionRate = totalSlots > 0 ? 
-    Math.round((completedItems / totalSlots) * 100) : 0;
+function updateStudioStats(products, content) {
+  const totalSlots = products.length + content.length;
+  const filled = products.length;
+  const approved = products.filter(p => p.status === 'Approved').length;
+  const completionRate = totalSlots > 0 ? Math.round((filled / totalSlots) * 100) : 0;
 
   document.getElementById('totalSlots').textContent = totalSlots;
-  document.getElementById('filledSlots').textContent = filledSlots;
-  document.getElementById('completedItems').textContent = completedItems;
-  document.getElementById('approvedItems').textContent = approvedItems;
+  document.getElementById('filledSlots').textContent = filled;
+  document.getElementById('approvedItems').textContent = approved;
   document.getElementById('completionRate').textContent = completionRate + '%';
 }
 
@@ -1417,10 +1093,10 @@ document.getElementById('addHotProductForm').addEventListener('submit', async fu
     hideLoading();
     alert('✅ Product added successfully!');
     this.reset();
-    loadHotProducts();
+    await loadHotProducts();
   } catch (error) {
     hideLoading();
-    alert('Error adding product: ' + error.message);
+    alert('Error: ' + error.message);
   }
 });
 
@@ -1430,38 +1106,20 @@ async function loadHotProducts() {
     allHotProducts = await getAllHotProducts();
     displayHotProducts(allHotProducts);
     updateHotProductStats(allHotProducts);
-    hideLoading();
   } catch (error) {
-    hideLoading();
     console.error('Error loading hot products:', error);
     document.getElementById('hotProductsTableBody').innerHTML = 
-      '<tr><td colspan="8" style="text-align:center;padding:40px;color:#f44336;">Error: ' + error.message + '</td></tr>';
+      '<tr><td colspan="7" style="text-align:center;padding:40px;color:#f44336;">Error: ' + error.message + '</td></tr>';
+  } finally {
+    hideLoading();
   }
-}
-
-function filterHotProducts() {
-  const category = document.getElementById('filterCategory').value;
-  const listed = document.getElementById('filterListed').value;
-
-  let filtered = allHotProducts;
-
-  if (category) {
-    filtered = filtered.filter(p => p.category === category);
-  }
-
-  if (listed) {
-    const isListed = listed === 'true';
-    filtered = filtered.filter(p => p.listed === isListed);
-  }
-
-  displayHotProducts(filtered);
 }
 
 function displayHotProducts(products) {
   const tbody = document.getElementById('hotProductsTableBody');
 
   if (!products || products.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:#999;">No products found</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:#999;">No products found</td></tr>';
     return;
   }
 
@@ -1469,26 +1127,25 @@ function displayHotProducts(products) {
     <tr>
       <td><strong>${p.id}</strong></td>
       <td>${p.category || ''}</td>
-      <td><a href="${p.productlink || '#'}" target="_blank" style="color:#1976D2;max-width:200px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${p.productlink || ''}">${(p.productlink || '').substring(0, 40)}...</a></td>
+      <td><a href="${p.productlink || '#'}" target="_blank" style="color:#1976D2;max-width:200px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(p.productlink || '').substring(0, 40)}...</a></td>
       <td>${p.salescount || 0}</td>
-      <td><input type="checkbox" ${p.listed ? 'checked' : ''} onchange="toggleListed(${p.id}, this.checked)" style="width:auto;"></td>
+      <td><input type="checkbox" ${p.listed ? 'checked' : ''} onchange="toggleProductListed(${p.id}, this.checked)" style="width:auto;"></td>
       <td><input type="text" value="${p.kaprukalink || ''}" id="kapruka_${p.id}" style="padding:8px;font-size:12px;" placeholder="Kapruka link"></td>
-      <td>${formatDate(p.createdat)}</td>
       <td>
         <div class="action-btns">
-          <button class="btn btn-primary" onclick="updateKaprukaLink(${p.id})" style="padding:8px 12px;font-size:12px;">Save Link</button>
-          <button class="btn btn-danger" onclick="deleteHotProduct(${p.id})" style="padding:8px 12px;font-size:12px;">Delete</button>
+          <button class="btn btn-primary btn-sm" onclick="updateKaprukaLink(${p.id})">Save Link</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteHotProductItem(${p.id})">Delete</button>
         </div>
       </td>
     </tr>
   `).join('');
 }
 
-async function toggleListed(productId, isListed) {
+async function toggleProductListed(productId, isListed) {
   try {
     await updateHotProduct(productId, { listed: isListed });
     alert('✅ Listed status updated!');
-    loadHotProducts();
+    await loadHotProducts();
   } catch (error) {
     alert('Error: ' + error.message);
   }
@@ -1502,14 +1159,14 @@ async function updateKaprukaLink(productId) {
     await updateHotProduct(productId, { kaprukalink: link });
     hideLoading();
     alert('✅ Kapruka link updated!');
-    loadHotProducts();
+    await loadHotProducts();
   } catch (error) {
     hideLoading();
     alert('Error: ' + error.message);
   }
 }
 
-async function deleteHotProduct(productId) {
+async function deleteHotProductItem(productId) {
   if (!confirm('Delete this product?')) return;
 
   try {
@@ -1517,7 +1174,7 @@ async function deleteHotProduct(productId) {
     await deleteHotProductById(productId);
     hideLoading();
     alert('✅ Product deleted!');
-    loadHotProducts();
+    await loadHotProducts();
   } catch (error) {
     hideLoading();
     alert('Error: ' + error.message);
@@ -1527,39 +1184,14 @@ async function deleteHotProduct(productId) {
 function updateHotProductStats(products) {
   const total = products.length;
   const listed = products.filter(p => p.listed).length;
-  const categories = [...new Set(products.map(p => p.category))].length;
 
   document.getElementById('adminTotalProducts').textContent = total;
   document.getElementById('adminListedProducts').textContent = listed;
-  document.getElementById('adminCategoryCount').textContent = categories;
 }
 
 // ═══════════════════════════════════════════════════════════════
 // DEPARTMENTS
 // ═══════════════════════════════════════════════════════════════
-
-document.getElementById('deptForm').addEventListener('submit', async function(e) {
-  e.preventDefault();
-
-  try {
-    showLoading();
-    await addDepartment({
-      month: document.getElementById('deptMonth').value,
-      department: document.getElementById('deptName').value,
-      budget: parseFloat(document.getElementById('deptBudget').value),
-      slots: 10,
-      color: '#E8F5E9',
-      active: 'Yes'
-    });
-    hideLoading();
-    alert('✅ Department added!');
-    this.reset();
-    loadDepartments();
-  } catch (error) {
-    hideLoading();
-    alert('Error: ' + error.message);
-  }
-});
 
 async function loadDepartments() {
   try {
@@ -1568,8 +1200,7 @@ async function loadDepartments() {
     const tbody = document.getElementById('deptsTable');
 
     if (!depts || depts.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:#999;">No departments found</td></tr>';
-      hideLoading();
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:#999;">No departments found</td></tr>';
       return;
     }
 
@@ -1580,30 +1211,14 @@ async function loadDepartments() {
         <td>$${d.budget || 0}k</td>
         <td>${d.slots || 0}</td>
         <td><span class="badge" style="background:${d.color || '#E8F5E9'};">${d.active || 'Yes'}</span></td>
-        <td><button class="btn btn-danger" onclick="deleteDepartment(${d.id})">Delete</button></td>
       </tr>
     `).join('');
-
-    hideLoading();
   } catch (error) {
-    hideLoading();
     console.error('Error loading departments:', error);
-    document.getElementById('deptsTable').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:#f44336;">Error loading data</td></tr>';
-  }
-}
-
-async function deleteDepartment(deptId) {
-  if (!confirm('Delete this department?')) return;
-
-  try {
-    showLoading();
-    await deleteDepartmentById(deptId);
+    document.getElementById('deptsTable').innerHTML = 
+      '<tr><td colspan="5" style="text-align:center;padding:40px;color:#f44336;">Error: ' + error.message + '</td></tr>';
+  } finally {
     hideLoading();
-    alert('✅ Department deleted!');
-    loadDepartments();
-  } catch (error) {
-    hideLoading();
-    alert('Error: ' + error.message);
   }
 }
   </script>
