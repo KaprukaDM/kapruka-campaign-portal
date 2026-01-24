@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard - Kapruka</title>
+  <title>Admin Dashboard - Kapruka Campaign Portal</title>
   <link rel="icon" type="image/png" href="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
@@ -17,11 +17,8 @@
     .container { max-width: 1800px; margin: 0 auto; }
     .header { text-align: center; margin-bottom: 50px; }
     .kapruka-logo {
-      width: 120px;
-      height: 120px;
-      margin: 0 auto 30px;
-      border-radius: 50%;
-      overflow: hidden;
+      width: 120px; height: 120px; margin: 0 auto 30px;
+      border-radius: 50%; overflow: hidden;
       box-shadow: 0 15px 50px rgba(0,0,0,0.5);
       animation: float 3s ease-in-out infinite;
     }
@@ -141,7 +138,6 @@
     .btn-warning { background: linear-gradient(135deg, #FFA726, #F57C00); color: white; }
     .btn-success { background: linear-gradient(135deg, #66BB6A, #43A047); color: white; }
     .btn-danger { background: linear-gradient(135deg, #EF5350, #E53935); color: white; }
-    .btn-complete { background: linear-gradient(135deg, #9E9E9E, #757575); color: white; }
     .table-container { overflow-x: auto; margin-top: 20px; }
     table {
       width: 100%;
@@ -181,16 +177,11 @@
     .badge-rejected { background: #FFCDD2; color: #C62828; }
     .badge-pending { background: #FFF9C4; color: #F57F17; }
     .badge-approved { background: #C8E6C9; color: #1B5E20; }
-    .badge-received { background: #E3F2FD; color: #1565C0; }
-    .badge-review { background: #FFF3E0; color: #E65100; }
     .action-btns { display: flex; gap: 8px; flex-wrap: wrap; }
     .action-btns button { padding: 8px 15px; font-size: 12px; }
     .loading {
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
+      top: 0; left: 0; right: 0; bottom: 0;
       background: rgba(0,0,0,0.85);
       display: none;
       align-items: center;
@@ -198,8 +189,7 @@
       z-index: 9999;
     }
     .spinner {
-      width: 60px;
-      height: 60px;
+      width: 60px; height: 60px;
       border: 5px solid rgba(255,215,0,0.3);
       border-top-color: #FFD700;
       border-radius: 50%;
@@ -208,10 +198,7 @@
     @keyframes spin { to { transform: rotate(360deg); } }
     .modal {
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
+      top: 0; left: 0; right: 0; bottom: 0;
       background: rgba(0,0,0,0.85);
       display: none;
       align-items: center;
@@ -236,8 +223,7 @@
     }
     .close-modal {
       position: absolute;
-      top: 20px;
-      right: 20px;
+      top: 20px; right: 20px;
       background: none;
       border: none;
       font-size: 32px;
@@ -335,30 +321,13 @@
       background: #E3F2FD;
       border-left-color: #1976D2;
     }
-    .studio-filters {
-      display: flex;
-      gap: 15px;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-    }
-    .studio-filters select {
-      padding: 12px;
-      border-radius: 8px;
-      border: 2px solid #e8e8e8;
-      min-width: 200px;
-    }
-    @media (max-width: 768px) {
-      h1 { font-size: 32px; }
-      .tabs { flex-direction: column; }
-      .tab-btn { width: 100%; }
-      table { font-size: 12px; }
-      th, td { padding: 10px; }
-      .calendar-grid { grid-template-columns: 1fr; }
-    }
   </style>
 </head>
 <body>
-  <div class="loading" id="loading"><div class="spinner"></div></div>
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+  </div>
+
   <div class="modal" id="modal">
     <div class="modal-content" id="modalContent"></div>
   </div>
@@ -369,20 +338,22 @@
         <img src="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw" alt="Kapruka">
       </div>
       <h1>Admin Dashboard</h1>
-      <p class="subtitle">Campaign Management</p>
+      <p class="subtitle">Campaign Management Portal</p>
     </div>
 
+    <!-- LOGIN SCREEN -->
     <div id="loginScreen" class="login-card">
       <h2>🔐 Admin Login</h2>
       <form id="loginForm">
         <div class="form-group">
           <label>Password</label>
-          <input type="password" id="adminPassword" required placeholder="Enter admin password">
+          <input type="password" id="adminPassword" required placeholder="Enter password (207)">
         </div>
         <button type="submit" class="btn btn-primary" style="width:100%;">Login</button>
       </form>
     </div>
 
+    <!-- ADMIN CONTENT -->
     <div id="adminContent" class="admin-content">
       <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('requests')">📋 Campaign Requests</button>
@@ -390,10 +361,11 @@
         <button class="tab-btn" onclick="switchTab('content')">📅 Content Calendar</button>
         <button class="tab-btn" onclick="switchTab('studio')">🎬 Studio Calendar</button>
         <button class="tab-btn" onclick="switchTab('hotproducts')">🔥 Hot Products</button>
-        <button class="tab-btn" onclick="switchTab('departments')">🏢 Department Config</button>
+        <button class="tab-btn" onclick="switchTab('departments')">🏢 Departments</button>
         <button class="tab-btn" style="margin-left:auto;background:#d32f2f;" onclick="logout()">Logout</button>
       </div>
 
+      <!-- TAB 1: CAMPAIGN REQUESTS -->
       <div id="tab-requests" class="tab-content active">
         <div class="card">
           <h2>📋 Campaign Requests</h2>
@@ -419,6 +391,7 @@
         </div>
       </div>
 
+      <!-- TAB 2: PRODUCT SUGGESTIONS -->
       <div id="tab-products" class="tab-content">
         <div class="card">
           <h2>💡 Product Suggestions</h2>
@@ -432,7 +405,7 @@
                   <th>Category</th>
                   <th>Margin %</th>
                   <th>Status</th>
-                  <th>Page</th>
+                  <th>Assigned Page</th>
                   <th>Slot</th>
                   <th>Actions</th>
                 </tr>
@@ -445,6 +418,7 @@
         </div>
       </div>
 
+      <!-- TAB 3: CONTENT CALENDAR -->
       <div id="tab-content" class="tab-content">
         <div class="card">
           <h2>📅 Add Content Theme</h2>
@@ -456,7 +430,7 @@
               </div>
               <div class="form-group">
                 <label>Slots Per Day</label>
-                <input type="number" id="slotsPerDay" required placeholder="3" min="1" max="10" value="3">
+                <input type="number" id="slotsPerDay" required value="3" min="1" max="10">
               </div>
               <div class="form-group">
                 <label>Start Date</label>
@@ -473,7 +447,7 @@
               <div class="form-group">
                 <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
                   <input type="checkbox" id="isSeasonal" style="width:auto;padding:0;">
-                  <span>Seasonal Theme (Any Category)</span>
+                  <span>Seasonal Theme</span>
                 </label>
               </div>
             </div>
@@ -525,8 +499,10 @@
         </div>
       </div>
 
+      <!-- TAB 4: STUDIO CALENDAR -->
       <div id="tab-studio" class="tab-content">
         <div class="card">
+          <!-- Stats Dashboard -->
           <div class="stats-grid">
             <div class="stat-card" style="background:#E8F5E9;">
               <div class="stat-number" style="color:#1B5E20;" id="totalSlots">0</div>
@@ -556,24 +532,13 @@
               <option value="1">January 2026</option>
               <option value="2">February 2026</option>
               <option value="3">March 2026</option>
+              <option value="4">April 2026</option>
+              <option value="5">May 2026</option>
+              <option value="6">June 2026</option>
             </select>
           </div>
 
-          <div class="studio-filters">
-            <select id="filterSource" onchange="applyStudioFilters()">
-              <option value="">All Sources</option>
-              <option value="lead_form">Lead Form Only</option>
-              <option value="content">Content Calendar Only</option>
-            </select>
-            <select id="filterStatus" onchange="applyStudioFilters()">
-              <option value="">All Statuses</option>
-              <option value="Received">Received</option>
-              <option value="Working">Working</option>
-              <option value="Submitted for Review">Submitted (Not Approved)</option>
-              <option value="Approved">Approved by Head</option>
-            </select>
-          </div>
-
+          <!-- Calendar Grid -->
           <div class="calendar-grid" id="studioCalendarGrid">
             <div class="calendar-day-header">Sun</div>
             <div class="calendar-day-header">Mon</div>
@@ -586,9 +551,11 @@
         </div>
       </div>
 
+      <!-- TAB 5: HOT PRODUCTS -->
       <div id="tab-hotproducts" class="tab-content">
         <div class="card">
           <h2>🔥 Hot Products Management</h2>
+
           <div class="stats-grid">
             <div class="stat-card" style="background:#E8F5E9;">
               <div class="stat-number" style="color:#1B5E20;" id="adminTotalProducts">0</div>
@@ -607,7 +574,7 @@
           <div style="background:#f9f9f9;padding:25px;border-radius:12px;margin-bottom:30px;">
             <h3 style="color:#5e3a8e;margin-bottom:20px;">➕ Add New Product</h3>
             <form id="addHotProductForm">
-              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:15px;">
+              <div style="display:grid;grid-template-columns:1fr 2fr 1fr;gap:15px;">
                 <div class="form-group">
                   <label>Category</label>
                   <select id="hotProductCategory" required>
@@ -616,6 +583,8 @@
                     <option value="Flowers">Flowers</option>
                     <option value="Chocolates">Chocolates</option>
                     <option value="Electronics">Electronics</option>
+                    <option value="Fashion">Fashion</option>
+                    <option value="Food & Restaurants">Food & Restaurants</option>
                   </select>
                 </div>
                 <div class="form-group">
@@ -632,16 +601,20 @@
           </div>
 
           <div style="display:flex;gap:15px;margin-bottom:20px;">
-            <select id="filterCategory" onchange="filterHotProducts()">
+            <select id="filterCategory" onchange="filterHotProducts()" style="padding:12px;border:2px solid #e8e8e8;border-radius:8px;flex:1;">
               <option value="">All Categories</option>
               <option value="Cakes">Cakes</option>
               <option value="Flowers">Flowers</option>
+              <option value="Chocolates">Chocolates</option>
+              <option value="Electronics">Electronics</option>
+              <option value="Fashion">Fashion</option>
             </select>
-            <select id="filterListed" onchange="filterHotProducts()">
+            <select id="filterListed" onchange="filterHotProducts()" style="padding:12px;border:2px solid #e8e8e8;border-radius:8px;">
               <option value="">All Status</option>
               <option value="true">Listed Only</option>
               <option value="false">Unlisted Only</option>
             </select>
+            <button onclick="loadHotProducts()" class="btn btn-primary">🔄 Refresh</button>
           </div>
 
           <div class="table-container">
@@ -654,17 +627,19 @@
                   <th>Sales</th>
                   <th>Listed</th>
                   <th>Kapruka Link</th>
+                  <th>Created</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody id="hotProductsTableBody">
-                <tr><td colspan="7" style="text-align:center;padding:40px;">Loading...</td></tr>
+                <tr><td colspan="8" style="text-align:center;padding:40px;">Loading...</td></tr>
               </tbody>
             </table>
           </div>
         </div>
       </div>
 
+      <!-- TAB 6: DEPARTMENTS -->
       <div id="tab-departments" class="tab-content">
         <div class="card">
           <h2>🏢 Add Department</h2>
@@ -675,15 +650,16 @@
                 <select id="deptMonth" required>
                   <option value="January 2026">January 2026</option>
                   <option value="February 2026">February 2026</option>
+                  <option value="March 2026">March 2026</option>
                 </select>
               </div>
               <div class="form-group">
                 <label>Department Name</label>
-                <input type="text" id="deptName" required>
+                <input type="text" id="deptName" required placeholder="e.g., Marketing">
               </div>
               <div class="form-group">
                 <label>Budget ($k)</label>
-                <input type="number" id="deptBudget" required>
+                <input type="number" id="deptBudget" required placeholder="e.g., 200">
               </div>
             </div>
             <button type="submit" class="btn btn-primary">Add Department</button>
@@ -691,7 +667,7 @@
         </div>
 
         <div class="card">
-          <h2>📋 Departments</h2>
+          <h2>📋 Existing Departments</h2>
           <div class="table-container">
             <table>
               <thead>
@@ -699,11 +675,13 @@
                   <th>Month</th>
                   <th>Department</th>
                   <th>Budget</th>
+                  <th>Slots</th>
+                  <th>Active</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody id="deptsTable">
-                <tr><td colspan="4" style="text-align:center;padding:40px;">Loading...</td></tr>
+                <tr><td colspan="6" style="text-align:center;padding:40px;">Loading...</td></tr>
               </tbody>
             </table>
           </div>
@@ -714,6 +692,9 @@
 
   <script src="js/supabase-api.js"></script>
   <script>
+// ═══════════════════════════════════════════════════════════════
+// CONFIGURATION
+// ═══════════════════════════════════════════════════════════════
 
 const APP_CONFIG = {
   PAGE_SCHEDULE: {
@@ -729,12 +710,49 @@ const APP_CONFIG = {
 
 let allHotProducts = [];
 
-function showLoading() { document.getElementById('loading').style.display = 'flex'; }
-function hideLoading() { document.getElementById('loading').style.display = 'none'; }
+// ═══════════════════════════════════════════════════════════════
+// UTILITY FUNCTIONS
+// ═══════════════════════════════════════════════════════════════
+
+function showLoading() {
+  document.getElementById('loading').style.display = 'flex';
+}
+
+function hideLoading() {
+  document.getElementById('loading').style.display = 'none';
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '-';
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-US', { 
+    month: 'short', 
+    day: 'numeric', 
+    year: 'numeric' 
+  });
+}
+
+function getBadgeClass(status) {
+  const map = {
+    'Request Submitted': 'submitted',
+    'Working': 'working',
+    'Live': 'live',
+    'Completed': 'completed',
+    'Rejected': 'rejected',
+    'Pending': 'pending',
+    'Approved': 'approved'
+  };
+  return map[status] || 'pending';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// AUTHENTICATION
+// ═══════════════════════════════════════════════════════════════
 
 document.getElementById('loginForm').addEventListener('submit', function(e) {
   e.preventDefault();
   const password = document.getElementById('adminPassword').value;
+
   if (password === '207') {
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('adminContent').style.display = 'block';
@@ -750,9 +768,14 @@ function logout() {
   document.getElementById('adminPassword').value = '';
 }
 
+// ═══════════════════════════════════════════════════════════════
+// TAB MANAGEMENT
+// ═══════════════════════════════════════════════════════════════
+
 function switchTab(tabName) {
   document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
   event.target.classList.add('active');
   document.getElementById('tab-' + tabName).classList.add('active');
 
@@ -773,11 +796,9 @@ document.getElementById('modal').addEventListener('click', function(e) {
   if (e.target.id === 'modal') closeModal();
 });
 
-function formatDate(dateStr) {
-  if (!dateStr) return '-';
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
+// ═══════════════════════════════════════════════════════════════
+// LOAD ALL DATA
+// ═══════════════════════════════════════════════════════════════
 
 async function loadAllData() {
   loadCampaignRequests();
@@ -792,6 +813,10 @@ async function loadAllData() {
   loadStudioCalendar();
 }
 
+// ═══════════════════════════════════════════════════════════════
+// CAMPAIGN REQUESTS
+// ═══════════════════════════════════════════════════════════════
+
 async function loadCampaignRequests() {
   try {
     showLoading();
@@ -799,7 +824,7 @@ async function loadCampaignRequests() {
     const tbody = document.getElementById('requestsTable');
 
     if (!requests || requests.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;">No requests found</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:#999;">No campaign requests found</td></tr>';
       hideLoading();
       return;
     }
@@ -812,17 +837,44 @@ async function loadCampaignRequests() {
         <td>${r.month || ''}</td>
         <td>${r.slot || ''}</td>
         <td>${r.campaign || ''}</td>
-        <td><span class="badge badge-pending">${r.status || 'Pending'}</span></td>
-        <td><button class="btn btn-success">Update</button></td>
+        <td><span class="badge badge-${getBadgeClass(r.status)}">${r.status || 'Pending'}</span></td>
+        <td>
+          <div class="action-btns">
+            ${r.status === 'Request Submitted' ? `<button class="btn btn-warning" onclick="updateRequestStatus('${r.request_id}', 'Working')">Working</button>` : ''}
+            ${r.status === 'Working' ? `<button class="btn btn-success" onclick="updateRequestStatus('${r.request_id}', 'Live')">Set Live</button>` : ''}
+            ${r.status === 'Live' ? `<button class="btn btn-primary" onclick="updateRequestStatus('${r.request_id}', 'Completed')">Complete</button>` : ''}
+            <button class="btn btn-danger" onclick="updateRequestStatus('${r.request_id}', 'Rejected')">Reject</button>
+          </div>
+        </td>
       </tr>
     `).join('');
+
     hideLoading();
   } catch (error) {
     hideLoading();
-    console.error('Error:', error);
+    console.error('Error loading requests:', error);
     document.getElementById('requestsTable').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:#f44336;">Error loading data</td></tr>';
   }
 }
+
+async function updateRequestStatus(requestId, newStatus) {
+  if (!confirm(`Update status to: ${newStatus}?`)) return;
+
+  try {
+    showLoading();
+    await updateCampaignRequest(requestId, { status: newStatus });
+    hideLoading();
+    alert('✅ Status updated!');
+    loadCampaignRequests();
+  } catch (error) {
+    hideLoading();
+    alert('Error: ' + error.message);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PRODUCT SUGGESTIONS
+// ═══════════════════════════════════════════════════════════════
 
 async function loadProductSuggestions() {
   try {
@@ -831,7 +883,7 @@ async function loadProductSuggestions() {
     const tbody = document.getElementById('productsTable');
 
     if (!products || products.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;">No products found</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:#999;">No product suggestions found</td></tr>';
       hideLoading();
       return;
     }
@@ -840,56 +892,156 @@ async function loadProductSuggestions() {
       <tr>
         <td><strong>${p.submission_id || ''}</strong></td>
         <td>${formatDate(p.submitted_at)}</td>
-        <td><a href="${p.product_link || '#'}" target="_blank">View</a></td>
+        <td><a href="${p.product_link || '#'}" target="_blank" style="color:#1976D2;">View Product</a></td>
         <td>${p.category || ''}</td>
         <td>${p.margin || 0}%</td>
-        <td><span class="badge badge-${p.status === 'Approved' ? 'approved' : 'pending'}">${p.status || 'Pending'}</span></td>
+        <td><span class="badge badge-${getBadgeClass(p.status)}">${p.status || 'Pending'}</span></td>
         <td>${p.assigned_page || '-'}</td>
-        <td>${p.slot_date ? formatDate(p.slot_date) : '-'}</td>
-        <td><button class="btn btn-success">Approve</button></td>
+        <td>${p.slot_date ? formatDate(p.slot_date) + ' #' + p.slot_number : '-'}</td>
+        <td>
+          <div class="action-btns">
+            ${p.status === 'Pending' ? `
+              <button class="btn btn-success" onclick="approveProduct('${p.submission_id}')">Approve</button>
+              <button class="btn btn-danger" onclick="rejectProduct('${p.submission_id}')">Reject</button>
+            ` : ''}
+            ${p.status === 'Approved' ? `
+              <button class="btn btn-warning" onclick="editProductApproval('${p.submission_id}')">Edit</button>
+            ` : ''}
+          </div>
+        </td>
       </tr>
     `).join('');
+
     hideLoading();
   } catch (error) {
     hideLoading();
-    console.error('Error:', error);
+    console.error('Error loading products:', error);
     document.getElementById('productsTable').innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:#f44336;">Error loading data</td></tr>';
   }
 }
 
-async function loadContentBookings() {
-  try {
-    showLoading();
-    const bookings = await getAllContentBookings();
-    const tbody = document.getElementById('contentTable');
+function approveProduct(submissionId) {
+  const pageOptions = Object.keys(APP_CONFIG.PAGE_SCHEDULE).map(p => 
+    `<option value="${p}">${p}</option>`
+  ).join('');
 
-    if (!bookings || bookings.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;">No bookings found</td></tr>';
-      hideLoading();
+  showModal(`
+    <button class="close-modal" onclick="closeModal()">×</button>
+    <h3>✅ Approve Product</h3>
+    <form id="approveForm">
+      <div class="form-group">
+        <label>Assign to Page</label>
+        <select id="assignPage" required onchange="loadAvailableSlots()">
+          <option value="">Select Page</option>
+          ${pageOptions}
+        </select>
+      </div>
+      <div class="form-group" id="slotSelection" style="display:none;">
+        <label>Select Slot</label>
+        <select id="assignSlot" required>
+          <option value="">Loading...</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-success">Approve & Assign</button>
+    </form>
+  `);
+
+  document.getElementById('approveForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const page = document.getElementById('assignPage').value;
+    const slotInfo = document.getElementById('assignSlot').value;
+
+    if (!slotInfo) {
+      alert('Please select a slot');
       return;
     }
 
-    tbody.innerHTML = bookings.map(b => `
-      <tr>
-        <td>${formatDate(b.date)}</td>
-        <td>Slot ${b.slot_number || ''}</td>
-        <td>${b.category || ''}</td>
-        <td>${b.product_code || '-'}</td>
-        <td>${b.page_name || '-'}</td>
-        <td><span class="badge badge-${b.status === 'Approved' ? 'approved' : 'pending'}">${b.status || 'Pending'}</span></td>
-        <td><button class="btn btn-success">Approve</button></td>
-      </tr>
-    `).join('');
+    const [slotDate, slotNumber] = slotInfo.split('|');
+
+    try {
+      showLoading();
+      await updateProductSuggestion(submissionId, {
+        status: 'Approved',
+        assigned_page: page,
+        slot_date: slotDate,
+        slot_number: parseInt(slotNumber),
+        reviewer_name: 'Admin',
+        reviewed_at: new Date().toISOString()
+      });
+      hideLoading();
+      closeModal();
+      alert('✅ Product approved and assigned!');
+      loadProductSuggestions();
+      loadStudioCalendar();
+    } catch (error) {
+      hideLoading();
+      alert('Error: ' + error.message);
+    }
+  });
+}
+
+function loadAvailableSlots() {
+  const page = document.getElementById('assignPage').value;
+  if (!page) return;
+
+  const schedule = APP_CONFIG.PAGE_SCHEDULE[page];
+  const slotSelect = document.getElementById('assignSlot');
+  const slotSection = document.getElementById('slotSelection');
+
+  slotSection.style.display = 'block';
+
+  const slots = [];
+  const today = new Date();
+
+  for (let i = 0; i < 14; i++) {
+    const checkDate = new Date(today);
+    checkDate.setDate(today.getDate() + i);
+
+    if (checkDate.getDay() === schedule.day) {
+      for (let s = 1; s <= schedule.slots; s++) {
+        const dateStr = checkDate.toISOString().split('T')[0];
+        slots.push(`<option value="${dateStr}|${s}">${formatDate(dateStr)} - Slot ${s}</option>`);
+      }
+    }
+  }
+
+  slotSelect.innerHTML = slots.length > 0 ? 
+    slots.join('') : 
+    '<option value="">No slots available</option>';
+}
+
+function editProductApproval(submissionId) {
+  approveProduct(submissionId);
+}
+
+async function rejectProduct(submissionId) {
+  const reason = prompt('Rejection reason:');
+  if (!reason) return;
+
+  try {
+    showLoading();
+    await updateProductSuggestion(submissionId, {
+      status: 'Rejected',
+      rejection_reason: reason,
+      reviewer_name: 'Admin',
+      reviewed_at: new Date().toISOString()
+    });
     hideLoading();
+    alert('✅ Product rejected');
+    loadProductSuggestions();
   } catch (error) {
     hideLoading();
-    console.error('Error:', error);
-    document.getElementById('contentTable').innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:#f44336;">Error loading data</td></tr>';
+    alert('Error: ' + error.message);
   }
 }
 
+// ═══════════════════════════════════════════════════════════════
+// CONTENT CALENDAR
+// ═══════════════════════════════════════════════════════════════
+
 document.getElementById('themeForm').addEventListener('submit', async function(e) {
   e.preventDefault();
+
   try {
     showLoading();
     await createTheme({
@@ -901,7 +1053,7 @@ document.getElementById('themeForm').addEventListener('submit', async function(e
       is_seasonal: document.getElementById('isSeasonal').checked
     });
     hideLoading();
-    alert('✅ Theme created!');
+    alert('✅ Theme created successfully!');
     this.reset();
     loadThemes();
   } catch (error) {
@@ -910,6 +1062,155 @@ document.getElementById('themeForm').addEventListener('submit', async function(e
   }
 });
 
+async function loadContentBookings() {
+  try {
+    showLoading();
+    const bookings = await getAllContentBookings();
+    const tbody = document.getElementById('contentTable');
+
+    if (!bookings || bookings.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:#999;">No content bookings found</td></tr>';
+      hideLoading();
+      return;
+    }
+
+    tbody.innerHTML = bookings.map(b => `
+      <tr>
+        <td>${formatDate(b.date)}</td>
+        <td>Slot ${b.slot_number || ''}</td>
+        <td>${b.category || ''}</td>
+        <td>${b.product_code || '-'}</td>
+        <td>${b.page_name || '-'}</td>
+        <td><span class="badge badge-${getBadgeClass(b.status)}">${b.status || 'Pending'}</span></td>
+        <td>
+          <div class="action-btns">
+            ${b.status === 'Pending' ? `
+              <button class="btn btn-success" onclick="approveBooking(${b.id})">Approve</button>
+              <button class="btn btn-danger" onclick="rejectBooking(${b.id})">Reject</button>
+            ` : ''}
+            ${b.status === 'Approved' ? `
+              <button class="btn btn-warning" onclick="editBooking(${b.id})">Edit</button>
+            ` : ''}
+          </div>
+        </td>
+      </tr>
+    `).join('');
+
+    hideLoading();
+  } catch (error) {
+    hideLoading();
+    console.error('Error loading bookings:', error);
+    document.getElementById('contentTable').innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:#f44336;">Error loading data</td></tr>';
+  }
+}
+
+async function approveBooking(bookingId) {
+  try {
+    showLoading();
+    await updateContentBooking(bookingId, { 
+      status: 'Approved',
+      reviewer: 'Admin',
+      reviewed_at: new Date().toISOString()
+    });
+    hideLoading();
+    alert('✅ Booking approved!');
+    loadContentBookings();
+    loadStudioCalendar();
+  } catch (error) {
+    hideLoading();
+    alert('Error: ' + error.message);
+  }
+}
+
+function editBooking(bookingId) {
+  showModal(`
+    <button class="close-modal" onclick="closeModal()">×</button>
+    <h3>✏️ Edit Booking</h3>
+    <form id="editBookingForm">
+      <div class="form-group">
+        <label>Product Code</label>
+        <input type="text" id="editProductCode" placeholder="PRODUCT001">
+      </div>
+      <div class="form-group">
+        <label>Or Reject with Reason</label>
+        <textarea id="editRejectReason" placeholder="Reason for rejection"></textarea>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button type="button" class="btn btn-success" onclick="saveBookingEdit(${bookingId})">Save Changes</button>
+        <button type="button" class="btn btn-danger" onclick="saveBookingReject(${bookingId})">Reject</button>
+      </div>
+    </form>
+  `);
+}
+
+async function saveBookingEdit(bookingId) {
+  const productCode = document.getElementById('editProductCode').value;
+  if (!productCode) {
+    alert('Enter product code');
+    return;
+  }
+
+  try {
+    showLoading();
+    await updateContentBooking(bookingId, { 
+      product_code: productCode,
+      status: 'Approved',
+      reviewer: 'Admin'
+    });
+    hideLoading();
+    closeModal();
+    alert('✅ Booking updated!');
+    loadContentBookings();
+  } catch (error) {
+    hideLoading();
+    alert('Error: ' + error.message);
+  }
+}
+
+async function saveBookingReject(bookingId) {
+  const reason = document.getElementById('editRejectReason').value;
+  if (!reason) {
+    alert('Enter rejection reason');
+    return;
+  }
+
+  try {
+    showLoading();
+    await updateContentBooking(bookingId, { 
+      status: 'Rejected',
+      rejection_reason: reason,
+      reviewer: 'Admin'
+    });
+    hideLoading();
+    closeModal();
+    alert('✅ Booking rejected');
+    loadContentBookings();
+  } catch (error) {
+    hideLoading();
+    alert('Error: ' + error.message);
+  }
+}
+
+async function rejectBooking(bookingId) {
+  const reason = prompt('Rejection reason:');
+  if (!reason) return;
+
+  try {
+    showLoading();
+    await updateContentBooking(bookingId, { 
+      status: 'Rejected',
+      rejection_reason: reason,
+      reviewer: 'Admin'
+    });
+    hideLoading();
+    alert('✅ Booking rejected');
+    loadContentBookings();
+  } catch (error) {
+    hideLoading();
+    alert('Error: ' + error.message);
+  }
+}
+
 async function loadThemes() {
   try {
     showLoading();
@@ -917,7 +1218,7 @@ async function loadThemes() {
     const tbody = document.getElementById('themesTable');
 
     if (!themes || themes.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;">No themes found</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:#999;">No themes found</td></tr>';
       hideLoading();
       return;
     }
@@ -929,16 +1230,36 @@ async function loadThemes() {
         <td>${formatDate(t.end_date)}</td>
         <td>${t.slots_per_day || 0}</td>
         <td>${t.is_seasonal ? 'Seasonal' : 'Daily'}</td>
-        <td><button class="btn btn-danger">Delete</button></td>
+        <td><button class="btn btn-danger" onclick="deleteTheme(${t.id})">Delete</button></td>
       </tr>
     `).join('');
+
     hideLoading();
   } catch (error) {
     hideLoading();
-    console.error('Error:', error);
+    console.error('Error loading themes:', error);
     document.getElementById('themesTable').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:#f44336;">Error loading data</td></tr>';
   }
 }
+
+async function deleteTheme(themeId) {
+  if (!confirm('Delete this theme?')) return;
+
+  try {
+    showLoading();
+    await deleteThemeById(themeId);
+    hideLoading();
+    alert('✅ Theme deleted');
+    loadThemes();
+  } catch (error) {
+    hideLoading();
+    alert('Error: ' + error.message);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STUDIO CALENDAR
+// ═══════════════════════════════════════════════════════════════
 
 async function loadStudioCalendar() {
   try {
@@ -950,28 +1271,32 @@ async function loadStudioCalendar() {
     const bookings = await getAllContentBookings();
 
     const approvedProducts = products.filter(p => 
-      p.status === 'Approved' && p.slot_date && 
+      p.status === 'Approved' && 
+      p.slot_date && 
       new Date(p.slot_date).getMonth() + 1 === month
     );
 
     const approvedBookings = bookings.filter(b => 
-      b.status === 'Approved' && b.date && 
+      b.status === 'Approved' && 
+      b.date && 
       new Date(b.date).getMonth() + 1 === month
     );
 
     renderStudioCalendar(year, month, approvedProducts, approvedBookings);
-    updateStudioStats(approvedProducts, approvedBookings);
+    updateStudioStats(year, month, approvedProducts, approvedBookings);
 
     hideLoading();
   } catch (error) {
     hideLoading();
-    console.error('Error:', error);
+    console.error('Error loading studio calendar:', error);
+    alert('Error loading calendar: ' + error.message);
   }
 }
 
 function renderStudioCalendar(year, month, products, bookings) {
   const grid = document.getElementById('studioCalendarGrid');
 
+  // Clear existing days (keep headers)
   while (grid.children.length > 7) {
     grid.removeChild(grid.lastChild);
   }
@@ -979,24 +1304,34 @@ function renderStudioCalendar(year, month, products, bookings) {
   const firstDay = new Date(year, month - 1, 1).getDay();
   const daysInMonth = new Date(year, month, 0).getDate();
 
+  // Empty cells before month starts
   for (let i = 0; i < firstDay; i++) {
-    grid.innerHTML += '<div class="calendar-day empty"></div>';
+    const emptyDiv = document.createElement('div');
+    emptyDiv.className = 'calendar-day empty';
+    grid.appendChild(emptyDiv);
   }
 
+  // Days of the month
   for (let day = 1; day <= daysInMonth; day++) {
     const date = new Date(year, month - 1, day);
     const dateStr = date.toISOString().split('T')[0];
     const dayOfWeek = date.getDay();
 
-    const pageInfo = Object.entries(APP_CONFIG.PAGE_SCHEDULE).find(([name, info]) => info.day === dayOfWeek);
+    // Get page for this day
+    const pageInfo = Object.entries(APP_CONFIG.PAGE_SCHEDULE).find(
+      ([name, info]) => info.day === dayOfWeek
+    );
 
-    let dayHtml = '<div class="calendar-day">';
-    dayHtml += `<div class="day-number">${day}</div>`;
+    const dayDiv = document.createElement('div');
+    dayDiv.className = 'calendar-day';
+
+    let dayHtml = `<div class="day-number">${day}</div>`;
 
     if (pageInfo) {
       const [pageName, schedule] = pageInfo;
       dayHtml += `<div class="day-page">${pageName}</div>`;
 
+      // Show 3 lead form slots
       for (let slot = 1; slot <= schedule.slots; slot++) {
         const product = products.find(p => 
           p.slot_date === dateStr && p.slot_number === slot
@@ -1009,29 +1344,55 @@ function renderStudioCalendar(year, month, products, bookings) {
         }
       }
 
+      // Show content calendar items
       const contentItems = bookings.filter(b => b.date === dateStr);
       contentItems.forEach(c => {
         dayHtml += `<div class="slot-badge content">${c.product_code || 'Content'}</div>`;
       });
     }
 
-    dayHtml += '</div>';
-    grid.innerHTML += dayHtml;
+    dayDiv.innerHTML = dayHtml;
+    grid.appendChild(dayDiv);
   }
 }
 
-function updateStudioStats(products, bookings) {
-  const totalSlots = products.length + bookings.length;
+function updateStudioStats(year, month, products, bookings) {
+  // Calculate total lead form slots for the month
+  const daysInMonth = new Date(year, month, 0).getDate();
+  let totalLeadSlots = 0;
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(year, month - 1, day);
+    const dayOfWeek = date.getDay();
+    const pageInfo = Object.entries(APP_CONFIG.PAGE_SCHEDULE).find(
+      ([name, info]) => info.day === dayOfWeek
+    );
+    if (pageInfo) {
+      totalLeadSlots += pageInfo[1].slots;
+    }
+  }
+
+  const filledLeadSlots = products.length;
+  const contentItems = bookings.length;
+  const totalSlots = totalLeadSlots + contentItems;
+  const filledSlots = filledLeadSlots + contentItems;
+
+  // Mock completion data (extend with actual status tracking)
+  const completedItems = Math.floor(filledSlots * 0.6);
+  const approvedItems = Math.floor(filledSlots * 0.4);
+  const completionRate = totalSlots > 0 ? 
+    Math.round((completedItems / totalSlots) * 100) : 0;
+
   document.getElementById('totalSlots').textContent = totalSlots;
-  document.getElementById('filledSlots').textContent = products.length;
-  document.getElementById('completedItems').textContent = Math.floor(totalSlots * 0.6);
-  document.getElementById('approvedItems').textContent = Math.floor(totalSlots * 0.4);
-  document.getElementById('completionRate').textContent = totalSlots > 0 ? '60%' : '0%';
+  document.getElementById('filledSlots').textContent = filledSlots;
+  document.getElementById('completedItems').textContent = completedItems;
+  document.getElementById('approvedItems').textContent = approvedItems;
+  document.getElementById('completionRate').textContent = completionRate + '%';
 }
 
-function applyStudioFilters() {
-  loadStudioCalendar();
-}
+// ═══════════════════════════════════════════════════════════════
+// HOT PRODUCTS
+// ═══════════════════════════════════════════════════════════════
 
 document.getElementById('addHotProductForm').addEventListener('submit', async function(e) {
   e.preventDefault();
@@ -1041,7 +1402,7 @@ document.getElementById('addHotProductForm').addEventListener('submit', async fu
   const salesCount = document.getElementById('hotProductSales').value;
 
   if (!category || !productLink) {
-    alert('Please fill in all fields');
+    alert('Please fill in all required fields');
     return;
   }
 
@@ -1054,12 +1415,12 @@ document.getElementById('addHotProductForm').addEventListener('submit', async fu
       listed: false
     });
     hideLoading();
-    alert('✅ Product added!');
+    alert('✅ Product added successfully!');
     this.reset();
     loadHotProducts();
   } catch (error) {
     hideLoading();
-    alert('Error: ' + error.message);
+    alert('Error adding product: ' + error.message);
   }
 });
 
@@ -1072,9 +1433,9 @@ async function loadHotProducts() {
     hideLoading();
   } catch (error) {
     hideLoading();
-    console.error('Error:', error);
+    console.error('Error loading hot products:', error);
     document.getElementById('hotProductsTableBody').innerHTML = 
-      '<tr><td colspan="7" style="text-align:center;padding:40px;color:#f44336;">Error: ' + error.message + '</td></tr>';
+      '<tr><td colspan="8" style="text-align:center;padding:40px;color:#f44336;">Error: ' + error.message + '</td></tr>';
   }
 }
 
@@ -1100,7 +1461,7 @@ function displayHotProducts(products) {
   const tbody = document.getElementById('hotProductsTableBody');
 
   if (!products || products.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;">No products found</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:#999;">No products found</td></tr>';
     return;
   }
 
@@ -1108,13 +1469,16 @@ function displayHotProducts(products) {
     <tr>
       <td><strong>${p.id}</strong></td>
       <td>${p.category || ''}</td>
-      <td><a href="${p.productlink || '#'}" target="_blank" style="color:#1976D2;">${(p.productlink || '').substring(0, 40)}...</a></td>
+      <td><a href="${p.productlink || '#'}" target="_blank" style="color:#1976D2;max-width:200px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${p.productlink || ''}">${(p.productlink || '').substring(0, 40)}...</a></td>
       <td>${p.salescount || 0}</td>
       <td><input type="checkbox" ${p.listed ? 'checked' : ''} onchange="toggleListed(${p.id}, this.checked)" style="width:auto;"></td>
-      <td><input type="text" value="${p.kaprukalink || ''}" id="kapruka_${p.id}" style="padding:8px;" placeholder="Kapruka link"></td>
+      <td><input type="text" value="${p.kaprukalink || ''}" id="kapruka_${p.id}" style="padding:8px;font-size:12px;" placeholder="Kapruka link"></td>
+      <td>${formatDate(p.createdat)}</td>
       <td>
-        <button class="btn btn-primary" onclick="updateKaprukaLink(${p.id})" style="padding:8px;">Save</button>
-        <button class="btn btn-danger" onclick="deleteHotProduct(${p.id})" style="padding:8px;">Delete</button>
+        <div class="action-btns">
+          <button class="btn btn-primary" onclick="updateKaprukaLink(${p.id})" style="padding:8px 12px;font-size:12px;">Save Link</button>
+          <button class="btn btn-danger" onclick="deleteHotProduct(${p.id})" style="padding:8px 12px;font-size:12px;">Delete</button>
+        </div>
       </td>
     </tr>
   `).join('');
@@ -1123,7 +1487,7 @@ function displayHotProducts(products) {
 async function toggleListed(productId, isListed) {
   try {
     await updateHotProduct(productId, { listed: isListed });
-    alert('✅ Updated!');
+    alert('✅ Listed status updated!');
     loadHotProducts();
   } catch (error) {
     alert('Error: ' + error.message);
@@ -1132,11 +1496,12 @@ async function toggleListed(productId, isListed) {
 
 async function updateKaprukaLink(productId) {
   const link = document.getElementById('kapruka_' + productId).value;
+
   try {
     showLoading();
     await updateHotProduct(productId, { kaprukalink: link });
     hideLoading();
-    alert('✅ Link updated!');
+    alert('✅ Kapruka link updated!');
     loadHotProducts();
   } catch (error) {
     hideLoading();
@@ -1146,11 +1511,12 @@ async function updateKaprukaLink(productId) {
 
 async function deleteHotProduct(productId) {
   if (!confirm('Delete this product?')) return;
+
   try {
     showLoading();
     await deleteHotProductById(productId);
     hideLoading();
-    alert('✅ Deleted!');
+    alert('✅ Product deleted!');
     loadHotProducts();
   } catch (error) {
     hideLoading();
@@ -1168,8 +1534,13 @@ function updateHotProductStats(products) {
   document.getElementById('adminCategoryCount').textContent = categories;
 }
 
+// ═══════════════════════════════════════════════════════════════
+// DEPARTMENTS
+// ═══════════════════════════════════════════════════════════════
+
 document.getElementById('deptForm').addEventListener('submit', async function(e) {
   e.preventDefault();
+
   try {
     showLoading();
     await addDepartment({
@@ -1197,7 +1568,7 @@ async function loadDepartments() {
     const tbody = document.getElementById('deptsTable');
 
     if (!depts || depts.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:40px;">No departments found</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:#999;">No departments found</td></tr>';
       hideLoading();
       return;
     }
@@ -1207,14 +1578,32 @@ async function loadDepartments() {
         <td>${d.month || ''}</td>
         <td><strong>${d.department || ''}</strong></td>
         <td>$${d.budget || 0}k</td>
-        <td><button class="btn btn-danger">Delete</button></td>
+        <td>${d.slots || 0}</td>
+        <td><span class="badge" style="background:${d.color || '#E8F5E9'};">${d.active || 'Yes'}</span></td>
+        <td><button class="btn btn-danger" onclick="deleteDepartment(${d.id})">Delete</button></td>
       </tr>
     `).join('');
+
     hideLoading();
   } catch (error) {
     hideLoading();
-    console.error('Error:', error);
-    document.getElementById('deptsTable').innerHTML = '<tr><td colspan="4" style="text-align:center;padding:40px;color:#f44336;">Error loading data</td></tr>';
+    console.error('Error loading departments:', error);
+    document.getElementById('deptsTable').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:#f44336;">Error loading data</td></tr>';
+  }
+}
+
+async function deleteDepartment(deptId) {
+  if (!confirm('Delete this department?')) return;
+
+  try {
+    showLoading();
+    await deleteDepartmentById(deptId);
+    hideLoading();
+    alert('✅ Department deleted!');
+    loadDepartments();
+  } catch (error) {
+    hideLoading();
+    alert('Error: ' + error.message);
   }
 }
   </script>
