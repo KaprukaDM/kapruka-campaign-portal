@@ -277,6 +277,13 @@
       min-width: 120px;
     }
     .detail-value { color: #333; }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    .stat-card { padding: 20px; border-radius: 12px; }
     @media (max-width: 768px) {
       h1 { font-size: 32px; }
       .tabs { flex-direction: column; }
@@ -320,6 +327,7 @@
         <button class="tab-btn" onclick="switchTab('products')">💡 Product Suggestions</button>
         <button class="tab-btn" onclick="switchTab('content')">📅 Content Calendar</button>
         <button class="tab-btn" onclick="switchTab('studio')">🎬 Studio Calendar</button>
+        <button class="tab-btn" onclick="switchTab('hotproducts')">🔥 Hot Products</button>
         <button class="tab-btn" onclick="switchTab('departments')">🏢 Department Config</button>
         <button class="tab-btn" style="margin-left:auto;background:#d32f2f;" onclick="logout()">Logout</button>
       </div>
@@ -484,6 +492,124 @@
         </div>
       </div>
 
+      <!-- HOT PRODUCTS TAB -->
+      <div id="tab-hotproducts" class="tab-content">
+        <div class="card">
+          <h2>🔥 Hot Products Management</h2>
+          <p style="color:#666;margin-bottom:25px;">Add and manage hot product suggestions by category</p>
+
+          <div class="stats-grid">
+            <div class="stat-card" style="background:#E8F5E9;">
+              <div style="color:#2E7D32;font-size:12px;font-weight:600;text-transform:uppercase;margin-bottom:8px;">Total Products</div>
+              <div style="color:#1B5E20;font-size:32px;font-weight:700;" id="adminTotalProducts">0</div>
+            </div>
+            <div class="stat-card" style="background:#E3F2FD;">
+              <div style="color:#1565C0;font-size:12px;font-weight:600;text-transform:uppercase;margin-bottom:8px;">Listed Products</div>
+              <div style="color:#0D47A1;font-size:32px;font-weight:700;" id="adminListedProducts">0</div>
+            </div>
+            <div class="stat-card" style="background:#FFF3E0;">
+              <div style="color:#E65100;font-size:12px;font-weight:600;text-transform:uppercase;margin-bottom:8px;">Categories</div>
+              <div style="color:#BF360C;font-size:32px;font-weight:700;" id="adminCategoryCount">0</div>
+            </div>
+          </div>
+
+          <div style="background:#f9f9f9;padding:25px;border-radius:12px;margin-bottom:30px;">
+            <h3 style="color:#5e3a8e;margin-bottom:20px;">➕ Add New Product</h3>
+            <form id="addHotProductForm" style="display:grid;gap:15px;">
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:15px;">
+                <div class="form-group">
+                  <label>Category</label>
+                  <select id="hotProductCategory" required>
+                    <option value="">Select Category</option>
+                    <option value="Cakes">Cakes</option>
+                    <option value="Flowers">Flowers</option>
+                    <option value="Chocolates">Chocolates</option>
+                    <option value="Clothing">Clothing</option>
+                    <option value="Electronics">Electronics</option>
+                    <option value="Fashion">Fashion</option>
+                    <option value="Food & Restaurants">Food & Restaurants</option>
+                    <option value="Fruits">Fruits</option>
+                    <option value="Soft Toys & Kids Toys">Soft Toys & Kids Toys</option>
+                    <option value="Grocery & Hampers">Grocery & Hampers</option>
+                    <option value="Greeting Cards & Party Supplies">Greeting Cards & Party Supplies</option>
+                    <option value="Sports and Bicycles">Sports and Bicycles</option>
+                    <option value="Mother and Baby">Mother and Baby</option>
+                    <option value="Jewellery and Watches">Jewellery and Watches</option>
+                    <option value="Cosmetics & Perfumes">Cosmetics & Perfumes</option>
+                    <option value="Customized Gifts">Customized Gifts</option>
+                    <option value="Health and Wellness">Health and Wellness</option>
+                    <option value="Home & Lifestyle">Home & Lifestyle</option>
+                    <option value="Combo and Gift Sets">Combo and Gift Sets</option>
+                    <option value="Books & Stationery">Books & Stationery</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Product Link</label>
+                  <input type="url" id="hotProductLink" required placeholder="https://example.com/product">
+                </div>
+                <div class="form-group">
+                  <label>Sales Count</label>
+                  <input type="number" id="hotProductSales" value="0" min="0">
+                </div>
+              </div>
+              <button type="submit" class="btn btn-primary">➕ Add Product</button>
+            </form>
+          </div>
+
+          <div style="display:flex;gap:15px;margin-bottom:20px;flex-wrap:wrap;">
+            <select id="filterCategory" onchange="filterHotProducts()" style="padding:12px;border:2px solid #e8e8e8;border-radius:8px;flex:1;min-width:200px;">
+              <option value="">All Categories</option>
+              <option value="Cakes">Cakes</option>
+              <option value="Flowers">Flowers</option>
+              <option value="Chocolates">Chocolates</option>
+              <option value="Clothing">Clothing</option>
+              <option value="Electronics">Electronics</option>
+              <option value="Fashion">Fashion</option>
+              <option value="Food & Restaurants">Food & Restaurants</option>
+              <option value="Fruits">Fruits</option>
+              <option value="Soft Toys & Kids Toys">Soft Toys & Kids Toys</option>
+              <option value="Grocery & Hampers">Grocery & Hampers</option>
+              <option value="Greeting Cards & Party Supplies">Greeting Cards & Party Supplies</option>
+              <option value="Sports and Bicycles">Sports and Bicycles</option>
+              <option value="Mother and Baby">Mother and Baby</option>
+              <option value="Jewellery and Watches">Jewellery and Watches</option>
+              <option value="Cosmetics & Perfumes">Cosmetics & Perfumes</option>
+              <option value="Customized Gifts">Customized Gifts</option>
+              <option value="Health and Wellness">Health and Wellness</option>
+              <option value="Home & Lifestyle">Home & Lifestyle</option>
+              <option value="Combo and Gift Sets">Combo and Gift Sets</option>
+              <option value="Books & Stationery">Books & Stationery</option>
+            </select>
+            <select id="filterListed" onchange="filterHotProducts()" style="padding:12px;border:2px solid #e8e8e8;border-radius:8px;min-width:150px;">
+              <option value="">All Status</option>
+              <option value="true">Listed Only</option>
+              <option value="false">Unlisted Only</option>
+            </select>
+            <button onclick="loadHotProducts()" class="btn btn-primary">🔄 Refresh</button>
+          </div>
+
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Category</th>
+                  <th>Product Link</th>
+                  <th>Sales</th>
+                  <th>Listed</th>
+                  <th>Kapruka Link</th>
+                  <th>Created</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="hotProductsTableBody">
+                <tr><td colspan="8" style="text-align:center;padding:40px;color:#999;">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       <!-- Department Config Tab -->
       <div id="tab-departments" class="tab-content">
         <div class="card">
@@ -561,6 +687,7 @@
 
   <script>
     let isLoggedIn = false;
+    let allHotProducts = [];
 
     function showLoading() { document.getElementById('loading').style.display = 'flex'; }
     function hideLoading() { document.getElementById('loading').style.display = 'none'; }
@@ -598,6 +725,7 @@
       document.getElementById('tab-' + tab).classList.add('active');
       if (tab === 'content') loadContentData();
       if (tab === 'studio') loadStudioCalendar();
+      if (tab === 'hotproducts') loadHotProducts();
     }
 
     async function loadAllData() {
@@ -620,25 +748,25 @@
           if (r.status === 'Live') badgeClass = 'badge-live';
           if (r.status === 'Rejected') badgeClass = 'badge-rejected';
           if (r.status === 'Completed') badgeClass = 'badge-completed';
-          return \`
+          return `
             <tr>
-              <td>\${r.requestId}</td>
-              <td>\${new Date(r.timestamp).toLocaleDateString()}</td>
-              <td>\${r.department}</td>
-              <td>\${r.month}</td>
-              <td>\${r.slot}</td>
-              <td>\${r.campaign}</td>
-              <td><span class="badge \${badgeClass}">\${r.status}</span></td>
+              <td>${r.requestId}</td>
+              <td>${new Date(r.timestamp).toLocaleDateString()}</td>
+              <td>${r.department}</td>
+              <td>${r.month}</td>
+              <td>${r.slot}</td>
+              <td>${r.campaign}</td>
+              <td><span class="badge ${badgeClass}">${r.status}</span></td>
               <td>
                 <div class="action-btns">
-                  <button class="btn btn-warning" onclick="updateStatus(\${r.row}, 'Working')">Working</button>
-                  <button class="btn btn-success" onclick="updateStatus(\${r.row}, 'Live')">Live</button>
-                  <button class="btn btn-complete" onclick="updateStatus(\${r.row}, 'Completed')">Complete</button>
-                  <button class="btn btn-danger" onclick="updateStatus(\${r.row}, 'Rejected')">Reject</button>
+                  <button class="btn btn-warning" onclick="updateStatus(${r.row}, 'Working')">Working</button>
+                  <button class="btn btn-success" onclick="updateStatus(${r.row}, 'Live')">Live</button>
+                  <button class="btn btn-complete" onclick="updateStatus(${r.row}, 'Completed')">Complete</button>
+                  <button class="btn btn-danger" onclick="updateStatus(${r.row}, 'Rejected')">Reject</button>
                 </div>
               </td>
             </tr>
-          \`;
+          `;
         }).join('');
       } catch (error) {
         document.getElementById('requestsTable').innerHTML = 
@@ -654,7 +782,7 @@
         showLoading();
         await updateRequestStatus(row, status, reviewer, comments || '');
         hideLoading();
-        alert(\`Status updated to: \${status}\`);
+        alert(`Status updated to: ${status}`);
         loadRequests();
       } catch (error) {
         hideLoading();
@@ -674,26 +802,26 @@
         tbody.innerHTML = products.map(p => {
           let badgeClass = p.status === 'Approved' ? 'badge-approved' : 
                           p.status === 'Rejected' ? 'badge-rejected' : 'badge-pending';
-          const slotInfo = p.slotDate ? \`\${p.slotDate} #\${p.slotNumber}\` : '-';
+          const slotInfo = p.slotDate ? `${p.slotDate} #${p.slotNumber}` : '-';
           const actions = p.status === 'Pending' 
-            ? \`
-              <button class="btn btn-success" onclick="reviewProduct(\${p.row}, 'Approved')">Approve</button>
-              <button class="btn btn-danger" onclick="reviewProduct(\${p.row}, 'Rejected')">Reject</button>
-            \`
-            : \`<button class="btn btn-warning" onclick="editProduct(\${p.row})">Edit</button>\`;
-          return \`
+            ? `
+              <button class="btn btn-success" onclick="reviewProduct(${p.row}, 'Approved')">Approve</button>
+              <button class="btn btn-danger" onclick="reviewProduct(${p.row}, 'Rejected')">Reject</button>
+            `
+            : `<button class="btn btn-warning" onclick="editProduct(${p.row})">Edit</button>`;
+          return `
             <tr>
-              <td>\${p.submissionId}</td>
-              <td>\${new Date(p.timestamp).toLocaleDateString()}</td>
-              <td><a href="\${p.productLink}" target="_blank" style="color:#5e3a8e;">View</a></td>
-              <td>\${p.category}</td>
-              <td>\${p.margin}%</td>
-              <td><span class="badge \${badgeClass}">\${p.status}</span></td>
-              <td>\${p.assignedPage || '-'}</td>
-              <td>\${slotInfo}</td>
-              <td><div class="action-btns">\${actions}</div></td>
+              <td>${p.submissionId}</td>
+              <td>${new Date(p.timestamp).toLocaleDateString()}</td>
+              <td><a href="${p.productLink}" target="_blank" style="color:#5e3a8e;">View</a></td>
+              <td>${p.category}</td>
+              <td>${p.margin}%</td>
+              <td><span class="badge ${badgeClass}">${p.status}</span></td>
+              <td>${p.assignedPage || '-'}</td>
+              <td>${slotInfo}</td>
+              <td><div class="action-btns">${actions}</div></td>
             </tr>
-          \`;
+          `;
         }).join('');
       } catch (error) {
         document.getElementById('productsTable').innerHTML = 
@@ -723,7 +851,7 @@
     }
 
     function showApprovalModal(row, reviewerName) {
-      const content = \`
+      const content = `
         <button class="close-modal" onclick="closeModal()">×</button>
         <h3>✅ Approve Product</h3>
         <form id="approvalForm">
@@ -747,7 +875,7 @@
           </div>
           <button type="submit" class="btn btn-success" style="width:100%;">Approve</button>
         </form>
-      \`;
+      `;
       showModal(content);
       document.getElementById('approvalForm').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -789,16 +917,16 @@
         let html = '';
         data.slots.forEach(slot => {
           const disabled = !slot.available ? 'disabled' : '';
-          const label = slot.available ? '✅ Available' : \`❌ \${slot.bookedBy}\`;
+          const label = slot.available ? '✅ Available' : `❌ ${slot.bookedBy}`;
           const bg = slot.available ? '#d4edda' : '#f8d7da';
-          html += \`
-            <div style="padding:10px;margin:5px 0;background:\${bg};border-radius:5px;">
+          html += `
+            <div style="padding:10px;margin:5px 0;background:${bg};border-radius:5px;">
               <label>
-                <input type="radio" name="selectedSlot" value="\${slot.date}|\${slot.slotNumber}" \${disabled}>
-                <strong>\${slot.date}</strong> - Slot \${slot.slotNumber} - \${label}
+                <input type="radio" name="selectedSlot" value="${slot.date}|${slot.slotNumber}" ${disabled}>
+                <strong>${slot.date}</strong> - Slot ${slot.slotNumber} - ${label}
               </label>
             </div>
-          \`;
+          `;
         });
         document.getElementById('slotsList').innerHTML = html;
         document.getElementById('slotSelection').style.display = 'block';
@@ -824,21 +952,21 @@
         tbody.innerHTML = bookings.map(b => {
           const statusClass = b.status.toLowerCase();
           const actions = b.status === 'Pending' 
-            ? \`
-              <button class="btn btn-success" onclick="approveContent(\${b.id})">Approve</button>
-              <button class="btn btn-danger" onclick="rejectContent(\${b.id})">Reject</button>
-            \` : '-';
-          return \`
+            ? `
+              <button class="btn btn-success" onclick="approveContent(${b.id})">Approve</button>
+              <button class="btn btn-danger" onclick="rejectContent(${b.id})">Reject</button>
+            ` : '-';
+          return `
             <tr>
-              <td>\${b.date}</td>
-              <td>\${b.slotNumber}</td>
-              <td>\${b.category}</td>
-              <td>\${b.productCode}</td>
-              <td>\${b.pageName || '-'}</td>
-              <td><span class="badge badge-\${statusClass}">\${b.status}</span></td>
-              <td>\${actions}</td>
+              <td>${b.date}</td>
+              <td>${b.slotNumber}</td>
+              <td>${b.category}</td>
+              <td>${b.productCode}</td>
+              <td>${b.pageName || '-'}</td>
+              <td><span class="badge badge-${statusClass}">${b.status}</span></td>
+              <td>${actions}</td>
             </tr>
-          \`;
+          `;
         }).join('');
       } catch (error) {
         document.getElementById('contentTable').innerHTML = 
@@ -888,16 +1016,16 @@
         }
         tbody.innerHTML = themes.map(t => {
           const type = t.is_seasonal ? '🎉 Seasonal' : '📅 Daily';
-          return \`
+          return `
             <tr>
-              <td>\${t.theme_name}</td>
-              <td>\${t.start_date}</td>
-              <td>\${t.end_date}</td>
-              <td>\${t.slots_per_day}</td>
-              <td>\${type}</td>
-              <td><button class="btn btn-danger" onclick="deleteThemeById(\${t.id})">Delete</button></td>
+              <td>${t.theme_name}</td>
+              <td>${t.start_date}</td>
+              <td>${t.end_date}</td>
+              <td>${t.slots_per_day}</td>
+              <td>${type}</td>
+              <td><button class="btn btn-danger" onclick="deleteThemeById(${t.id})">Delete</button></td>
             </tr>
-          \`;
+          `;
         }).join('');
       } catch (error) {
         document.getElementById('themesTable').innerHTML = 
@@ -959,33 +1087,33 @@
           if (item.status === 'empty') statusBadge = '<span class="badge" style="background:#e0e0e0;color:#666;">Empty</span>';
           else if (item.status === 'booked') statusBadge = '<span class="badge badge-approved">Booked</span>';
           else if (item.status === 'pending_approval') statusBadge = '<span class="badge badge-pending">Pending</span>';
-          let studioBadge = \`<span class="badge badge-\${item.studioStatus.toLowerCase().replace(' ', '-')}">\${item.studioStatus}</span>\`;
+          let studioBadge = `<span class="badge badge-${item.studioStatus.toLowerCase().replace(' ', '-')}">${item.studioStatus}</span>`;
           if (item.approvedByHead) studioBadge += ' <span style="color:gold;">⭐ Head Approved</span>';
-          const updateBtn = item.studioId ? \`<button class="btn btn-warning" onclick="updateStudioStatus(\${item.studioId}, '\${item.studioStatus}', \${item.approvedByHead})">Update</button>\` : '';
-          html += \`
+          const updateBtn = item.studioId ? `<button class="btn btn-warning" onclick="updateStudioStatus(${item.studioId}, '${item.studioStatus}', ${item.approvedByHead})">Update</button>` : '';
+          html += `
             <div class="studio-item">
               <div class="studio-item-header">
-                <div class="studio-item-title">\${dayName}, \${dateStr} - Slot \${item.slotNumber}</div>
-                <div>\${statusBadge}</div>
+                <div class="studio-item-title">${dayName}, ${dateStr} - Slot ${item.slotNumber}</div>
+                <div>${statusBadge}</div>
               </div>
               <div class="detail-row">
                 <div class="detail-label">Page:</div>
-                <div class="detail-value">\${item.pageName}</div>
+                <div class="detail-value">${item.pageName}</div>
               </div>
               <div class="detail-row">
                 <div class="detail-label">Category:</div>
-                <div class="detail-value">\${item.category}</div>
+                <div class="detail-value">${item.category}</div>
               </div>
-              \${item.productCode ? \`<div class="detail-row"><div class="detail-label">Product:</div><div class="detail-value">\${item.productCode}</div></div>\` : ''}
-              \${item.productLink ? \`<div class="detail-row"><div class="detail-label">Link:</div><div class="detail-value"><a href="\${item.productLink}" target="_blank" style="color:#5e3a8e;">View Product</a></div></div>\` : ''}
+              ${item.productCode ? `<div class="detail-row"><div class="detail-label">Product:</div><div class="detail-value">${item.productCode}</div></div>` : ''}
+              ${item.productLink ? `<div class="detail-row"><div class="detail-label">Link:</div><div class="detail-value"><a href="${item.productLink}" target="_blank" style="color:#5e3a8e;">View Product</a></div></div>` : ''}
               <div class="detail-row">
                 <div class="detail-label">Studio:</div>
-                <div class="detail-value">\${studioBadge}</div>
+                <div class="detail-value">${studioBadge}</div>
               </div>
-              \${item.studioLink ? \`<div class="detail-row"><div class="detail-label">Content:</div><div class="detail-value"><a href="\${item.studioLink}" target="_blank" style="color:#5e3a8e;">📎 View</a></div></div>\` : ''}
-              \${updateBtn ? \`<div style="margin-top:10px;">\${updateBtn}</div>\` : ''}
+              ${item.studioLink ? `<div class="detail-row"><div class="detail-label">Content:</div><div class="detail-value"><a href="${item.studioLink}" target="_blank" style="color:#5e3a8e;">📎 View</a></div></div>` : ''}
+              ${updateBtn ? `<div style="margin-top:10px;">${updateBtn}</div>` : ''}
             </div>
-          \`;
+          `;
         });
         document.getElementById('studioCalendarView').innerHTML = html;
       } catch (error) {
@@ -995,10 +1123,10 @@
     }
 
     function updateStudioStatus(studioId, currentStatus, isApproved) {
-      const content = \`
+      const content = `
         <button class="close-modal" onclick="closeModal()">×</button>
         <h3>Update Studio Status</h3>
-        <p><strong>Current:</strong> \${currentStatus} \${isApproved ? '⭐' : ''}</p>
+        <p><strong>Current:</strong> ${currentStatus} ${isApproved ? '⭐' : ''}</p>
         <form id="studioForm">
           <div class="form-group">
             <label>New Status</label>
@@ -1020,7 +1148,7 @@
           </div>
           <button type="submit" class="btn btn-primary" style="width:100%;">Update</button>
         </form>
-      \`;
+      `;
       showModal(content);
       document.getElementById('studioForm').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -1063,31 +1191,138 @@
       document.getElementById('contentLinkField').style.display = (status === 'Submitted for Review' || status === 'Approved') ? 'block' : 'none';
     }
 
-    // Departments
-    async function loadDepartments() {
+    // HOT PRODUCTS
+    document.getElementById('addHotProductForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const category = document.getElementById('hotProductCategory').value;
+      const productLink = document.getElementById('hotProductLink').value;
+      const salesCount = document.getElementById('hotProductSales').value;
+      if (!category || !productLink) {
+        alert('Please fill in all required fields');
+        return;
+      }
       try {
-        const depts = await getAllDepartments();
-        const tbody = document.getElementById('deptsTable');
-        if (depts.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;">No departments yet</td></tr>';
-          return;
-        }
-        tbody.innerHTML = depts.map(d => \`
-          <tr>
-            <td>\${d.month}</td>
-            <td>\${d.department}</td>
-            <td>$\${d.budget}k</td>
-            <td>\${d.slots}</td>
-            <td>\${d.active}</td>
-            <td><button class="btn btn-danger" onclick="deleteDept(\${d.row})">Delete</button></td>
-          </tr>
-        \`).join('');
+        showLoading();
+        await addHotProduct({ category, productLink, salesCount });
+        hideLoading();
+        alert('✅ Product added!');
+        document.getElementById('addHotProductForm').reset();
+        loadHotProducts();
       } catch (error) {
-        document.getElementById('deptsTable').innerHTML = 
-          '<tr><td colspan="6" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    });
+
+    async function loadHotProducts() {
+      try {
+        showLoading();
+        allHotProducts = await getAllHotProducts();
+        const stats = await getHotProductsStats();
+        document.getElementById('adminTotalProducts').textContent = stats.totalProducts;
+        document.getElementById('adminListedProducts').textContent = stats.listedProducts;
+        document.getElementById('adminCategoryCount').textContent = Object.keys(stats.byCategory).length;
+        filterHotProducts();
+        hideLoading();
+      } catch (error) {
+        hideLoading();
+        console.error('Error loading hot products', error);
+        document.getElementById('hotProductsTableBody').innerHTML = 
+          '<tr><td colspan="8" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
       }
     }
 
+    function filterHotProducts() {
+      const categoryFilter = document.getElementById('filterCategory').value;
+      const listedFilter = document.getElementById('filterListed').value;
+      let filtered = allHotProducts;
+      if (categoryFilter) filtered = filtered.filter(p => p.category === categoryFilter);
+      if (listedFilter !== '') {
+        const isListed = listedFilter === 'true';
+        filtered = filtered.filter(p => p.listed === isListed);
+      }
+      displayHotProducts(filtered);
+    }
+
+    function displayHotProducts(products) {
+      const tbody = document.getElementById('hotProductsTableBody');
+      if (products.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:#999;">No products found</td></tr>';
+        return;
+      }
+      tbody.innerHTML = products.map(p => {
+        const shortLink = p.productlink.length > 40 ? p.productlink.substring(0, 40) + '...' : p.productlink;
+        const kaprukaShort = p.kaprukalink ? (p.kaprukalink.length > 40 ? p.kaprukalink.substring(0, 40) + '...' : p.kaprukalink) : '-';
+        const createdDate = new Date(p.createdat).toLocaleDateString();
+        return `
+          <tr style="border-bottom:1px solid #f0f0f0;">
+            <td style="padding:12px;font-weight:600;">${p.id}</td>
+            <td style="padding:12px;">
+              <span style="background:#E8F5E9;color:#2E7D32;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;">
+                ${p.category}
+              </span>
+            </td>
+            <td style="padding:12px;">
+              <a href="${p.productlink}" target="_blank" style="color:#5e3a8e;text-decoration:none;" title="${p.productlink}">${shortLink}</a>
+            </td>
+            <td style="padding:12px;text-align:center;font-weight:600;">${p.salescount || 0}</td>
+            <td style="padding:12px;text-align:center;">
+              <input type="checkbox" ${p.listed ? 'checked' : ''} onchange="toggleListed(${p.id}, this.checked)" style="width:20px;height:20px;cursor:pointer;">
+            </td>
+            <td style="padding:12px;">
+              ${p.kaprukalink ? `<a href="${p.kaprukalink}" target="_blank" style="color:#5e3a8e;text-decoration:none;" title="${p.kaprukalink}">${kaprukaShort}</a>` : '<span style="color:#999;">-</span>'}
+            </td>
+            <td style="padding:12px;text-align:center;color:#666;font-size:12px;">${createdDate}</td>
+            <td style="padding:12px;text-align:center;">
+              <button onclick="editHotProduct(${p.id})" style="background:#FFA726;color:white;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;margin-right:5px;">Edit</button>
+              <button onclick="deleteHotProductItem(${p.id})" style="background:#EF5350;color:white;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;">Delete</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function toggleListed(id, listed) {
+      try {
+        await updateHotProduct(id, { listed });
+        loadHotProducts();
+      } catch (error) {
+        alert('Error: ' + error.message);
+      }
+    }
+
+    async function editHotProduct(id) {
+      const product = allHotProducts.find(p => p.id === id);
+      if (!product) return;
+      const kaprukaLink = prompt('Enter Kapruka Link:', product.kaprukalink || '');
+      if (kaprukaLink === null) return;
+      try {
+        showLoading();
+        await updateHotProduct(id, { kaprukalink: kaprukaLink });
+        hideLoading();
+        alert('✅ Product updated!');
+        loadHotProducts();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    }
+
+    async function deleteHotProductItem(id) {
+      if (!confirm('Delete this product?')) return;
+      try {
+        showLoading();
+        await deleteHotProduct(id);
+        hideLoading();
+        alert('✅ Product deleted!');
+        loadHotProducts();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    }
+
+    // Departments
     document.getElementById('deptForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const config = {
@@ -1110,6 +1345,30 @@
         alert('Error: ' + error.message);
       }
     });
+
+    async function loadDepartments() {
+      try {
+        const depts = await getAllDepartments();
+        const tbody = document.getElementById('deptsTable');
+        if (depts.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;">No departments yet</td></tr>';
+          return;
+        }
+        tbody.innerHTML = depts.map(d => `
+          <tr>
+            <td>${d.month}</td>
+            <td>${d.department}</td>
+            <td>$${d.budget}k</td>
+            <td>${d.slots}</td>
+            <td>${d.active}</td>
+            <td><button class="btn btn-danger" onclick="deleteDept(${d.row})">Delete</button></td>
+          </tr>
+        `).join('');
+      } catch (error) {
+        document.getElementById('deptsTable').innerHTML = 
+          '<tr><td colspan="6" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
+      }
+    }
 
     async function deleteDept(row) {
       if (!confirm('Delete this department?')) return;
