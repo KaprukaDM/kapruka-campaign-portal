@@ -3,1958 +3,852 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard - Kapruka</title>
-  <link rel="icon" type="image/png" href="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <title>Kapruka Admin Portal</title>
+  <link rel="icon" type="image/png" href="https://www.kapruka.com/favicon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --primary: #5e3a8e;
+      --primary-dark: #422b73;
+      --accent: #FFD700;
+      --bg-gradient: linear-gradient(135deg, #1a0b2e 0%, #3d2461 50%, #5e3a8e 100%);
+      --glass: rgba(255, 255, 255, 0.96);
+      --shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    
     body {
       font-family: 'Inter', sans-serif;
-      background: linear-gradient(135deg, #1a0b2e 0%, #3d2461 50%, #5e3a8e 100%);
+      background: var(--bg-gradient);
       min-height: 100vh;
       padding: 40px 20px;
+      color: #333;
     }
-    .container { max-width: 1800px; margin: 0 auto; }
+
+    /* --- LAYOUT --- */
+    .container { max-width: 1600px; margin: 0 auto; }
+    
     .header {
       text-align: center;
-      margin-bottom: 50px;
+      margin-bottom: 40px;
+      color: white;
     }
+    
     .kapruka-logo {
-      width: 120px;
-      height: 120px;
-      margin: 0 auto 30px;
+      width: 80px;
+      height: 80px;
       border-radius: 50%;
-      overflow: hidden;
-      box-shadow: 0 15px 50px rgba(0,0,0,0.5);
-      animation: float 3s ease-in-out infinite;
+      border: 3px solid var(--accent);
+      margin-bottom: 15px;
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
     }
-    @keyframes float {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-10px); }
-    }
-    .kapruka-logo img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    h1 {
-      font-family: 'Playfair Display', serif;
-      font-size: 48px;
-      background: linear-gradient(135deg, #FFD700, #FFF, #FFD700);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 10px;
-    }
-    .subtitle {
-      color: rgba(255,255,255,0.8);
-      font-size: 16px;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-    }
-    .login-card {
-      background: rgba(255,255,255,0.98);
-      padding: 50px;
-      border-radius: 20px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-      max-width: 450px;
-      margin: 0 auto;
-    }
-    .login-card h2 {
-      font-family: 'Playfair Display', serif;
-      color: #5e3a8e;
-      font-size: 28px;
-      margin-bottom: 30px;
-      text-align: center;
-    }
-    .admin-content { display: none; }
+
+    h1 { font-size: 32px; font-weight: 700; margin-bottom: 5px; }
+    .subtitle { opacity: 0.8; font-size: 14px; letter-spacing: 1px; text-transform: uppercase; }
+
+    /* --- TABS --- */
     .tabs {
       display: flex;
       gap: 10px;
-      margin-bottom: 30px;
+      margin-bottom: 25px;
       flex-wrap: wrap;
+      justify-content: center;
     }
+
     .tab-btn {
-      padding: 15px 30px;
-      background: rgba(255,255,255,0.2);
+      padding: 12px 24px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
       color: white;
-      border: 2px solid rgba(255,255,255,0.3);
-      border-radius: 12px;
+      border-radius: 8px;
       cursor: pointer;
-      font-size: 15px;
       font-weight: 600;
-      transition: all 0.3s;
+      transition: all 0.2s;
     }
-    .tab-btn:hover {
-      background: rgba(255,215,0,0.2);
-      border-color: #FFD700;
+
+    .tab-btn:hover, .tab-btn.active {
+      background: var(--accent);
+      color: var(--primary-dark);
+      border-color: var(--accent);
+      transform: translateY(-2px);
     }
-    .tab-btn.active {
-      background: linear-gradient(135deg, #5e3a8e, #3d2461);
-      border-color: #FFD700;
-      box-shadow: 0 8px 25px rgba(255,215,0,0.3);
-    }
+
     .tab-content { display: none; }
-    .tab-content.active { display: block; }
+    .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* --- CARDS & FORMS --- */
     .card {
-      background: rgba(255,255,255,0.98);
-      padding: 35px;
-      border-radius: 20px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      background: var(--glass);
+      border-radius: 16px;
+      padding: 30px;
+      box-shadow: var(--shadow);
       margin-bottom: 30px;
     }
-    .card h2 {
-      font-family: 'Playfair Display', serif;
-      color: #5e3a8e;
-      font-size: 28px;
+
+    h2 { color: var(--primary); margin-bottom: 20px; font-size: 24px; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
       margin-bottom: 20px;
     }
-    .form-group { margin-bottom: 20px; }
-    label {
-      display: block;
-      color: #5e3a8e;
-      font-weight: 600;
-      margin-bottom: 10px;
-      font-size: 14px;
-    }
+
+    .form-group label { display: block; font-size: 13px; font-weight: 600; color: #666; margin-bottom: 8px; }
+    
     input, select, textarea {
       width: 100%;
-      padding: 16px;
-      border: 2px solid #e8e8e8;
-      border-radius: 12px;
-      font-size: 15px;
-      font-family: 'Inter', sans-serif;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border-color 0.2s;
     }
-    input:focus, select:focus, textarea:focus {
-      outline: none;
-      border-color: #FFD700;
-    }
+
+    input:focus, select:focus { outline: none; border-color: var(--primary); }
+
+    /* --- BUTTONS --- */
     .btn {
-      padding: 15px 30px;
+      padding: 10px 20px;
       border: none;
-      border-radius: 12px;
-      font-size: 16px;
+      border-radius: 8px;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.3s;
+      transition: transform 0.2s;
     }
-    .btn-primary {
-      background: linear-gradient(135deg, #5e3a8e, #3d2461);
-      color: white;
-    }
-    .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 30px rgba(94,58,142,0.4);
-    }
-    .btn-warning {
-      background: linear-gradient(135deg, #FFA726, #F57C00);
-      color: white;
-    }
-    .btn-success {
-      background: linear-gradient(135deg, #66BB6A, #43A047);
-      color: white;
-    }
-    .btn-danger {
-      background: linear-gradient(135deg, #EF5350, #E53935);
-      color: white;
-    }
-    .btn-complete {
-      background: linear-gradient(135deg, #9E9E9E, #757575);
-      color: white;
-    }
-    .table-container {
-      overflow-x: auto;
-      margin-top: 20px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: white;
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-success { background: #2e7d32; color: white; }
+    .btn-warning { background: #f57c00; color: white; }
+    .btn-danger { background: #c62828; color: white; }
+    
+    /* --- TABLES --- */
+    .table-responsive { overflow-x: auto; border-radius: 8px; border: 1px solid #eee; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th { background: #f8f9fa; padding: 15px; text-align: left; color: var(--primary); font-weight: 700; border-bottom: 2px solid #eee; }
+    td { padding: 15px; border-bottom: 1px solid #eee; vertical-align: middle; }
+    tr:hover { background: #fcfcfc; }
+
+    /* --- BADGES --- */
+    .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+    .badge-approved { background: #e8f5e9; color: #2e7d32; }
+    .badge-pending { background: #fff3e0; color: #ef6c00; }
+    .badge-rejected { background: #ffebee; color: #c62828; }
+    .badge-empty { background: #f5f5f5; color: #999; border: 1px dashed #ccc; }
+
+    /* --- STUDIO VERTICAL CALENDAR --- */
+    .studio-day-container {
+      border: 2px solid #e0e0e0;
       border-radius: 12px;
+      margin-bottom: 30px;
       overflow: hidden;
+      background: white;
     }
-    th {
-      background: linear-gradient(135deg, #5e3a8e, #3d2461);
+
+    .studio-day-header {
+      background: var(--primary);
       color: white;
-      padding: 15px;
-      text-align: left;
-      font-weight: 600;
-      font-size: 13px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    td {
-      padding: 15px;
-      border-bottom: 1px solid #f0f0f0;
-      font-size: 14px;
-    }
-    tr:hover {
-      background: #f9f9f9;
-    }
-    .badge {
-      display: inline-block;
-      padding: 6px 12px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-      text-transform: uppercase;
-    }
-    .badge-submitted { background: #E1BEE7; color: #4A148C; }
-    .badge-working { background: #FFF9C4; color: #F57F17; }
-    .badge-live { background: #C8E6C9; color: #1B5E20; }
-    .badge-completed { background: #E0E0E0; color: #424242; }
-    .badge-rejected { background: #FFCDD2; color: #C62828; }
-    .badge-pending { background: #FFF9C4; color: #F57F17; }
-    .badge-approved { background: #C8E6C9; color: #1B5E20; }
-    .action-btns {
+      padding: 15px 25px;
       display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .action-btns button {
-      padding: 8px 15px;
-      font-size: 12px;
-    }
-    .loading {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.85);
-      display: none;
+      justify-content: space-between;
       align-items: center;
-      justify-content: center;
-      z-index: 9999;
     }
-    .spinner {
-      width: 60px;
-      height: 60px;
-      border: 5px solid rgba(255,215,0,0.3);
-      border-top-color: #FFD700;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .modal {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.85);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 10000;
+    
+    .studio-day-title { font-size: 18px; font-weight: 700; }
+    .studio-day-meta { font-size: 13px; opacity: 0.9; background: rgba(0,0,0,0.2); padding: 4px 10px; border-radius: 4px; }
+
+    .studio-slots-container {
       padding: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
     }
+
+    .slot-card {
+      border-radius: 10px;
+      padding: 15px;
+      position: relative;
+      transition: all 0.2s;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 140px;
+    }
+
+    .slot-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+
+    /* Slot Types */
+    .slot-lead { border: 2px solid #e3f2fd; background: #fbfdff; }
+    .slot-content { border: 2px solid #f3e5f5; background: #fdfbff; }
+    .slot-empty { border: 2px dashed #e0e0e0; background: #fafafa; opacity: 0.8; cursor: default; }
+
+    /* Status Indicators */
+    .slot-status {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+
+    .status-received { background: #e0e0e0; color: #555; }
+    .status-working { background: #fff8e1; color: #f57f17; }
+    .status-submitted { background: #e1bee7; color: #7b1fa2; }
+    .status-approved { background: #e8f5e9; color: #2e7d32; }
+
+    .slot-number { font-size: 12px; font-weight: 700; color: #999; margin-bottom: 5px; text-transform: uppercase; }
+    .slot-title { font-weight: 600; color: #333; margin-bottom: 5px; line-height: 1.3; }
+    .slot-details { font-size: 12px; color: #666; }
+
+    /* --- MODALS --- */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.8);
+      align-items: center;
+      justify-content: center;
+    }
+
     .modal-content {
       background: white;
-      padding: 40px;
-      border-radius: 24px;
-      max-width: 800px;
-      max-height: 90vh;
-      overflow-y: auto;
+      width: 90%;
+      max-width: 600px;
+      border-radius: 16px;
+      padding: 30px;
       position: relative;
+      animation: zoomIn 0.2s;
     }
-    .modal h3 {
-      font-family: 'Playfair Display', serif;
-      color: #5e3a8e;
-      font-size: 24px;
-      margin-bottom: 20px;
-    }
+
+    @keyframes zoomIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
     .close-modal {
       position: absolute;
       top: 20px;
       right: 20px;
-      background: none;
-      border: none;
-      font-size: 32px;
+      font-size: 24px;
       cursor: pointer;
       color: #999;
-      line-height: 1;
-    }
-    .close-modal:hover { color: #333; }
-    .checkbox-label {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      cursor: pointer;
-    }
-    .checkbox-label input {
-      width: auto;
-      padding: 0;
-    }
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 20px;
-      margin-bottom: 30px;
-    }
-    .stat-card {
-      padding: 20px;
-      border-radius: 12px;
-    }
-    .radio-group {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .radio-label {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      cursor: pointer;
-      padding: 10px;
-      border: 2px solid #e8e8e8;
-      border-radius: 8px;
-      transition: all 0.3s;
-    }
-    .radio-label:hover {
-      border-color: #FFD700;
-      background: #fffef0;
-    }
-    .radio-label input {
-      width: auto;
-      padding: 0;
     }
 
-    /* STUDIO CALENDAR STYLES */
-    .calendar-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 30px;
-    }
-    .month-nav {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-    }
-    .month-nav button {
-      background: #5e3a8e;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-    .month-nav h3 {
-      font-size: 24px;
-      color: #5e3a8e;
-      min-width: 200px;
-      text-align: center;
-    }
-    .calendar-grid {
+    .slot-picker-grid {
       display: grid;
-      grid-template-columns: repeat(7, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       gap: 10px;
-      margin-top: 20px;
+      margin-top: 15px;
     }
-    .calendar-day-header {
-      background: #5e3a8e;
-      color: white;
-      padding: 10px;
-      text-align: center;
-      font-weight: 600;
+
+    .picker-slot {
+      padding: 15px;
+      border: 2px solid #eee;
       border-radius: 8px;
-      font-size: 14px;
-    }
-    .calendar-day {
-      background: white;
-      border: 2px solid #e8e8e8;
-      border-radius: 12px;
-      min-height: 120px;
-      padding: 10px;
+      text-align: center;
       cursor: pointer;
-      transition: all 0.3s;
-      position: relative;
-    }
-    .calendar-day:hover {
-      border-color: #FFD700;
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    }
-    .calendar-day.empty {
-      background: #f5f5f5;
-      cursor: default;
-    }
-    .calendar-day.empty:hover {
-      transform: none;
-      box-shadow: none;
-    }
-    .day-number {
-      font-weight: 700;
-      color: #5e3a8e;
-      font-size: 16px;
-      margin-bottom: 8px;
-    }
-    .day-content-item {
-      background: #E8F5E9;
-      padding: 6px 8px;
-      border-radius: 6px;
-      font-size: 11px;
-      margin-bottom: 4px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .day-content-item.completed {
-      background: #C8E6C9;
-      border-left: 3px solid #43A047;
-    }
-    .day-content-item.pending {
-      background: #FFF9C4;
-      border-left: 3px solid #F57C00;
-    }
-    .content-list-item {
-      background: #f9f9f9;
-      padding: 20px;
-      border-radius: 12px;
-      margin-bottom: 15px;
-      border: 2px solid #e8e8e8;
-      transition: all 0.3s;
-    }
-    .content-list-item:hover {
-      border-color: #5e3a8e;
-      background: #fff;
-    }
-    .content-list-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-    .content-list-title {
-      font-weight: 700;
-      color: #5e3a8e;
-      font-size: 16px;
-    }
-    .content-list-badge {
-      padding: 4px 12px;
-      border-radius: 12px;
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-    }
-    .status-completed { background: #C8E6C9; color: #1B5E20; }
-    .status-pending { background: #FFF9C4; color: #F57F17; }
-    .detail-row {
-      display: grid;
-      grid-template-columns: 120px 1fr;
-      gap: 10px;
-      margin-bottom: 12px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid #f0f0f0;
-    }
-    .detail-row:last-child {
-      border-bottom: none;
-      margin-bottom: 0;
-      padding-bottom: 0;
-    }
-    .detail-label {
-      font-weight: 600;
-      color: #5e3a8e;
       font-size: 13px;
     }
-    .detail-value {
-      color: #333;
-      font-size: 14px;
-      word-wrap: break-word;
-    }
 
-    @media (max-width: 768px) {
-      h1 { font-size: 32px; }
-      .tabs { flex-direction: column; }
-      .tab-btn { width: 100%; }
-      table { font-size: 12px; }
-      th, td { padding: 10px; }
-      .calendar-grid {
-        grid-template-columns: 1fr;
-      }
-      .calendar-day {
-        min-height: auto;
-      }
+    .picker-slot:hover { border-color: var(--primary); background: #f3e5f5; }
+    .picker-slot.booked { background: #eee; color: #999; cursor: not-allowed; border-color: #eee; }
+    .picker-slot.selected { background: var(--primary); color: white; border-color: var(--primary); }
+
+    /* --- LOGIN --- */
+    .login-wrapper {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: var(--bg-gradient);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 2000;
+    }
+    .login-box {
+      background: white;
+      padding: 40px;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.3);
     }
   </style>
 </head>
 <body>
-  <div class="loading" id="loading"><div class="spinner"></div></div>
-  <div class="modal" id="modal">
-    <div class="modal-content" id="modalContent"></div>
+
+<div id="loginScreen" class="login-wrapper">
+  <div class="login-box">
+    <img src="https://www.kapruka.com/favicon.ico" class="kapruka-logo" style="width:60px;height:60px;border:none;box-shadow:none;">
+    <h2 style="border:none;margin-bottom:10px;">Admin Access</h2>
+    <p style="color:#666;margin-bottom:20px;">Enter credentials to continue</p>
+    <form id="loginForm">
+      <input type="password" id="adminPassword" placeholder="Enter Password" style="margin-bottom:15px;">
+      <button type="submit" class="btn btn-primary" style="width:100%;">Unlock Dashboard</button>
+    </form>
+  </div>
+</div>
+
+<div class="container" id="mainContent" style="display:none;">
+  
+  <div class="header">
+    <img src="https://www.kapruka.com/favicon.ico" class="kapruka-logo">
+    <h1>Campaign Portal Admin</h1>
+    <div class="subtitle">Kapruka Global Shop & E-commerce Operations</div>
   </div>
 
-  <div class="container">
-    <div class="header">
-      <div class="kapruka-logo">
-        <img src="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw" alt="Kapruka">
-      </div>
-      <h1>Admin Dashboard</h1>
-      <p class="subtitle">Campaign Management</p>
-    </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('requests')">Campaign Requests</button>
+    <button class="tab-btn" onclick="switchTab('products')">Product Suggestions</button>
+    <button class="tab-btn" onclick="switchTab('content')">Content Calendar</button>
+    <button class="tab-btn" onclick="switchTab('studio')">Studio Calendar</button>
+    <button class="tab-btn" onclick="switchTab('hot')">Hot Products</button>
+    <button class="tab-btn btn-danger" onclick="location.reload()">Logout</button>
+  </div>
 
-    <!-- Login Screen -->
-    <div id="loginScreen" class="login-card">
-      <h2>🔐 Admin Login</h2>
-      <form id="loginForm">
-        <div class="form-group">
-          <label>Password</label>
-          <input type="password" id="adminPassword" required placeholder="Enter admin password">
+  <div id="tab-requests" class="tab-content active">
+    <div class="card">
+      <h2>📢 Campaign Requests</h2>
+      <div class="table-responsive">
+        <table id="requestsTable">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Department</th>
+              <th>Campaign</th>
+              <th>Slot</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-products" class="tab-content">
+    <div class="card">
+      <h2>💡 Product Suggestions</h2>
+      <div class="table-responsive">
+        <table id="productsTable">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Category</th>
+              <th>Margin</th>
+              <th>Status</th>
+              <th>Assigned Page</th>
+              <th>Scheduled For</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-content" class="tab-content">
+    <div class="card">
+      <h2>📅 Content Calendar Items</h2>
+      <div style="margin-bottom:20px;text-align:right;">
+         <button class="btn btn-primary" onclick="promptAddTheme()">+ Add New Theme</button>
+      </div>
+      <div class="table-responsive">
+        <table id="contentTable">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Theme</th>
+              <th>Category</th>
+              <th>Product Code</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-studio" class="tab-content">
+    <div class="card" style="background:transparent;box-shadow:none;padding:0;">
+      <div style="display:flex;justify-content:center;gap:20px;margin-bottom:30px;">
+        <button class="btn btn-primary" onclick="changeStudioMonth(-1)">◀ Previous Week</button>
+        <h2 id="studioDateRange" style="border:none;margin:0;color:white;text-shadow:0 2px 4px rgba(0,0,0,0.5);">Jan 26 - Feb 01</h2>
+        <button class="btn btn-primary" onclick="changeStudioMonth(1)">Next Week ▶</button>
+      </div>
+      
+      <div id="studioVerticalContainer">
         </div>
-        <button type="submit" class="btn btn-primary" style="width:100%;">Login</button>
+    </div>
+  </div>
+
+  <div id="tab-hot" class="tab-content">
+    <div class="card">
+      <h2>🔥 Hot Products</h2>
+      <form id="addHotForm" style="margin-bottom:30px;background:#f9f9f9;padding:20px;border-radius:12px;">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Category</label>
+            <select id="hotCategory">
+              <option>Cakes</option><option>Flowers</option><option>Chocolates</option>
+              <option>Fashion</option><option>Electronics</option><option>Toys</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Product Link</label>
+            <input type="url" id="hotLink" placeholder="https://..." required>
+          </div>
+          <div class="form-group">
+            <label>Sales Count</label>
+            <input type="number" id="hotSales" value="0">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-success">Add Hot Product</button>
       </form>
-    </div>
 
-    <!-- Admin Content -->
-    <div id="adminContent" class="admin-content">
-      <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('requests')">📋 Campaign Requests</button>
-        <button class="tab-btn" onclick="switchTab('products')">💡 Product Suggestions</button>
-        <button class="tab-btn" onclick="switchTab('content')">📅 Content Calendar</button>
-        <button class="tab-btn" onclick="switchTab('studio')">🎬 Studio Calendar</button>
-        <button class="tab-btn" onclick="switchTab('hotproducts')">🔥 Hot Products</button>
-        <button class="tab-btn" onclick="switchTab('departments')">🏢 Department Config</button>
-        <button class="tab-btn" style="margin-left:auto;background:#d32f2f;" onclick="logout()">Logout</button>
-      </div>
-
-      <!-- Campaign Requests Tab -->
-      <div id="tab-requests" class="tab-content active">
-        <div class="card">
-          <h2>📋 Campaign Requests</h2>
-          <div class="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Request ID</th>
-                  <th>Date</th>
-                  <th>Department</th>
-                  <th>Month</th>
-                  <th>Slot</th>
-                  <th>Campaign</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="requestsTable">
-                <tr><td colspan="8" style="text-align:center;padding:40px;">Loading...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- Product Suggestions Tab -->
-      <div id="tab-products" class="tab-content">
-        <div class="card">
-          <h2>💡 Product Suggestions</h2>
-          <div class="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Submission ID</th>
-                  <th>Date</th>
-                  <th>Product Link</th>
-                  <th>Category</th>
-                  <th>Margin %</th>
-                  <th>Status</th>
-                  <th>Page Name</th>
-                  <th>Go Live Date</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="productsTable">
-                <tr><td colspan="9" style="text-align:center;padding:40px;">Loading...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- Content Calendar Tab -->
-      <div id="tab-content" class="tab-content">
-        <div class="card">
-          <h2>📅 Add Content Theme</h2>
-          <form id="themeForm">
-            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px;">
-              <div class="form-group">
-                <label>Theme Name</label>
-                <input type="text" id="themeName" required placeholder="e.g., Valentine's Day">
-              </div>
-              <div class="form-group">
-                <label>Slots Per Day</label>
-                <input type="number" id="slotsPerDay" required placeholder="e.g., 3" min="1" max="10" value="3">
-              </div>
-            </div>
-            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px;">
-              <div class="form-group">
-                <label>Start Date</label>
-                <input type="date" id="themeStart" required>
-              </div>
-              <div class="form-group">
-                <label>End Date</label>
-                <input type="date" id="themeEnd" required>
-              </div>
-            </div>
-            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px;">
-              <div class="form-group">
-                <label>Theme Color</label>
-                <input type="color" id="themeColor" value="#422B73">
-              </div>
-              <div class="form-group">
-                <label class="checkbox-label">
-                  <input type="checkbox" id="isSeasonal">
-                  <span>Seasonal Theme (no categories)</span>
-                </label>
-              </div>
-            </div>
-            <button type="submit" class="btn btn-primary">Add Theme</button>
-          </form>
-        </div>
-
-        <div class="card">
-          <h2>🗂️ Content Bookings</h2>
-          <div class="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Slot</th>
-                  <th>Category</th>
-                  <th>Product Code</th>
-                  <th>Status</th>
-                  <th>Go Live</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="contentTable">
-                <tr><td colspan="7" style="text-align:center;padding:40px;">Loading...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="card">
-          <h2>🎨 Themes</h2>
-          <div class="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Theme</th>
-                  <th>Start</th>
-                  <th>End</th>
-                  <th>Slots/Day</th>
-                  <th>Type</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="themesTable">
-                <tr><td colspan="6" style="text-align:center;padding:40px;">Loading...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- STUDIO CALENDAR TAB -->
-      <div id="tab-studio" class="tab-content">
-        <div class="card">
-          <div class="calendar-header">
-            <h2 style="margin:0;">🎬 Studio Calendar</h2>
-            <button class="btn btn-success" onclick="openAddExtraContentModal()">➕ Add Extra Content</button>
-          </div>
-
-          <div class="month-nav">
-            <button onclick="changeStudioMonth(-1)">◀ Previous</button>
-            <h3 id="studioMonthTitle">January 2026</h3>
-            <button onclick="changeStudioMonth(1)">Next ▶</button>
-          </div>
-
-          <div class="calendar-grid" id="studioCalendarGrid">
-            <div class="calendar-day-header">Sun</div>
-            <div class="calendar-day-header">Mon</div>
-            <div class="calendar-day-header">Tue</div>
-            <div class="calendar-day-header">Wed</div>
-            <div class="calendar-day-header">Thu</div>
-            <div class="calendar-day-header">Fri</div>
-            <div class="calendar-day-header">Sat</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- HOT PRODUCTS TAB -->
-      <div id="tab-hotproducts" class="tab-content">
-        <div class="card">
-          <h2>🔥 Hot Products Management</h2>
-          <p style="color:#666;margin-bottom:25px;">Add and manage hot product suggestions by category</p>
-
-          <div class="stats-grid">
-            <div class="stat-card" style="background:#E8F5E9;">
-              <div style="color:#2E7D32;font-size:12px;font-weight:600;text-transform:uppercase;margin-bottom:8px;">Total Products</div>
-              <div style="color:#1B5E20;font-size:32px;font-weight:700;" id="adminTotalProducts">0</div>
-            </div>
-            <div class="stat-card" style="background:#E3F2FD;">
-              <div style="color:#1565C0;font-size:12px;font-weight:600;text-transform:uppercase;margin-bottom:8px;">Listed Products</div>
-              <div style="color:#0D47A1;font-size:32px;font-weight:700;" id="adminListedProducts">0</div>
-            </div>
-            <div class="stat-card" style="background:#FFF3E0;">
-              <div style="color:#E65100;font-size:12px;font-weight:600;text-transform:uppercase;margin-bottom:8px;">Categories</div>
-              <div style="color:#BF360C;font-size:32px;font-weight:700;" id="adminCategoryCount">0</div>
-            </div>
-          </div>
-
-          <div style="background:#f9f9f9;padding:25px;border-radius:12px;margin-bottom:30px;">
-            <h3 style="color:#5e3a8e;margin-bottom:20px;">➕ Add New Product</h3>
-            <form id="addHotProductForm" style="display:grid;gap:15px;">
-              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:15px;">
-                <div>
-                  <label style="display:block;color:#5e3a8e;font-weight:600;margin-bottom:8px;font-size:13px;">Category</label>
-                  <select id="hotProductCategory" required style="width:100%;padding:12px;border:2px solid #e8e8e8;border-radius:8px;font-size:14px;">
-                    <option value="">Select Category</option>
-                    <option value="Cakes">Cakes</option>
-                    <option value="Flowers">Flowers</option>
-                    <option value="Chocolates">Chocolates</option>
-                    <option value="Clothing">Clothing</option>
-                    <option value="Electronics">Electronics</option>
-                    <option value="Fashion">Fashion</option>
-                    <option value="Food & Restaurants">Food & Restaurants</option>
-                    <option value="Fruits">Fruits</option>
-                    <option value="Soft Toys & Kids Toys">Soft Toys & Kids Toys</option>
-                    <option value="Grocery & Hampers">Grocery & Hampers</option>
-                    <option value="Greeting Cards & Party Supplies">Greeting Cards & Party Supplies</option>
-                    <option value="Sports and Bicycles">Sports and Bicycles</option>
-                    <option value="Mother and Baby">Mother and Baby</option>
-                    <option value="Jewellery and Watches">Jewellery and Watches</option>
-                    <option value="Cosmetics & Perfumes">Cosmetics & Perfumes</option>
-                    <option value="Customized Gifts">Customized Gifts</option>
-                    <option value="Health and Wellness">Health and Wellness</option>
-                    <option value="Home & Lifestyle">Home & Lifestyle</option>
-                    <option value="Combo and Gift Sets">Combo and Gift Sets</option>
-                    <option value="Books & Stationery">Books & Stationery</option>
-                  </select>
-                </div>
-                <div>
-                  <label style="display:block;color:#5e3a8e;font-weight:600;margin-bottom:8px;font-size:13px;">Product Link</label>
-                  <input type="url" id="hotProductLink" required placeholder="https://example.com/product" style="width:100%;padding:12px;border:2px solid #e8e8e8;border-radius:8px;font-size:14px;">
-                </div>
-                <div>
-                  <label style="display:block;color:#5e3a8e;font-weight:600;margin-bottom:8px;font-size:13px;">Sales Count</label>
-                  <input type="number" id="hotProductSales" value="0" min="0" style="width:100%;padding:12px;border:2px solid #e8e8e8;border-radius:8px;font-size:14px;">
-                </div>
-              </div>
-              <button type="submit" style="padding:14px 32px;background:linear-gradient(135deg,#5e3a8e,#3d2461);color:white;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;transition:all 0.3s;">
-                ➕ Add Product
-              </button>
-            </form>
-          </div>
-
-          <div style="display:flex;gap:15px;margin-bottom:20px;flex-wrap:wrap;">
-            <select id="filterCategory" onchange="filterHotProducts()" style="padding:12px;border:2px solid #e8e8e8;border-radius:8px;font-size:14px;flex:1;min-width:200px;">
-              <option value="">All Categories</option>
-              <option value="Cakes">Cakes</option>
-              <option value="Flowers">Flowers</option>
-              <option value="Chocolates">Chocolates</option>
-              <option value="Clothing">Clothing</option>
-              <option value="Electronics">Electronics</option>
-              <option value="Fashion">Fashion</option>
-              <option value="Food & Restaurants">Food & Restaurants</option>
-              <option value="Fruits">Fruits</option>
-              <option value="Soft Toys & Kids Toys">Soft Toys & Kids Toys</option>
-              <option value="Grocery & Hampers">Grocery & Hampers</option>
-              <option value="Greeting Cards & Party Supplies">Greeting Cards & Party Supplies</option>
-              <option value="Sports and Bicycles">Sports and Bicycles</option>
-              <option value="Mother and Baby">Mother and Baby</option>
-              <option value="Jewellery and Watches">Jewellery and Watches</option>
-              <option value="Cosmetics & Perfumes">Cosmetics & Perfumes</option>
-              <option value="Customized Gifts">Customized Gifts</option>
-              <option value="Health and Wellness">Health and Wellness</option>
-              <option value="Home & Lifestyle">Home & Lifestyle</option>
-              <option value="Combo and Gift Sets">Combo and Gift Sets</option>
-              <option value="Books & Stationery">Books & Stationery</option>
-            </select>
-            <select id="filterListed" onchange="filterHotProducts()" style="padding:12px;border:2px solid #e8e8e8;border-radius:8px;font-size:14px;min-width:150px;">
-              <option value="">All Status</option>
-              <option value="true">Listed Only</option>
-              <option value="false">Unlisted Only</option>
-            </select>
-            <button onclick="loadHotProducts()" style="padding:12px 24px;background:#5e3a8e;color:white;border:none;border-radius:8px;font-weight:600;cursor:pointer;">
-              🔄 Refresh
-            </button>
-          </div>
-
-          <div style="overflow-x:auto;">
-            <table style="width:100%;border-collapse:collapse;">
-              <thead>
-                <tr style="background:#5e3a8e;color:white;">
-                  <th style="padding:12px;text-align:left;">ID</th>
-                  <th style="padding:12px;text-align:left;">Category</th>
-                  <th style="padding:12px;text-align:left;">Product Link</th>
-                  <th style="padding:12px;text-align:center;">Sales</th>
-                  <th style="padding:12px;text-align:center;">Listed</th>
-                  <th style="padding:12px;text-align:left;">Kapruka Link</th>
-                  <th style="padding:12px;text-align:center;">Created</th>
-                  <th style="padding:12px;text-align:center;">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="hotProductsTableBody">
-                <tr><td colspan="8" style="text-align:center;padding:40px;color:#999;">Loading...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- Department Config Tab -->
-      <div id="tab-departments" class="tab-content">
-        <div class="card">
-          <h2>🏢 Add Department</h2>
-          <form id="deptForm">
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
-              <div class="form-group">
-                <label>Month</label>
-                <select id="deptMonth" required>
-                  <option value="January 2026">January 2026</option>
-                  <option value="February 2026">February 2026</option>
-                  <option value="March 2026">March 2026</option>
-                  <option value="April 2026">April 2026</option>
-                  <option value="May 2026">May 2026</option>
-                  <option value="June 2026">June 2026</option>
-                  <option value="July 2026">July 2026</option>
-                  <option value="August 2026">August 2026</option>
-                  <option value="September 2026">September 2026</option>
-                  <option value="October 2026">October 2026</option>
-                  <option value="November 2026">November 2026</option>
-                  <option value="December 2026">December 2026</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label>Department Name</label>
-                <input type="text" id="deptName" required placeholder="e.g., Marketing">
-              </div>
-              <div class="form-group">
-                <label>Budget ($k)</label>
-                <input type="number" id="deptBudget" required placeholder="e.g., 200">
-              </div>
-            </div>
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
-              <div class="form-group">
-                <label>Slots</label>
-                <input type="number" id="deptSlots" required placeholder="e.g., 10">
-              </div>
-              <div class="form-group">
-                <label>Color</label>
-                <input type="color" id="deptColor" value="#E8F5E9">
-              </div>
-              <div class="form-group">
-                <label>Active</label>
-                <select id="deptActive">
-                  <option value="Yes">Yes</option>
-                  <option value="No">No</option>
-                </select>
-              </div>
-            </div>
-            <button type="submit" class="btn btn-primary">Add Department</button>
-          </form>
-        </div>
-
-        <div class="card">
-          <h2>📋 Existing Departments</h2>
-          <div class="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Month</th>
-                  <th>Department</th>
-                  <th>Budget</th>
-                  <th>Slots</th>
-                  <th>Active</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="deptsTable">
-                <tr><td colspan="6" style="text-align:center;padding:40px;">Loading...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+      <div class="table-responsive">
+        <table id="hotTable">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Product Link</th>
+              <th>Sales</th>
+              <th>Listed?</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
       </div>
     </div>
   </div>
 
-  <script src="js/supabase-api.js"></script>
-  <script>
-    let isLoggedIn = false;
-    let allHotProducts = [];
-    let currentStudioMonth = 1;
-    let currentStudioYear = 2026;
-    let studioCalendarData = [];
+</div>
 
-    // UPDATED PAGE NAMES - Your actual Facebook pages
-    const PAGE_NAMES = [
-      'Kapruka',
-      'Social Mart',
-      'Electronic Factory',
-      'Fashion Factory',
-      'Toys Factory',
-      'Handbag Factory'
-    ];
+<div id="approveModal" class="modal">
+  <div class="modal-content">
+    <span class="close-modal" onclick="closeModal('approveModal')">&times;</span>
+    <h2>✅ Approve & Schedule</h2>
+    <p>Select the page and slot for this product.</p>
+    
+    <div class="form-group">
+      <label>1. Assign to Page</label>
+      <select id="approvePageSelect" onchange="fetchSlotsForPage(this.value)">
+        <option value="">Select Page...</option>
+        <option value="Kapruka FB Leads">Kapruka FB Leads (Mon)</option>
+        <option value="Social Mart">Social Mart (Tue)</option>
+        <option value="Electronic Factory">Electronic Factory (Wed)</option>
+        <option value="Fashion Factory">Fashion Factory (Thu)</option>
+        <option value="Toys Factory">Toys Factory (Fri)</option>
+        <option value="Handbag Factory">Handbag Factory (Sat)</option>
+      </select>
+    </div>
 
-    function showLoading() {
-      document.getElementById('loading').style.display = 'flex';
+    <div id="slotPickerArea" style="display:none;">
+      <label style="font-weight:600;display:block;margin-top:15px;">2. Select Available Slot</label>
+      <div id="slotGrid" class="slot-picker-grid">
+        </div>
+    </div>
+
+    <div style="margin-top:20px;text-align:right;">
+      <button class="btn btn-success" id="confirmApproveBtn" disabled onclick="confirmProductApproval()">Confirm Schedule</button>
+    </div>
+  </div>
+</div>
+
+<div id="studioModal" class="modal">
+  <div class="modal-content">
+    <span class="close-modal" onclick="closeModal('studioModal')">&times;</span>
+    <h2 id="studioModalTitle">Manage Content</h2>
+    <div id="studioModalDetails" style="margin-bottom:20px;background:#f5f5f5;padding:15px;border-radius:8px;font-size:14px;"></div>
+
+    <div class="form-group">
+      <label>Update Status</label>
+      <select id="studioStatusSelect" onchange="handleStatusChange()">
+        <option value="Received">Received</option>
+        <option value="Working">Working</option>
+        <option value="Submitted for Review">Submitted for Review</option>
+        <option value="Approved">Approved (Head Only)</option>
+      </select>
+    </div>
+
+    <div id="linkInputArea" style="display:none;margin-top:15px;">
+      <div class="form-group">
+        <label>Content Link (Required for Review)</label>
+        <input type="url" id="studioContentLink" placeholder="https://drive.google.com/...">
+      </div>
+    </div>
+
+    <div id="passwordArea" style="display:none;margin-top:15px;">
+      <div class="form-group">
+        <label>Head Password (Required for Approval)</label>
+        <input type="password" id="headPassword" placeholder="Enter PIN">
+      </div>
+    </div>
+
+    <div id="rejectionArea" style="display:none;margin-top:15px;">
+        <div class="form-group">
+            <label>Rejection Reason</label>
+            <input type="text" id="rejectionReason" placeholder="Why is this rejected?">
+        </div>
+    </div>
+
+    <div style="margin-top:20px;text-align:right;">
+      <button class="btn btn-primary" onclick="saveStudioStatus()">Update Status</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/supabase-api.js"></script>
+
+<script>
+  // --- STATE ---
+  let selectedProductRow = null;
+  let selectedSlotData = null;
+  let selectedStudioId = null;
+  let currentStudioDate = new Date(); // Tracks the start of the week for studio view
+
+  // --- INITIALIZATION ---
+  document.getElementById('loginForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const pw = document.getElementById('adminPassword').value;
+    if (pw === 'Kapruka2026!Admin') {
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('mainContent').style.display = 'block';
+      loadAllTabs();
+    } else {
+      alert('Invalid Password');
     }
+  });
 
-    function hideLoading() {
-      document.getElementById('loading').style.display = 'none';
-    }
+  function loadAllTabs() {
+    loadRequests();
+    loadProducts();
+    loadStudioCalendar(); // Initial load
+    loadContent();
+    loadHotProducts();
+  }
 
-    function showModal(content) {
-      document.getElementById('modalContent').innerHTML = content;
-      document.getElementById('modal').style.display = 'flex';
-    }
+  function switchTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-' + tabId).classList.add('active');
+    event.target.classList.add('active');
+    
+    if(tabId === 'studio') loadStudioCalendar();
+    if(tabId === 'products') loadProducts();
+  }
 
-    function closeModal() {
-      document.getElementById('modal').style.display = 'none';
-    }
+  // --- 1. CAMPAIGN REQUESTS ---
+  async function loadRequests() {
+    const data = await getAllRequests();
+    const tbody = document.querySelector('#requestsTable tbody');
+    tbody.innerHTML = data.map(r => `
+      <tr>
+        <td>${new Date(r.timestamp).toLocaleDateString()}</td>
+        <td>${r.department}</td>
+        <td>${r.campaign}</td>
+        <td>${r.slot}</td>
+        <td><span class="badge badge-pending">${r.status}</span></td>
+        <td>
+           <button class="btn btn-warning" style="padding:5px 10px;font-size:12px;" onclick="alert('Manage in Supabase')">Edit</button>
+        </td>
+      </tr>
+    `).join('');
+  }
 
-    // Login
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const password = document.getElementById('adminPassword').value;
-
-      if (verifyAdminPassword(password)) {
-        isLoggedIn = true;
-        document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('adminContent').style.display = 'block';
-        loadAllData();
+  // --- 2. PRODUCT SUGGESTIONS & APPROVAL ---
+  async function loadProducts() {
+    const data = await getAllProductSuggestions();
+    const tbody = document.querySelector('#productsTable tbody');
+    tbody.innerHTML = data.map(p => {
+      let actions = '';
+      if(p.status === 'Pending') {
+        actions = `<button class="btn btn-success" onclick="openApproveModal(${p.row})">Approve</button> 
+                   <button class="btn btn-danger" onclick="rejectProduct(${p.row})">Reject</button>`;
       } else {
-        alert('Invalid password');
+        actions = `<span style="font-size:12px;color:#666;">${p.status}</span>`;
       }
-    });
 
-    function logout() {
-      isLoggedIn = false;
-      document.getElementById('loginScreen').style.display = 'block';
-      document.getElementById('adminContent').style.display = 'none';
-      document.getElementById('adminPassword').value = '';
-    }
+      return `<tr>
+        <td><a href="${p.productLink}" target="_blank">View Product</a></td>
+        <td>${p.category}</td>
+        <td>${p.margin}%</td>
+        <td><span class="badge badge-${p.status.toLowerCase()}">${p.status}</span></td>
+        <td>${p.assignedPage || '-'}</td>
+        <td>${p.slotDate ? p.slotDate + ' (Slot ' + p.slotNumber + ')' : '-'}</td>
+        <td>${actions}</td>
+      </tr>`;
+    }).join('');
+  }
 
-    function switchTab(tab) {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      event.target.classList.add('active');
-      document.getElementById('tab-' + tab).classList.add('active');
+  function openApproveModal(rowId) {
+    selectedProductRow = rowId;
+    selectedSlotData = null;
+    document.getElementById('approvePageSelect').value = "";
+    document.getElementById('slotPickerArea').style.display = 'none';
+    document.getElementById('confirmApproveBtn').disabled = true;
+    document.getElementById('approveModal').style.display = 'flex';
+  }
 
-      if (tab === 'content') {
-        loadContentData();
-      } else if (tab === 'hotproducts') {
-        loadHotProducts();
-      } else if (tab === 'studio') {
-        loadStudioCalendar();
-      }
-    }
+  async function fetchSlotsForPage(pageName) {
+    if(!pageName) return;
+    document.getElementById('slotGrid').innerHTML = '<div style="grid-column:1/-1;text-align:center;">Loading slots...</div>';
+    document.getElementById('slotPickerArea').style.display = 'block';
 
-    async function loadAllData() {
-      loadRequests();
-      loadProducts();
-      loadDepartments();
-    }
+    try {
+      const dates = await getAvailableSlotsForPage(pageName);
+      const grid = document.getElementById('slotGrid');
+      grid.innerHTML = '';
 
-    // ═══════════════════════════════════════════════════════════
-    // CAMPAIGN REQUESTS
-    // ═══════════════════════════════════════════════════════════
-    async function loadRequests() {
-      try {
-        const requests = await getAllRequests();
-        const tbody = document.getElementById('requestsTable');
-
-        if (requests.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;">No requests yet</td></tr>';
-          return;
-        }
-
-        tbody.innerHTML = requests.map(r => {
-          let badgeClass = 'badge-working';
-          if (r.status === 'Live') badgeClass = 'badge-live';
-          if (r.status === 'Rejected') badgeClass = 'badge-rejected';
-          if (r.status === 'Completed') badgeClass = 'badge-completed';
-
-          return `
-            <tr>
-              <td>${r.requestId}</td>
-              <td>${new Date(r.timestamp).toLocaleDateString()}</td>
-              <td>${r.department}</td>
-              <td>${r.month}</td>
-              <td>${r.slot}</td>
-              <td>${r.campaign}</td>
-              <td><span class="badge ${badgeClass}">${r.status}</span></td>
-              <td>
-                <div class="action-btns">
-                  <button class="btn btn-warning" onclick="updateStatus(${r.row}, 'Working')">Working</button>
-                  <button class="btn btn-success" onclick="updateStatus(${r.row}, 'Live')">Live</button>
-                  <button class="btn btn-complete" onclick="updateStatus(${r.row}, 'Completed')">Complete</button>
-                  <button class="btn btn-danger" onclick="updateStatus(${r.row}, 'Rejected')">Reject</button>
-                </div>
-              </td>
-            </tr>
+      dates.forEach(d => {
+        d.slots.forEach(s => {
+          const div = document.createElement('div');
+          div.className = `picker-slot ${s.status === 'Booked' ? 'booked' : ''}`;
+          div.innerHTML = `
+            <strong>${d.date}</strong><br>
+            Slot ${s.number}<br>
+            <span style="font-size:10px;">${s.status}</span>
           `;
-        }).join('');
-      } catch (error) {
-        document.getElementById('requestsTable').innerHTML = 
-          '<tr><td colspan="8" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
-      }
-    }
-
-    async function updateStatus(row, status) {
-      const reviewer = prompt('Enter your name:');
-      if (!reviewer) return;
-
-      const comments = status === 'Rejected' ? prompt('Rejection reason (optional):') : '';
-
-      try {
-        showLoading();
-        await updateRequestStatus(row, status, reviewer, comments || '');
-        hideLoading();
-        alert(`Status updated to: ${status}`);
-        loadRequests();
-      } catch (error) {
-        hideLoading();
-        alert('Error: ' + error.message);
-      }
-    }
-
-    // ═══════════════════════════════════════════════════════════
-    // PRODUCT SUGGESTIONS
-    // ═══════════════════════════════════════════════════════════
-    async function loadProducts() {
-      try {
-        const products = await getAllProductSuggestions();
-        const tbody = document.getElementById('productsTable');
-
-        if (products.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;">No products yet</td></tr>';
-          return;
-        }
-
-        tbody.innerHTML = products.map(p => {
-          let badgeClass = p.status === 'Approved' ? 'badge-approved' : 
-                          p.status === 'Rejected' ? 'badge-rejected' : 'badge-pending';
-
-          const actions = p.status === 'Approved' 
-            ? `<button class="btn btn-warning" onclick="editProduct(${p.row})">Edit</button>`
-            : `
-              <button class="btn btn-success" onclick="reviewProduct(${p.row}, 'Approved')">Approve</button>
-              <button class="btn btn-danger" onclick="reviewProduct(${p.row}, 'Rejected')">Reject</button>
-            `;
-
-          return `
-            <tr>
-              <td>${p.submissionId}</td>
-              <td>${new Date(p.timestamp).toLocaleDateString()}</td>
-              <td><a href="${p.productLink}" target="_blank" style="color:#5e3a8e;">View</a></td>
-              <td>${p.category}</td>
-              <td>${p.margin}%</td>
-              <td><span class="badge ${badgeClass}">${p.status}</span></td>
-              <td>${p.assignedPage || '-'}</td>
-              <td>${p.goLiveDate || '-'}</td>
-              <td>
-                <div class="action-btns">
-                  ${actions}
-                </div>
-              </td>
-            </tr>
-          `;
-        }).join('');
-      } catch (error) {
-        document.getElementById('productsTable').innerHTML = 
-          '<tr><td colspan="9" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
-      }
-    }
-
-    async function reviewProduct(row, status) {
-      const reviewerName = prompt('Enter your name:');
-      if (!reviewerName) return;
-
-      if (status === 'Approved') {
-        showApprovalModal(row, reviewerName);
-      } else {
-        const rejectionReason = prompt('Rejection Reason:');
-        if (!rejectionReason) return;
-
-        try {
-          showLoading();
-          await updateProductReview(row, {
-            status: 'Rejected',
-            reviewerName,
-            rejectionReason
-          });
-          hideLoading();
-          alert('Product rejected!');
-          loadProducts();
-        } catch (error) {
-          hideLoading();
-          alert('Error: ' + error.message);
-        }
-      }
-    }
-
-    function showApprovalModal(row, reviewerName) {
-      const radioButtons = PAGE_NAMES.map(page => `
-        <label class="radio-label">
-          <input type="radio" name="pageName" value="${page}" required>
-          <span>${page}</span>
-        </label>
-      `).join('');
-
-      const content = `
-        <button class="close-modal" onclick="closeModal()">×</button>
-        <h3>✅ Approve Product</h3>
-        <form id="approvalForm">
-          <div class="form-group">
-            <label>Select Page</label>
-            <div class="radio-group">
-              ${radioButtons}
-            </div>
-          </div>
-          <div class="form-group">
-            <label>Go Live Date</label>
-            <input type="date" id="goLiveDate" required>
-          </div>
-          <button type="submit" class="btn btn-success" style="width:100%;">Approve</button>
-        </form>
-      `;
-
-      showModal(content);
-
-      document.getElementById('approvalForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const assignedPage = document.querySelector('input[name="pageName"]:checked')?.value;
-        const goLiveDate = document.getElementById('goLiveDate').value;
-
-        if (!assignedPage) {
-          alert('Please select a page');
-          return;
-        }
-
-        try {
-          showLoading();
-          await updateProductReview(row, {
-            status: 'Approved',
-            reviewerName,
-            assignedPage,
-            goLiveDate
-          });
-          hideLoading();
-          closeModal();
-          alert('✅ Product approved!');
-          loadProducts();
-        } catch (error) {
-          hideLoading();
-          alert('Error: ' + error.message);
-        }
-      });
-    }
-
-    async function editProduct(row) {
-      const products = await getAllProductSuggestions();
-      const product = products.find(p => p.row === row);
-
-      if (!product) {
-        alert('Product not found');
-        return;
-      }
-
-      const radioButtons = PAGE_NAMES.map(page => `
-        <label class="radio-label">
-          <input type="radio" name="pageName" value="${page}" ${product.assignedPage === page ? 'checked' : ''}>
-          <span>${page}</span>
-        </label>
-      `).join('');
-
-      const content = `
-        <button class="close-modal" onclick="closeModal()">×</button>
-        <h3>✏️ Edit Product</h3>
-        <form id="editProductForm">
-          <div class="form-group">
-            <label>Select Page</label>
-            <div class="radio-group">
-              ${radioButtons}
-            </div>
-          </div>
-          <div class="form-group">
-            <label>Go Live Date</label>
-            <input type="date" id="editGoLiveDate" value="${product.goLiveDate || ''}" required>
-          </div>
-          <button type="submit" class="btn btn-primary" style="width:100%;">Update</button>
-        </form>
-      `;
-
-      showModal(content);
-
-      document.getElementById('editProductForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const assignedPage = document.querySelector('input[name="pageName"]:checked')?.value;
-        const goLiveDate = document.getElementById('editGoLiveDate').value;
-
-        try {
-          showLoading();
-          await updateProductReview(row, {
-            status: 'Approved',
-            reviewerName: product.reviewerName,
-            assignedPage,
-            goLiveDate
-          });
-          hideLoading();
-          closeModal();
-          alert('✅ Product updated!');
-          loadProducts();
-          loadStudioCalendar();
-        } catch (error) {
-          hideLoading();
-          alert('Error: ' + error.message);
-        }
-      });
-    }
-
-    // ═══════════════════════════════════════════════════════════
-    // CONTENT CALENDAR (FIXED - NOW ASKS FOR DATE)
-    // ═══════════════════════════════════════════════════════════
-    document.getElementById('themeForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const themeData = {
-        themeName: document.getElementById('themeName').value,
-        startDate: document.getElementById('themeStart').value,
-        endDate: document.getElementById('themeEnd').value,
-        slotsPerDay: document.getElementById('slotsPerDay').value,
-        themeColor: document.getElementById('themeColor').value,
-        isSeasonal: document.getElementById('isSeasonal').checked
-      };
-
-      try {
-        showLoading();
-        await addTheme(themeData);
-        hideLoading();
-        alert('✅ Theme added successfully!');
-        document.getElementById('themeForm').reset();
-        loadContentData();
-      } catch (error) {
-        hideLoading();
-        alert('Error: ' + error.message);
-      }
-    });
-
-    async function loadContentData() {
-      loadContentBookings();
-      loadThemes();
-    }
-
-    async function loadContentBookings() {
-      try {
-        const bookings = await getAllContentBookings();
-        const tbody = document.getElementById('contentTable');
-
-        if (bookings.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;">No bookings yet</td></tr>';
-          return;
-        }
-
-        tbody.innerHTML = bookings.map(b => {
-          let badgeClass = b.status === 'Approved' ? 'badge-approved' : 
-                          b.status === 'Rejected' ? 'badge-rejected' : 'badge-pending';
-
-          return `
-            <tr>
-              <td>${b.date}</td>
-              <td>${b.slotNumber}</td>
-              <td>${b.category}</td>
-              <td>${b.productCode}</td>
-              <td><span class="badge ${badgeClass}">${b.status}</span></td>
-              <td>${b.goLiveDate || '-'}</td>
-              <td>
-                <div class="action-btns">
-                  ${b.status === 'Pending' ? `
-                    <button class="btn btn-success" onclick="approveContent(${b.id})">Approve</button>
-                    <button class="btn btn-danger" onclick="rejectContent(${b.id})">Reject</button>
-                  ` : b.status === 'Approved' ? `
-                    <button class="btn btn-warning" onclick="editContentBooking(${b.id})">Edit</button>
-                  ` : ''}
-                </div>
-              </td>
-            </tr>
-          `;
-        }).join('');
-      } catch (error) {
-        document.getElementById('contentTable').innerHTML = 
-          '<tr><td colspan="7" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
-      }
-    }
-
-    // FIXED - Now asks for date with calendar picker
-    async function approveContent(id) {
-      const reviewer = prompt('Enter your name:');
-      if (!reviewer) return;
-
-      // Show modal with date picker instead of prompt
-      const content = `
-        <button class="close-modal" onclick="closeModal()">×</button>
-        <h3>✅ Approve Content Booking</h3>
-        <form id="approveContentForm">
-          <div class="form-group">
-            <label>Go Live Date</label>
-            <input type="date" id="contentGoLiveDate" required>
-          </div>
-          <button type="submit" class="btn btn-success" style="width:100%;">Approve</button>
-        </form>
-      `;
-
-      showModal(content);
-
-      document.getElementById('approveContentForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const goLiveDate = document.getElementById('contentGoLiveDate').value;
-
-        try {
-          showLoading();
-          await updateContentBooking(id, { status: 'Approved', reviewer, goLiveDate });
-          hideLoading();
-          closeModal();
-          alert('✅ Content approved!');
-          loadContentBookings();
-          loadStudioCalendar();
-        } catch (error) {
-          hideLoading();
-          alert('Error: ' + error.message);
-        }
-      });
-    }
-
-    async function rejectContent(id) {
-      const reviewer = prompt('Enter your name:');
-      if (!reviewer) return;
-
-      const rejectionReason = prompt('Rejection reason:');
-
-      try {
-        showLoading();
-        await updateContentBooking(id, { status: 'Rejected', reviewer, rejectionReason });
-        hideLoading();
-        alert('Content rejected!');
-        loadContentBookings();
-      } catch (error) {
-        hideLoading();
-        alert('Error: ' + error.message);
-      }
-    }
-
-    // FIXED - Added edit function for approved bookings
-    async function editContentBooking(id) {
-      const bookings = await getAllContentBookings();
-      const booking = bookings.find(b => b.id === id);
-
-      if (!booking) {
-        alert('Booking not found');
-        return;
-      }
-
-      const content = `
-        <button class="close-modal" onclick="closeModal()">×</button>
-        <h3>✏️ Edit Content Booking</h3>
-        <form id="editBookingForm">
-          <div class="form-group">
-            <label>Go Live Date</label>
-            <input type="date" id="editBookingDate" value="${booking.goLiveDate || ''}" required>
-          </div>
-          <button type="submit" class="btn btn-primary" style="width:100%;">Update</button>
-        </form>
-      `;
-
-      showModal(content);
-
-      document.getElementById('editBookingForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const goLiveDate = document.getElementById('editBookingDate').value;
-
-        try {
-          showLoading();
-          await updateContentBooking(id, {
-            status: 'Approved',
-            reviewer: booking.reviewer,
-            goLiveDate
-          });
-          hideLoading();
-          closeModal();
-          alert('✅ Booking updated!');
-          loadContentBookings();
-          loadStudioCalendar();
-        } catch (error) {
-          hideLoading();
-          alert('Error: ' + error.message);
-        }
-      });
-    }
-
-    async function loadThemes() {
-      try {
-        const themes = await getAllThemes();
-        const tbody = document.getElementById('themesTable');
-
-        if (themes.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;">No themes yet</td></tr>';
-          return;
-        }
-
-        tbody.innerHTML = themes.map(t => `
-          <tr>
-            <td>${t.theme_name}</td>
-            <td>${t.start_date}</td>
-            <td>${t.end_date}</td>
-            <td>${t.slots_per_day}</td>
-            <td>${t.is_seasonal ? 'Seasonal' : 'Daily Post'}</td>
-            <td>
-              <button class="btn btn-danger" onclick="removeTheme(${t.id})">Delete</button>
-            </td>
-          </tr>
-        `).join('');
-      } catch (error) {
-        document.getElementById('themesTable').innerHTML = 
-          '<tr><td colspan="6" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
-      }
-    }
-
-    async function removeTheme(id) {
-      if (!confirm('⚠️ Delete this theme?')) return;
-
-      try {
-        showLoading();
-        const result = await deleteTheme(id);
-        hideLoading();
-
-        if (result.slotsDeleted > 0) {
-          alert(`✅ Theme deleted successfully!\n\n${result.slotsDeleted} category slots were also removed.`);
-        } else {
-          alert('✅ Theme deleted successfully!');
-        }
-
-        loadThemes();
-        loadContentBookings();
-      } catch (error) {
-        hideLoading();
-        alert('❌ Error: ' + error.message);
-      }
-    }
-
-    // ═══════════════════════════════════════════════════════════
-    // STUDIO CALENDAR
-    // ═══════════════════════════════════════════════════════════
-    async function loadStudioCalendar() {
-      try {
-        showLoading();
-        const data = await getStudioCalendarForMonth(currentStudioYear, currentStudioMonth);
-        studioCalendarData = data;
-
-        const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-        document.getElementById('studioMonthTitle').textContent = `${monthNames[currentStudioMonth - 1]} ${currentStudioYear}`;
-
-        renderStudioCalendar();
-        hideLoading();
-      } catch (error) {
-        hideLoading();
-        alert('Error loading studio calendar: ' + error.message);
-      }
-    }
-
-    function renderStudioCalendar() {
-      const grid = document.getElementById('studioCalendarGrid');
-
-      while (grid.children.length > 7) {
-        grid.removeChild(grid.lastChild);
-      }
-
-      const firstDay = new Date(currentStudioYear, currentStudioMonth - 1, 1);
-      const lastDay = new Date(currentStudioYear, currentStudioMonth, 0);
-      const startDay = firstDay.getDay();
-      const daysInMonth = lastDay.getDate();
-
-      for (let i = 0; i < startDay; i++) {
-        const emptyDiv = document.createElement('div');
-        emptyDiv.className = 'calendar-day empty';
-        grid.appendChild(emptyDiv);
-      }
-
-      for (let day = 1; day <= daysInMonth; day++) {
-        const dateStr = `${currentStudioYear}-${String(currentStudioMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        const dayData = studioCalendarData.filter(item => item.date === dateStr);
-
-        const dayDiv = document.createElement('div');
-        dayDiv.className = 'calendar-day';
-        dayDiv.onclick = () => showDateContents(dateStr);
-
-        let html = `<div class="day-number">${day}</div>`;
-
-        dayData.forEach(item => {
-          const status = item.completion_status === 'Completed' ? 'completed' : 'pending';
-          const icon = item.completion_status === 'Completed' ? '✅' : '⏳';
-          html += `<div class="day-content-item ${status}">${icon} ${item.product_code || item.page_name || 'Content'}</div>`;
+          
+          if(s.status === 'Available') {
+            div.onclick = () => selectSlot(div, d.date, s.number, pageName);
+          }
+          grid.appendChild(div);
         });
-
-        dayDiv.innerHTML = html;
-        grid.appendChild(dayDiv);
-      }
+      });
+    } catch (e) {
+      console.error(e);
+      alert('Error fetching slots');
     }
+  }
 
-    function changeStudioMonth(delta) {
-      currentStudioMonth += delta;
-      if (currentStudioMonth < 1) {
-        currentStudioMonth = 12;
-        currentStudioYear--;
-      } else if (currentStudioMonth > 12) {
-        currentStudioMonth = 1;
-        currentStudioYear++;
-      }
-      loadStudioCalendar();
+  function selectSlot(el, date, number, page) {
+    document.querySelectorAll('.picker-slot').forEach(e => e.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedSlotData = { date, number, page };
+    document.getElementById('confirmApproveBtn').disabled = false;
+  }
+
+  async function confirmProductApproval() {
+    if(!selectedProductRow || !selectedSlotData) return;
+    
+    try {
+      await updateProductReview(selectedProductRow, {
+        status: 'Approved',
+        reviewerName: 'Admin',
+        assignedPage: selectedSlotData.page,
+        slotDate: selectedSlotData.date,
+        slotNumber: selectedSlotData.number
+      });
+      closeModal('approveModal');
+      loadProducts();
+      alert('Product Approved & Scheduled!');
+    } catch (e) {
+      alert(e.message);
     }
+  }
 
-    function showDateContents(date) {
-      const items = studioCalendarData.filter(item => item.date === date);
+  // --- 4. STUDIO VERTICAL CALENDAR ---
+  async function loadStudioCalendar() {
+    // Determine start/end of the current view (1 week view)
+    const start = new Date(currentStudioDate);
+    start.setDate(start.getDate() - start.getDay()); // Go to Sunday
+    
+    const end = new Date(start);
+    end.setDate(end.getDate() + 6); // Go to Saturday
 
-      if (items.length === 0) {
-        alert('No content scheduled for this date');
-        return;
-      }
+    const dateStrStart = start.toISOString().split('T')[0];
+    const dateStrEnd = end.toISOString().split('T')[0];
 
-      const listHtml = items.map((item, index) => {
-        const statusClass = item.completion_status === 'Completed' ? 'status-completed' : 'status-pending';
-        const icon = item.completion_status === 'Completed' ? '✅' : '⏳';
+    document.getElementById('studioDateRange').innerText = `${start.toDateString()} - ${end.toDateString()}`;
 
-        return `
-          <div class="content-list-item" onclick="showContentDetails(${item.id})">
-            <div class="content-list-header">
-              <div class="content-list-title">${icon} ${item.product_code || item.page_name || `Content ${index + 1}`}</div>
-              <div class="content-list-badge ${statusClass}">${item.completion_status || 'Not Started'}</div>
-            </div>
-            <div style="font-size:12px;color:#666;">
-              ${item.page_name || ''} • ${item.format || ''} • ${item.source_type}
-            </div>
-          </div>
-        `;
-      }).join('');
+    const schedule = await getFullStudioSchedule(dateStrStart, dateStrEnd);
+    const container = document.getElementById('studioVerticalContainer');
+    container.innerHTML = '';
 
-      const content = `
-        <button class="close-modal" onclick="closeModal()">×</button>
-        <h3>📅 ${date} - Content List</h3>
-        <div style="margin-top:20px;">
-          ${listHtml}
+    schedule.forEach(day => {
+      const dayDiv = document.createElement('div');
+      dayDiv.className = 'studio-day-container';
+      
+      let slotsHtml = '';
+      
+      // Fixed Slots (Lead Forms)
+      day.leadSlots.forEach(slot => {
+        if(slot.is_empty) {
+          slotsHtml += `
+            <div class="slot-card slot-empty">
+              <div class="slot-number">Slot ${slot.slot_number} - ${slot.page_name}</div>
+              <div class="slot-title" style="color:#999;">Empty Slot</div>
+              <div class="slot-details">Waiting for product...</div>
+            </div>`;
+        } else {
+           slotsHtml += renderBookedSlot(slot, 'slot-lead');
+        }
+      });
+
+      // Content Calendar Slots
+      day.contentSlots.forEach(slot => {
+        slotsHtml += renderBookedSlot(slot, 'slot-content');
+      });
+
+      dayDiv.innerHTML = `
+        <div class="studio-day-header">
+          <span class="studio-day-title">${day.dayName}, ${day.date}</span>
+          <span class="studio-day-meta">${day.leadSlots.length} Lead Slots | ${day.contentSlots.length} Content Items</span>
+        </div>
+        <div class="studio-slots-container">
+          ${slotsHtml}
         </div>
       `;
+      container.appendChild(dayDiv);
+    });
+  }
 
-      showModal(content);
+  function renderBookedSlot(slot, cssClass) {
+    let statusClass = 'status-received';
+    if(slot.studio_status === 'Working') statusClass = 'status-working';
+    if(slot.studio_status === 'Submitted for Review') statusClass = 'status-submitted';
+    if(slot.studio_status === 'Approved') statusClass = 'status-approved';
+
+    return `
+      <div class="slot-card ${cssClass}" onclick="openStudioModal(${slot.id})">
+        <div class="slot-status ${statusClass}">${slot.studio_status}</div>
+        <div class="slot-number">${slot.slot_type === 'lead_form' ? 'Lead Form Slot ' + slot.slot_number : 'Content Calendar'}</div>
+        <div class="slot-title">${slot.content_details || 'Content Item'}</div>
+        <div class="slot-details">
+          Page: ${slot.page_name || 'N/A'}<br>
+          Format: ${slot.format || 'N/A'}
+        </div>
+        ${slot.head_approved ? '<div style="margin-top:10px;font-size:11px;color:green;">✅ Head Approved</div>' : ''}
+      </div>`;
+  }
+
+  function changeStudioMonth(weeks) {
+    currentStudioDate.setDate(currentStudioDate.getDate() + (weeks * 7));
+    loadStudioCalendar();
+  }
+
+  // --- STUDIO MODAL WORKFLOW ---
+  async function openStudioModal(id) {
+    selectedStudioId = id;
+    const item = await getStudioCalendarItem(id);
+    if(!item) return;
+
+    document.getElementById('studioModalTitle').innerText = item.content_details || 'Manage Content';
+    document.getElementById('studioModalDetails').innerHTML = `
+      <strong>Date:</strong> ${item.date}<br>
+      <strong>Page:</strong> ${item.page_name}<br>
+      <strong>Format:</strong> ${item.format}
+      ${item.content_link ? `<br><strong>Link:</strong> <a href="${item.content_link}" target="_blank">View Content</a>` : ''}
+    `;
+
+    document.getElementById('studioStatusSelect').value = item.studio_status || 'Received';
+    handleStatusChange(); // Show/hide fields
+    
+    document.getElementById('studioModal').style.display = 'flex';
+  }
+
+  function handleStatusChange() {
+    const status = document.getElementById('studioStatusSelect').value;
+    document.getElementById('linkInputArea').style.display = (status === 'Submitted for Review') ? 'block' : 'none';
+    document.getElementById('passwordArea').style.display = (status === 'Approved') ? 'block' : 'none';
+  }
+
+  async function saveStudioStatus() {
+    const status = document.getElementById('studioStatusSelect').value;
+    const link = document.getElementById('studioContentLink').value;
+    const password = document.getElementById('headPassword').value;
+
+    const data = { studio_status: status };
+
+    if(status === 'Submitted for Review') {
+      if(!link) return alert('Content Link is required for review.');
+      data.content_link = link;
     }
 
-    async function showContentDetails(id) {
-      try {
-        showLoading();
-        const item = await getStudioCalendarItem(id);
-        hideLoading();
-
-        if (!item) {
-          alert('Content not found');
-          return;
-        }
-
-        const content = `
-          <button class="close-modal" onclick="closeModal()">×</button>
-          <h3>📦 Content Details</h3>
-
-          <div style="margin-top:25px;">
-            ${item.product_code ? `<div class="detail-row">
-              <div class="detail-label">Product Code:</div>
-              <div class="detail-value">${item.product_code}</div>
-            </div>` : ''}
-
-            <div class="detail-row">
-              <div class="detail-label">Page Name:</div>
-              <div class="detail-value">${item.page_name || '-'}</div>
-            </div>
-
-            <div class="detail-row">
-              <div class="detail-label">Format:</div>
-              <div class="detail-value">${item.format || '-'}</div>
-            </div>
-
-            <div class="detail-row">
-              <div class="detail-label">Details:</div>
-              <div class="detail-value">${item.content_details || '-'}</div>
-            </div>
-
-            <div class="detail-row">
-              <div class="detail-label">Reference Links:</div>
-              <div class="detail-value">${item.reference_links ? `<a href="${item.reference_links}" target="_blank">${item.reference_links}</a>` : '-'}</div>
-            </div>
-
-            <div class="detail-row">
-              <div class="detail-label">Source:</div>
-              <div class="detail-value">${item.source_type}</div>
-            </div>
-          </div>
-
-          <hr style="margin:25px 0;border:none;border-top:2px solid #f0f0f0;">
-
-          <h3 style="font-size:18px;margin-bottom:15px;">✅ Completion Status</h3>
-
-          <form id="completionForm">
-            <div class="form-group">
-              <label>Status</label>
-              <select id="completionStatus" style="padding:12px;">
-                <option value="Not Started" ${item.completion_status === 'Not Started' ? 'selected' : ''}>Not Started</option>
-                <option value="In Progress" ${item.completion_status === 'In Progress' ? 'selected' : ''}>In Progress</option>
-                <option value="Completed" ${item.completion_status === 'Completed' ? 'selected' : ''}>Completed</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label>📎 Content Link (Published Post)</label>
-              <input type="url" id="contentLink" placeholder="https://facebook.com/post/123" value="${item.content_link || ''}" style="padding:12px;">
-            </div>
-
-            <button type="submit" class="btn btn-success" style="width:100%;">💾 Save</button>
-          </form>
-        `;
-
-        showModal(content);
-
-        document.getElementById('completionForm').addEventListener('submit', async (e) => {
-          e.preventDefault();
-
-          const completionStatus = document.getElementById('completionStatus').value;
-          const contentLink = document.getElementById('contentLink').value;
-
-          try {
-            showLoading();
-            await updateStudioCompletion(id, { completion_status: completionStatus, content_link: contentLink });
-            hideLoading();
-            closeModal();
-            alert('✅ Status updated!');
-            loadStudioCalendar();
-          } catch (error) {
-            hideLoading();
-            alert('Error: ' + error.message);
-          }
-        });
-      } catch (error) {
-        hideLoading();
-        alert('Error: ' + error.message);
-      }
+    if(status === 'Approved') {
+      if(password !== '207') return alert('Invalid Head Password');
+      data.password = password; // API will verify again
+      data.approved_by = 'Head of Content';
     }
 
-    function openAddExtraContentModal() {
-      const radioButtons = PAGE_NAMES.map(page => `
-        <label class="radio-label">
-          <input type="radio" name="extraPageName" value="${page}" required>
-          <span>${page}</span>
-        </label>
-      `).join('');
+    try {
+      await updateStudioStatus(selectedStudioId, data);
+      closeModal('studioModal');
+      loadStudioCalendar();
+      alert('Status Updated');
+    } catch(e) {
+      alert(e.message);
+    }
+  }
 
-      const content = `
-        <button class="close-modal" onclick="closeModal()">×</button>
-        <h3>➕ Add Extra Content</h3>
-        <form id="extraContentForm">
-          <div class="form-group">
-            <label>Content Details</label>
-            <textarea id="extraDetails" required placeholder="Describe the content..." rows="3"></textarea>
-          </div>
-
-          <div class="form-group">
-            <label>Format</label>
-            <input type="text" id="extraFormat" required placeholder="e.g., Single Image, Carousel, Video">
-          </div>
-
-          <div class="form-group">
-            <label>Page Name</label>
-            <div class="radio-group">
-              ${radioButtons}
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>Date</label>
-            <input type="date" id="extraDate" required>
-          </div>
-
-          <div class="form-group">
-            <label>Reference Links</label>
-            <textarea id="extraLinks" placeholder="Add reference URLs..." rows="2"></textarea>
-          </div>
-
-          <button type="submit" class="btn btn-success" style="width:100%;">Add Content</button>
-        </form>
-      `;
-
-      showModal(content);
-
-      document.getElementById('extraContentForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        const pageName = document.querySelector('input[name="extraPageName"]:checked')?.value;
-        if (!pageName) {
-          alert('Please select a page');
-          return;
-        }
-
-        const extraData = {
-          content_details: document.getElementById('extraDetails').value,
-          format: document.getElementById('extraFormat').value,
-          page_name: pageName,
-          date: document.getElementById('extraDate').value,
-          reference_links: document.getElementById('extraLinks').value,
-          created_by: 'Admin'
-        };
-
-        try {
-          showLoading();
-          await addExtraContent(extraData);
-          hideLoading();
-          closeModal();
-          alert('✅ Extra content added!');
-          loadStudioCalendar();
-        } catch (error) {
-          hideLoading();
-          alert('Error: ' + error.message);
-        }
+  // --- HOT PRODUCTS ---
+  document.getElementById('addHotForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      await addHotProduct({
+        category: document.getElementById('hotCategory').value,
+        productLink: document.getElementById('hotLink').value,
+        salesCount: document.getElementById('hotSales').value
       });
+      loadHotProducts();
+      document.getElementById('addHotForm').reset();
+    } catch(e) { alert(e.message); }
+  });
+
+  async function loadHotProducts() {
+    const data = await getAllHotProducts();
+    document.querySelector('#hotTable tbody').innerHTML = data.map(p => `
+      <tr>
+        <td>${p.category}</td>
+        <td><a href="${p.product_link}" target="_blank">Link</a></td>
+        <td>${p.sales_count}</td>
+        <td>${p.listed ? '✅' : '❌'}</td>
+        <td><button class="btn btn-danger btn-sm" onclick="deleteHotProductItem(${p.id})">Delete</button></td>
+      </tr>
+    `).join('');
+  }
+
+  async function deleteHotProductItem(id) {
+    if(confirm('Delete?')) {
+      await deleteHotProduct(id);
+      loadHotProducts();
     }
+  }
 
-    // ═══════════════════════════════════════════════════════════
-    // HOT PRODUCTS
-    // ═══════════════════════════════════════════════════════════
-    document.getElementById('addHotProductForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
+  // --- CONTENT CALENDAR ---
+  async function loadContent() {
+    const data = await getAllContentBookings();
+    document.querySelector('#contentTable tbody').innerHTML = data.map(c => `
+      <tr>
+        <td>${c.date}</td>
+        <td>${c.theme}</td>
+        <td>${c.category}</td>
+        <td>${c.productCode || '-'}</td>
+        <td>${c.status}</td>
+        <td>-</td>
+      </tr>
+    `).join('');
+  }
 
-      const category = document.getElementById('hotProductCategory').value;
-      const productLink = document.getElementById('hotProductLink').value;
-      const salesCount = document.getElementById('hotProductSales').value;
+  // --- UTILS ---
+  function closeModal(id) {
+    document.getElementById(id).style.display = 'none';
+  }
+  
+  function rejectProduct(id) {
+     const reason = prompt("Reason for rejection:");
+     if(reason) updateProductReview(id, {status:'Rejected', rejectionReason: reason}).then(loadProducts);
+  }
 
-      if (!category || !productLink) {
-        alert('Please fill in all required fields');
-        return;
-      }
-
-      try {
-        showLoading();
-        await addHotProduct({
-          category: category,
-          productLink: productLink,
-          salesCount: salesCount
-        });
-        hideLoading();
-        alert('✓ Product added successfully!');
-        document.getElementById('addHotProductForm').reset();
-        loadHotProducts();
-      } catch (error) {
-        hideLoading();
-        alert('Error adding product: ' + error.message);
-      }
-    });
-
-    async function loadHotProducts() {
-      try {
-        showLoading();
-        allHotProducts = await getAllHotProducts();
-        const stats = await getHotProductsStats();
-
-        document.getElementById('adminTotalProducts').textContent = stats.totalProducts;
-        document.getElementById('adminListedProducts').textContent = stats.listedProducts;
-        document.getElementById('adminCategoryCount').textContent = Object.keys(stats.byCategory).length;
-
-        filterHotProducts();
-        hideLoading();
-      } catch (error) {
-        hideLoading();
-        console.error('Error loading hot products:', error);
-        document.getElementById('hotProductsTableBody').innerHTML = 
-          '<tr><td colspan="8" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
-      }
-    }
-
-    function filterHotProducts() {
-      const categoryFilter = document.getElementById('filterCategory').value;
-      const listedFilter = document.getElementById('filterListed').value;
-
-      let filtered = allHotProducts;
-
-      if (categoryFilter) {
-        filtered = filtered.filter(p => p.category === categoryFilter);
-      }
-
-      if (listedFilter !== '') {
-        const isListed = listedFilter === 'true';
-        filtered = filtered.filter(p => p.listed === isListed);
-      }
-
-      displayHotProducts(filtered);
-    }
-
-    function displayHotProducts(products) {
-      const tbody = document.getElementById('hotProductsTableBody');
-
-      if (products.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:#999;">No products found</td></tr>';
-        return;
-      }
-
-      tbody.innerHTML = products.map(p => {
-        const shortLink = p.product_link.length > 40 ? p.product_link.substring(0, 40) + '...' : p.product_link;
-        const kaprukaShort = p.kapruka_link ? (p.kapruka_link.length > 40 ? p.kapruka_link.substring(0, 40) + '...' : p.kapruka_link) : '-';
-        const createdDate = new Date(p.created_at).toLocaleDateString();
-
-        return `
-          <tr style="border-bottom:1px solid #f0f0f0;">
-            <td style="padding:12px;font-weight:600;">${p.id}</td>
-            <td style="padding:12px;">
-              <span style="background:#E8F5E9;color:#2E7D32;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;">
-                ${p.category}
-              </span>
-            </td>
-            <td style="padding:12px;">
-              <a href="${p.product_link}" target="_blank" style="color:#5e3a8e;text-decoration:none;" title="${p.product_link}">
-                ${shortLink}
-              </a>
-            </td>
-            <td style="padding:12px;text-align:center;font-weight:600;">${p.sales_count || 0}</td>
-            <td style="padding:12px;text-align:center;">
-              <input type="checkbox" ${p.listed ? 'checked' : ''} onchange="toggleListed(${p.id}, this.checked)" style="width:20px;height:20px;cursor:pointer;">
-            </td>
-            <td style="padding:12px;">
-              ${p.kapruka_link ? 
-                `<a href="${p.kapruka_link}" target="_blank" style="color:#5e3a8e;text-decoration:none;" title="${p.kapruka_link}">${kaprukaShort}</a>` 
-                : '<span style="color:#999;">-</span>'}
-            </td>
-            <td style="padding:12px;text-align:center;color:#666;font-size:12px;">${createdDate}</td>
-            <td style="padding:12px;text-align:center;">
-              <button onclick="editHotProduct(${p.id})" style="background:#FFA726;color:white;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;margin-right:5px;">
-                Edit
-              </button>
-              <button onclick="deleteHotProductItem(${p.id})" style="background:#EF5350;color:white;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;">
-                Delete
-              </button>
-            </td>
-          </tr>
-        `;
-      }).join('');
-    }
-
-    async function toggleListed(id, listed) {
-      try {
-        await updateHotProduct(id, { listed });
-        loadHotProducts();
-      } catch (error) {
-        alert('Error updating product: ' + error.message);
-      }
-    }
-
-    async function editHotProduct(id) {
-      const product = allHotProducts.find(p => p.id === id);
-      if (!product) return;
-
-      const kaprukaLink = prompt('Enter Kapruka Link:', product.kapruka_link || '');
-      if (kaprukaLink === null) return;
-
-      try {
-        showLoading();
-        await updateHotProduct(id, { kapruka_link: kaprukaLink });
-        hideLoading();
-        alert('✓ Product updated!');
-        loadHotProducts();
-      } catch (error) {
-        hideLoading();
-        alert('Error: ' + error.message);
-      }
-    }
-
-    async function deleteHotProductItem(id) {
-      if (!confirm('Delete this product?')) return;
-
-      try {
-        showLoading();
-        await deleteHotProduct(id);
-        hideLoading();
-        alert('✓ Product deleted!');
-        loadHotProducts();
-      } catch (error) {
-        hideLoading();
-        alert('Error: ' + error.message);
-      }
-    }
-
-    // ═══════════════════════════════════════════════════════════
-    // DEPARTMENTS
-    // ═══════════════════════════════════════════════════════════
-    document.getElementById('deptForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const config = {
-        month: document.getElementById('deptMonth').value,
-        department: document.getElementById('deptName').value,
-        budget: document.getElementById('deptBudget').value,
-        slots: document.getElementById('deptSlots').value,
-        color: document.getElementById('deptColor').value,
-        active: document.getElementById('deptActive').value
-      };
-
-      try {
-        showLoading();
-        await addDepartment(config);
-        hideLoading();
-        alert('✅ Department added successfully!');
-        document.getElementById('deptForm').reset();
-        loadDepartments();
-      } catch (error) {
-        hideLoading();
-        alert('Error: ' + error.message);
-      }
-    });
-
-    async function loadDepartments() {
-      try {
-        const depts = await getAllDepartments();
-        const tbody = document.getElementById('deptsTable');
-
-        if (depts.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;">No departments yet</td></tr>';
-          return;
-        }
-
-        tbody.innerHTML = depts.map(d => `
-          <tr>
-            <td>${d.month}</td>
-            <td>${d.department}</td>
-            <td>$${d.budget}k</td>
-            <td>${d.slots}</td>
-            <td><span class="badge ${d.active === 'Yes' ? 'badge-approved' : 'badge-rejected'}">${d.active}</span></td>
-            <td>
-              <button class="btn btn-danger" onclick="removeDept(${d.row})">Delete</button>
-            </td>
-          </tr>
-        `).join('');
-      } catch (error) {
-        document.getElementById('deptsTable').innerHTML = 
-          '<tr><td colspan="6" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
-      }
-    }
-
-    async function removeDept(row) {
-      if (!confirm('Delete this department?')) return;
-
-      try {
-        showLoading();
-        await deleteDepartment(row);
-        hideLoading();
-        alert('✅ Department deleted!');
-        loadDepartments();
-      } catch (error) {
-        hideLoading();
-        alert('Error: ' + error.message);
-      }
-    }
-  </script>
+</script>
 </body>
 </html>
