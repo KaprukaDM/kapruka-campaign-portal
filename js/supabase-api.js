@@ -1,14 +1,12 @@
 // ═══════════════════════════════════════════════════════════════
-// SUPABASE API CLIENT - KAPRUKA CAMPAIGN PORTAL (UPDATED)
+// SUPABASE API CLIENT - KAPRUKA CAMPAIGN PORTAL
 // ═══════════════════════════════════════════════════════════════
 
 const SUPABASE_URL = 'https://ivllhheqqiseagmctfyp.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml2bGxoaGVxcWlzZWFnbWN0ZnlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1NzQzMzksImV4cCI6MjA4NDE1MDMzOX0.OnkYNACtdknKDY2KqLfiGN0ORXpKaW906fD0TtSJlIk';
 const ADMIN_PASSWORD = 'Kapruka2026!Admin';
-const CONTENT_HEAD_PASSWORD = '207';
 
 const VALID_STATUSES = ['Request Submitted', 'Working', 'Live', 'Completed', 'Rejected'];
-const STUDIO_APPROVAL_STATUSES = ['Received', 'Working', 'Submitted for Review', 'Approved'];
 
 // ═══════════════════════════════════════════════════════════════
 // PAGE SCHEDULE CONFIGURATION
@@ -16,8 +14,8 @@ const STUDIO_APPROVAL_STATUSES = ['Received', 'Working', 'Submitted for Review',
 
 const PAGE_SCHEDULE = {
   'Kapruka FB Leads': { day: 1, slots: 3 },      // Monday
-  'Electronic Factory': { day: 2, slots: 3 },    // Tuesday (was Wednesday)
-  'Social Mart': { day: 3, slots: 3 },          // Wednesday (was Tuesday)
+  'Electronic Factory': { day: 2, slots: 3 },    // Tuesday
+  'Social Mart': { day: 3, slots: 3 },          // Wednesday
   'Fashion Factory': { day: 4, slots: 3 },       // Thursday
   'Toys Factory': { day: 5, slots: 3 },         // Friday
   'Handbag Factory': { day: 6, slots: 3 },      // Saturday
@@ -62,12 +60,147 @@ function getAllPageNames() {
   return Object.keys(PAGE_SCHEDULE);
 }
 
-function verifyContentHeadPassword(password) {
-  return password === CONTENT_HEAD_PASSWORD;
+// ═══════════════════════════════════════════════════════════════
+// ENHANCED STUDIO CALENDAR - SHOW ALL CONTENT CALENDAR SLOTS
+// ═══════════════════════════════════════════════════════════════
+
+async function getStudioCalendarData(month, year) {
+  try {
+    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+    const lastDay = new Date(year, month, 0).getDate();
+    const endDate = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
+
+    // Get all content themes
+    const themes = await supabaseQuery(
+      `theme_config?start_date=lte.${endDate}&end_date=gte.${startDate}`
+    );
+
+    // Get all category slots (this defines ALL possible slots)
+    const categorySlots = await supabaseQuery(
+      `category_slots?date=gte.${startDate}&date=lte.${endDate}&order=date.asc,slot_number.asc`
+    );
+
+    // Get all content bookings
+    const contentBookings = await supabaseQuery(
+      `content_calendar?date=gte.${startDate}&date=lte.${endDate}`
+    );
+
+    // Get approved product suggestions that have been assigned
+    const productSuggestions = await supabaseQuery(
+      `product_suggestions?status=eq.Approved&go_live_date=gte.${startDate}&go_live_date=lte.${endDate}`
+    );
+
+    // Get existing studio calendar entries
+    const studioEntries = await supabaseQuery(
+      `studio_calendar?date=gte.${startDate}&date=lte.${endDate}`
+    );
+
+    // Combine all data
+    const calendarItems = [];
+
+    // Process ALL category slots (both empty and booked)
+    categorySlots.forEach(slot => {
+      // Check if this slot is booked in content_calendar
+      const booking = contentBookings.find(b => 
+        b.date === slot.date && 
+        b.slot_number === slot.slot_number &&
+        (b.status === 'Approved' || b.status === 'Pending')
+      );
+
+      // Check if there's a studio entry for this
+      const studioEntry = studioEntries.find(s => 
+        s.date === slot.date && 
+        s.source_type === 'content_booking' &&
+        s.source_id === booking?.id
+      );
+
+      calendarItems.push({
+        date: slot.date,
+        slotNumber: slot.slot_number,
+        category: slot.category,
+        type: 'content_slot',
+        status: booking ? (booking.status === 'Approved' ? 'booked' : 'pending') : 'empty',
+        productCode: booking?.product_code || null,
+        productLink: booking?.product_link || null,
+        theme: booking?.theme || '',
+        submittedBy: booking?.submitted_by || null,
+        studioStatus: studioEntry?.completion_status || 'pending',
+        studioLink: studioEntry?.content_link || null,
+        studioId: studioEntry?.id || null,
+        bookingId: booking?.id || null
+      });
+    });
+
+    // Add TikTok Video slots for every Sunday
+    const currentDate = new Date(startDate);
+    const endDateObj = new Date(endDate);
+    
+    while (currentDate <= endDateObj) {
+      if (currentDate.getDay() === 0) { // Sunday
+        const dateStr = currentDate.toISOString().split('T')[0];
+        
+        const tiktokEntry = studioEntries.find(s => 
+          s.date === dateStr && 
+          s.page_name === 'TikTok Video'
+        );
+
+        calendarItems.push({
+          date: dateStr,
+          slotNumber: 1,
+          category: 'TikTok Video',
+          type: 'tiktok_slot',
+          status: tiktokEntry ? 'booked' : 'empty',
+          productCode: tiktokEntry?.product_code || null,
+          pageName: 'TikTok Video',
+          studioStatus: tiktokEntry?.completion_status || 'pending',
+          studioLink: tiktokEntry?.content_link || null,
+          studioId: tiktokEntry?.id || null,
+          contentDetails: tiktokEntry?.content_details || null
+        });
+      }
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    // Add product suggestions
+    productSuggestions.forEach(product => {
+      const existingStudio = studioEntries.find(s => 
+        s.source_type === 'product_suggestion' && 
+        s.source_id === product.id
+      );
+
+      calendarItems.push({
+        date: product.go_live_date,
+        slotNumber: product.slot_number || null,
+        type: 'product_suggestion',
+        status: 'booked',
+        productLink: product.product_link,
+        pageName: product.assigned_page,
+        category: product.category,
+        promotionIdea: product.promotion_idea,
+        studioStatus: existingStudio?.completion_status || 'pending',
+        studioLink: existingStudio?.content_link || null,
+        studioId: existingStudio?.id || null,
+        productSuggestionId: product.id
+      });
+    });
+
+    return {
+      themes: themes || [],
+      calendarItems: calendarItems.sort((a, b) => {
+        if (a.date === b.date) {
+          return (a.slotNumber || 0) - (b.slotNumber || 0);
+        }
+        return a.date.localeCompare(b.date);
+      })
+    };
+  } catch (error) {
+    console.error('getStudioCalendarData error:', error);
+    throw error;
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
-// PRODUCT SUGGESTION SLOT AVAILABILITY (NEXT 2 WEEKS)
+// GET AVAILABLE SLOTS FOR PAGE (Next 3 Weeks)
 // ═══════════════════════════════════════════════════════════════
 
 async function getAvailableSlotsForPage(pageName) {
@@ -77,10 +210,10 @@ async function getAvailableSlotsForPage(pageName) {
     }
 
     const schedule = PAGE_SCHEDULE[pageName];
-    const targetDay = schedule.day;
+    const targetDay = schedule.day; // 0=Sunday, 1=Monday, etc.
     const slotsPerDay = schedule.slots;
 
-    // Get dates for next 2 weeks for this specific weekday
+    // Get dates for next 3 weeks for this specific weekday
     const dates = [];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -89,40 +222,54 @@ async function getAvailableSlotsForPage(pageName) {
     let currentDate = new Date(today);
     const daysUntilTarget = (targetDay - currentDate.getDay() + 7) % 7;
     if (daysUntilTarget === 0) {
+      // If today is the target day, start from next week
       currentDate.setDate(currentDate.getDate() + 7);
     } else {
       currentDate.setDate(currentDate.getDate() + daysUntilTarget);
     }
 
-    // Get next 2 occurrences
-    for (let i = 0; i < 2; i++) {
+    // Get next 3 occurrences of this weekday
+    for (let i = 0; i < 3; i++) {
       dates.push(currentDate.toISOString().split('T')[0]);
       currentDate.setDate(currentDate.getDate() + 7);
     }
 
-    // Get existing product bookings
+    // Get existing bookings for these dates and page
+    const contentBookings = await supabaseQuery(
+      `content_calendar?page_name=eq.${encodeURIComponent(pageName)}`
+    );
+
+    // Check product_suggestions bookings
     const productBookings = await supabaseQuery(
       `product_suggestions?assigned_page=eq.${encodeURIComponent(pageName)}&status=eq.Approved`
     );
 
-    // Build slot availability
+    // Build slot availability for each date
     const slotAvailability = [];
 
     dates.forEach(date => {
       for (let slotNum = 1; slotNum <= slotsPerDay; slotNum++) {
-        const productBooked = productBookings.find(p => 
-          p.go_live_date === date && 
-          p.assigned_slot_number === slotNum
+        // Check if slot is booked in content_calendar
+        const contentBooked = contentBookings.find(b => 
+          b.date === date && 
+          b.slot_number === slotNum &&
+          (b.status === 'Approved' || b.status === 'Pending')
         );
 
-        const isBooked = !!productBooked;
+        // Check if slot is booked in product_suggestions
+        const productBooked = productBookings.find(p => 
+          p.slot_date === date && 
+          p.slot_number === slotNum
+        );
+
+        const isBooked = !!(contentBooked || productBooked);
 
         slotAvailability.push({
           date: date,
           slotNumber: slotNum,
           available: !isBooked,
-          bookedBy: productBooked ? `${productBooked.submission_id}` : null,
-          displayLabel: `${date} - Slot ${slotNum}`
+          bookedBy: contentBooked ? `Content: ${contentBooked.product_code}` : 
+                    productBooked ? `Product: ${productBooked.submission_id}` : null
         });
       }
     });
@@ -130,7 +277,7 @@ async function getAvailableSlotsForPage(pageName) {
     return {
       pageName: pageName,
       weekday: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][targetDay],
-      slots: slotAvailability.filter(s => s.available)
+      slots: slotAvailability
     };
   } catch (error) {
     console.error('getAvailableSlotsForPage error:', error);
@@ -139,261 +286,51 @@ async function getAvailableSlotsForPage(pageName) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// NEW STUDIO CALENDAR - VERTICAL VIEW WITH ALL SLOTS
+// STUDIO CALENDAR + EXTRA CONTENT CORE (LEGACY FUNCTIONS)
 // ═══════════════════════════════════════════════════════════════
 
-async function getStudioCalendarVertical(startDate, endDate) {
-  try {
-    // Get all studio slots
-    const slots = await supabaseQuery(
-      `studio_calendar_slots?date=gte.${startDate}&date=lte.${endDate}&order=date.desc`
-    );
+async function upsertStudioCalendarEntry(entry) {
+  const payload = {
+    date: entry.date,
+    source_type: entry.source_type,
+    source_id: entry.source_id || null,
+    product_code: entry.product_code || null,
+    page_name: entry.page_name || null,
+    format: entry.format || null,
+    content_details: entry.content_details || '',
+    reference_links: entry.reference_links || ''
+  };
 
-    // Get content calendar bookings
-    const contentBookings = await supabaseQuery(
-      `content_calendar?date=gte.${startDate}&date=lte.${endDate}`
-    );
-
-    // Get product suggestions
-    const productSuggestions = await supabaseQuery(
-      `product_suggestions?go_live_date=gte.${startDate}&go_live_date=lte.${endDate}&status=eq.Approved`
-    );
-
-    // Get studio calendar details
-    const studioDetails = await supabaseQuery(
-      `studio_calendar?date=gte.${startDate}&date=lte.${endDate}`
-    );
-
-    // Group slots by date
-    const dateGroups = {};
-
-    slots.forEach(slot => {
-      if (!dateGroups[slot.date]) {
-        dateGroups[slot.date] = {
-          date: slot.date,
-          dayOfWeek: new Date(slot.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long' }),
-          slots: []
-        };
-      }
-
-      let slotData = {
-        id: slot.id,
-        slotNumber: slot.slot_number,
-        slotType: slot.slot_type,
-        pageName: slot.page_name,
-        category: slot.category,
-        theme: slot.theme,
-        bookingStatus: 'empty',
-        userBooked: false,
-        adminApproved: false,
-        studioStatus: 'Received',
-        productCode: null,
-        productLink: null,
-        submittedBy: null,
-        contentLink: null,
-        approvedBy: null,
-        studioId: null
-      };
-
-      // Check content calendar booking
-      if (slot.slot_type === 'content_calendar') {
-        const booking = contentBookings.find(b => 
-          b.date === slot.date && 
-          b.slot_number === slot.slot_number
-        );
-
-        if (booking) {
-          slotData.userBooked = true;
-          slotData.adminApproved = booking.status === 'Approved';
-          slotData.bookingStatus = booking.status === 'Approved' ? 'approved' : 'pending';
-          slotData.productCode = booking.product_code;
-          slotData.productLink = booking.product_link;
-          slotData.submittedBy = booking.submitted_by;
-        }
-      }
-
-      // Check product suggestion
-      if (slot.slot_type === 'product_suggestion') {
-        const product = productSuggestions.find(p => 
-          p.go_live_date === slot.date && 
-          p.assigned_slot_number === slot.slot_number &&
-          p.assigned_page === slot.page_name
-        );
-
-        if (product) {
-          slotData.userBooked = true;
-          slotData.adminApproved = true;
-          slotData.bookingStatus = 'approved';
-          slotData.productCode = product.submission_id;
-          slotData.productLink = product.product_link;
-          slotData.submittedBy = product.name;
-        }
-      }
-
-      // Check studio details
-      const studioDetail = studioDetails.find(s =>
-        s.date === slot.date &&
-        s.slot_number === slot.slot_number &&
-        s.slot_type === slot.slot_type
-      );
-
-      if (studioDetail) {
-        slotData.studioStatus = studioDetail.approval_status || 'Received';
-        slotData.contentLink = studioDetail.content_link;
-        slotData.approvedBy = studioDetail.approved_by;
-        slotData.studioId = studioDetail.id;
-      }
-
-      dateGroups[slot.date].slots.push(slotData);
-    });
-
-    // Convert to array and sort
-    const result = Object.values(dateGroups).sort((a, b) => 
-      new Date(b.date) - new Date(a.date)
-    );
-
-    // Sort slots within each date
-    result.forEach(day => {
-      day.slots.sort((a, b) => {
-        if (a.slotType === b.slotType) {
-          return a.slotNumber - b.slotNumber;
-        }
-        return a.slotType === 'content_calendar' ? -1 : 1;
-      });
-    });
-
-    return result;
-  } catch (error) {
-    console.error('getStudioCalendarVertical error:', error);
-    throw error;
-  }
-}
-
-async function getStudioCalendarStats(startDate, endDate) {
-  try {
-    const data = await getStudioCalendarVertical(startDate, endDate);
-    
-    let stats = {
-      totalSlots: 0,
-      emptySlots: 0,
-      pendingApproval: 0,
-      approved: 0,
-      needsReview: 0,
-      contentHeadApproved: 0
-    };
-
-    data.forEach(day => {
-      day.slots.forEach(slot => {
-        stats.totalSlots++;
-        
-        if (slot.bookingStatus === 'empty') {
-          stats.emptySlots++;
-        } else if (slot.bookingStatus === 'pending') {
-          stats.pendingApproval++;
-        } else if (slot.bookingStatus === 'approved') {
-          stats.approved++;
-        }
-
-        if (slot.studioStatus === 'Submitted for Review') {
-          stats.needsReview++;
-        }
-        
-        if (slot.studioStatus === 'Approved') {
-          stats.contentHeadApproved++;
-        }
-      });
-    });
-
-    return stats;
-  } catch (error) {
-    console.error('getStudioCalendarStats error:', error);
-    return {
-      totalSlots: 0,
-      emptySlots: 0,
-      pendingApproval: 0,
-      approved: 0,
-      needsReview: 0,
-      contentHeadApproved: 0
-    };
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════
-// UPDATE STUDIO CALENDAR APPROVAL STATUS
-// ═══════════════════════════════════════════════════════════════
-
-async function updateStudioApprovalStatus(date, slotNumber, slotType, statusData) {
-  try {
-    // Validate status
-    if (!STUDIO_APPROVAL_STATUSES.includes(statusData.approvalStatus)) {
-      throw new Error(`Invalid approval status: ${statusData.approvalStatus}`);
-    }
-
-    // Check if entry exists
+  if (entry.source_id) {
     const existing = await supabaseQuery(
-      `studio_calendar?date=eq.${date}&slot_number=eq.${slotNumber}&slot_type=eq.${slotType}`
+      `studio_calendar?source_type=eq.${encodeURIComponent(entry.source_type)}&source_id=eq.${entry.source_id}`
     );
-
-    const updateData = {
-      approval_status: statusData.approvalStatus,
-      updated_at: new Date().toISOString()
-    };
-
-    // If Submitted for Review, require content link
-    if (statusData.approvalStatus === 'Submitted for Review') {
-      if (!statusData.contentLink) {
-        throw new Error('Content link is required for submission');
-      }
-      updateData.content_link = statusData.contentLink;
-    }
-
-    // If Approved, require password and approver name
-    if (statusData.approvalStatus === 'Approved') {
-      if (!verifyContentHeadPassword(statusData.password)) {
-        throw new Error('Invalid content head password');
-      }
-      if (!statusData.approvedBy) {
-        throw new Error('Approver name is required');
-      }
-      updateData.approved_by = statusData.approvedBy;
-      updateData.approved_at = new Date().toISOString();
-    }
 
     if (existing.length > 0) {
-      // Update existing
-      await supabaseQuery(
-        `studio_calendar?id=eq.${existing[0].id}`,
-        'PATCH',
-        updateData
-      );
-      return { success: true, id: existing[0].id };
-    } else {
-      // Create new entry
-      const newData = {
-        date: date,
-        slot_number: slotNumber,
-        slot_type: slotType,
-        ...updateData
-      };
-      const result = await supabaseQuery('studio_calendar', 'POST', newData);
-      return { success: true, id: result[0].id };
+      const id = existing[0].id;
+      await supabaseQuery(`studio_calendar?id=eq.${id}`, 'PATCH', payload);
+      return id;
     }
-  } catch (error) {
-    console.error('updateStudioApprovalStatus error:', error);
-    throw error;
   }
-}
 
-// ═══════════════════════════════════════════════════════════════
-// STUDIO CALENDAR LEGACY FUNCTIONS (UPDATED)
-// ═══════════════════════════════════════════════════════════════
+  const result = await supabaseQuery('studio_calendar', 'POST', payload);
+  return result[0].id;
+}
 
 async function getStudioCalendarForMonth(year, month) {
   const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
   const lastDay = new Date(year, month, 0).getDate();
   const endDate = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
 
-  return await getStudioCalendarVertical(startDate, endDate);
+  return await supabaseQuery(
+    `studio_calendar?date=gte.${startDate}&date=lte.${endDate}&order=date.asc`
+  );
+}
+
+async function getStudioCalendarForDate(date) {
+  return await supabaseQuery(
+    `studio_calendar?date=eq.${date}&order=created_at.asc`
+  );
 }
 
 async function getStudioCalendarItem(id) {
@@ -408,6 +345,74 @@ async function updateStudioCompletion(id, data) {
   };
   await supabaseQuery(`studio_calendar?id=eq.${id}`, 'PATCH', payload);
   return { success: true };
+}
+
+async function addExtraContent(extra) {
+  const row = {
+    date: extra.date,
+    page_name: extra.page_name,
+    format: extra.format || '',
+    content_details: extra.content_details,
+    reference_links: extra.reference_links || '',
+    created_by: extra.created_by || ''
+  };
+
+  const result = await supabaseQuery('extra_content', 'POST', row);
+  const saved = result[0];
+
+  await upsertStudioCalendarEntry({
+    date: saved.date,
+    source_type: 'extra_content',
+    source_id: saved.id,
+    product_code: null,
+    page_name: saved.page_name,
+    format: saved.format,
+    content_details: saved.content_details,
+    reference_links: saved.reference_links
+  });
+
+  return saved;
+}
+
+async function updateExtraContent(id, extra) {
+  const row = {
+    date: extra.date,
+    page_name: extra.page_name,
+    format: extra.format || '',
+    content_details: extra.content_details,
+    reference_links: extra.reference_links || ''
+  };
+
+  await supabaseQuery(`extra_content?id=eq.${id}`, 'PATCH', row);
+
+  await upsertStudioCalendarEntry({
+    date: extra.date,
+    source_type: 'extra_content',
+    source_id: id,
+    product_code: null,
+    page_name: extra.page_name,
+    format: extra.format,
+    content_details: extra.content_details,
+    reference_links: extra.reference_links
+  });
+
+  return { success: true };
+}
+
+async function deleteExtraContent(id) {
+  await supabaseQuery(`extra_content?id=eq.${id}`, 'DELETE');
+  await supabaseQuery(`studio_calendar?source_type=eq.extra_content&source_id=eq.${id}`, 'DELETE');
+  return { success: true };
+}
+
+async function getExtraContentForMonth(year, month) {
+  const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+  const lastDay = new Date(year, month, 0).getDate();
+  const endDate = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
+
+  return await supabaseQuery(
+    `extra_content?date=gte.${startDate}&date=lte.${endDate}&order=date.asc`
+  );
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -688,13 +693,14 @@ async function getAllProductSuggestions() {
     status: p.status,
     assignedPage: p.assigned_page || '',
     goLiveDate: p.go_live_date || '',
-    slotNumber: p.assigned_slot_number || null,
+    slotDate: p.slot_date || '',
+    slotNumber: p.slot_number || null,
     reviewerName: p.reviewer_name || '',
     rejectionReason: p.rejection_reason || ''
   }));
 }
 
-async function updateProductReview(row, reviewData) {
+async function updateProductReviewWithSlot(row, reviewData) {
   try {
     const updateData = {
       status: reviewData.status,
@@ -704,52 +710,48 @@ async function updateProductReview(row, reviewData) {
     if (reviewData.status === 'Approved') {
       updateData.assigned_page = reviewData.assignedPage || '';
       updateData.go_live_date = reviewData.goLiveDate || null;
-      updateData.assigned_slot_number = reviewData.slotNumber || null;
+      updateData.slot_date = reviewData.slotDate || reviewData.goLiveDate;
+      updateData.slot_number = reviewData.slotNumber || null;
       updateData.rejection_reason = '';
     } else {
       updateData.assigned_page = '';
       updateData.go_live_date = null;
-      updateData.assigned_slot_number = null;
+      updateData.slot_date = null;
+      updateData.slot_number = null;
       updateData.rejection_reason = reviewData.rejectionReason || '';
     }
 
     await supabaseQuery(`product_suggestions?id=eq.${row}`, 'PATCH', updateData);
 
-    // Create studio calendar entry if approved
+    // Add to studio calendar if approved
     if (reviewData.status === 'Approved') {
       const rows = await supabaseQuery(`product_suggestions?id=eq.${row}`);
       if (rows.length) {
         const p = rows[0];
 
-        // Check if studio calendar entry exists
-        const existing = await supabaseQuery(
-          `studio_calendar?date=eq.${reviewData.goLiveDate}&slot_number=eq.${reviewData.slotNumber}&slot_type=eq.product_suggestion`
-        );
-
-        const studioData = {
-          date: reviewData.goLiveDate,
-          slot_number: reviewData.slotNumber,
-          slot_type: 'product_suggestion',
-          page_name: reviewData.assignedPage,
-          product_code: p.submission_id,
+        await upsertStudioCalendarEntry({
+          date: reviewData.slotDate || reviewData.goLiveDate || p.go_live_date,
+          source_type: 'product_suggestion',
+          source_id: p.id,
+          product_code: p.product_code || p.submission_id,
+          page_name: reviewData.assignedPage || p.assigned_page || null,
+          format: 'Product Suggestion',
           content_details: p.promotion_idea || p.product_link,
-          reference_links: p.product_link,
-          approval_status: 'Received'
-        };
-
-        if (existing.length > 0) {
-          await supabaseQuery(`studio_calendar?id=eq.${existing[0].id}`, 'PATCH', studioData);
-        } else {
-          await supabaseQuery('studio_calendar', 'POST', studioData);
-        }
+          reference_links: p.product_link
+        });
       }
     }
 
     return { success: true };
   } catch (error) {
-    console.error('updateProductReview error:', error);
+    console.error('updateProductReviewWithSlot error:', error);
     throw error;
   }
+}
+
+// Keep the old function for backward compatibility
+async function updateProductReview(row, reviewData) {
+  return await updateProductReviewWithSlot(row, reviewData);
 }
 
 async function getAllDepartments() {
@@ -787,11 +789,26 @@ async function deleteDepartment(row) {
 // ═══════════════════════════════════════════════════════════════
 
 const CATEGORIES = [
-  'Cakes', 'Flowers', 'Chocolates', 'Clothing', 'Electronics', 'Fashion',
-  'Food & Restaurants', 'Fruits', 'Soft Toys & Kids Toys', 'Grocery & Hampers',
-  'Greeting Cards & Party Supplies', 'Sports and Bicycles', 'Mother and Baby',
-  'Jewellery and Watches', 'Cosmetics & Perfumes', 'Customized Gifts',
-  'Health and Wellness', 'Home & Lifestyle', 'Combo and Gift Sets', 'Books & Stationery'
+  'Cakes',
+  'Flowers',
+  'Chocolates',
+  'Clothing',
+  'Electronics',
+  'Fashion',
+  'Food & Restaurants',
+  'Fruits',
+  'Soft Toys & Kids Toys',
+  'Grocery & Hampers',
+  'Greeting Cards & Party Supplies',
+  'Sports and Bicycles',
+  'Mother and Baby',
+  'Jewellery and Watches',
+  'Cosmetics & Perfumes',
+  'Customized Gifts',
+  'Health and Wellness',
+  'Home & Lifestyle',
+  'Combo and Gift Sets',
+  'Books & Stationery'
 ];
 
 async function getCalendarData(month, year) {
@@ -927,33 +944,20 @@ async function updateContentBooking(id, updateData) {
 
     await supabaseQuery(`content_calendar?id=eq.${id}`, 'PATCH', data);
 
-    // Create studio calendar entry if approved
     if (updateData.status === 'Approved') {
       const rows = await supabaseQuery(`content_calendar?id=eq.${id}`);
       if (rows.length) {
         const b = rows[0];
-
-        const existing = await supabaseQuery(
-          `studio_calendar?date=eq.${b.date}&slot_number=eq.${b.slot_number}&slot_type=eq.content_calendar`
-        );
-
-        const studioData = {
-          date: b.date,
-          slot_number: b.slot_number,
-          slot_type: 'content_calendar',
-          category: b.category,
-          theme: b.theme,
+        await upsertStudioCalendarEntry({
+          date: updateData.goLiveDate || b.date,
+          source_type: 'content_booking',
+          source_id: b.id,
           product_code: b.product_code,
+          page_name: b.page_name || null,
+          format: 'Content Calendar',
           content_details: `${b.theme || ''} - ${b.category || ''}`.trim(),
-          reference_links: b.product_link || '',
-          approval_status: 'Received'
-        };
-
-        if (existing.length > 0) {
-          await supabaseQuery(`studio_calendar?id=eq.${existing[0].id}`, 'PATCH', studioData);
-        } else {
-          await supabaseQuery('studio_calendar', 'POST', studioData);
-        }
+          reference_links: b.product_link || ''
+        });
       }
     }
 
@@ -1072,6 +1076,177 @@ async function deleteTheme(themeId) {
     return { success: true, slotsDeleted: slots.length };
   } catch (error) {
     console.error('deleteTheme error:', error);
+    throw error;
+  }
+}
+
+async function refreshCategorySlotsForMonth(month, year) {
+  try {
+    const monthYear = `${year}-${String(month).padStart(2, '0')}`;
+
+    await supabaseQuery(`category_slots?month_year=eq.${monthYear}`, 'DELETE');
+
+    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+    const lastDay = new Date(year, month, 0).getDate();
+    const endDate = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
+
+    const themes = await supabaseQuery(
+      `theme_config?start_date=lte.${endDate}&end_date=gte.${startDate}`
+    );
+
+    for (const theme of themes) {
+      const themeStart = theme.start_date > startDate ? theme.start_date : startDate;
+      const themeEnd = theme.end_date < endDate ? theme.end_date : endDate;
+      await generateCategorySlots(themeStart, themeEnd, theme.slots_per_day, theme.is_seasonal);
+    }
+
+    return { success: true };
+  } catch (error) {
+    throw error;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PRODUCT PERFORMANCE API
+// ═══════════════════════════════════════════════════════════════
+
+async function searchProductPerformance(keyword, startDate, endDate) {
+  try {
+    let url = `${SUPABASE_URL}/rest/v1/meta_ads_performance?`;
+
+    if (startDate && endDate) {
+      url += `date=gte.${startDate}&date=lte.${endDate}&`;
+    }
+
+    url += `order=date.desc`;
+
+    const response = await fetch(url, {
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status}`);
+    }
+
+    const allData = await response.json();
+
+    const keywordLower = keyword.toLowerCase();
+    const results = allData.filter(row => 
+      (row.campaign_name && row.campaign_name.toLowerCase().includes(keywordLower)) ||
+      (row.adset_name && row.adset_name.toLowerCase().includes(keywordLower)) ||
+      (row.ad_name && row.ad_name.toLowerCase().includes(keywordLower))
+    );
+
+    if (results.length === 0) {
+      return { level: 'none', data: [], aggregated: [] };
+    }
+
+    const uniqueAccounts = [...new Set(results.map(r => r.ad_account_id).filter(Boolean))];
+
+    let aggregationLevel = 'ad';
+    let dataToAggregate = results;
+    let groupBy = 'ad_name';
+
+    if (uniqueAccounts.length > 1) {
+      aggregationLevel = 'account';
+      groupBy = 'ad_account_id';
+    }
+    else {
+      const campaignMatches = results.filter(r => 
+        r.campaign_name && r.campaign_name.toLowerCase().includes(keywordLower)
+      );
+
+      if (campaignMatches.length > 0) {
+        aggregationLevel = 'campaign';
+        dataToAggregate = campaignMatches;
+        groupBy = 'campaign_name';
+      } 
+      else {
+        const adsetMatches = results.filter(r => 
+          r.adset_name && r.adset_name.toLowerCase().includes(keywordLower)
+        );
+
+        if (adsetMatches.length > 0) {
+          aggregationLevel = 'adset';
+          dataToAggregate = adsetMatches;
+          groupBy = 'adset_name';
+        }
+        else {
+          const adMatches = results.filter(r => 
+            r.ad_name && r.ad_name.toLowerCase().includes(keywordLower)
+          );
+
+          if (adMatches.length > 0) {
+            dataToAggregate = adMatches;
+          }
+        }
+      }
+    }
+
+    const grouped = {};
+    dataToAggregate.forEach(row => {
+      const key = row[groupBy] || 'Unknown';
+      if (!grouped[key]) {
+        grouped[key] = {
+          name: key,
+          campaign_name: row.campaign_name || 'N/A',
+          adset_name: row.adset_name || 'N/A',
+          ad_name: row.ad_name || 'N/A',
+          objective: row.objective || 'N/A',
+          amount_spent: 0,
+          reach: 0,
+          impression: 0,
+          clicks: 0,
+          results: 0,
+          direct_orders: 0,
+          dates: [],
+          ad_account_id: row.ad_account_id || 'N/A'
+        };
+      }
+
+      grouped[key].amount_spent += parseFloat(row.amount_spent || 0);
+      grouped[key].reach += parseInt(row.reach || 0);
+      grouped[key].impression += parseInt(row.impression || 0);
+      grouped[key].clicks += parseInt(row.clicks || 0);
+      grouped[key].results += parseInt(row.results || 0);
+      grouped[key].direct_orders += parseInt(row.if_direct_orders || 0);
+      grouped[key].dates.push(row.date);
+    });
+
+    const aggregated = Object.values(grouped).map(item => {
+      const cpc = item.clicks > 0 ? (item.amount_spent / item.clicks).toFixed(2) : 0;
+      const cpm = item.impression > 0 ? ((item.amount_spent / item.impression) * 1000).toFixed(2) : 0;
+      const ctr = item.impression > 0 ? ((item.clicks / item.impression) * 100).toFixed(2) : 0;
+      const conversionRate = item.clicks > 0 ? ((item.direct_orders / item.clicks) * 100).toFixed(2) : 0;
+
+      const sortedDates = item.dates.sort();
+      const dateRange = sortedDates.length > 0 
+        ? `${sortedDates[0]} to ${sortedDates[sortedDates.length - 1]}` 
+        : 'N/A';
+
+      return {
+        ...item,
+        cpc,
+        cpm,
+        ctr,
+        conversionRate,
+        dateRange,
+        dayCount: new Set(item.dates).size
+      };
+    });
+
+    return {
+      level: aggregationLevel,
+      data: results,
+      aggregated: aggregated,
+      totalRecords: results.length
+    };
+
+  } catch (error) {
+    console.error('searchProductPerformance error:', error);
     throw error;
   }
 }
