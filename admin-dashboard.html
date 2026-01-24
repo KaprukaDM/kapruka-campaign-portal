@@ -908,12 +908,32 @@
     // ═══════════════════════════════════════════════════════════
     // LOGIN & NAVIGATION
     // ═══════════════════════════════════════════════════════════
+    // Check if already logged in and handle hash navigation on page load
+    window.addEventListener('DOMContentLoaded', function() {
+      const loggedIn = sessionStorage.getItem('adminLoggedIn');
+      if (loggedIn === 'true') {
+        isLoggedIn = true;
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('adminContent').style.display = 'block';
+        loadAllData();
+        
+        // Handle hash navigation after login
+        setTimeout(() => {
+          const hash = window.location.hash.substring(1);
+          if (hash && ['requests', 'products', 'content', 'studio', 'hotproducts', 'departments'].includes(hash)) {
+            switchTab(hash);
+          }
+        }, 300);
+      }
+    });
+
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const password = document.getElementById('adminPassword').value;
 
       if (verifyAdminPassword(password)) {
         isLoggedIn = true;
+        sessionStorage.setItem('adminLoggedIn', 'true');
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('adminContent').style.display = 'block';
         loadAllData();
@@ -924,9 +944,11 @@
 
     function logout() {
       isLoggedIn = false;
+      sessionStorage.removeItem('adminLoggedIn');
       document.getElementById('loginScreen').style.display = 'block';
       document.getElementById('adminContent').style.display = 'none';
       document.getElementById('adminPassword').value = '';
+      window.location.hash = '';
     }
 
     function switchTab(tab) {
@@ -970,13 +992,7 @@
       }
     });
     
-    // Load initial tab from URL hash on page load
-    window.addEventListener('DOMContentLoaded', function() {
-      const hash = window.location.hash.substring(1);
-      if (hash && ['requests', 'products', 'content', 'studio', 'hotproducts', 'departments'].includes(hash)) {
-        switchTab(hash);
-      }
-    });
+
 
     async function loadAllData() {
       loadRequests();
@@ -1164,8 +1180,8 @@
               </div>
             </div>
             <div class="form-group">
-              <label>Go Live Date *</label>
-              <input type="date" id="goLiveDate" required>
+              <label>Reference (Optional)</label>
+              <textarea id="productReference" rows="3" placeholder="Add any reference notes or links..."></textarea>
             </div>
             <div id="slotsDisplay" style="margin-top:20px;"></div>
             <button type="submit" class="btn btn-success" style="width:100%;margin-top:20px;">Approve & Assign Slot</button>
@@ -1188,15 +1204,15 @@
         document.getElementById('approvalForm').addEventListener('submit', async (e) => {
           e.preventDefault();
           const assignedPage = document.querySelector('input[name="pageName"]:checked')?.value;
-          const goLiveDate = document.getElementById('goLiveDate').value;
+          const productReference = document.getElementById('productReference').value;
           const selectedSlot = document.querySelector('input[name="slotSelection"]:checked');
 
-          if (!assignedPage || !goLiveDate) {
-            alert('Please fill all required fields');
+          if (!assignedPage) {
+            alert('Please select a page');
             return;
           }
 
-          let slotDate = goLiveDate;
+          let slotDate = null;
           let slotNumber = null;
 
           if (selectedSlot) {
@@ -1211,7 +1227,7 @@
               status: 'Approved',
               reviewerName,
               assignedPage,
-              goLiveDate,
+              productReference,
               slotDate,
               slotNumber
             });
@@ -1434,8 +1450,12 @@
           goLiveDate
         });
         hideLoading();
-        alert('✅ Booking approved!');
+        alert('✅ Booking approved and synced to Studio Calendar!');
         loadContentBookings();
+        // Reload studio calendar if currently on that tab
+        if (document.getElementById('tab-studio').classList.contains('active')) {
+          setTimeout(() => loadStudioCalendar(), 500);
+        }
       } catch (error) {
         hideLoading();
         alert('Error: ' + error.message);
@@ -1507,6 +1527,10 @@
             closeModal();
             alert('✅ Content booking updated!');
             loadContentBookings();
+            // Reload studio calendar if currently on that tab
+            if (document.getElementById('tab-studio').classList.contains('active')) {
+              setTimeout(() => loadStudioCalendar(), 500);
+            }
           } catch (error) {
             hideLoading();
             alert('Error: ' + error.message);
