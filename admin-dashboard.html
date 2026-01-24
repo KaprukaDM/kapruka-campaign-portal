@@ -862,33 +862,21 @@
 
   <script src="js/supabase-api.js"></script>
   <script>
+    // ═══════════════════════════════════════════════════════════
+    // GLOBAL VARIABLES
+    // ═══════════════════════════════════════════════════════════
     let isLoggedIn = false;
     let allHotProducts = [];
     let currentStudioMonth = 1;
     let currentStudioYear = 2026;
     let studioCalendarData = [];
 
-    // Page configuration
-    const PAGE_NAMES = [
-      'Kapruka FB Leads',
-      'Social Mart',
-      'Electronic Factory',
-      'Fashion Factory',
-      'Toys Factory',
-      'Handbag Factory',
-      'TikTok Video'
-    ];
+    // PAGE_SCHEDULE and other constants are already defined in supabase-api.js
+    // We can access them directly without redeclaring
 
-    const PAGE_SCHEDULE = {
-      1: { page: 'Kapruka FB Leads', slots: 3 },      // Monday
-      2: { page: 'Social Mart', slots: 3 },           // Tuesday
-      3: { page: 'Electronic Factory', slots: 3 },    // Wednesday
-      4: { page: 'Fashion Factory', slots: 3 },       // Thursday
-      5: { page: 'Toys Factory', slots: 3 },          // Friday
-      6: { page: 'Handbag Factory', slots: 3 },       // Saturday
-      0: { page: 'TikTok Video', slots: 1 }           // Sunday
-    };
-
+    // ═══════════════════════════════════════════════════════════
+    // UTILITY FUNCTIONS
+    // ═══════════════════════════════════════════════════════════
     function showLoading() {
       document.getElementById('loading').style.display = 'flex';
     }
@@ -906,7 +894,9 @@
       document.getElementById('modal').style.display = 'none';
     }
 
-    // Login
+    // ═══════════════════════════════════════════════════════════
+    // LOGIN & NAVIGATION
+    // ═══════════════════════════════════════════════════════════
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const password = document.getElementById('adminPassword').value;
@@ -1092,7 +1082,6 @@
       try {
         showLoading();
         
-        // Get product details
         const products = await getAllProductSuggestions();
         const product = products.find(p => p.row === row);
         
@@ -1102,7 +1091,6 @@
           return;
         }
 
-        // Find page from schedule
         let selectedPage = null;
         for (const [day, config] of Object.entries(PAGE_SCHEDULE)) {
           if (product.category && config.page.toLowerCase().includes(product.category.toLowerCase())) {
@@ -1141,7 +1129,6 @@
 
         showModal(content);
 
-        // Load available slots when page is selected
         document.querySelectorAll('input[name="pageName"]').forEach(radio => {
           radio.addEventListener('change', async (e) => {
             const pageName = e.target.value;
@@ -1149,7 +1136,6 @@
           });
         });
 
-        // Load initial slots if page is pre-selected
         if (selectedPage) {
           await loadAvailableSlots(selectedPage);
         }
@@ -1479,23 +1465,17 @@
       try {
         showLoading();
         
-        // Update month title
         const months = ['January', 'February', 'March', 'April', 'May', 'June', 
                        'July', 'August', 'September', 'October', 'November', 'December'];
         document.getElementById('studioMonthTitle').textContent = 
           `${months[currentStudioMonth - 1]} ${currentStudioYear}`;
 
-        // Generate empty slots for the month
         await generateEmptySlotsForMonth(currentStudioYear, currentStudioMonth);
 
-        // Get calendar data
         const data = await getStudioCalendarForMonth(currentStudioYear, currentStudioMonth);
         studioCalendarData = data;
 
-        // Calculate stats
         updateDashboardStats(data);
-
-        // Render calendar
         renderCalendarGrid(data);
         
         hideLoading();
@@ -1523,7 +1503,6 @@
     function renderCalendarGrid(data) {
       const grid = document.getElementById('studioCalendarGrid');
       
-      // Clear existing (except headers)
       while (grid.children.length > 7) {
         grid.removeChild(grid.lastChild);
       }
@@ -1533,14 +1512,12 @@
       const startDayOfWeek = firstDay.getDay();
       const daysInMonth = lastDay.getDate();
 
-      // Add empty cells for days before month starts
       for (let i = 0; i < startDayOfWeek; i++) {
         const emptyDay = document.createElement('div');
         emptyDay.className = 'calendar-day empty';
         grid.appendChild(emptyDay);
       }
 
-      // Add days of the month
       for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(currentStudioYear, currentStudioMonth - 1, day);
         const dateStr = date.toISOString().split('T')[0];
@@ -1549,26 +1526,20 @@
         const dayDiv = document.createElement('div');
         dayDiv.className = 'calendar-day';
         
-        // Day number
         const dayNumber = document.createElement('div');
         dayNumber.className = 'day-number';
         dayNumber.textContent = day;
         dayDiv.appendChild(dayNumber);
 
-        // Slots container
         const slotsContainer = document.createElement('div');
         slotsContainer.className = 'day-slots';
 
-        // Get data for this date
         const dayData = data.filter(d => d.date === dateStr);
-        
-        // Get page schedule for this day
         const schedule = PAGE_SCHEDULE[dayOfWeek];
         
         if (schedule) {
           const expectedSlots = schedule.slots;
           
-          // Lead Form Slots
           for (let slotNum = 1; slotNum <= expectedSlots; slotNum++) {
             const slotData = dayData.find(d => 
               d.slot_type === 'lead_form' && 
@@ -1615,7 +1586,6 @@
             slotsContainer.appendChild(slotDiv);
           }
 
-          // Content Calendar Items
           const contentItems = dayData.filter(d => d.slot_type === 'content_calendar');
           contentItems.forEach(item => {
             const slotDiv = document.createElement('div');
@@ -1706,7 +1676,6 @@
 
       showModal(content);
 
-      // Show/hide fields based on status
       const statusSelect = document.getElementById('studioStatus');
       const contentLinkGroup = document.getElementById('contentLinkGroup');
       const passwordGroup = document.getElementById('passwordGroup');
@@ -1724,7 +1693,6 @@
         }
       });
 
-      // Trigger change to show correct fields
       statusSelect.dispatchEvent(new Event('change'));
 
       document.getElementById('updateStatusForm').addEventListener('submit', async (e) => {
@@ -1861,7 +1829,6 @@
         allHotProducts = await getAllHotProducts();
         hideLoading();
         
-        // Update stats
         const listed = allHotProducts.filter(p => p.listed).length;
         const categories = [...new Set(allHotProducts.map(p => p.category))].length;
         
@@ -1869,66 +1836,48 @@
         document.getElementById('adminListedProducts').textContent = listed;
         document.getElementById('adminCategoryCount').textContent = categories;
         
-        filterHotProducts();
+        const tbody = document.getElementById('hotProductsTableBody');
+        
+        if (allHotProducts.length === 0) {
+          tbody.innerHTML = '<p style="text-align:center;padding:40px;color:#999;">No products found</p>';
+          return;
+        }
+        
+        tbody.innerHTML = allHotProducts.map(p => `
+          <div style="background:white;padding:20px;border-radius:12px;margin-bottom:15px;border:2px solid #e8e8e8;">
+            <div style="display:grid;grid-template-columns:auto 1fr auto;gap:20px;align-items:center;">
+              <div>
+                <div style="font-weight:700;color:#5e3a8e;margin-bottom:5px;">ID: ${p.id}</div>
+                <div style="font-size:12px;color:#666;">${p.category}</div>
+              </div>
+              <div>
+                <a href="${p.product_link}" target="_blank" style="color:#5e3a8e;font-size:14px;word-break:break-all;">
+                  ${p.product_link}
+                </a>
+                <div style="margin-top:5px;">
+                  <span style="background:#E3F2FD;padding:4px 8px;border-radius:6px;font-size:11px;font-weight:600;">
+                    Sales: ${p.sales_count || 0}
+                  </span>
+                  <span style="background:${p.listed ? '#C8E6C9' : '#FFCDD2'};padding:4px 8px;border-radius:6px;font-size:11px;font-weight:600;margin-left:5px;">
+                    ${p.listed ? 'Listed' : 'Unlisted'}
+                  </span>
+                </div>
+              </div>
+              <div>
+                <button onclick="deleteHotProductConfirm(${p.id})" style="padding:8px 16px;background:#d32f2f;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;">
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        `).join('');
       } catch (error) {
         hideLoading();
         alert('Error loading hot products: ' + error.message);
       }
     }
 
-    function filterHotProducts() {
-      const categoryFilter = document.getElementById('filterCategory')?.value;
-      const listedFilter = document.getElementById('filterListed')?.value;
-      
-      let filtered = allHotProducts;
-      
-      if (categoryFilter) {
-        filtered = filtered.filter(p => p.category === categoryFilter);
-      }
-      
-      if (listedFilter) {
-        const isListed = listedFilter === 'true';
-        filtered = filtered.filter(p => p.listed === isListed);
-      }
-      
-      const tbody = document.getElementById('hotProductsTableBody');
-      
-      if (filtered.length === 0) {
-        tbody.innerHTML = '<p style="text-align:center;padding:40px;color:#999;">No products found</p>';
-        return;
-      }
-      
-      tbody.innerHTML = filtered.map(p => `
-        <div style="background:white;padding:20px;border-radius:12px;margin-bottom:15px;border:2px solid #e8e8e8;">
-          <div style="display:grid;grid-template-columns:auto 1fr auto;gap:20px;align-items:center;">
-            <div>
-              <div style="font-weight:700;color:#5e3a8e;margin-bottom:5px;">ID: ${p.id}</div>
-              <div style="font-size:12px;color:#666;">${p.category}</div>
-            </div>
-            <div>
-              <a href="${p.product_link}" target="_blank" style="color:#5e3a8e;font-size:14px;word-break:break-all;">
-                ${p.product_link}
-              </a>
-              <div style="margin-top:5px;">
-                <span style="background:#E3F2FD;padding:4px 8px;border-radius:6px;font-size:11px;font-weight:600;">
-                  Sales: ${p.sales_count || 0}
-                </span>
-                <span style="background:${p.listed ? '#C8E6C9' : '#FFCDD2'};padding:4px 8px;border-radius:6px;font-size:11px;font-weight:600;margin-left:5px;">
-                  ${p.listed ? 'Listed' : 'Unlisted'}
-                </span>
-              </div>
-            </div>
-            <div>
-              <button onclick="deleteHotProduct(${p.id})" style="padding:8px 16px;background:#d32f2f;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;">
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    async function deleteHotProduct(id) {
+    async function deleteHotProductConfirm(id) {
       if (!confirm('Delete this product?')) return;
       
       try {
@@ -2014,7 +1963,7 @@
       }
     }
 
-    // Initialize on January 2026
+    // Initialize
     currentStudioMonth = 1;
     currentStudioYear = 2026;
   </script>
