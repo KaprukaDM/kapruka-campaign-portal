@@ -691,7 +691,7 @@ async function updateProductReview(row, reviewData) {
 
   if (reviewData.status === 'Approved') {
     updateData.assigned_page = reviewData.assignedPage || '';
-    updateData.go_live_date = reviewData.goLiveDate || null;
+    updateData.product_reference = reviewData.productReference || null;
     updateData.slot_date = reviewData.slotDate || null;
     updateData.slot_number = reviewData.slotNumber || null;
     updateData.rejection_reason = '';
@@ -703,7 +703,7 @@ async function updateProductReview(row, reviewData) {
     }
   } else {
     updateData.assigned_page = '';
-    updateData.go_live_date = null;
+    updateData.product_reference = null;
     updateData.slot_date = null;
     updateData.slot_number = null;
     updateData.slot_day_name = null;
@@ -718,7 +718,7 @@ async function updateProductReview(row, reviewData) {
       const p = rows[0];
 
       await upsertStudioCalendarEntry({
-        date: reviewData.slotDate || reviewData.goLiveDate || p.slot_date || p.go_live_date,
+        date: reviewData.slotDate || p.slot_date,
         source_type: 'product_suggestion',
         source_id: p.id,
         product_code: p.product_code || null,
