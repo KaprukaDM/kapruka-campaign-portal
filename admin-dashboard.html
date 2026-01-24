@@ -205,6 +205,7 @@
     .badge-rejected { background: #FFCDD2; color: #C62828; }
     .badge-pending { background: #FFF9C4; color: #F57F17; }
     .badge-approved { background: #C8E6C9; color: #1B5E20; }
+    .badge-warning { background: #FFE0B2; color: #E65100; }
     .action-btns {
       display: flex;
       gap: 8px;
@@ -371,9 +372,8 @@
       background: white;
       border: 2px solid #e8e8e8;
       border-radius: 12px;
-      min-height: 140px;
+      min-height: 160px;
       padding: 10px;
-      cursor: pointer;
       transition: all 0.3s;
       position: relative;
     }
@@ -404,9 +404,6 @@
       border-radius: 6px;
       font-size: 10px;
       margin-bottom: 4px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
       cursor: pointer;
       transition: all 0.2s;
     }
@@ -707,21 +704,19 @@
         </div>
       </div>
 
-      <!-- HOT PRODUCTS TAB (keeping original) -->
+      <!-- HOT PRODUCTS TAB -->
       <div id="tab-hotproducts" class="tab-content">
         <div class="card">
           <h2>🔥 Hot Products Management</h2>
-          <!-- Original hot products code here... -->
-          <p style="text-align:center;padding:40px;color:#999;">Hot Products section (keeping your original code)</p>
+          <p style="text-align:center;padding:40px;color:#999;">Hot Products section</p>
         </div>
       </div>
 
-      <!-- DEPARTMENTS TAB (keeping original) -->
+      <!-- DEPARTMENTS TAB -->
       <div id="tab-departments" class="tab-content">
         <div class="card">
           <h2>🏢 Departments</h2>
-          <!-- Original departments code here... -->
-          <p style="text-align:center;padding:40px;color:#999;">Departments section (keeping your original code)</p>
+          <p style="text-align:center;padding:40px;color:#999;">Departments section</p>
         </div>
       </div>
     </div>
@@ -734,14 +729,15 @@
     let currentStudioYear = new Date().getFullYear();
     let studioCalendarData = null;
 
-    const PAGE_NAMES = [
-      'Kapruka FB Leads',
-      'Electronic Factory',
-      'Social Mart',
-      'Fashion Factory',
-      'Toys Factory',
-      'Handbag Factory'
-    ];
+    const PAGE_SCHEDULE_CONFIG = {
+      1: { page: 'Kapruka FB Leads', slots: 3 },      // Monday
+      2: { page: 'Electronic Factory', slots: 3 },    // Tuesday
+      3: { page: 'Social Mart', slots: 3 },          // Wednesday
+      4: { page: 'Fashion Factory', slots: 3 },       // Thursday
+      5: { page: 'Toys Factory', slots: 3 },         // Friday
+      6: { page: 'Handbag Factory', slots: 3 },      // Saturday
+      0: { page: 'TikTok Video', slots: 1 }          // Sunday
+    };
 
     function showLoading() {
       document.getElementById('loading').style.display = 'flex';
@@ -795,6 +791,10 @@
         loadContentData();
       } else if (tab === 'studio') {
         loadStudioCalendar();
+      } else if (tab === 'requests') {
+        loadRequests();
+      } else if (tab === 'products') {
+        loadProducts();
       }
     }
 
@@ -804,11 +804,68 @@
     }
 
     // ═══════════════════════════════════════════════════════════
-    // CAMPAIGN REQUESTS (keeping your original)
+    // CAMPAIGN REQUESTS
     // ═══════════════════════════════════════════════════════════
+    
     async function loadRequests() {
-      // Your original code...
-      document.getElementById('requestsTable').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;">Campaign Requests loaded</td></tr>';
+      try {
+        const requests = await getAllRequests();
+        const tbody = document.getElementById('requestsTable');
+
+        if (requests.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;">No requests yet</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = requests.map(r => {
+          let badgeClass = 'badge-submitted';
+          if (r.status === 'Working') badgeClass = 'badge-working';
+          if (r.status === 'Live') badgeClass = 'badge-live';
+          if (r.status === 'Rejected') badgeClass = 'badge-rejected';
+          if (r.status === 'Completed') badgeClass = 'badge-completed';
+
+          return `
+            <tr>
+              <td><strong>${r.requestId}</strong></td>
+              <td>${new Date(r.timestamp).toLocaleDateString()}</td>
+              <td>${r.department}</td>
+              <td>${r.month}</td>
+              <td>${r.slot}</td>
+              <td>${r.campaign}</td>
+              <td><span class="badge ${badgeClass}">${r.status}</span></td>
+              <td>
+                <div class="action-btns">
+                  <button class="btn btn-warning" onclick="updateStatus(${r.row}, 'Working')">Working</button>
+                  <button class="btn btn-success" onclick="updateStatus(${r.row}, 'Live')">Live</button>
+                  <button class="btn btn-complete" onclick="updateStatus(${r.row}, 'Completed')">Complete</button>
+                  <button class="btn btn-danger" onclick="updateStatus(${r.row}, 'Rejected')">Reject</button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch (error) {
+        document.getElementById('requestsTable').innerHTML = 
+          '<tr><td colspan="8" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
+      }
+    }
+
+    async function updateStatus(row, status) {
+      const reviewer = prompt('Enter your name:');
+      if (!reviewer) return;
+
+      const comments = status === 'Rejected' ? prompt('Rejection reason (optional):') : '';
+
+      try {
+        showLoading();
+        await updateRequestStatus(row, status, reviewer, comments || '');
+        hideLoading();
+        alert(`✅ Status updated to: ${status}`);
+        loadRequests();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -1055,15 +1112,97 @@
     }
 
     // ═══════════════════════════════════════════════════════════
-    // CONTENT CALENDAR (keeping simple version)
+    // CONTENT CALENDAR
     // ═══════════════════════════════════════════════════════════
+    
     async function loadContentData() {
-      document.getElementById('contentTable').innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;">Content Calendar loaded</td></tr>';
-      document.getElementById('themesTable').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;">Themes loaded</td></tr>';
+      try {
+        const bookings = await getAllContentBookings();
+        const tbody = document.getElementById('contentTable');
+
+        if (bookings.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;">No content bookings yet</td></tr>';
+        } else {
+          tbody.innerHTML = bookings.slice(0, 50).map(b => {
+            let badgeClass = b.status === 'Approved' ? 'badge-approved' : 
+                            b.status === 'Rejected' ? 'badge-rejected' : 'badge-pending';
+            return `
+              <tr>
+                <td>${b.date}</td>
+                <td>${b.slotNumber}</td>
+                <td>${b.category}</td>
+                <td><strong>${b.productCode}</strong></td>
+                <td><span class="badge ${badgeClass}">${b.status}</span></td>
+                <td>${b.goLiveDate || '-'}</td>
+                <td>-</td>
+              </tr>
+            `;
+          }).join('');
+        }
+
+        const themes = await getAllThemes();
+        const themesBody = document.getElementById('themesTable');
+        
+        if (themes.length === 0) {
+          themesBody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;">No themes yet</td></tr>';
+        } else {
+          themesBody.innerHTML = themes.map(t => `
+            <tr>
+              <td><strong>${t.theme_name}</strong></td>
+              <td>${t.start_date}</td>
+              <td>${t.end_date}</td>
+              <td>${t.slots_per_day}</td>
+              <td>${t.is_seasonal ? '🌟 Seasonal' : '📅 Regular'}</td>
+              <td>
+                <button class="btn btn-danger" onclick="deleteTheme(${t.id})">Delete</button>
+              </td>
+            </tr>
+          `).join('');
+        }
+      } catch (error) {
+        console.error('Content Calendar Error:', error);
+      }
+    }
+
+    document.getElementById('themeForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      try {
+        showLoading();
+        await addTheme({
+          themeName: document.getElementById('themeName').value,
+          startDate: document.getElementById('themeStart').value,
+          endDate: document.getElementById('themeEnd').value,
+          slotsPerDay: document.getElementById('slotsPerDay').value,
+          themeColor: document.getElementById('themeColor').value,
+          isSeasonal: document.getElementById('isSeasonal').checked
+        });
+        hideLoading();
+        alert('✅ Theme added successfully!');
+        document.getElementById('themeForm').reset();
+        loadContentData();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    });
+
+    async function deleteTheme(id) {
+      if (!confirm('Delete this theme?')) return;
+      try {
+        showLoading();
+        await deleteTheme(id);
+        hideLoading();
+        alert('✅ Theme deleted!');
+        loadContentData();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
     }
 
     // ═══════════════════════════════════════════════════════════
-    // STUDIO CALENDAR WITH CALENDAR VIEW
+    // STUDIO CALENDAR WITH THEMES AND PAGE SCHEDULE
     // ═══════════════════════════════════════════════════════════
 
     async function loadStudioCalendar() {
@@ -1128,56 +1267,130 @@
         });
       }
 
+      // Group themes by date range
+      const themesByDate = {};
+      if (studioCalendarData && studioCalendarData.themes) {
+        studioCalendarData.themes.forEach(theme => {
+          const start = new Date(theme.start_date);
+          const end = new Date(theme.end_date);
+          
+          for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+            const dateStr = d.toISOString().split('T')[0];
+            if (!themesByDate[dateStr]) {
+              themesByDate[dateStr] = [];
+            }
+            themesByDate[dateStr].push(theme);
+          }
+        });
+      }
+
       // Create day cells
       for (let day = 1; day <= totalDays; day++) {
         const dateStr = `${currentStudioYear}-${String(currentStudioMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const dayOfWeek = new Date(dateStr).getDay();
         const dayItems = itemsByDate[dateStr] || [];
+        const dayThemes = themesByDate[dateStr] || [];
+        const pageConfig = PAGE_SCHEDULE_CONFIG[dayOfWeek];
         
-        const cell = createStudioDayCell(day, dateStr, dayItems);
+        const cell = createStudioDayCell(day, dateStr, dayItems, dayThemes, pageConfig, dayOfWeek);
         grid.appendChild(cell);
       }
     }
 
-    function createStudioDayCell(day, dateStr, dayItems) {
+    function createStudioDayCell(day, dateStr, dayItems, dayThemes, pageConfig, dayOfWeek) {
       const cell = document.createElement('div');
       cell.className = 'calendar-day';
 
-      if (dayItems.length === 0) {
-        cell.classList.add('empty');
+      // Day number
+      const dayNumberDiv = document.createElement('div');
+      dayNumberDiv.className = 'day-number';
+      dayNumberDiv.textContent = day;
+      cell.appendChild(dayNumberDiv);
+
+      // Show themes if any
+      if (dayThemes.length > 0) {
+        const themeDiv = document.createElement('div');
+        themeDiv.style.cssText = 'font-size:9px;color:#666;margin-bottom:6px;font-weight:600;padding:3px 6px;background:#f0f0f0;border-radius:4px;text-align:center;';
+        themeDiv.textContent = dayThemes.map(t => t.theme_name).join(' + ');
+        cell.appendChild(themeDiv);
+
+        // Apply theme color
+        const theme = dayThemes[0];
+        if (theme.theme_color) {
+          cell.style.borderColor = theme.theme_color;
+          cell.style.background = `linear-gradient(135deg, ${theme.theme_color}11, ${theme.theme_color}05)`;
+        }
       }
 
-      cell.innerHTML = `<div class="day-number">${day}</div>`;
+      // Show page assignment for this day
+      if (pageConfig) {
+        const pageDiv = document.createElement('div');
+        pageDiv.style.cssText = 'font-size:10px;color:#5e3a8e;margin-bottom:8px;font-weight:700;padding:4px 6px;background:rgba(94,58,142,0.1);border-radius:4px;text-align:center;';
+        pageDiv.textContent = `📱 ${pageConfig.page}`;
+        cell.appendChild(pageDiv);
 
-      dayItems.forEach(item => {
-        const itemDiv = document.createElement('div');
-        itemDiv.className = 'day-content-item';
-        
-        if (item.type === 'tiktok_slot') {
-          itemDiv.classList.add('tiktok');
-          itemDiv.textContent = '📹 TikTok';
-        } else if (item.status === 'booked') {
-          itemDiv.classList.add('booked');
-          itemDiv.textContent = `${item.category} - ${item.productCode || 'N/A'}`;
-        } else if (item.status === 'empty') {
-          itemDiv.classList.add('empty');
-          itemDiv.textContent = `${item.category} - Empty`;
-        } else if (item.status === 'pending') {
-          itemDiv.classList.add('pending');
-          itemDiv.textContent = `${item.category} - Pending`;
+        // Show slots for this page
+        for (let slotNum = 1; slotNum <= pageConfig.slots; slotNum++) {
+          // Check if this slot is booked
+          const slotItem = dayItems.find(item => item.slotNumber === slotNum);
+          
+          const slotDiv = document.createElement('div');
+          slotDiv.className = 'day-content-item';
+          
+          if (slotItem) {
+            if (slotItem.status === 'booked') {
+              slotDiv.classList.add('booked');
+              slotDiv.innerHTML = `
+                <strong>Slot ${slotNum}</strong>
+                <div style="font-size:9px;margin-top:2px;">${slotItem.category || 'N/A'}</div>
+                <div style="font-size:8px;color:#2E7D32;">● Booked</div>
+              `;
+            } else if (slotItem.status === 'pending') {
+              slotDiv.classList.add('pending');
+              slotDiv.innerHTML = `
+                <strong>Slot ${slotNum}</strong>
+                <div style="font-size:9px;margin-top:2px;">${slotItem.category || 'N/A'}</div>
+                <div style="font-size:8px;color:#F57C00;">◐ Pending</div>
+              `;
+            } else if (slotItem.status === 'empty') {
+              slotDiv.classList.add('empty');
+              slotDiv.innerHTML = `
+                <strong>Slot ${slotNum}</strong>
+                <div style="font-size:9px;margin-top:2px;">${slotItem.category || 'Any'}</div>
+                <div style="font-size:8px;color:#F57C00;">○ Empty</div>
+              `;
+            }
+
+            slotDiv.onclick = (e) => {
+              e.stopPropagation();
+              showContentDetails(slotItem, dateStr, pageConfig);
+            };
+          } else {
+            // No content calendar slot for this - show empty
+            slotDiv.classList.add('empty');
+            slotDiv.innerHTML = `
+              <strong>Slot ${slotNum}</strong>
+              <div style="font-size:8px;color:#999;">○ No Content</div>
+            `;
+          }
+
+          cell.appendChild(slotDiv);
         }
-
-        itemDiv.onclick = (e) => {
-          e.stopPropagation();
-          showContentDetails(item, dateStr);
-        };
-
-        cell.appendChild(itemDiv);
-      });
+      } else {
+        // No page assigned to this day (shouldn't happen with our config)
+        if (dayItems.length === 0) {
+          cell.classList.add('empty');
+          const emptyDiv = document.createElement('div');
+          emptyDiv.style.cssText = 'font-size:11px;color:#999;text-align:center;padding:10px;';
+          emptyDiv.textContent = 'No page assigned';
+          cell.appendChild(emptyDiv);
+        }
+      }
 
       return cell;
     }
 
-    function showContentDetails(item, date) {
+    function showContentDetails(item, date, pageConfig) {
       const dateObj = new Date(date);
       const formattedDate = dateObj.toLocaleDateString('en-US', { 
         weekday: 'long', 
@@ -1188,15 +1401,15 @@
 
       let detailsHTML = `
         <button class="close-modal" onclick="closeModal()">×</button>
-        <h3>📋 Content Details</h3>
+        <h3>📋 Content Slot Details</h3>
+        <div style="background:linear-gradient(135deg,#E8F5E9,#C8E6C9);padding:15px;border-radius:12px;margin-bottom:20px;text-align:center;">
+          <div style="font-size:18px;font-weight:700;color:#1B5E20;">${formattedDate}</div>
+          ${pageConfig ? `<div style="font-size:14px;color:#2E7D32;margin-top:5px;">📱 ${pageConfig.page}</div>` : ''}
+        </div>
         <div style="background:#f9f9f9;padding:20px;border-radius:12px;margin-bottom:20px;">
           <div style="margin-bottom:15px;">
-            <strong style="color:#5e3a8e;">Date:</strong><br>
-            ${formattedDate}
-          </div>
-          <div style="margin-bottom:15px;">
             <strong style="color:#5e3a8e;">Slot Number:</strong><br>
-            ${item.slotNumber || 'N/A'}
+            Slot ${item.slotNumber || 'N/A'}
           </div>
           <div style="margin-bottom:15px;">
             <strong style="color:#5e3a8e;">Category:</strong><br>
@@ -1217,13 +1430,7 @@
           ${item.productLink ? `
             <div style="margin-bottom:15px;">
               <strong style="color:#5e3a8e;">Product Link:</strong><br>
-              <a href="${item.productLink}" target="_blank" style="color:#5e3a8e;">View Product</a>
-            </div>
-          ` : ''}
-          ${item.pageName ? `
-            <div style="margin-bottom:15px;">
-              <strong style="color:#5e3a8e;">Page Name:</strong><br>
-              ${item.pageName}
+              <a href="${item.productLink}" target="_blank" style="color:#5e3a8e;">View Product →</a>
             </div>
           ` : ''}
           ${item.theme ? `
@@ -1253,7 +1460,7 @@
           ${item.studioLink ? `
             <div style="margin-bottom:15px;">
               <strong style="color:#5e3a8e;">Content Link:</strong><br>
-              <a href="${item.studioLink}" target="_blank" style="color:#5e3a8e;">View Content</a>
+              <a href="${item.studioLink}" target="_blank" style="color:#5e3a8e;">View Content →</a>
             </div>
           ` : ''}
         </div>
@@ -1262,14 +1469,21 @@
       if (item.studioId && item.status === 'booked') {
         detailsHTML += `
           <div style="margin-top:20px;">
-            <h4 style="color:#5e3a8e;margin-bottom:15px;">Mark as Completed</h4>
+            <h4 style="color:#5e3a8e;margin-bottom:15px;">✅ Mark as Completed</h4>
             <div class="form-group">
-              <label>Content Link</label>
-              <input type="url" id="contentLinkInput" placeholder="https://..." style="width:100%;">
+              <label>Content Link (Drive/Cloud)</label>
+              <input type="url" id="contentLinkInput" placeholder="https://drive.google.com/..." style="width:100%;">
             </div>
             <button class="btn btn-success" onclick="markStudioComplete(${item.studioId})" style="width:100%;">
               ✓ Mark as Completed
             </button>
+          </div>
+        `;
+      } else if (item.status === 'empty') {
+        detailsHTML += `
+          <div style="background:#FFF3E0;padding:15px;border-radius:12px;border-left:4px solid #F57C00;">
+            <strong style="color:#E65100;">📌 Note:</strong><br>
+            <div style="color:#666;margin-top:8px;">This slot is empty. Content team should create content for this slot based on the ${item.category || 'assigned category'}.</div>
           </div>
         `;
       }
