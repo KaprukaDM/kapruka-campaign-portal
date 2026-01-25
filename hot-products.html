@@ -377,16 +377,11 @@
     </div>
   </div>
 
+  <!-- Load shared API (includes CATEGORIES) -->
   <script src="js/supabase-api.js"></script>
   <script>
-    // Use a DIFFERENT variable name to avoid conflicts - PRODUCT_CATEGORIES instead of CATEGORIES
-    const PRODUCT_CATEGORIES = [
-      'Cakes', 'Flowers', 'Chocolates', 'Clothing', 'Electronics', 'Fashion',
-      'Food & Restaurants', 'Fruits', 'Soft Toys & Kids Toys', 'Grocery & Hampers',
-      'Greeting Cards & Party Supplies', 'Sports and Bicycles', 'Mother and Baby',
-      'Jewellery and Watches', 'Cosmetics & Perfumes', 'Customized Gifts',
-      'Health and Wellness', 'Home & Lifestyle', 'Combo and Gift Sets', 'Books & Stationery'
-    ];
+    // Use shared CATEGORIES from supabase-api.js as the source of truth
+    const PRODUCT_CATEGORIES = Array.isArray(CATEGORIES) ? CATEGORIES : [];
 
     let selectedCategory = null;
     let currentProducts = [];
@@ -422,6 +417,11 @@
     function displayCategories() {
       const grid = document.getElementById('categoryGrid');
       grid.innerHTML = '';
+
+      if (!PRODUCT_CATEGORIES.length) {
+        grid.innerHTML = '<div style="text-align:center;padding:40px;color:#999;grid-column:1/-1;">No categories configured</div>';
+        return;
+      }
 
       PRODUCT_CATEGORIES.forEach(cat => {
         const btn = document.createElement('div');
@@ -507,7 +507,6 @@
       try {
         await updateHotProduct(productId, { listed: isListed });
 
-        // Enable/disable Kapruka link input
         const linkInput = document.getElementById(`link-${productId}`);
         linkInput.disabled = !isListed;
 
@@ -516,8 +515,7 @@
           await updateHotProduct(productId, { kapruka_link: '' });
         }
 
-        // Update stats
-        const listedCount = currentProducts.filter(p => 
+        const listedCount = currentProducts.filter(p =>
           p.id === productId ? isListed : p.listed
         ).length;
         document.getElementById('listedProducts').textContent = listedCount;
