@@ -1162,3 +1162,158 @@ async function deleteHotProduct(id) {
     throw error;
   }
 }
+// ═══════════════════════════════════════════════════════════════
+// PRODUCT PERFORMANCE API
+// ═══════════════════════════════════════════════════════════════
+
+async function searchProductPerformance(keyword, startDate, endDate) {
+  try {
+    // Build URL with date range (dates are required now)
+    let url = `${SUPABASE_URL}/rest/v1/meta_ads_performance?`;
+
+    if (startDate && endDate) {
+      url += `date=gte.${startDate}&date=lte.${endDate}&`;
+    }
+
+    url += `order=date.desc`;
+
+    // Fetch all data in date range
+    const response = await fetch(url, {
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status}`);
+    }
+
+    const allData = await response.json();
+
+    // Filter by keyword
+    const keywordLower = keyword.toLowerCase();
+    const results = allData.filter(row => 
+      (row.campaign_name && row.campaign_name.toLowerCase().includes(keywordLower)) ||
+      (row.adset_name && row.adset_name.toLowerCase().includes(keywordLower)) ||
+      (row.ad_name && row.ad_name.toLowerCase().includes(keywordLower))
+    );
+
+    if (results.length === 0) {
+      return { level: 'none', data: [], aggregated: [] };
+    }
+
+    // Priority Order: Account > Campaign > Adset > Ad
+    // Check if multiple ad accounts match
+    const uniqueAccounts = [...new Set(results.map(r => r.ad_account_id).filter(Boolean))];
+
+    let aggregationLevel = 'ad';
+    let dataToAggregate = results;
+    let groupBy = 'ad_name';
+
+    // 1. Check Account level (if multiple accounts)
+    if (uniqueAccounts.length > 1) {
+      aggregationLevel = 'account';
+      groupBy = 'ad_account_id';
+    }
+    // 2. Check Campaign level
+    else {
+      const campaignMatches = results.filter(r => 
+        r.campaign_name && r.campaign_name.toLowerCase().includes(keywordLower)
+      );
+
+      if (campaignMatches.length > 0) {
+        aggregationLevel = 'campaign';
+        dataToAggregate = campaignMatches;
+        groupBy = 'campaign_name';
+      } 
+      // 3. Check Adset level
+      else {
+        const adsetMatches = results.filter(r => 
+          r.adset_name && r.adset_name.toLowerCase().includes(keywordLower)
+        );
+
+        if (adsetMatches.length > 0) {
+          aggregationLevel = 'adset';
+          dataToAggregate = adsetMatches;
+          groupBy = 'adset_name';
+        }
+        // 4. Default to Ad level
+        else {
+          const adMatches = results.filter(r => 
+            r.ad_name && r.ad_name.toLowerCase().includes(keywordLower)
+          );
+
+          if (adMatches.length > 0) {
+            dataToAggregate = adMatches;
+          }
+        }
+      }
+    }
+
+    // Aggregate by groupBy field
+    const grouped = {};
+    dataToAggregate.forEach(row => {
+      const key = row[groupBy] || 'Unknown';
+      if (!grouped[key]) {
+        grouped[key] = {
+          name: key,
+          campaign_name: row.campaign_name || 'N/A',
+          adset_name: row.adset_name || 'N/A',
+          ad_name: row.ad_name || 'N/A',
+          objective: row.objective || 'N/A',
+          amount_spent: 0,
+          reach: 0,
+          impression: 0,
+          clicks: 0,
+          results: 0,
+          direct_orders: 0,
+          dates: [],
+          ad_account_id: row.ad_account_id || 'N/A'
+        };
+      }
+
+      grouped[key].amount_spent += parseFloat(row.amount_spent || 0);
+      grouped[key].reach += parseInt(row.reach || 0);
+      grouped[key].impression += parseInt(row.impression || 0);
+      grouped[key].clicks += parseInt(row.clicks || 0);
+      grouped[key].results += parseInt(row.results || 0);
+      grouped[key].direct_orders += parseInt(row.if_direct_orders || 0);
+      grouped[key].dates.push(row.date);
+    });
+
+    // Calculate metrics
+    const aggregated = Object.values(grouped).map(item => {
+      const cpc = item.clicks > 0 ? (item.amount_spent / item.clicks).toFixed(2) : 0;
+      const cpm = item.impression > 0 ? ((item.amount_spent / item.impression) * 1000).toFixed(2) : 0;
+      const ctr = item.impression > 0 ? ((item.clicks / item.impression) * 100).toFixed(2) : 0;
+      const conversionRate = item.clicks > 0 ? ((item.direct_orders / item.clicks) * 100).toFixed(2) : 0;
+
+      const sortedDates = item.dates.sort();
+      const dateRange = sortedDates.length > 0 
+        ? `${sortedDates[0]} to ${sortedDates[sortedDates.length - 1]}` 
+        : 'N/A';
+
+      return {
+        ...item,
+        cpc,
+        cpm,
+        ctr,
+        conversionRate,
+        dateRange,
+        dayCount: new Set(item.dates).size
+      };
+    });
+
+    return {
+      level: aggregationLevel,
+      data: results,
+      aggregated: aggregated,
+      totalRecords: results.length
+    };
+
+  } catch (error) {
+    console.error('searchProductPerformance error:', error);
+    throw error;
+  }
+}
