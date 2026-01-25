@@ -3,16 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Campaign Portal - Kapruka</title>
+  <title>Admin Dashboard - Kapruka</title>
   <link rel="icon" type="image/png" href="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    * { 
-      margin: 0; 
-      padding: 0; 
-      box-sizing: border-box; 
-    }
-    
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
     :root {
       --primary-purple: #5e3a8e;
       --primary-purple-dark: #3d2461;
@@ -20,803 +16,1132 @@
       --accent-gold: #FFD700;
       --bg-gradient: linear-gradient(135deg, #1a0b2e 0%, #3d2461 50%, #5e3a8e 100%);
       --card-bg: rgba(255,255,255,0.98);
-      --shadow-sm: 0 4px 12px rgba(0,0,0,0.08);
-      --shadow-md: 0 8px 24px rgba(0,0,0,0.12);
-      --shadow-lg: 0 16px 48px rgba(0,0,0,0.18);
-      --shadow-xl: 0 24px 64px rgba(0,0,0,0.25);
       --border-radius: 16px;
       --border-radius-lg: 24px;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.1);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.15);
+      --shadow-lg: 0 8px 32px rgba(0,0,0,0.2);
       --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    
+
     body {
       font-family: 'Inter', sans-serif;
       background: var(--bg-gradient);
       min-height: 100vh;
-      padding: 50px 24px;
-      position: relative;
-      overflow-x: hidden;
+      padding: 30px 20px;
+      color: #333;
     }
-    
-    /* Animated background particles */
-    body::before {
-      content: '';
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-image: 
-        radial-gradient(circle at 20% 50%, rgba(255,215,0,0.08) 0%, transparent 50%),
-        radial-gradient(circle at 80% 80%, rgba(94,58,142,0.12) 0%, transparent 50%),
-        radial-gradient(circle at 40% 20%, rgba(61,36,97,0.1) 0%, transparent 50%);
-      pointer-events: none;
-      z-index: 0;
-    }
-    
+
     .container { 
-      max-width: 1400px; 
+      max-width: 1800px; 
       margin: 0 auto; 
-      position: relative;
-      z-index: 1;
     }
-    
-    /* ===== HEADER SECTION ===== */
-    .header {
-      text-align: center;
-      margin-bottom: 60px;
-      animation: fadeInDown 0.8s ease-out;
+
+    /* Header */
+    .header { 
+      text-align: center; 
+      margin-bottom: 40px; 
     }
-    
-    @keyframes fadeInDown {
-      from {
-        opacity: 0;
-        transform: translateY(-30px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-    
+
     .kapruka-logo {
-      width: 130px;
-      height: 130px;
-      margin: 0 auto 35px;
+      width: 100px;
+      height: 100px;
+      margin: 0 auto 25px;
       border-radius: 50%;
       overflow: hidden;
-      box-shadow: 
-        0 20px 60px rgba(0,0,0,0.4),
-        0 0 0 8px rgba(255,215,0,0.2),
-        0 0 0 16px rgba(255,215,0,0.1);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.4);
       animation: float 3s ease-in-out infinite;
-      position: relative;
+      border: 4px solid rgba(255,215,0,0.3);
     }
-    
-    .kapruka-logo::after {
-      content: '';
-      position: absolute;
-      top: -50%;
-      left: -50%;
-      width: 200%;
-      height: 200%;
-      background: linear-gradient(
-        45deg,
-        transparent,
-        rgba(255,255,255,0.1),
-        transparent
-      );
-      transform: rotate(45deg);
-      animation: shine 3s infinite;
-    }
-    
-    @keyframes shine {
-      0%, 100% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
-      50% { transform: translateX(100%) translateY(100%) rotate(45deg); }
-    }
-    
+
     @keyframes float {
       0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-12px); }
+      50% { transform: translateY(-10px); }
     }
-    
+
     .kapruka-logo img {
       width: 100%;
       height: 100%;
       object-fit: cover;
     }
-    
+
     h1 {
       font-family: 'Playfair Display', serif;
-      font-size: 56px;
-      background: linear-gradient(135deg, #FFD700 0%, #FFF 50%, #FFD700 100%);
-      background-size: 200% auto;
+      font-size: 42px;
+      background: linear-gradient(135deg, #FFD700, #FFF, #FFD700);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
       font-weight: 700;
-      letter-spacing: -1px;
-      animation: shimmer 3s linear infinite;
     }
-    
-    @keyframes shimmer {
-      0% { background-position: 0% center; }
-      100% { background-position: 200% center; }
-    }
-    
+
     .subtitle {
-      color: rgba(255,255,255,0.9);
-      font-size: 15px;
-      letter-spacing: 4px;
+      color: rgba(255,255,255,0.85);
+      font-size: 14px;
+      letter-spacing: 2.5px;
       text-transform: uppercase;
-      font-weight: 600;
-      text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      font-weight: 500;
     }
-    
-    /* ===== CARD STYLES ===== */
+
+    /* Login Card */
+    .login-card {
+      background: var(--card-bg);
+      padding: 45px;
+      border-radius: var(--border-radius-lg);
+      box-shadow: var(--shadow-lg);
+      max-width: 420px;
+      margin: 0 auto;
+    }
+
+    .login-card h2 {
+      font-family: 'Playfair Display', serif;
+      color: var(--primary-purple);
+      font-size: 26px;
+      margin-bottom: 25px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .admin-content { display: none; }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+      background: rgba(255,255,255,0.1);
+      padding: 12px;
+      border-radius: var(--border-radius);
+      backdrop-filter: blur(10px);
+    }
+
+    .tab-btn {
+      padding: 12px 24px;
+      background: rgba(255,255,255,0.15);
+      color: white;
+      border: 2px solid rgba(255,255,255,0.2);
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: var(--transition);
+      backdrop-filter: blur(5px);
+      white-space: nowrap;
+    }
+
+    .tab-btn:hover {
+      background: rgba(255,215,0,0.25);
+      border-color: var(--accent-gold);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(255,215,0,0.2);
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, var(--primary-purple), var(--primary-purple-dark));
+      border-color: var(--accent-gold);
+      box-shadow: 0 4px 16px rgba(255,215,0,0.3);
+      transform: translateY(-2px);
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Cards */
     .card {
       background: var(--card-bg);
-      padding: 40px;
+      padding: 32px;
       border-radius: var(--border-radius-lg);
-      box-shadow: var(--shadow-xl);
-      margin-bottom: 32px;
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(255,255,255,0.2);
-      animation: fadeInUp 0.6s ease-out backwards;
-      transition: var(--transition);
+      box-shadow: var(--shadow-lg);
+      margin-bottom: 25px;
     }
-    
-    .card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 28px 72px rgba(0,0,0,0.3);
-    }
-    
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(30px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-    
-    .card:nth-child(2) { animation-delay: 0.1s; }
-    .card:nth-child(3) { animation-delay: 0.2s; }
-    
+
     .card h2 {
       font-family: 'Playfair Display', serif;
       color: var(--primary-purple);
-      font-size: 32px;
-      margin-bottom: 28px;
+      font-size: 26px;
+      margin-bottom: 20px;
       font-weight: 700;
       display: flex;
       align-items: center;
-      gap: 12px;
-    }
-    
-    /* ===== MONTH GRID ===== */
-    .month-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 18px;
-    }
-    
-    .month-btn {
-      padding: 24px 20px;
-      border: 2px solid rgba(94,58,142,0.15);
-      border-radius: 16px;
-      background: linear-gradient(135deg, #fff 0%, #f9f9ff 100%);
-      cursor: pointer;
-      font-weight: 700;
-      font-size: 15px;
-      color: #666;
-      text-align: center;
-      transition: var(--transition);
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .month-btn::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255,215,0,0.2), transparent);
-      transition: left 0.5s;
-    }
-    
-    .month-btn:hover::before {
-      left: 100%;
-    }
-    
-    .month-btn:hover {
-      border-color: var(--accent-gold);
-      transform: translateY(-6px) scale(1.02);
-      box-shadow: 0 12px 32px rgba(255,215,0,0.25);
-      color: var(--primary-purple);
-    }
-    
-    .month-btn.selected {
-      background: linear-gradient(135deg, var(--primary-purple), var(--primary-purple-dark));
-      color: white;
-      border-color: var(--accent-gold);
-      box-shadow: 
-        0 12px 36px rgba(94,58,142,0.4),
-        0 0 0 3px rgba(255,215,0,0.3);
-      transform: translateY(-6px) scale(1.05);
-    }
-    
-    /* ===== DEPARTMENT CARDS ===== */
-    .dept-container { 
-      display: none; 
-    }
-    
-    .dept-card {
-      background: var(--card-bg);
-      padding: 40px;
-      border-radius: var(--border-radius-lg);
-      margin-bottom: 32px;
-      box-shadow: var(--shadow-lg);
-      border-left: 6px solid var(--accent-gold);
-      position: relative;
-      overflow: hidden;
-      transition: var(--transition);
-    }
-    
-    .dept-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      right: 0;
-      width: 200px;
-      height: 200px;
-      background: radial-gradient(circle, rgba(255,215,0,0.08) 0%, transparent 70%);
-      pointer-events: none;
-    }
-    
-    .dept-card:hover {
-      transform: translateX(4px);
-      box-shadow: var(--shadow-xl);
-    }
-    
-    .dept-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 32px;
-      padding-bottom: 24px;
-      border-bottom: 2px solid rgba(94,58,142,0.1);
-      position: relative;
-    }
-    
-    .dept-name {
-      font-family: 'Playfair Display', serif;
-      font-size: 28px;
-      color: var(--primary-purple);
-      font-weight: 700;
-    }
-    
-    .dept-meta { 
-      display: flex; 
-      gap: 16px; 
-      flex-wrap: wrap; 
-    }
-    
-    .dept-meta > div {
-      background: linear-gradient(135deg, #f8f8ff, #fff);
-      padding: 12px 20px;
-      border-radius: 12px;
-      font-size: 14px;
-      font-weight: 600;
-      color: #666;
-      box-shadow: var(--shadow-sm);
-      border: 1px solid rgba(94,58,142,0.1);
-    }
-    
-    .meta-value {
-      color: var(--primary-purple);
-      background: linear-gradient(135deg, var(--accent-gold), #FFC700);
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 14px;
-      font-weight: 800;
-      margin-left: 8px;
-      box-shadow: 0 4px 12px rgba(255,215,0,0.3);
-      display: inline-block;
-    }
-    
-    /* ===== SLOT GRID ===== */
-    .slot-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-      gap: 18px;
-    }
-    
-    .slot {
-      aspect-ratio: 1;
-      border-radius: 18px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      border: 3px solid transparent;
-      transition: var(--transition);
-      font-weight: 600;
-      padding: 10px;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .slot::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: 18px;
-      padding: 3px;
-      background: linear-gradient(135deg, transparent, rgba(255,255,255,0.4));
-      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      -webkit-mask-composite: xor;
-      mask-composite: exclude;
-      opacity: 0;
-      transition: opacity 0.3s;
-    }
-    
-    .slot:hover::after {
-      opacity: 1;
-    }
-    
-    .slot-num { 
-      font-size: 28px; 
-      font-weight: 900; 
-      margin-bottom: 6px;
-      text-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    }
-    
-    .slot-label { 
-      font-size: 10px; 
-      text-transform: uppercase; 
-      font-weight: 800;
-      letter-spacing: 0.8px;
+      gap: 10px;
     }
 
-    /* ===== UPDATED SLOT COLORS ===== */
-    
-    /* AVAILABLE - Bright Green Gradient */
-    .slot.available {
-      background: linear-gradient(135deg, #A7F3D0 0%, #6EE7B7 50%, #34D399 100%);
-      color: #065F46;
-      border-color: #10B981;
-      box-shadow: 0 4px 16px rgba(16,185,129,0.25);
-    }
-    .slot.available:hover {
-      transform: translateY(-8px) scale(1.08);
-      box-shadow: 
-        0 16px 40px rgba(16,185,129,0.35),
-        0 0 0 4px rgba(16,185,129,0.15);
-      background: linear-gradient(135deg, #6EE7B7 0%, #34D399 50%, #10B981 100%);
-    }
+    /* Forms */
+    .form-group { margin-bottom: 18px; }
 
-    /* REQUEST SUBMITTED - Vibrant Purple Gradient */
-    .slot.submitted {
-      background: linear-gradient(135deg, #DDD6FE 0%, #C4B5FD 50%, #A78BFA 100%);
-      color: #5B21B6;
-      border-color: #7C3AED;
-      box-shadow: 0 4px 16px rgba(124,58,237,0.25);
-    }
-    .slot.submitted .slot-num,
-    .slot.submitted .slot-label {
-      color: #5B21B6;
-    }
-    .slot.submitted:hover {
-      transform: translateY(-6px) scale(1.05);
-      box-shadow: 
-        0 12px 32px rgba(124,58,237,0.35),
-        0 0 0 4px rgba(124,58,237,0.15);
-    }
-
-    /* WORKING - Warm Orange Gradient */
-    .slot.working {
-      background: linear-gradient(135deg, #FED7AA 0%, #FDBA74 50%, #FB923C 100%);
-      color: #9A3412;
-      border-color: #EA580C;
-      box-shadow: 0 4px 16px rgba(234,88,12,0.25);
-    }
-    .slot.working .slot-num {
-      color: #7C2D12;
-    }
-    .slot.working:hover {
-      transform: translateY(-6px) scale(1.05);
-      box-shadow: 
-        0 12px 32px rgba(234,88,12,0.35),
-        0 0 0 4px rgba(234,88,12,0.15);
-    }
-
-    /* LIVE - Electric Blue Gradient */
-    .slot.live {
-      background: linear-gradient(135deg, #60A5FA 0%, #3B82F6 50%, #2563EB 100%);
-      color: white;
-      border-color: #1D4ED8;
-      box-shadow: 
-        0 4px 16px rgba(37,99,235,0.35),
-        0 0 20px rgba(59,130,246,0.2);
-    }
-    .slot.live .slot-num,
-    .slot.live .slot-label {
-      color: white;
-      text-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    }
-    .slot.live .slot-details {
-      color: rgba(255,255,255,0.95);
-      background: rgba(255,255,255,0.2);
-      backdrop-filter: blur(10px);
-      padding: 4px 8px;
-      border-radius: 6px;
-      margin-top: 6px;
-    }
-    .slot.live:hover {
-      transform: translateY(-6px) scale(1.05);
-      box-shadow: 
-        0 12px 32px rgba(37,99,235,0.45),
-        0 0 24px rgba(59,130,246,0.3),
-        0 0 0 4px rgba(96,165,250,0.2);
-    }
-
-    /* COMPLETED - Sophisticated Slate Gradient */
-    .slot.completed {
-      background: linear-gradient(135deg, #CBD5E1 0%, #94A3B8 50%, #64748B 100%);
-      color: #1E293B;
-      border-color: #475569;
-      box-shadow: 0 4px 16px rgba(71,85,105,0.25);
-    }
-    .slot.completed .slot-num {
-      color: #0F172A;
-    }
-    .slot.completed .slot-label {
-      color: #334155;
-    }
-    .slot.completed:hover {
-      transform: translateY(-6px) scale(1.05);
-      box-shadow: 
-        0 12px 32px rgba(71,85,105,0.35),
-        0 0 0 4px rgba(148,163,184,0.2);
-    }
-
-    /* SELECTED - Premium Gold Gradient */
-    .slot.selected {
-      background: linear-gradient(135deg, #FDE68A 0%, #FCD34D 50%, #FBBF24 100%);
-      color: var(--primary-purple);
-      border-color: var(--primary-purple);
-      transform: scale(1.12);
-      box-shadow: 
-        0 20px 50px rgba(251,191,36,0.5),
-        0 0 0 5px rgba(251,191,36,0.2),
-        0 0 40px rgba(251,191,36,0.3);
-      animation: pulse 2s infinite;
-    }
-    
-    @keyframes pulse {
-      0%, 100% { box-shadow: 0 20px 50px rgba(251,191,36,0.5), 0 0 0 5px rgba(251,191,36,0.2), 0 0 40px rgba(251,191,36,0.3); }
-      50% { box-shadow: 0 20px 50px rgba(251,191,36,0.6), 0 0 0 8px rgba(251,191,36,0.3), 0 0 50px rgba(251,191,36,0.4); }
-    }
-    
-    .slot.selected .slot-num {
-      color: var(--primary-purple-dark);
-      font-size: 30px;
-    }
-
-    .slot-details {
-      font-size: 9px;
-      margin-top: 6px;
-      line-height: 1.4;
-      font-weight: 700;
-      text-align: center;
-      opacity: 0.9;
-    }
-    
-    /* ===== FORM STYLES ===== */
-    .form-card { 
-      display: none; 
-    }
-    
-    .form-group { 
-      margin-bottom: 24px; 
-    }
-    
     label {
       display: block;
       color: var(--primary-purple);
-      font-weight: 700;
-      margin-bottom: 10px;
-      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      font-size: 13px;
       letter-spacing: 0.3px;
     }
-    
-    input, textarea {
+
+    input, select, textarea {
       width: 100%;
-      padding: 18px;
+      padding: 14px 16px;
       border: 2px solid #e8e8e8;
-      border-radius: 14px;
-      font-size: 15px;
+      border-radius: 12px;
+      font-size: 14px;
       font-family: 'Inter', sans-serif;
       transition: var(--transition);
-      background: white;
+      background: #fff;
     }
-    
-    input:focus, textarea:focus {
+
+    input:focus, select:focus, textarea:focus {
       outline: none;
       border-color: var(--accent-gold);
-      box-shadow: 0 0 0 4px rgba(255,215,0,0.15);
-      transform: translateY(-2px);
+      box-shadow: 0 0 0 4px rgba(255,215,0,0.1);
     }
-    
-    input:hover, textarea:hover {
+
+    input:hover, select:hover, textarea:hover {
       border-color: #d0d0d0;
     }
-    
-    textarea { 
-      min-height: 140px; 
-      resize: vertical;
+
+    /* Buttons */
+    .btn {
+      padding: 12px 28px;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
     }
-    
-    .date-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-    }
-    
-    .btn-submit {
-      width: 100%;
-      padding: 22px;
+
+    .btn-primary {
       background: linear-gradient(135deg, var(--primary-purple), var(--primary-purple-dark));
       color: white;
-      border: none;
-      border-radius: 16px;
-      font-size: 18px;
-      font-weight: 800;
-      cursor: pointer;
-      text-transform: uppercase;
-      margin-top: 24px;
-      transition: var(--transition);
-      box-shadow: 0 8px 24px rgba(94,58,142,0.3);
-      letter-spacing: 1px;
-      position: relative;
-      overflow: hidden;
     }
-    
-    .btn-submit::before {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 0;
-      height: 0;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.2);
-      transform: translate(-50%, -50%);
-      transition: width 0.6s, height 0.6s;
-    }
-    
-    .btn-submit:hover::before {
-      width: 400px;
-      height: 400px;
-    }
-    
-    .btn-submit:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 16px 40px rgba(94,58,142,0.4);
-    }
-    
-    .btn-submit:active {
+
+    .btn-primary:hover {
       transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(94,58,142,0.4);
     }
-    
-    .btn-submit:disabled {
-      background: linear-gradient(135deg, #ccc, #aaa);
-      cursor: not-allowed;
-      transform: none;
+
+    .btn-warning {
+      background: linear-gradient(135deg, #FFA726, #F57C00);
+      color: white;
     }
-    
-    /* ===== LOADING & MODAL ===== */
+
+    .btn-warning:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(245,124,0,0.4);
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, #66BB6A, #43A047);
+      color: white;
+    }
+
+    .btn-success:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(67,160,71,0.4);
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, #EF5350, #E53935);
+      color: white;
+    }
+
+    .btn-danger:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(229,57,53,0.4);
+    }
+
+    .btn-complete {
+      background: linear-gradient(135deg, #9E9E9E, #757575);
+      color: white;
+    }
+
+    .btn-complete:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(117,117,117,0.4);
+    }
+
+    /* Tables */
+    .table-container {
+      overflow-x: auto;
+      margin-top: 20px;
+      border-radius: 12px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+    }
+
+    th {
+      background: linear-gradient(135deg, var(--primary-purple), var(--primary-purple-dark));
+      color: white;
+      padding: 16px 14px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 14px;
+      border-bottom: 1px solid #f5f5f5;
+      font-size: 13px;
+      vertical-align: middle;
+    }
+
+    tr:hover { 
+      background: #fafafa; 
+      transition: background 0.2s;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-block;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .badge-submitted { background: #E1BEE7; color: #4A148C; }
+    .badge-working { background: #FFF9C4; color: #F57F17; }
+    .badge-live { background: #C8E6C9; color: #1B5E20; }
+    .badge-completed { background: #E0E0E0; color: #424242; }
+    .badge-rejected { background: #FFCDD2; color: #C62828; }
+    .badge-pending { background: #FFF9C4; color: #F57F17; }
+    .badge-approved { background: #C8E6C9; color: #1B5E20; }
+    .badge-received { background: #E3F2FD; color: #1565C0; }
+    .badge-review { background: #FFF3E0; color: #E65100; }
+
+    /* Action Buttons */
+    .action-btns {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .action-btns button {
+      padding: 7px 14px;
+      font-size: 12px;
+    }
+
+    /* Loading */
     .loading {
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(26,11,46,0.95);
-      backdrop-filter: blur(10px);
+      background: rgba(0,0,0,0.85);
       display: none;
       align-items: center;
       justify-content: center;
       z-index: 9999;
+      backdrop-filter: blur(5px);
     }
-    
+
     .spinner {
-      width: 70px;
-      height: 70px;
-      border: 6px solid rgba(255,215,0,0.2);
+      width: 60px;
+      height: 60px;
+      border: 5px solid rgba(255,215,0,0.3);
       border-top-color: var(--accent-gold);
       border-radius: 50%;
       animation: spin 1s linear infinite;
     }
-    
-    @keyframes spin { 
-      to { transform: rotate(360deg); } 
-    }
-    
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Modal */
     .modal {
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(26,11,46,0.95);
-      backdrop-filter: blur(10px);
+      background: rgba(0,0,0,0.85);
       display: none;
       align-items: center;
       justify-content: center;
       z-index: 10000;
-      padding: 24px;
+      padding: 20px;
+      backdrop-filter: blur(5px);
     }
-    
+
     .modal-content {
       background: white;
-      padding: 50px;
+      padding: 35px;
       border-radius: var(--border-radius-lg);
-      max-width: 550px;
-      text-align: center;
-      box-shadow: 0 24px 80px rgba(0,0,0,0.5);
-      animation: modalSlideIn 0.4s ease-out;
+      max-width: 800px;
+      max-height: 90vh;
+      overflow-y: auto;
+      position: relative;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
     }
-    
-    @keyframes modalSlideIn {
-      from {
-        opacity: 0;
-        transform: scale(0.9) translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-      }
+
+    .modal h3 {
+      font-family: 'Playfair Display', serif;
+      color: var(--primary-purple);
+      font-size: 22px;
+      margin-bottom: 20px;
+      font-weight: 700;
     }
-    
-    .modal-icon {
-      width: 90px;
-      height: 90px;
-      background: linear-gradient(135deg, #10B981, #059669);
+
+    .close-modal {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: #f5f5f5;
+      border: none;
+      font-size: 28px;
+      cursor: pointer;
+      color: #666;
+      line-height: 1;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 0 auto 28px;
-      font-size: 50px;
-      color: white;
-      box-shadow: 0 12px 32px rgba(16,185,129,0.4);
+      transition: var(--transition);
     }
-    
-    .modal h2 {
-      font-family: 'Playfair Display', serif;
-      color: var(--primary-purple);
-      font-size: 36px;
-      margin-bottom: 18px;
+
+    .close-modal:hover { 
+      background: #e0e0e0;
+      color: #333;
+      transform: rotate(90deg);
     }
-    
-    .modal-btn {
-      padding: 16px 48px;
-      background: linear-gradient(135deg, var(--primary-purple), var(--primary-purple-dark));
+
+    /* Checkboxes and Radio */
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      padding: 10px;
+      border-radius: 8px;
+      transition: var(--transition);
+    }
+
+    .checkbox-label:hover {
+      background: #f9f9f9;
+    }
+
+    .checkbox-label input {
+      width: auto;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    .radio-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .radio-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      padding: 12px;
+      border: 2px solid #e8e8e8;
+      border-radius: 10px;
+      transition: var(--transition);
+      background: white;
+    }
+
+    .radio-label:hover {
+      border-color: var(--accent-gold);
+      background: #fffef0;
+      transform: translateX(4px);
+    }
+
+    .radio-label input {
+      width: auto;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    /* Stats */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 18px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      padding: 22px;
+      border-radius: 14px;
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition);
+    }
+
+    .stat-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-md);
+    }
+
+    /* Calendar */
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .month-nav {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .month-nav button {
+      background: var(--primary-purple);
       color: white;
       border: none;
-      border-radius: 14px;
-      font-size: 16px;
-      font-weight: 700;
+      padding: 10px 20px;
+      border-radius: 10px;
       cursor: pointer;
-      margin-top: 24px;
+      font-weight: 600;
       transition: var(--transition);
-      box-shadow: 0 8px 20px rgba(94,58,142,0.3);
+      font-size: 14px;
     }
-    
-    .modal-btn:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 12px 28px rgba(94,58,142,0.4);
-    }
-    
-    .detail-row {
-      text-align: left;
-      padding: 16px;
-      background: linear-gradient(135deg, #f9f9ff, #fff);
-      border-radius: 12px;
-      margin: 14px 0;
-      border-left: 4px solid var(--primary-purple);
+
+    .month-nav button:hover {
+      background: var(--primary-purple-dark);
+      transform: translateY(-2px);
       box-shadow: var(--shadow-sm);
     }
-    
-    .detail-row strong {
+
+    .month-nav h3 {
+      font-size: 22px;
       color: var(--primary-purple);
-      display: block;
-      margin-bottom: 8px;
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      font-weight: 800;
+      min-width: 200px;
+      text-align: center;
+      margin: 0;
+      font-weight: 700;
     }
-    
-    /* ===== RESPONSIVE ===== */
+
+    .dashboard-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 14px;
+      margin-bottom: 30px;
+    }
+
+    .dashboard-stat {
+      padding: 18px;
+      border-radius: 14px;
+      text-align: center;
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition);
+    }
+
+    .dashboard-stat:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      opacity: 0.8;
+      letter-spacing: 0.5px;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .calendar-day-header {
+      background: var(--primary-purple);
+      color: white;
+      padding: 14px;
+      text-align: center;
+      font-weight: 700;
+      border-radius: 10px;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .calendar-day {
+      background: white;
+      border: 2px solid #e8e8e8;
+      border-radius: 14px;
+      min-height: 180px;
+      padding: 12px;
+      cursor: pointer;
+      transition: var(--transition);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .calendar-day:hover {
+      border-color: var(--accent-gold);
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .calendar-day.empty {
+      background: #f5f5f5;
+      cursor: default;
+      opacity: 0.6;
+    }
+
+    .calendar-day.empty:hover {
+      transform: none;
+      box-shadow: none;
+      border-color: #e8e8e8;
+    }
+
+    .day-number {
+      font-weight: 700;
+      color: var(--primary-purple);
+      font-size: 17px;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #e8e8e8;
+    }
+
+    .day-slots {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .slot-item {
+      padding: 9px;
+      border-radius: 8px;
+      font-size: 11px;
+      margin-bottom: 7px;
+      border-left: 3px solid;
+      background: white;
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition);
+    }
+
+    .slot-item:hover {
+      transform: translateX(4px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .slot-item.lead-form {
+      background: #E3F2FD;
+      border-left-color: #1976D2;
+    }
+
+    .slot-item.lead-form.booked {
+      background: #C8E6C9;
+      border-left-color: #43A047;
+    }
+
+    .slot-item.lead-form.empty {
+      background: #f5f5f5;
+      border-left-color: #bdbdbd;
+      color: #999;
+    }
+
+    .slot-item.content-calendar {
+      background: #FFF9C4;
+      border-left-color: #F57C00;
+    }
+
+    .slot-item.tiktok {
+      background: #F3E5F5;
+      border-left-color: #8E24AA;
+    }
+
+    .slot-number {
+      font-weight: 700;
+      font-size: 10px;
+      display: inline-block;
+      min-width: 30px;
+    }
+
+    .slot-status {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-size: 9px;
+      font-weight: 700;
+      margin-left: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .status-empty { background: #e0e0e0; color: #666; }
+    .status-booked { background: #81C784; color: #1B5E20; }
+    .status-received { background: #90CAF9; color: #0D47A1; }
+    .status-working { background: #FFB74D; color: #E65100; }
+    .status-review { background: #FFD54F; color: #F57F00; }
+    .status-approved { background: #66BB6A; color: #1B5E20; }
+
+    .slot-page {
+      display: block;
+      font-weight: 600;
+      color: var(--primary-purple);
+      margin-top: 3px;
+      font-size: 10px;
+    }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+      .calendar-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+
     @media (max-width: 768px) {
-      body { padding: 30px 16px; }
-      h1 { font-size: 38px; }
-      .card { padding: 28px; }
-      .dept-header { 
+      h1 { font-size: 32px; }
+      .tabs { 
         flex-direction: column; 
-        align-items: flex-start; 
-        gap: 16px; 
+        padding: 10px;
       }
-      .slot-grid { 
-        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); 
-        gap: 14px;
+      .tab-btn { width: 100%; }
+      table { font-size: 12px; }
+      th, td { padding: 10px 8px; }
+      .calendar-grid {
+        grid-template-columns: 1fr;
       }
-      .date-row { grid-template-columns: 1fr; }
-      .month-grid { grid-template-columns: 1fr; }
+      .calendar-day {
+        min-height: auto;
+      }
+      .card {
+        padding: 20px;
+      }
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--primary-purple);
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--primary-purple-dark);
     }
   </style>
 </head>
 <body>
+</head>
+<body>
   <div class="loading" id="loading"><div class="spinner"></div></div>
-  <div class="modal" id="modal"><div class="modal-content" id="modalContent"></div></div>
+  <div class="modal" id="modal">
+    <div class="modal-content" id="modalContent"></div>
+  </div>
 
   <div class="container">
     <div class="header">
       <div class="kapruka-logo">
         <img src="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw" alt="Kapruka">
       </div>
-      <h1>Campaign Portal</h1>
-      <p class="subtitle">Kapruka Holdings PLC</p>
+      <h1>Admin Dashboard</h1>
+      <p class="subtitle">Campaign Management</p>
     </div>
 
-    <div class="card">
-      <h2>📅 Select Campaign Month</h2>
-      <div class="month-grid" id="monthGrid">
-        <div style="text-align:center;padding:40px;color:#999;grid-column:1/-1;">Loading...</div>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-card">
+      <h2>🔐 Admin Login</h2>
+      <form id="loginForm">
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="adminPassword" required placeholder="Enter admin password">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;">Login</button>
+      </form>
+    </div>
+
+    <!-- Admin Content -->
+    <div id="adminContent" class="admin-content">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('requests')">📋 Campaign Requests</button>
+        <button class="tab-btn" onclick="switchTab('products')">💡 Lead Form Products Approval</button>
+        <button class="tab-btn" onclick="switchTab('content')">📅 Content Calendar Approval</button>
+        <button class="tab-btn" onclick="switchTab('studio')">🎬 Studio Calendar</button>
+        <button class="tab-btn" onclick="switchTab('hot')">🔥 Hot Products</button>
+        <button class="tab-btn" onclick="switchTab('departments')">🏢 Department Config</button>
+        <button class="tab-btn" style="margin-left:auto;background:#d32f2f;" onclick="logout()">Logout</button>
       </div>
-    </div>
 
-    <div class="dept-container" id="deptContainer"></div>
-
-    <div class="card form-card" id="formCard">
-      <h2>✨ Campaign Details</h2>
-      <form id="campaignForm">
-        <div class="form-group">
-          <label>📝 Campaign Details:</label>
-          <textarea id="campaign" required placeholder="Describe your campaign..."></textarea>
-        </div>
-        <div class="form-group">
-          <label>⏱️ Duration (days):</label>
-          <input type="number" id="duration" value="7" min="1" max="31" required>
-        </div>
-        <div class="form-group">
-          <label>📅 Campaign Period:</label>
-          <div class="date-row">
-            <input type="date" id="startDate" required>
-            <input type="date" id="endDate" required readonly style="background:#f5f5f5;">
+      <!-- Campaign Requests Tab -->
+      <div id="tab-requests" class="tab-content active">
+        <div class="card">
+          <h2>📋 Campaign Requests</h2>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Request ID</th>
+                  <th>Date</th>
+                  <th>Department</th>
+                  <th>Month</th>
+                  <th>Slot</th>
+                  <th>Campaign</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="requestsTable">
+                <tr><td colspan="8" style="text-align:center;padding:40px;">Loading...</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
-        <button type="submit" class="btn-submit" id="submitBtn">🚀 Submit Request</button>
-      </form>
+      </div>
+
+      <!-- Product Suggestions Tab -->
+      <div id="tab-products" class="tab-content">
+        <div class="card">
+          <h2>💡 Lead Form Products Suggestions</h2>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Submission ID</th>
+                  <th>Date</th>
+                  <th>Product Link</th>
+                  <th>Category</th>
+                  <th>Margin %</th>
+                  <th>Status</th>
+                  <th>Page Name</th>
+                  <th>Slot Date</th>
+                  <th>Slot #</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="productsTable">
+                <tr><td colspan="10" style="text-align:center;padding:40px;">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Content Calendar Tab -->
+      <div id="tab-content" class="tab-content">
+        <div class="card">
+          <h2>📅 Add Content Theme</h2>
+          <form id="themeForm">
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px;">
+              <div class="form-group">
+                <label>Theme Name</label>
+                <input type="text" id="themeName" required placeholder="e.g., Valentine's Day">
+              </div>
+              <div class="form-group">
+                <label>Slots Per Day</label>
+                <input type="number" id="slotsPerDay" required placeholder="e.g., 3" min="1" max="10" value="3">
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px;">
+              <div class="form-group">
+                <label>Start Date</label>
+                <input type="date" id="themeStart" required>
+              </div>
+              <div class="form-group">
+                <label>End Date</label>
+                <input type="date" id="themeEnd" required>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px;">
+              <div class="form-group">
+                <label>Theme Color</label>
+                <input type="color" id="themeColor" value="#422B73">
+              </div>
+              <div class="form-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="isSeasonal">
+                  <span>Seasonal Theme (no categories)</span>
+                </label>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Theme</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <h2>🗂️ Content Bookings Approval</h2>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Slot</th>
+                  <th>Category</th>
+                  <th>Product Code</th>
+                  <th>Status</th>
+                  <th>Go Live</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="contentTable">
+                <tr><td colspan="7" style="text-align:center;padding:40px;">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>🎨 Themes</h2>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Theme</th>
+                  <th>Start</th>
+                  <th>End</th>
+                  <th>Slots/Day</th>
+                  <th>Type</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="themesTable">
+                <tr><td colspan="6" style="text-align:center;padding:40px;">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- STUDIO CALENDAR TAB -->
+      <div id="tab-studio" class="tab-content">
+        <div class="card">
+          <div class="calendar-header">
+            <h2 style="margin:0;">🎬 Studio Calendar</h2>
+            <button class="btn btn-success" onclick="openAddExtraContentModal()">➕ Add Extra Content</button>
+          </div>
+
+          <!-- Dashboard Stats -->
+          <div class="dashboard-stats">
+            <div class="dashboard-stat" style="background:#E8F5E9;">
+              <div class="stat-value" style="color:#1B5E20;" id="totalSlots">0</div>
+              <div class="stat-label" style="color:#2E7D32;">Total Slots</div>
+            </div>
+            <div class="dashboard-stat" style="background:#E3F2FD;">
+              <div class="stat-value" style="color:#0D47A1;" id="bookedSlots">0</div>
+              <div class="stat-label" style="color:#1565C0;">Booked</div>
+            </div>
+            <div class="dashboard-stat" style="background:#C8E6C9;">
+              <div class="stat-value" style="color:#1B5E20;" id="completedSlots">0</div>
+              <div class="stat-label" style="color:#2E7D32;">Completed</div>
+            </div>
+            <div class="dashboard-stat" style="background:#FFF3E0;">
+              <div class="stat-value" style="color:#E65100;" id="approvedSlots">0</div>
+              <div class="stat-label" style="color:#EF6C00;">Head Approved</div>
+            </div>
+            <div class="dashboard-stat" style="background:#F3E5F5;">
+              <div class="stat-value" style="color:#6A1B9A;" id="completionRate">0%</div>
+              <div class="stat-label" style="color:#7B1FA2;">Completion Rate</div>
+            </div>
+          </div>
+
+          <div class="month-nav">
+            <button onclick="changeStudioMonth(-1)">◀ Previous</button>
+            <h3 id="studioMonthTitle">January 2026</h3>
+            <button onclick="changeStudioMonth(1)">Next ▶</button>
+          </div>
+
+          <div style="margin-bottom:20px;">
+            <label style="color:#5e3a8e;font-weight:600;margin-right:10px;">Filter by Status:</label>
+            <select id="studioFilter" onchange="loadStudioCalendar()" style="padding:10px;border-radius:8px;border:2px solid #e8e8e8;font-size:14px;">
+              <option value="all">All Content</option>
+              <option value="received">Not Started (Received)</option>
+              <option value="working">Working</option>
+              <option value="submitted">Submitted for Review</option>
+              <option value="approved">Approved by Head</option>
+            </select>
+          </div>
+
+          <div class="calendar-grid" id="studioCalendarGrid">
+            <div class="calendar-day-header">Sun</div>
+            <div class="calendar-day-header">Mon</div>
+            <div class="calendar-day-header">Tue</div>
+            <div class="calendar-day-header">Wed</div>
+            <div class="calendar-day-header">Thu</div>
+            <div class="calendar-day-header">Fri</div>
+            <div class="calendar-day-header">Sat</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HOT PRODUCTS TAB -->
+      <div id="tab-hotproducts" class="tab-content">
+        <div class="card">
+          <h2>🔥 Hot Products Management</h2>
+          <p style="color:#666;margin-bottom:25px;">Add and manage hot product suggestions by category</p>
+
+          <div class="stats-grid">
+            <div class="stat-card" style="background:#E8F5E9;">
+              <div style="color:#2E7D32;font-size:12px;font-weight:600;text-transform:uppercase;margin-bottom:8px;">Total Products</div>
+              <div style="color:#1B5E20;font-size:32px;font-weight:700;" id="adminTotalProducts">0</div>
+            </div>
+            <div class="stat-card" style="background:#E3F2FD;">
+              <div style="color:#1565C0;font-size:12px;font-weight:600;text-transform:uppercase;margin-bottom:8px;">Listed Products</div>
+              <div style="color:#0D47A1;font-size:32px;font-weight:700;" id="adminListedProducts">0</div>
+            </div>
+            <div class="stat-card" style="background:#FFF3E0;">
+              <div style="color:#E65100;font-size:12px;font-weight:600;text-transform:uppercase;margin-bottom:8px;">Categories</div>
+              <div style="color:#BF360C;font-size:32px;font-weight:700;" id="adminCategoryCount">0</div>
+            </div>
+          </div>
+
+          <div style="background:#f9f9f9;padding:25px;border-radius:12px;margin-bottom:30px;">
+            <h3 style="color:#5e3a8e;margin-bottom:20px;">➕ Add New Product</h3>
+            <form id="addHotProductForm" style="display:grid;gap:15px;">
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:15px;">
+                <div>
+                  <label style="display:block;color:#5e3a8e;font-weight:600;margin-bottom:8px;font-size:13px;">Category</label>
+                  <select id="hotProductCategory" required style="width:100%;padding:12px;border:2px solid #e8e8e8;border-radius:8px;font-size:14px;">
+                    <option value="">Select Category</option>
+                    <option value="Cakes">Cakes</option>
+                    <option value="Flowers">Flowers</option>
+                    <option value="Chocolates">Chocolates</option>
+                    <option value="Electronics">Electronics</option>
+                    <option value="Fashion">Fashion</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="display:block;color:#5e3a8e;font-weight:600;margin-bottom:8px;font-size:13px;">Product Link</label>
+                  <input type="url" id="hotProductLink" required placeholder="https://example.com/product" style="width:100%;padding:12px;border:2px solid #e8e8e8;border-radius:8px;font-size:14px;">
+                </div>
+                <div>
+                  <label style="display:block;color:#5e3a8e;font-weight:600;margin-bottom:8px;font-size:13px;">Sales Count</label>
+                  <input type="number" id="hotProductSales" value="0" min="0" style="width:100%;padding:12px;border:2px solid #e8e8e8;border-radius:8px;font-size:14px;">
+                </div>
+              </div>
+              <button type="submit" style="padding:14px 32px;background:linear-gradient(135deg,#5e3a8e,#3d2461);color:white;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;">
+                ➕ Add Product
+              </button>
+            </form>
+          </div>
+
+          <div id="hotProductsTableBody"></div>
+        </div>
+      </div>
+
+      <!-- Department Config Tab -->
+      <div id="tab-departments" class="tab-content">
+        <div class="card">
+          <h2>🏢 Add Department</h2>
+          <form id="deptForm">
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
+              <div class="form-group">
+                <label>Month</label>
+                <select id="deptMonth" required>
+                  <option value="January 2026">January 2026</option>
+                  <option value="February 2026">February 2026</option>
+                  <option value="March 2026">March 2026</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Department Name</label>
+                <input type="text" id="deptName" required placeholder="e.g., Marketing">
+              </div>
+              <div class="form-group">
+                <label>Budget ($k)</label>
+                <input type="number" id="deptBudget" required placeholder="e.g., 200">
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
+              <div class="form-group">
+                <label>Slots</label>
+                <input type="number" id="deptSlots" required placeholder="e.g., 10">
+              </div>
+              <div class="form-group">
+                <label>Color</label>
+                <input type="color" id="deptColor" value="#E8F5E9">
+              </div>
+              <div class="form-group">
+                <label>Active</label>
+                <select id="deptActive">
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Department</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <h2>📋 Existing Departments</h2>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Month</th>
+                  <th>Department</th>
+                  <th>Budget</th>
+                  <th>Slots</th>
+                  <th>Active</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="deptsTable">
+                <tr><td colspan="6" style="text-align:center;padding:40px;">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
   <script src="js/supabase-api.js"></script>
   <script>
-    let selectedMonth = null;
-    let selectedDept = null;
-    let selectedSlot = null;
-    let selectedElement = null;
+    // ═══════════════════════════════════════════════════════════
+    // GLOBAL VARIABLES
+    // ═══════════════════════════════════════════════════════════
+    let isLoggedIn = false;
+    let allHotProducts = [];
+    let currentStudioMonth = 1;
+    let currentStudioYear = 2026;
+    let studioCalendarData = [];
 
+    // PAGE_SCHEDULE and other constants are already defined in supabase-api.js
+    // We can access them directly without redeclaring
+
+    // ═══════════════════════════════════════════════════════════
+    // UTILITY FUNCTIONS
+    // ═══════════════════════════════════════════════════════════
     function showLoading() {
       document.getElementById('loading').style.display = 'flex';
     }
@@ -825,248 +1150,1276 @@
       document.getElementById('loading').style.display = 'none';
     }
 
-    function calcEndDate() {
-      const start = document.getElementById('startDate').value;
-      const duration = parseInt(document.getElementById('duration').value);
-      if (start && duration) {
-        const end = new Date(start);
-        end.setDate(end.getDate() + duration);
-        document.getElementById('endDate').value = end.toISOString().split('T')[0];
-      }
-    }
-
-    document.getElementById('startDate').addEventListener('change', calcEndDate);
-    document.getElementById('duration').addEventListener('change', calcEndDate);
-
-    async function loadInitialData() {
-      try {
-        showLoading();
-        const data = await getInitialData();
-
-        if (data && data.months && data.months.length > 0) {
-          displayMonths(data.months);
-          if (data.currentMonth && data.months.includes(data.currentMonth)) {
-            setTimeout(() => selectMonth(data.currentMonth), 500);
-          }
-        } else {
-          document.getElementById('monthGrid').innerHTML = 
-            '<div style="text-align:center;padding:40px;color:#999;grid-column:1/-1;">No active months yet.</div>';
-        }
-        hideLoading();
-      } catch (error) {
-        hideLoading();
-        document.getElementById('monthGrid').innerHTML = 
-          '<div style="text-align:center;padding:40px;color:#d32f2f;grid-column:1/-1;">Error: ' + error.message + '</div>';
-      }
-    }
-
-    function displayMonths(months) {
-      const grid = document.getElementById('monthGrid');
-      grid.innerHTML = '';
-
-      months.forEach(m => {
-        const btn = document.createElement('div');
-        btn.className = 'month-btn';
-        btn.textContent = m;
-        btn.onclick = () => selectMonth(m);
-        grid.appendChild(btn);
-      });
-    }
-
-    async function selectMonth(month) {
-      selectedMonth = month;
-      selectedDept = null;
-      selectedSlot = null;
-      selectedElement = null;
-      document.getElementById('formCard').style.display = 'none';
-
-      document.querySelectorAll('.month-btn').forEach(b => {
-        b.classList.toggle('selected', b.textContent === month);
-      });
-
-      try {
-        showLoading();
-        const depts = await getSlotsForMonth(month);
-        displayDepts(depts);
-        hideLoading();
-      } catch (error) {
-        hideLoading();
-        alert('Error loading departments: ' + error.message);
-      }
-    }
-
-    function displayDepts(depts) {
-      const container = document.getElementById('deptContainer');
-      container.innerHTML = '';
-
-      if (!depts || depts.length === 0) {
-        container.innerHTML = '<div class="card"><p style="text-align:center;padding:40px;color:#999;">No departments for this month.</p></div>';
-        container.style.display = 'block';
-        return;
-      }
-
-      depts.forEach(dept => {
-        const available = dept.slots.filter(s => s.available).length;
-        const card = document.createElement('div');
-        card.className = 'dept-card';
-        card.innerHTML = `
-          <div class="dept-header">
-            <div class="dept-name">${dept.department}</div>
-            <div class="dept-meta">
-              <div>💰 Budget: <span class="meta-value">$${dept.budget}k</span></div>
-              <div>🎰 Available: <span class="meta-value">${available}/${dept.totalSlots}</span></div>
-            </div>
-          </div>
-          <div class="slot-grid" id="grid-${dept.department.replace(/\s+/g,'-')}"></div>
-        `;
-        container.appendChild(card);
-
-        const grid = document.getElementById(`grid-${dept.department.replace(/\s+/g,'-')}`);
-        dept.slots.forEach(slot => {
-          const div = document.createElement('div');
-
-          if (slot.available) {
-            div.className = 'slot available';
-            div.innerHTML = `
-              <div class="slot-num">${slot.number}</div>
-              <div class="slot-label">AVAILABLE</div>
-            `;
-            div.onclick = () => pickSlot(dept.department, slot.name, div);
-          } else {
-            const status = slot.details.status;
-            let slotClass = 'working';
-            
-            if (status === 'Request Submitted') slotClass = 'submitted';
-            else if (status === 'Working') slotClass = 'working';
-            else if (status === 'Live') slotClass = 'live';
-            else if (status === 'Completed') slotClass = 'completed';
-            
-            div.className = 'slot ' + slotClass;
-            
-            let displayLabel = status.toUpperCase();
-            if (displayLabel.length > 12) {
-              displayLabel = displayLabel.substring(0, 10) + '..';
-            }
-            
-            div.innerHTML = `
-              <div class="slot-num">${slot.number}</div>
-              <div class="slot-label">${displayLabel}</div>
-              <div class="slot-details">${slot.details.campaign.substring(0,20)}</div>
-            `;
-            div.onclick = () => showDetails(slot.details);
-          }
-
-          grid.appendChild(div);
-        });
-      });
-
-      container.style.display = 'block';
-    }
-
-    function pickSlot(dept, slotName, element) {
-      if (selectedElement && selectedElement !== element) {
-        selectedElement.classList.remove('selected');
-        selectedElement.classList.add('available');
-        selectedElement.querySelector('.slot-label').textContent = 'AVAILABLE';
-      }
-
-      if (element.classList.contains('selected')) {
-        element.classList.remove('selected');
-        element.classList.add('available');
-        element.querySelector('.slot-label').textContent = 'AVAILABLE';
-        selectedDept = null;
-        selectedSlot = null;
-        selectedElement = null;
-        document.getElementById('formCard').style.display = 'none';
-      } else {
-        element.classList.remove('available');
-        element.classList.add('selected');
-        element.querySelector('.slot-label').textContent = 'SELECTED';
-        selectedDept = dept;
-        selectedSlot = slotName;
-        selectedElement = element;
-        document.getElementById('formCard').style.display = 'block';
-        document.getElementById('formCard').scrollIntoView({behavior: 'smooth'});
-      }
-    }
-
-    function showDetails(details) {
-      document.getElementById('modalContent').innerHTML = `
-        <div class="modal-icon">📋</div>
-        <h2>Slot Details</h2>
-        <div class="detail-row"><strong>Request ID</strong><span>${details.requestId}</span></div>
-        <div class="detail-row"><strong>Campaign</strong><span>${details.campaign}</span></div>
-        <div class="detail-row"><strong>Status</strong><span>${details.status}</span></div>
-        <div class="detail-row"><strong>Requestor</strong><span>${details.requestor}</span></div>
-        <div class="detail-row"><strong>Period</strong><span>${details.startDate} to ${details.endDate}</span></div>
-        <button class="modal-btn" onclick="closeModal()">Close</button>
-      `;
+    function showModal(content) {
+      document.getElementById('modalContent').innerHTML = content;
       document.getElementById('modal').style.display = 'flex';
-    }
-
-    document.getElementById('campaignForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      if (!selectedDept || !selectedSlot) {
-        alert('Please select a slot first');
-        return;
-      }
-
-      const btn = document.getElementById('submitBtn');
-      btn.disabled = true;
-      btn.textContent = 'Submitting...';
-      showLoading();
-
-      try {
-        const formData = {
-          department: selectedDept,
-          month: selectedMonth,
-          slot: selectedSlot,
-          campaign: document.getElementById('campaign').value,
-          duration: document.getElementById('duration').value,
-          startDate: document.getElementById('startDate').value,
-          endDate: document.getElementById('endDate').value
-        };
-
-        const result = await submitCampaignRequest(formData);
-
-        btn.disabled = false;
-        btn.textContent = '🚀 Submit Request';
-        hideLoading();
-
-        document.getElementById('modalContent').innerHTML = `
-          <div class="modal-icon">✓</div>
-          <h2>Success!</h2>
-          <p>Campaign request submitted with status: <strong>Request Submitted</strong></p>
-          <div style="background:#f5f5f5;padding:12px;border-radius:10px;margin:20px 0;font-weight:600;">${result.requestId}</div>
-          <button class="modal-btn" onclick="closeSuccess()">Close</button>
-        `;
-        document.getElementById('modal').style.display = 'flex';
-        document.getElementById('campaignForm').reset();
-        document.getElementById('formCard').style.display = 'none';
-
-      } catch (error) {
-        btn.disabled = false;
-        btn.textContent = '🚀 Submit Request';
-        hideLoading();
-        alert('Error: ' + error.message);
-        selectMonth(selectedMonth);
-      }
-    });
-
-    function closeSuccess() {
-      document.getElementById('modal').style.display = 'none';
-      if (selectedMonth) {
-        showLoading();
-        setTimeout(() => selectMonth(selectedMonth), 300);
-      }
     }
 
     function closeModal() {
       document.getElementById('modal').style.display = 'none';
     }
 
-    window.onload = loadInitialData;
+    // ═══════════════════════════════════════════════════════════
+    // LOGIN & NAVIGATION
+    // ═══════════════════════════════════════════════════════════
+    // Check if already logged in and handle hash navigation on page load
+    window.addEventListener('DOMContentLoaded', function() {
+      const loggedIn = sessionStorage.getItem('adminLoggedIn');
+      if (loggedIn === 'true') {
+        isLoggedIn = true;
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('adminContent').style.display = 'block';
+        loadAllData();
+        
+        // Handle hash navigation after login
+        setTimeout(() => {
+          const hash = window.location.hash.substring(1);
+          if (hash && ['requests', 'products', 'content', 'studio', 'hotproducts', 'departments'].includes(hash)) {
+            switchTab(hash);
+          }
+        }, 300);
+      }
+    });
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const password = document.getElementById('adminPassword').value;
+
+      if (verifyAdminPassword(password)) {
+        isLoggedIn = true;
+        sessionStorage.setItem('adminLoggedIn', 'true');
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('adminContent').style.display = 'block';
+        loadAllData();
+      } else {
+        alert('Invalid password');
+      }
+    });
+
+    function logout() {
+      isLoggedIn = false;
+      sessionStorage.removeItem('adminLoggedIn');
+      document.getElementById('loginScreen').style.display = 'block';
+      document.getElementById('adminContent').style.display = 'none';
+      document.getElementById('adminPassword').value = '';
+      window.location.hash = '';
+    }
+
+    function switchTab(tab) {
+      // Update URL hash without reloading page
+      if (window.location.hash !== '#' + tab) {
+        window.location.hash = tab;
+      }
+      
+      // Update UI
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      
+      // Find and activate the correct button
+      const tabBtns = document.querySelectorAll('.tab-btn');
+      tabBtns.forEach(btn => {
+        const btnText = btn.textContent.toLowerCase();
+        if (btnText.includes(tab) || (tab === 'hotproducts' && btnText.includes('hot')) || (tab === 'departments' && btnText.includes('department'))) {
+          btn.classList.add('active');
+        }
+      });
+      
+      document.getElementById('tab-' + tab).classList.add('active');
+
+      // Load data for specific tabs
+      if (tab === 'content') {
+        loadContentData();
+      } else if (tab === 'hotproducts') {
+        loadHotProducts();
+      } else if (tab === 'studio') {
+        loadStudioCalendar();
+      } else if (tab === 'departments') {
+        loadDepartments();
+      }
+    }
+    
+    // Handle browser back/forward navigation
+    window.addEventListener('hashchange', function() {
+      const hash = window.location.hash.substring(1); // Remove #
+      if (hash) {
+        switchTab(hash);
+      }
+    });
+    
+
+
+    async function loadAllData() {
+      loadRequests();
+      loadProducts();
+      loadDepartments();
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // CAMPAIGN REQUESTS
+    // ═══════════════════════════════════════════════════════════
+    async function loadRequests() {
+      try {
+        const requests = await getAllRequests();
+        const tbody = document.getElementById('requestsTable');
+
+        if (requests.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;">No requests yet</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = requests.map(r => {
+          let badgeClass = 'badge-working';
+          if (r.status === 'Live') badgeClass = 'badge-live';
+          if (r.status === 'Rejected') badgeClass = 'badge-rejected';
+          if (r.status === 'Completed') badgeClass = 'badge-completed';
+
+          return `
+            <tr>
+              <td>${r.requestId}</td>
+              <td>${new Date(r.timestamp).toLocaleDateString()}</td>
+              <td>${r.department}</td>
+              <td>${r.month}</td>
+              <td>${r.slot}</td>
+              <td>${r.campaign}</td>
+              <td><span class="badge ${badgeClass}">${r.status}</span></td>
+              <td>
+                <div class="action-btns">
+                  <button class="btn btn-warning" onclick="updateStatus(${r.row}, 'Working')">Working</button>
+                  <button class="btn btn-success" onclick="updateStatus(${r.row}, 'Live')">Live</button>
+                  <button class="btn btn-complete" onclick="updateStatus(${r.row}, 'Completed')">Complete</button>
+                  <button class="btn btn-danger" onclick="updateStatus(${r.row}, 'Rejected')">Reject</button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch (error) {
+        document.getElementById('requestsTable').innerHTML = 
+          '<tr><td colspan="8" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
+      }
+    }
+
+    async function updateStatus(row, status) {
+      const reviewer = prompt('Enter your name:');
+      if (!reviewer) return;
+
+      const comments = status === 'Rejected' ? prompt('Rejection reason (optional):') : '';
+
+      try {
+        showLoading();
+        await updateRequestStatus(row, status, reviewer, comments || '');
+        hideLoading();
+        alert(`Status updated to: ${status}`);
+        loadRequests();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // PRODUCT SUGGESTIONS
+    // ═══════════════════════════════════════════════════════════
+    async function loadProducts() {
+      try {
+        const products = await getAllProductSuggestions();
+        const tbody = document.getElementById('productsTable');
+
+        if (products.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:40px;">No products yet</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = products.map(p => {
+          let badgeClass = p.status === 'Approved' ? 'badge-approved' : 
+                          p.status === 'Rejected' ? 'badge-rejected' : 'badge-pending';
+
+          const actions = p.status === 'Approved' 
+            ? `<button class="btn btn-warning" onclick="editProduct(${p.row})">Edit</button>`
+            : `
+              <button class="btn btn-success" onclick="reviewProduct(${p.row}, 'Approved')">Approve</button>
+              <button class="btn btn-danger" onclick="reviewProduct(${p.row}, 'Rejected')">Reject</button>
+            `;
+
+          return `
+            <tr>
+              <td>${p.submissionId}</td>
+              <td>${new Date(p.timestamp).toLocaleDateString()}</td>
+              <td><a href="${p.productLink}" target="_blank" style="color:#5e3a8e;">View</a></td>
+              <td>${p.category}</td>
+              <td>${p.margin}%</td>
+              <td><span class="badge ${badgeClass}">${p.status}</span></td>
+              <td>${p.assignedPage || '-'}</td>
+              <td>${p.slotDate || '-'}</td>
+              <td>${p.slotNumber || '-'}</td>
+              <td>
+                <div class="action-btns">
+                  ${actions}
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch (error) {
+        document.getElementById('productsTable').innerHTML = 
+          '<tr><td colspan="10" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
+      }
+    }
+
+    async function reviewProduct(row, status) {
+      const reviewerName = prompt('Enter your name:');
+      if (!reviewerName) return;
+
+      if (status === 'Approved') {
+        showApprovalModal(row, reviewerName);
+      } else {
+        const rejectionReason = prompt('Rejection Reason:');
+        if (!rejectionReason) return;
+
+        try {
+          showLoading();
+          await updateProductReview(row, {
+            status: 'Rejected',
+            reviewerName,
+            rejectionReason
+          });
+          hideLoading();
+          alert('Product rejected!');
+          loadProducts();
+        } catch (error) {
+          hideLoading();
+          alert('Error: ' + error.message);
+        }
+      }
+    }
+
+    async function showApprovalModal(row, reviewerName) {
+      try {
+        showLoading();
+        
+        const products = await getAllProductSuggestions();
+        const product = products.find(p => p.row === row);
+        
+        if (!product) {
+          hideLoading();
+          alert('Product not found');
+          return;
+        }
+
+        let selectedPage = null;
+        for (const [day, config] of Object.entries(PAGE_SCHEDULE)) {
+          if (product.category && config.page.toLowerCase().includes(product.category.toLowerCase())) {
+            selectedPage = config.page;
+            break;
+          }
+        }
+
+        const pageOptions = Object.values(PAGE_SCHEDULE).map(config => `
+          <label class="radio-label">
+            <input type="radio" name="pageName" value="${config.page}" ${config.page === selectedPage ? 'checked' : ''} required>
+            <span>${config.page}</span>
+          </label>
+        `).join('');
+
+        hideLoading();
+
+        const content = `
+          <button class="close-modal" onclick="closeModal()">×</button>
+          <h3>✅ Approve Product</h3>
+          <form id="approvalForm">
+            <div class="form-group">
+              <label>Select Page *</label>
+              <div class="radio-group">
+                ${pageOptions}
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Reference (Optional)</label>
+              <textarea id="productReference" rows="3" placeholder="Add any reference notes or links..."></textarea>
+            </div>
+            <div id="slotsDisplay" style="margin-top:20px;"></div>
+            <button type="submit" class="btn btn-success" style="width:100%;margin-top:20px;">Approve & Assign Slot</button>
+          </form>
+        `;
+
+        showModal(content);
+
+        document.querySelectorAll('input[name="pageName"]').forEach(radio => {
+          radio.addEventListener('change', async (e) => {
+            const pageName = e.target.value;
+            await loadAvailableSlots(pageName);
+          });
+        });
+
+        if (selectedPage) {
+          await loadAvailableSlots(selectedPage);
+        }
+
+        document.getElementById('approvalForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const assignedPage = document.querySelector('input[name="pageName"]:checked')?.value;
+          const productReference = document.getElementById('productReference').value;
+          const selectedSlot = document.querySelector('input[name="slotSelection"]:checked');
+
+          if (!assignedPage) {
+            alert('Please select a page');
+            return;
+          }
+
+          let slotDate = null;
+          let slotNumber = null;
+
+          if (selectedSlot) {
+            const slotData = JSON.parse(selectedSlot.value);
+            slotDate = slotData.date;
+            slotNumber = slotData.slotNumber;
+          }
+
+          try {
+            showLoading();
+            await updateProductReview(row, {
+              status: 'Approved',
+              reviewerName,
+              assignedPage,
+              productReference,
+              slotDate,
+              slotNumber
+            });
+            hideLoading();
+            closeModal();
+            alert('✅ Product approved and slot assigned!');
+            loadProducts();
+          } catch (error) {
+            hideLoading();
+            alert('Error: ' + error.message);
+          }
+        });
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    }
+
+    async function loadAvailableSlots(pageName) {
+      try {
+        const slotsDisplay = document.getElementById('slotsDisplay');
+        slotsDisplay.innerHTML = '<p style="text-align:center;color:#999;">Loading available slots...</p>';
+
+        const slots = await getAvailableSlotsForPage(pageName);
+        
+        if (slots.length === 0) {
+          slotsDisplay.innerHTML = '<p style="text-align:center;color:#d32f2f;">No available slots found for next 2 weeks</p>';
+          return;
+        }
+
+        const groupedByDate = {};
+        slots.forEach(slot => {
+          if (!groupedByDate[slot.date]) {
+            groupedByDate[slot.date] = [];
+          }
+          groupedByDate[slot.date].push(slot);
+        });
+
+        let html = '<div class="form-group"><label>Select Slot (Optional - Next 2 Weeks) *</label><div class="radio-group">';
+        
+        Object.keys(groupedByDate).sort().forEach(date => {
+          const dateSlots = groupedByDate[date];
+          const dateObj = new Date(date);
+          const dateStr = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+          
+          dateSlots.forEach(slot => {
+            const isAvailable = slot.available;
+            const slotData = JSON.stringify({ date: slot.date, slotNumber: slot.slotNumber });
+            
+            html += `
+              <label class="radio-label" style="${!isAvailable ? 'opacity:0.5;' : ''}">
+                <input type="radio" name="slotSelection" value='${slotData}' ${!isAvailable ? 'disabled' : ''}>
+                <span>${dateStr} - Slot ${slot.slotNumber} ${!isAvailable ? '(Booked)' : '✓'}</span>
+              </label>
+            `;
+          });
+        });
+        
+        html += '</div></div>';
+        slotsDisplay.innerHTML = html;
+      } catch (error) {
+        document.getElementById('slotsDisplay').innerHTML = 
+          '<p style="text-align:center;color:#d32f2f;">Error loading slots: ' + error.message + '</p>';
+      }
+    }
+
+    async function editProduct(row) {
+      const products = await getAllProductSuggestions();
+      const product = products.find(p => p.row === row);
+      
+      if (!product) {
+        alert('Product not found');
+        return;
+      }
+
+      const pageOptions = Object.values(PAGE_SCHEDULE).map(config => `
+        <label class="radio-label">
+          <input type="radio" name="editPageName" value="${config.page}" ${config.page === product.assignedPage ? 'checked' : ''} required>
+          <span>${config.page}</span>
+        </label>
+      `).join('');
+
+      const content = `
+        <button class="close-modal" onclick="closeModal()">×</button>
+        <h3>✏️ Edit Product Assignment</h3>
+        <form id="editForm">
+          <div class="form-group">
+            <label>Page Name</label>
+            <div class="radio-group">
+              ${pageOptions}
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Go Live Date</label>
+            <input type="date" id="editGoLiveDate" value="${product.goLiveDate || ''}" required>
+          </div>
+          <button type="submit" class="btn btn-warning" style="width:100%;">Update</button>
+        </form>
+      `;
+
+      showModal(content);
+
+      document.getElementById('editForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const assignedPage = document.querySelector('input[name="editPageName"]:checked')?.value;
+        const goLiveDate = document.getElementById('editGoLiveDate').value;
+
+        try {
+          showLoading();
+          await updateProductReview(row, {
+            status: 'Approved',
+            reviewerName: product.reviewerName,
+            assignedPage,
+            goLiveDate
+          });
+          hideLoading();
+          closeModal();
+          alert('✅ Product updated!');
+          loadProducts();
+        } catch (error) {
+          hideLoading();
+          alert('Error: ' + error.message);
+        }
+      });
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // CONTENT CALENDAR
+    // ═══════════════════════════════════════════════════════════
+    async function loadContentData() {
+      loadContentBookings();
+      loadThemes();
+    }
+
+    document.getElementById('themeForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const themeData = {
+        themeName: document.getElementById('themeName').value,
+        startDate: document.getElementById('themeStart').value,
+        endDate: document.getElementById('themeEnd').value,
+        slotsPerDay: document.getElementById('slotsPerDay').value,
+        themeColor: document.getElementById('themeColor').value,
+        isSeasonal: document.getElementById('isSeasonal').checked
+      };
+
+      try {
+        showLoading();
+        await addTheme(themeData);
+        hideLoading();
+        alert('✅ Theme added successfully!');
+        document.getElementById('themeForm').reset();
+        loadThemes();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    });
+
+    async function loadContentBookings() {
+      try {
+        const bookings = await getAllContentBookings();
+        const tbody = document.getElementById('contentTable');
+
+        if (bookings.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;">No bookings yet</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = bookings.map(b => {
+          let badgeClass = b.status === 'Approved' ? 'badge-approved' : 
+                          b.status === 'Rejected' ? 'badge-rejected' : 'badge-pending';
+
+          let actions;
+          if (b.status === 'Pending') {
+            actions = `
+              <button class="btn btn-success" onclick="approveContentBooking(${b.id})">Approve</button>
+              <button class="btn btn-danger" onclick="rejectContentBooking(${b.id})">Reject</button>
+            `;
+          } else if (b.status === 'Approved') {
+            actions = `<button class="btn btn-warning" onclick="editContentBooking(${b.id})">Edit</button>`;
+          } else {
+            actions = `<span style="color:#999;">-</span>`;
+          }
+
+          return `
+            <tr>
+              <td>${b.date}</td>
+              <td>${b.slotNumber}</td>
+              <td>${b.category}</td>
+              <td>${b.productCode}</td>
+              <td><span class="badge ${badgeClass}">${b.status}</span></td>
+              <td>${b.goLiveDate || '-'}</td>
+              <td>
+                <div class="action-btns">
+                  ${actions}
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch (error) {
+        document.getElementById('contentTable').innerHTML = 
+          '<tr><td colspan="7" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
+      }
+    }
+
+    async function approveContentBooking(id) {
+      const reviewer = prompt('Enter your name:');
+      if (!reviewer) return;
+
+      const goLiveDate = prompt('Enter Go Live Date (YYYY-MM-DD):');
+      if (!goLiveDate) return;
+
+      try {
+        showLoading();
+        await updateContentBooking(id, {
+          status: 'Approved',
+          reviewer,
+          goLiveDate
+        });
+        hideLoading();
+        alert('✅ Booking approved and synced to Studio Calendar!');
+        loadContentBookings();
+        // Reload studio calendar if currently on that tab
+        if (document.getElementById('tab-studio').classList.contains('active')) {
+          setTimeout(() => loadStudioCalendar(), 500);
+        }
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    }
+
+    async function rejectContentBooking(id) {
+      const reviewer = prompt('Enter your name:');
+      if (!reviewer) return;
+
+      const rejectionReason = prompt('Rejection reason:');
+      if (!rejectionReason) return;
+
+      try {
+        showLoading();
+        await updateContentBooking(id, {
+          status: 'Rejected',
+          reviewer,
+          rejectionReason
+        });
+        hideLoading();
+        alert('Booking rejected');
+        loadContentBookings();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+
+    async function editContentBooking(id) {
+      try {
+        const bookings = await getAllContentBookings();
+        const booking = bookings.find(b => b.id === id);
+        
+        if (!booking) {
+          alert('Booking not found');
+          return;
+        }
+
+        const content = `
+          <button class="close-modal" onclick="closeModal()">×</button>
+          <h3>✏️ Edit Content Booking</h3>
+          <form id="editContentForm">
+            <div class="form-group">
+              <label>Product Code</label>
+              <input type="text" id="editProductCode" value="${booking.productCode}" required>
+            </div>
+            <div class="action-btns" style="margin-top:20px;">
+              <button type="submit" class="btn btn-success" style="flex:1;">Update</button>
+              <button type="button" class="btn btn-danger" onclick="rejectApprovedBooking(${id})" style="flex:1;">Reject Approval</button>
+            </div>
+          </form>
+        `;
+
+        showModal(content);
+
+        document.getElementById('editContentForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const newProductCode = document.getElementById('editProductCode').value;
+
+          try {
+            showLoading();
+            await updateContentBooking(id, {
+              status: 'Approved',
+              productCode: newProductCode,
+              reviewer: booking.reviewer,
+              goLiveDate: booking.goLiveDate
+            });
+            hideLoading();
+            closeModal();
+            alert('✅ Content booking updated!');
+            loadContentBookings();
+            // Reload studio calendar if currently on that tab
+            if (document.getElementById('tab-studio').classList.contains('active')) {
+              setTimeout(() => loadStudioCalendar(), 500);
+            }
+          } catch (error) {
+            hideLoading();
+            alert('Error: ' + error.message);
+          }
+        });
+      } catch (error) {
+        alert('Error: ' + error.message);
+      }
+    }
+
+    async function rejectApprovedBooking(id) {
+      if (!confirm('Are you sure you want to reject this approved booking?')) return;
+
+      const rejectionReason = prompt('Rejection Reason:');
+      if (!rejectionReason) return;
+
+      try {
+        showLoading();
+        await updateContentBooking(id, {
+          status: 'Rejected',
+          rejectionReason: rejectionReason,
+          reviewer: 'Admin'
+        });
+        hideLoading();
+        closeModal();
+        alert('Booking rejected!');
+        loadContentBookings();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    }
+    }
+
+    async function loadThemes() {
+      try {
+        const themes = await getAllThemes();
+        const tbody = document.getElementById('themesTable');
+
+        if (themes.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;">No themes yet</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = themes.map(t => `
+          <tr>
+            <td>${t.theme_name}</td>
+            <td>${t.start_date}</td>
+            <td>${t.end_date}</td>
+            <td>${t.slots_per_day}</td>
+            <td>${t.is_seasonal ? 'Seasonal' : 'Regular'}</td>
+            <td>
+              <button class="btn btn-danger" onclick="deleteThemeConfirm(${t.id})">Delete</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (error) {
+        document.getElementById('themesTable').innerHTML = 
+          '<tr><td colspan="6" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
+      }
+    }
+
+    async function deleteThemeConfirm(id) {
+      if (!confirm('Delete this theme? All associated slots will be removed.')) return;
+
+      try {
+        showLoading();
+        await deleteTheme(id);
+        hideLoading();
+        alert('Theme deleted');
+        loadThemes();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // STUDIO CALENDAR (CALENDAR GRID VIEW)
+    // ═══════════════════════════════════════════════════════════
+    async function loadStudioCalendar() {
+      try {
+        showLoading();
+        
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                       'July', 'August', 'September', 'October', 'November', 'December'];
+        document.getElementById('studioMonthTitle').textContent = 
+          `${months[currentStudioMonth - 1]} ${currentStudioYear}`;
+
+        await generateEmptySlotsForMonth(currentStudioYear, currentStudioMonth);
+
+        let data = await getStudioCalendarForMonth(currentStudioYear, currentStudioMonth);
+        
+        // Apply filter
+        const filterValue = document.getElementById('studioFilter')?.value || 'all';
+        if (filterValue !== 'all') {
+          data = data.filter(item => {
+            if (filterValue === 'received') return item.studio_status === 'Received';
+            if (filterValue === 'working') return item.studio_status === 'Working';
+            if (filterValue === 'submitted') return item.studio_status === 'Submitted for Review';
+            if (filterValue === 'approved') return item.head_approved === true;
+            return true;
+          });
+        }
+        
+        studioCalendarData = data;
+
+        // Get themes for current month
+        const startDate = `${currentStudioYear}-${String(currentStudioMonth).padStart(2, '0')}-01`;
+        const lastDay = new Date(currentStudioYear, currentStudioMonth, 0).getDate();
+        const endDate = `${currentStudioYear}-${String(currentStudioMonth).padStart(2, '0')}-${lastDay}`;
+        const themes = await getAllThemes();
+        const monthThemes = themes.filter(t => t.start_date <= endDate && t.end_date >= startDate);
+
+        updateDashboardStats(data);
+        renderCalendarGrid(data, monthThemes);
+        
+        hideLoading();
+      } catch (error) {
+        hideLoading();
+        console.error('loadStudioCalendar error:', error);
+        alert('Error loading studio calendar: ' + error.message);
+      }
+    }
+
+    function updateDashboardStats(data) {
+      const totalSlots = data.length;
+      const bookedSlots = data.filter(d => d.booking_status === 'booked').length;
+      const completedSlots = data.filter(d => d.studio_status === 'Approved' && d.head_approved).length;
+      const approvedSlots = data.filter(d => d.head_approved).length;
+      const completionRate = totalSlots > 0 ? Math.round((completedSlots / totalSlots) * 100) : 0;
+
+      document.getElementById('totalSlots').textContent = totalSlots;
+      document.getElementById('bookedSlots').textContent = bookedSlots;
+      document.getElementById('completedSlots').textContent = completedSlots;
+      document.getElementById('approvedSlots').textContent = approvedSlots;
+      document.getElementById('completionRate').textContent = completionRate + '%';
+    }
+
+    function renderCalendarGrid(data, monthThemes = []) {
+      const grid = document.getElementById('studioCalendarGrid');
+      
+      while (grid.children.length > 7) {
+        grid.removeChild(grid.lastChild);
+      }
+
+      const firstDay = new Date(currentStudioYear, currentStudioMonth - 1, 1);
+      const lastDay = new Date(currentStudioYear, currentStudioMonth, 0);
+      const startDayOfWeek = firstDay.getDay();
+      const daysInMonth = lastDay.getDate();
+
+      for (let i = 0; i < startDayOfWeek; i++) {
+        const emptyDay = document.createElement('div');
+        emptyDay.className = 'calendar-day empty';
+        grid.appendChild(emptyDay);
+      }
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(currentStudioYear, currentStudioMonth - 1, day);
+        const dateStr = date.toISOString().split('T')[0];
+        const dayOfWeek = date.getDay();
+        
+        const dayDiv = document.createElement('div');
+        dayDiv.className = 'calendar-day';
+        
+        // Check if this date has a theme
+        const activeTheme = monthThemes.find(t => dateStr >= t.start_date && dateStr <= t.end_date);
+        if (activeTheme) {
+          dayDiv.style.borderTop = `4px solid ${activeTheme.theme_color}`;
+          dayDiv.style.borderRadius = '12px';
+        }
+        
+        const dayNumber = document.createElement('div');
+        dayNumber.className = 'day-number';
+        dayNumber.textContent = day;
+        dayDiv.appendChild(dayNumber);
+        
+        // Add theme name if exists
+        if (activeTheme) {
+          const themeName = document.createElement('div');
+          themeName.style.cssText = 'font-size:10px;font-weight:600;color:' + activeTheme.theme_color + ';margin-bottom:5px;text-align:center;';
+          themeName.textContent = activeTheme.theme_name;
+          dayDiv.appendChild(themeName);
+        }
+
+        const slotsContainer = document.createElement('div');
+        slotsContainer.className = 'day-slots';
+
+        const dayData = data.filter(d => d.date === dateStr);
+        const schedule = PAGE_SCHEDULE[dayOfWeek];
+        
+        if (schedule) {
+          const expectedSlots = schedule.slots;
+          
+          for (let slotNum = 1; slotNum <= expectedSlots; slotNum++) {
+            const slotData = dayData.find(d => 
+              d.slot_type === 'lead_form' && 
+              d.slot_number === slotNum
+            );
+
+            const slotDiv = document.createElement('div');
+            
+            if (slotData) {
+              const isBooked = slotData.booking_status === 'booked';
+              const isEmpty = slotData.booking_status === 'empty';
+              
+              slotDiv.className = `slot-item lead-form ${isBooked ? 'booked' : 'empty'}`;
+              
+              let statusBadge = '';
+              if (isEmpty) {
+                statusBadge = '<span class="slot-status status-empty">Empty</span>';
+              } else if (slotData.head_approved) {
+                statusBadge = '<span class="slot-status status-approved">✓ Approved</span>';
+              } else if (slotData.studio_status === 'Submitted for Review') {
+                statusBadge = '<span class="slot-status status-review">Review</span>';
+              } else if (slotData.studio_status === 'Working') {
+                statusBadge = '<span class="slot-status status-working">Working</span>';
+              } else {
+                statusBadge = '<span class="slot-status status-received">Received</span>';
+              }
+              
+              slotDiv.innerHTML = `
+                <span class="slot-number">S${slotNum}</span>
+                ${statusBadge}
+                <span class="slot-page">${schedule.page}</span>
+              `;
+              
+              slotDiv.onclick = () => showSlotDetails(slotData, dateStr);
+            } else {
+              slotDiv.className = 'slot-item lead-form empty';
+              slotDiv.innerHTML = `
+                <span class="slot-number">S${slotNum}</span>
+                <span class="slot-status status-empty">Empty</span>
+                <span class="slot-page">${schedule.page}</span>
+              `;
+            }
+            
+            slotsContainer.appendChild(slotDiv);
+          }
+
+          const contentItems = dayData.filter(d => d.slot_type === 'content_calendar');
+          contentItems.forEach(item => {
+            const slotDiv = document.createElement('div');
+            slotDiv.className = 'slot-item content-calendar';
+            
+            let statusBadge = '';
+            if (item.head_approved) {
+              statusBadge = '<span class="slot-status status-approved">✓ Approved</span>';
+            } else if (item.studio_status === 'Submitted for Review') {
+              statusBadge = '<span class="slot-status status-review">Review</span>';
+            } else if (item.studio_status === 'Working') {
+              statusBadge = '<span class="slot-status status-working">Working</span>';
+            } else {
+              statusBadge = '<span class="slot-status status-received">Received</span>';
+            }
+            
+            let displayText;
+            if (item.head_approved) {
+              // If approved: show category + product code + status
+              const category = item.content_details?.split('-')[1]?.trim() || '';
+              displayText = `${category}${item.product_code ? ' • ' + item.product_code : ''}`;
+            } else {
+              // If not approved: show only category
+              const category = item.content_details?.split('-')[1]?.trim() || '';
+              displayText = category || 'Content';
+            }
+            
+            slotDiv.innerHTML = `
+              <span class="slot-number">📅</span>
+              ${statusBadge}
+              <span class="slot-page">${displayText}</span>
+            `;
+            
+            slotDiv.onclick = () => showSlotDetails(item, dateStr);
+            slotsContainer.appendChild(slotDiv);
+          });
+        }
+
+        dayDiv.appendChild(slotsContainer);
+        grid.appendChild(dayDiv);
+      }
+    }
+
+    function showSlotDetails(slotData, dateStr) {
+      const statusOptions = ['Received', 'Working', 'Submitted for Review', 'Approved'].map(status => 
+        `<option value="${status}" ${slotData.studio_status === status ? 'selected' : ''}>${status}</option>`
+      ).join('');
+
+      const content = `
+        <button class="close-modal" onclick="closeModal()">×</button>
+        <h3>📝 Slot Details - ${dateStr}</h3>
+        <div style="background:#f9f9f9;padding:20px;border-radius:12px;margin-bottom:20px;">
+          <div style="display:grid;gap:15px;">
+            <div>
+              <strong style="color:#5e3a8e;">Type:</strong> 
+              <span>${slotData.slot_type === 'lead_form' ? '🔵 Lead Form' : '🟢 Content Calendar'}</span>
+            </div>
+            <div>
+              <strong style="color:#5e3a8e;">Page:</strong> 
+              <span>${slotData.page_name || '-'}</span>
+            </div>
+            <div>
+              <strong style="color:#5e3a8e;">Product Code:</strong> 
+              <span>${slotData.product_code || '-'}</span>
+            </div>
+            <div>
+              <strong style="color:#5e3a8e;">Content:</strong> 
+              <span>${slotData.content_details || '-'}</span>
+            </div>
+            <div>
+              <strong style="color:#5e3a8e;">Reference Link:</strong> 
+              ${slotData.reference_links ? `<a href="${slotData.reference_links}" target="_blank" style="color:#5e3a8e;">View</a>` : '-'}
+            </div>
+            <div>
+              <strong style="color:#5e3a8e;">Current Status:</strong> 
+              <span class="badge ${slotData.head_approved ? 'badge-approved' : slotData.studio_status === 'Working' ? 'badge-working' : 'badge-received'}">${slotData.head_approved ? 'Approved by Head' : slotData.studio_status}</span>
+            </div>
+          </div>
+        </div>
+
+        <form id="updateStatusForm">
+          <div class="form-group">
+            <label>Update Status</label>
+            <select id="studioStatus" required>
+              ${statusOptions}
+            </select>
+          </div>
+          <div class="form-group" id="contentLinkGroup" style="display:none;">
+            <label>Content Link *</label>
+            <input type="url" id="contentLink" placeholder="https://..." value="${slotData.content_link || ''}">
+          </div>
+          <div class="form-group" id="passwordGroup" style="display:none;">
+            <label>Head Approval Password *</label>
+            <input type="password" id="approvalPassword" placeholder="Enter password 207">
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%;">Update Status</button>
+        </form>
+      `;
+
+      showModal(content);
+
+      const statusSelect = document.getElementById('studioStatus');
+      const contentLinkGroup = document.getElementById('contentLinkGroup');
+      const passwordGroup = document.getElementById('passwordGroup');
+
+      statusSelect.addEventListener('change', () => {
+        if (statusSelect.value === 'Submitted for Review') {
+          contentLinkGroup.style.display = 'block';
+          passwordGroup.style.display = 'none';
+        } else if (statusSelect.value === 'Approved') {
+          contentLinkGroup.style.display = 'block';
+          passwordGroup.style.display = 'block';
+        } else {
+          contentLinkGroup.style.display = 'none';
+          passwordGroup.style.display = 'none';
+        }
+      });
+
+      statusSelect.dispatchEvent(new Event('change'));
+
+      document.getElementById('updateStatusForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const newStatus = document.getElementById('studioStatus').value;
+        const contentLink = document.getElementById('contentLink')?.value;
+        const password = document.getElementById('approvalPassword')?.value;
+
+        try {
+          showLoading();
+          await updateStudioStatus(slotData.id, {
+            studio_status: newStatus,
+            content_link: contentLink || null,
+            password: password || null,
+            approved_by: 'Content Head'
+          });
+          hideLoading();
+          closeModal();
+          alert('✅ Status updated!');
+          loadStudioCalendar();
+        } catch (error) {
+          hideLoading();
+          alert('Error: ' + error.message);
+        }
+      });
+    }
+
+    function changeStudioMonth(delta) {
+      currentStudioMonth += delta;
+      
+      if (currentStudioMonth > 12) {
+        currentStudioMonth = 1;
+        currentStudioYear++;
+      } else if (currentStudioMonth < 1) {
+        currentStudioMonth = 12;
+        currentStudioYear--;
+      }
+      
+      loadStudioCalendar();
+    }
+
+    function openAddExtraContentModal() {
+      const pageOptions = Object.values(PAGE_SCHEDULE).map(config => `
+        <option value="${config.page}">${config.page}</option>
+      `).join('');
+
+      const content = `
+        <button class="close-modal" onclick="closeModal()">×</button>
+        <h3>➕ Add Extra Content</h3>
+        <form id="extraContentForm">
+          <div class="form-group">
+            <label>Date *</label>
+            <input type="date" id="extraDate" required>
+          </div>
+          <div class="form-group">
+            <label>Page *</label>
+            <select id="extraPage" required>
+              ${pageOptions}
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Format</label>
+            <input type="text" id="extraFormat" placeholder="e.g., Image Post">
+          </div>
+          <div class="form-group">
+            <label>Content Details *</label>
+            <textarea id="extraDetails" required rows="3" placeholder="Describe the content..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Reference Links</label>
+            <textarea id="extraLinks" rows="2" placeholder="https://..."></textarea>
+          </div>
+          <button type="submit" class="btn btn-success" style="width:100%;">Add Content</button>
+        </form>
+      `;
+
+      showModal(content);
+
+      document.getElementById('extraContentForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const extraData = {
+          date: document.getElementById('extraDate').value,
+          page_name: document.getElementById('extraPage').value,
+          format: document.getElementById('extraFormat').value,
+          content_details: document.getElementById('extraDetails').value,
+          reference_links: document.getElementById('extraLinks').value,
+          created_by: 'Admin'
+        };
+
+        try {
+          showLoading();
+          await addExtraContent(extraData);
+          hideLoading();
+          closeModal();
+          alert('✅ Extra content added!');
+          loadStudioCalendar();
+        } catch (error) {
+          hideLoading();
+          alert('Error: ' + error.message);
+        }
+      });
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // HOT PRODUCTS
+    // ═══════════════════════════════════════════════════════════
+    document.getElementById('addHotProductForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const productData = {
+        category: document.getElementById('hotProductCategory').value,
+        productLink: document.getElementById('hotProductLink').value,
+        salesCount: document.getElementById('hotProductSales').value
+      };
+
+      try {
+        showLoading();
+        await addHotProduct(productData);
+        hideLoading();
+        alert('✅ Product added!');
+        document.getElementById('addHotProductForm').reset();
+        loadHotProducts();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    });
+
+    async function loadHotProducts() {
+      try {
+        showLoading();
+        allHotProducts = await getAllHotProducts();
+        hideLoading();
+        
+        const listed = allHotProducts.filter(p => p.listed).length;
+        const categories = [...new Set(allHotProducts.map(p => p.category))].length;
+        
+        document.getElementById('adminTotalProducts').textContent = allHotProducts.length;
+        document.getElementById('adminListedProducts').textContent = listed;
+        document.getElementById('adminCategoryCount').textContent = categories;
+        
+        const tbody = document.getElementById('hotProductsTableBody');
+        
+        if (allHotProducts.length === 0) {
+          tbody.innerHTML = '<p style="text-align:center;padding:40px;color:#999;">No products found</p>';
+          return;
+        }
+        
+        tbody.innerHTML = allHotProducts.map(p => `
+          <div style="background:white;padding:20px;border-radius:12px;margin-bottom:15px;border:2px solid #e8e8e8;">
+            <div style="display:grid;grid-template-columns:auto 1fr auto;gap:20px;align-items:center;">
+              <div>
+                <div style="font-weight:700;color:#5e3a8e;margin-bottom:5px;">ID: ${p.id}</div>
+                <div style="font-size:12px;color:#666;">${p.category}</div>
+              </div>
+              <div>
+                <a href="${p.product_link}" target="_blank" style="color:#5e3a8e;font-size:14px;word-break:break-all;">
+                  ${p.product_link}
+                </a>
+                <div style="margin-top:5px;">
+                  <span style="background:#E3F2FD;padding:4px 8px;border-radius:6px;font-size:11px;font-weight:600;">
+                    Sales: ${p.sales_count || 0}
+                  </span>
+                  <span style="background:${p.listed ? '#C8E6C9' : '#FFCDD2'};padding:4px 8px;border-radius:6px;font-size:11px;font-weight:600;margin-left:5px;">
+                    ${p.listed ? 'Listed' : 'Unlisted'}
+                  </span>
+                </div>
+              </div>
+              <div>
+                <button onclick="deleteHotProductConfirm(${p.id})" style="padding:8px 16px;background:#d32f2f;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;">
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      } catch (error) {
+        hideLoading();
+        alert('Error loading hot products: ' + error.message);
+      }
+    }
+
+    async function deleteHotProductConfirm(id) {
+      if (!confirm('Delete this product?')) return;
+      
+      try {
+        showLoading();
+        await deleteHotProduct(id);
+        hideLoading();
+        alert('Product deleted');
+        loadHotProducts();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // DEPARTMENTS
+    // ═══════════════════════════════════════════════════════════
+    document.getElementById('deptForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const config = {
+        month: document.getElementById('deptMonth').value,
+        department: document.getElementById('deptName').value,
+        budget: document.getElementById('deptBudget').value,
+        slots: document.getElementById('deptSlots').value,
+        color: document.getElementById('deptColor').value,
+        active: document.getElementById('deptActive').value
+      };
+
+      try {
+        showLoading();
+        await addDepartment(config);
+        hideLoading();
+        alert('✅ Department added!');
+        document.getElementById('deptForm').reset();
+        loadDepartments();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    });
+
+    async function loadDepartments() {
+      try {
+        const depts = await getAllDepartments();
+        const tbody = document.getElementById('deptsTable');
+
+        if (depts.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;">No departments yet</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = depts.map(d => `
+          <tr>
+            <td>${d.month}</td>
+            <td>${d.department}</td>
+            <td>$${d.budget}k</td>
+            <td>${d.slots}</td>
+            <td>${d.active}</td>
+            <td>
+              <button class="btn btn-danger" onclick="deleteDept(${d.row})">Delete</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (error) {
+        document.getElementById('deptsTable').innerHTML = 
+          '<tr><td colspan="6" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
+      }
+    }
+
+    async function deleteDept(row) {
+      if (!confirm('Delete this department?')) return;
+
+      try {
+        showLoading();
+        await deleteDepartment(row);
+        hideLoading();
+        alert('Department deleted');
+        loadDepartments();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    }
+
+    // Initialize
+    currentStudioMonth = 1;
+    currentStudioYear = 2026;
   </script>
 </body>
+</body>
 </html>
+
+
+
