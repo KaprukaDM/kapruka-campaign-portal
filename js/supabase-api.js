@@ -422,8 +422,7 @@ async function getSlotsForMonth(month) {
     requests.forEach(req => {
       if (req.department === dept.department && 
           req.status && 
-          req.status !== 'Rejected' &&
-          req.status !== 'Completed') {
+          req.status !== 'Rejected') {
         bookedSlots[req.slot] = {
           requestId: req.request_id,
           campaign: req.campaign || 'N/A',
