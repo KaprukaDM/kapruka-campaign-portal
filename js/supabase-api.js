@@ -6,6 +6,11 @@ const SUPABASE_URL = 'https://ivllhheqqiseagmctfyp.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml2bGxoaGVxcWlzZWFnbWN0ZnlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1NzQzMzksImV4cCI6MjA4NDE1MDMzOX0.OnkYNACtdknKDY2KqLfiGN0ORXpKaW906fD0TtSJlIk';
 const ADMIN_PASSWORD = 'Kapruka2026!Admin';
 const HEAD_APPROVAL_PASSWORD = '207';
+const SUPERADMIN_PASSWORD = 'Superadmin';  // Change this!
+
+function verifySuperAdminPassword(password) {
+  return password === SUPERADMIN_PASSWORD;
+}
 
 const VALID_STATUSES = ['Request Submitted', 'Working', 'Live', 'Completed', 'Rejected'];
 const STUDIO_STATUSES = ['Received', 'Working', 'Submitted for Review', 'Approved'];
