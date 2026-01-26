@@ -2116,7 +2116,7 @@
               displayText = `${category}${item.product_code ? ' • ' + item.product_code : ''}`;
             } else {
               const category = item.content_details?.split('-')[1]?.trim() || '';
-              displayText = item.page_name || 'Content';
+              displayText = item.page_name || 'Daily Post';
             }
             
             slotDiv.innerHTML = `
@@ -2486,4 +2486,5 @@
   </script>
 </body>
 </html>
+
 
