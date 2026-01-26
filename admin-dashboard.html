@@ -2470,9 +2470,9 @@
               }
               
               slotDiv.innerHTML = `
-                <span class="slot-number">S${slotNum}</span>
-                ${statusBadge}
-                <span class="slot-page">${schedule.page}</span>
+              <span class="slot-number">S${slotNum}</span>
+              ${statusBadge}
+              <span class="slot-page">${slotData.page_name || schedule.page}</span>  // ✅ CHANGE THIS LINE
               `;
               
               slotDiv.onclick = () => showSlotDetails(slotData, dateStr);
@@ -2888,3 +2888,4 @@
   </script>
 </body>
 </html>
+
