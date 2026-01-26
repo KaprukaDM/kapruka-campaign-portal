@@ -1067,6 +1067,80 @@
     }
 
     window.onload = loadInitialData;
+window.onload = loadInitialData;
+
+// ===== MONTHLY LOCK SYSTEM (After 25th) ===== 
+// ⬇️ ADD ALL THE JAVASCRIPT CODE HERE ⬇️
+function isPortalLocked() {
+  const today = new Date();
+  const dayOfMonth = today.getDate();
+  return dayOfMonth > 25;
+}
+
+function showLockMessage() {
+  if (!isPortalLocked()) return;
+  
+  const lockBanner = document.createElement('div');
+  lockBanner.style.cssText = `
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #EF4444, #DC2626);
+    color: white;
+    padding: 16px 32px;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(239,68,68,0.4);
+    z-index: 9998;
+    font-weight: 700;
+    font-size: 15px;
+    animation: slideDown 0.5s ease-out;
+  `;
+  lockBanner.innerHTML = '🔒 Portal Locked - Booking reopens on the 1st of next month';
+  document.body.appendChild(lockBanner);
+}
+
+const originalPickSlot = pickSlot;
+pickSlot = function(dept, slotName, element) {
+  if (isPortalLocked()) {
+    alert('🔒 Portal is locked after the 25th of each month. Booking will reopen on the 1st.');
+    return;
+  }
+  originalPickSlot(dept, slotName, element);
+};
+
+document.getElementById('campaignForm').addEventListener('submit', function(e) {
+  if (isPortalLocked()) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    alert('🔒 Portal is locked after the 25th of each month. Booking will reopen on the 1st.');
+    return false;
+  }
+}, true);
+
+window.addEventListener('load', showLockMessage);
+
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateX(-50%) translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  }
+`;
+document.head.appendChild(style);
+// ⬆️ END OF LOCK CODE ⬆️
   </script>
 </body>
 </html>
+
+    
+  </script>
+</body>
+</html>
+
