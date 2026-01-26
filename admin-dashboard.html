@@ -762,8 +762,6 @@
   </style>
 </head>
 <body>
-</head>
-<body>
   <div class="loading" id="loading"><div class="spinner"></div></div>
   <div class="modal" id="modal">
     <div class="modal-content" id="modalContent"></div>
@@ -1037,8 +1035,6 @@
                     <option value="Electronics">Electronics</option>
                     <option value="Fashion">Fashion</option>
                     <option value="Clothing">Clothing</option>
-                    <option value="Electronics">Electronics</option>
-                    <option value="Fashion">Fashion</option>
                     <option value="Food & Restaurants">Food & Restaurants</option>
                     <option value="Fruits">Fruits</option>
                     <option value="Soft Toys & Kids Toys">Soft Toys & Kids Toys</option>
@@ -1148,13 +1144,11 @@
     // GLOBAL VARIABLES
     // ═══════════════════════════════════════════════════════════
     let isLoggedIn = false;
+    let isSuperAdmin = false;  // NEW: Track superadmin role
     let allHotProducts = [];
     let currentStudioMonth = 1;
     let currentStudioYear = 2026;
     let studioCalendarData = [];
-
-    // PAGE_SCHEDULE and other constants are already defined in supabase-api.js
-    // We can access them directly without redeclaring
 
     // ═══════════════════════════════════════════════════════════
     // UTILITY FUNCTIONS
@@ -1179,50 +1173,109 @@
     // ═══════════════════════════════════════════════════════════
     // LOGIN & NAVIGATION
     // ═══════════════════════════════════════════════════════════
-    // Check if already logged in and handle hash navigation on page load
+    // MODIFIED: Check if already logged in and restore role
     window.addEventListener('DOMContentLoaded', function() {
       const loggedIn = sessionStorage.getItem('adminLoggedIn');
+      const role = sessionStorage.getItem('adminRole');
+
       if (loggedIn === 'true') {
         isLoggedIn = true;
+        isSuperAdmin = (role === 'superadmin');
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('adminContent').style.display = 'block';
-        loadAllData();
-        
-        // Handle hash navigation after login
-        setTimeout(() => {
-          const hash = window.location.hash.substring(1);
-          if (hash && ['requests', 'products', 'content', 'studio', 'hotproducts', 'departments'].includes(hash)) {
-            switchTab(hash);
-          }
-        }, 300);
+
+        if (isSuperAdmin) {
+          setupStudioOnlyView();
+          switchTab('studio');
+          loadStudioCalendar();
+        } else {
+          loadAllData();
+
+          setTimeout(() => {
+            const hash = window.location.hash.substring(1);
+            if (hash && ['requests', 'products', 'content', 'studio', 'hotproducts', 'departments'].includes(hash)) {
+              switchTab(hash);
+            }
+          }, 300);
+        }
       }
     });
 
+    // MODIFIED: Login handler with superadmin check
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const password = document.getElementById('adminPassword').value;
 
-      if (verifyAdminPassword(password)) {
+      if (verifySuperAdminPassword(password)) {
+        // SUPERADMIN: studio-only view
         isLoggedIn = true;
+        isSuperAdmin = true;
         sessionStorage.setItem('adminLoggedIn', 'true');
+        sessionStorage.setItem('adminRole', 'superadmin');
+
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('adminContent').style.display = 'block';
+
+        setupStudioOnlyView();
+        switchTab('studio');
+        loadStudioCalendar();
+      } else if (verifyAdminPassword(password)) {
+        // Normal admin: full access
+        isLoggedIn = true;
+        isSuperAdmin = false;
+        sessionStorage.setItem('adminLoggedIn', 'true');
+        sessionStorage.setItem('adminRole', 'admin');
+
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('adminContent').style.display = 'block';
+
         loadAllData();
       } else {
         alert('Invalid password');
       }
     });
 
+    // MODIFIED: Clear role on logout
     function logout() {
       isLoggedIn = false;
+      isSuperAdmin = false;
       sessionStorage.removeItem('adminLoggedIn');
+      sessionStorage.removeItem('adminRole');
       document.getElementById('loginScreen').style.display = 'block';
       document.getElementById('adminContent').style.display = 'none';
       document.getElementById('adminPassword').value = '';
       window.location.hash = '';
     }
 
+    // NEW: Setup studio-only view for superadmin
+    function setupStudioOnlyView() {
+      // hide all tab buttons except Studio and Logout
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        const text = btn.textContent.toLowerCase();
+        const isStudio = text.includes('studio');
+        const isLogout = text.includes('logout');
+        if (!isStudio && !isLogout) {
+          btn.style.display = 'none';
+        }
+      });
+
+      // hide all tab contents except studio
+      document.querySelectorAll('.tab-content').forEach(tab => {
+        if (tab.id !== 'tab-studio') {
+          tab.style.display = 'none';
+        } else {
+          tab.classList.add('active');
+          tab.style.display = 'block';
+        }
+      });
+    }
+
+    // MODIFIED: Prevent superadmin from switching tabs
     function switchTab(tab) {
+      if (isSuperAdmin && tab !== 'studio') {
+        tab = 'studio';
+      }
+
       // Update URL hash without reloading page
       if (window.location.hash !== '#' + tab) {
         window.location.hash = tab;
@@ -1257,13 +1310,11 @@
     
     // Handle browser back/forward navigation
     window.addEventListener('hashchange', function() {
-      const hash = window.location.hash.substring(1); // Remove #
+      const hash = window.location.hash.substring(1);
       if (hash) {
         switchTab(hash);
       }
     });
-    
-
 
     async function loadAllData() {
       loadRequests();
@@ -1723,7 +1774,6 @@
         hideLoading();
         alert('✅ Booking approved and synced to Studio Calendar!');
         loadContentBookings();
-        // Reload studio calendar if currently on that tab
         if (document.getElementById('tab-studio').classList.contains('active')) {
           setTimeout(() => loadStudioCalendar(), 500);
         }
@@ -1754,6 +1804,7 @@
         hideLoading();
         alert('Error: ' + error.message);
       }
+    }
 
     async function editContentBooking(id) {
       try {
@@ -1798,7 +1849,6 @@
             closeModal();
             alert('✅ Content booking updated!');
             loadContentBookings();
-            // Reload studio calendar if currently on that tab
             if (document.getElementById('tab-studio').classList.contains('active')) {
               setTimeout(() => loadStudioCalendar(), 500);
             }
@@ -1833,7 +1883,6 @@
         hideLoading();
         alert('Error: ' + error.message);
       }
-    }
     }
 
     async function loadThemes() {
@@ -1880,7 +1929,7 @@
     }
 
     // ═══════════════════════════════════════════════════════════
-    // STUDIO CALENDAR (CALENDAR GRID VIEW)
+    // STUDIO CALENDAR
     // ═══════════════════════════════════════════════════════════
     async function loadStudioCalendar() {
       try {
@@ -1895,7 +1944,6 @@
 
         let data = await getStudioCalendarForMonth(currentStudioYear, currentStudioMonth);
         
-        // Apply filter
         const filterValue = document.getElementById('studioFilter')?.value || 'all';
         if (filterValue !== 'all') {
           data = data.filter(item => {
@@ -1909,7 +1957,6 @@
         
         studioCalendarData = data;
 
-        // Get themes for current month
         const startDate = `${currentStudioYear}-${String(currentStudioMonth).padStart(2, '0')}-01`;
         const lastDay = new Date(currentStudioYear, currentStudioMonth, 0).getDate();
         const endDate = `${currentStudioYear}-${String(currentStudioMonth).padStart(2, '0')}-${lastDay}`;
@@ -1960,18 +2007,16 @@
       }
 
       for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(currentStudioYear, currentStudioMonth - 1, day);  
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const dayStr = String(date.getDate()).padStart(2, '0');
-      const dateStr = `${year}-${month}-${dayStr}`;
-      const dayOfWeek = date.getDay();
-
+        const date = new Date(currentStudioYear, currentStudioMonth - 1, day);  
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const dayStr = String(date.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${dayStr}`;
+        const dayOfWeek = date.getDay();
         
         const dayDiv = document.createElement('div');
         dayDiv.className = 'calendar-day';
         
-        // Check if this date has a theme
         const activeTheme = monthThemes.find(t => dateStr >= t.start_date && dateStr <= t.end_date);
         if (activeTheme) {
           dayDiv.style.borderTop = `4px solid ${activeTheme.theme_color}`;
@@ -1983,7 +2028,6 @@
         dayNumber.textContent = day;
         dayDiv.appendChild(dayNumber);
         
-        // Add theme name if exists
         if (activeTheme) {
           const themeName = document.createElement('div');
           themeName.style.cssText = 'font-size:10px;font-weight:600;color:' + activeTheme.theme_color + ';margin-bottom:5px;text-align:center;';
@@ -2064,11 +2108,9 @@
             
             let displayText;
             if (item.head_approved) {
-              // If approved: show category + product code + status
               const category = item.content_details?.split('-')[1]?.trim() || '';
               displayText = `${category}${item.product_code ? ' • ' + item.product_code : ''}`;
             } else {
-              // If not approved: show only category
               const category = item.content_details?.split('-')[1]?.trim() || '';
               displayText = item.page_name || 'Content';
             }
@@ -2439,14 +2481,4 @@
     currentStudioYear = 2026;
   </script>
 </body>
-</body>
 </html>
-
-
-
-
-
-
-
-
-
