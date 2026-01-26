@@ -1162,6 +1162,7 @@ async function deleteHotProduct(id) {
     throw error;
   }
 }
+
 // HOT PRODUCTS UPDATE
 async function updateHotProduct(productId, updateData) {
   try {
@@ -1186,7 +1187,6 @@ async function updateHotProduct(productId, updateData) {
     throw error;
   }
 }
-
 // ═══════════════════════════════════════════════════════════════
 // PRODUCT PERFORMANCE API
 // ═══════════════════════════════════════════════════════════════
