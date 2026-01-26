@@ -2066,7 +2066,7 @@
             } else {
               // If not approved: show only category
               const category = item.content_details?.split('-')[1]?.trim() || '';
-              displayText = category || 'Content';
+              displayText = item.page_name || 'Content';
             }
             
             slotDiv.innerHTML = `
@@ -2437,6 +2437,7 @@
 </body>
 </body>
 </html>
+
 
 
 
