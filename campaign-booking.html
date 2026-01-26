@@ -1067,20 +1067,31 @@
     }
 
     window.onload = loadInitialData;
-window.onload = loadInitialData;
 
-// ===== MONTHLY LOCK SYSTEM (After 25th) ===== 
-// ⬇️ ADD ALL THE JAVASCRIPT CODE HERE ⬇️
-function isPortalLocked() {
+// ===== MONTHLY LOCK SYSTEM (Only Current Month After 25th) ===== 
+function isCurrentMonthLocked() {
   const today = new Date();
   const dayOfMonth = today.getDate();
-  return dayOfMonth > 25;
+  
+  // Only lock if we're past the 25th
+  if (dayOfMonth <= 25) return false;
+  
+  // Get current month string (e.g., "January 2026")
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const currentMonthString = `${months[today.getMonth()]} ${today.getFullYear()}`;
+  
+  // Check if selected month is the current month
+  return selectedMonth === currentMonthString;
 }
 
 function showLockMessage() {
-  if (!isPortalLocked()) return;
+  const today = new Date();
+  const dayOfMonth = today.getDate();
+  
+  if (dayOfMonth <= 25) return;
   
   const lockBanner = document.createElement('div');
+  lockBanner.id = 'lockBanner';
   lockBanner.style.cssText = `
     position: fixed;
     top: 20px;
@@ -1095,30 +1106,68 @@ function showLockMessage() {
     font-weight: 700;
     font-size: 15px;
     animation: slideDown 0.5s ease-out;
+    text-align: center;
   `;
-  lockBanner.innerHTML = '🔒 Portal Locked - Booking reopens on the 1st of next month';
+  
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const currentMonthString = `${months[today.getMonth()]} ${today.getFullYear()}`;
+  
+  lockBanner.innerHTML = `🔒 ${currentMonthString} booking is closed - Reopens on 1st of next month`;
   document.body.appendChild(lockBanner);
 }
 
+// Override pickSlot to check lock
 const originalPickSlot = pickSlot;
 pickSlot = function(dept, slotName, element) {
-  if (isPortalLocked()) {
-    alert('🔒 Portal is locked after the 25th of each month. Booking will reopen on the 1st.');
+  if (isCurrentMonthLocked()) {
+    const today = new Date();
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const currentMonth = `${months[today.getMonth()]} ${today.getFullYear()}`;
+    alert(`🔒 ${currentMonth} booking is closed after the 25th. Please select a future month or wait until the 1st.`);
     return;
   }
   originalPickSlot(dept, slotName, element);
 };
 
+// Override form submit to check lock
 document.getElementById('campaignForm').addEventListener('submit', function(e) {
-  if (isPortalLocked()) {
+  if (isCurrentMonthLocked()) {
     e.preventDefault();
     e.stopImmediatePropagation();
-    alert('🔒 Portal is locked after the 25th of each month. Booking will reopen on the 1st.');
+    const today = new Date();
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const currentMonth = `${months[today.getMonth()]} ${today.getFullYear()}`;
+    alert(`🔒 ${currentMonth} booking is closed after the 25th. Please select a future month or wait until the 1st.`);
     return false;
   }
 }, true);
 
-window.addEventListener('load', showLockMessage);
+// Update lock banner when month changes
+const originalSelectMonth = selectMonth;
+selectMonth = async function(month) {
+  await originalSelectMonth(month);
+  
+  // Remove old banner
+  const oldBanner = document.getElementById('lockBanner');
+  if (oldBanner) oldBanner.remove();
+  
+  // Show banner only if current month is selected and past 25th
+  const today = new Date();
+  const dayOfMonth = today.getDate();
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const currentMonthString = `${months[today.getMonth()]} ${today.getFullYear()}`;
+  
+  if (dayOfMonth > 25 && month === currentMonthString) {
+    showLockMessage();
+  }
+};
+
+window.addEventListener('load', function() {
+  const today = new Date();
+  if (today.getDate() > 25) {
+    showLockMessage();
+  }
+});
 
 const style = document.createElement('style');
 style.textContent = `
@@ -1134,8 +1183,8 @@ style.textContent = `
   }
 `;
 document.head.appendChild(style);
-// ⬆️ END OF LOCK CODE ⬆️
   </script>
 </body>
 </html>
+
 
