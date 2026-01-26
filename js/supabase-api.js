@@ -17,13 +17,13 @@ const STUDIO_STATUSES = ['Received', 'Working', 'Submitted for Review', 'Approve
 
 // Page assignments by day of week
 const PAGE_SCHEDULE = {
-  1: { page: 'Kapruka FB', slots: 3 },      // Monday
-  2: { page: 'Social Mart', slots: 3 },           // Tuesday
-  3: { page: 'Electronic Factory', slots: 3 },    // Wednesday
-  4: { page: 'Fashion Factory', slots: 3 },       // Thursday
-  5: { page: 'Toys Factory', slots: 3 },          // Friday
-  6: { page: 'Handbag Factory', slots: 3 },       // Saturday
-  0: { page: 'TikTok Video', slots: 1 }           // Sunday
+  0: { page: 'Kapruka FB', slots: 3 },      // Monday
+  1: { page: 'Social Mart', slots: 3 },           // Tuesday
+  2: { page: 'Electronic Factory', slots: 3 },    // Wednesday
+  3: { page: 'Fashion Factory', slots: 3 },       // Thursday
+  4: { page: 'Toys Factory', slots: 3 },          // Friday
+  5: { page: 'Handbag Factory', slots: 3 },       // Saturday
+  6: { page: 'TikTok Video', slots: 1 }           // Sunday
 };
 
 // ═══════════════════════════════════════════════════════════════
