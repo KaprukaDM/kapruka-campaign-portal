@@ -93,7 +93,7 @@ async function getAvailableSlotsForPage(pageName) {
     const availableDates = [];
     const today = new Date();
     
-    for (let i = 0; i < 14; i++) {
+    for (let i = 0; i < 21; i++) {
       const checkDate = new Date(today);
       checkDate.setDate(today.getDate() + i);
       
