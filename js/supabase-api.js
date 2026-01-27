@@ -89,11 +89,11 @@ async function getAvailableSlotsForPage(pageName) {
       throw new Error('Invalid page name');
     }
     
-    // Get dates for next 2 weeks matching this day
+    // Get dates for next 3 weeks matching this day
     const availableDates = [];
     const today = new Date();
     
-    for (let i = 0; i < 14; i++) {
+    for (let i = 0; i < 21; i++) {
       const checkDate = new Date(today);
       checkDate.setDate(today.getDate() + i);
       
