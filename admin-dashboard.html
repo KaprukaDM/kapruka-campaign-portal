@@ -873,6 +873,7 @@
               <label>📊 Status</label>
               <select id="requestsStatus" onchange="filterRequests()">
                 <option value="">All Statuses</option>
+                <option value="Request Submitted">Request Submitted</option>
                 <option value="Working">Working</option>
                 <option value="Live">Live</option>
                 <option value="Completed">Completed</option>
@@ -1601,6 +1602,7 @@
 
       tbody.innerHTML = requests.map(r => {
         let badgeClass = 'badge-working';
+        if (r.status === 'Request Submitted') badgeClass = 'badge-submitted';
         if (r.status === 'Live') badgeClass = 'badge-live';
         if (r.status === 'Rejected') badgeClass = 'badge-rejected';
         if (r.status === 'Completed') badgeClass = 'badge-completed';
@@ -2888,6 +2890,3 @@
   </script>
 </body>
 </html>
-
-
-
