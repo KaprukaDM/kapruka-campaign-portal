@@ -17,13 +17,13 @@ const STUDIO_STATUSES = ['Received', 'Working', 'Submitted for Review', 'Approve
 
 // Page assignments by day of week
 const PAGE_SCHEDULE = {
-  0: { page: 'TikTok Video', slots: 1 },           // Sunday ✅
-  1: { page: 'Kapruka FB', slots: 3 },             // Monday ✅
-  2: { page: 'Electronic Factory', slots: 3 },     // Tuesday ✅
-  3: { page: 'Social Mart', slots: 3 },            // Wednesday ✅
-  4: { page: 'Fashion Factory', slots: 3 },        // Thursday ✅
-  5: { page: 'Toys Factory', slots: 3 },           // Friday ✅
-  6: { page: 'Handbag Factory', slots: 3 }         // Saturday ✅
+  0: { page: 'TikTok Video', slots: 1 },           // Sunday
+  1: { page: 'Kapruka FB', slots: 3 },             // Monday
+  2: { page: 'Electronic Factory', slots: 3 },     // Tuesday
+  3: { page: 'Social Mart', slots: 3 },            // Wednesday
+  4: { page: 'Fashion Factory', slots: 3 },        // Thursday
+  5: { page: 'Toys Factory', slots: 3 },           // Friday
+  6: { page: 'Handbag Factory', slots: 3 }         // Saturday
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -102,7 +102,7 @@ async function getAvailableSlotsForPage(pageName) {
       }
     }
     
-    // ✅ CHECK BOTH product_suggestions AND studio_calendar
+    // CHECK BOTH product_suggestions AND studio_calendar
     const todayStr = today.toISOString().split('T')[0];
     
     // Get booked slots from product_suggestions
@@ -110,7 +110,7 @@ async function getAvailableSlotsForPage(pageName) {
       `product_suggestions?assigned_page=eq.${encodeURIComponent(pageName)}&status=eq.Approved&slot_date=gte.${todayStr}`
     );
     
-    // ✅ NEW: Get booked slots from studio_calendar (includes manual bookings)
+    // Get booked slots from studio_calendar (includes manual bookings)
     const bookedFromStudio = await supabaseQuery(
       `studio_calendar?page_name=eq.${encodeURIComponent(pageName)}&booking_status=eq.booked&date=gte.${todayStr}`
     );
@@ -120,17 +120,12 @@ async function getAvailableSlotsForPage(pageName) {
     
     for (const date of availableDates) {
       for (let slotNum = 1; slotNum <= slotsPerDay; slotNum++) {
-        // Check if booked in product_suggestions
         const isBookedInProducts = bookedFromProducts.some(
           s => s.slot_date === date && s.slot_number === slotNum
         );
-        
-        // ✅ NEW: Check if booked in studio_calendar
         const isBookedInStudio = bookedFromStudio.some(
           s => s.date === date && s.slot_number === slotNum
         );
-        
-        // Slot is booked if found in EITHER table
         const isBooked = isBookedInProducts || isBookedInStudio;
         
         slots.push({
@@ -151,7 +146,6 @@ async function getAvailableSlotsForPage(pageName) {
 
 async function bookProductSlot(productId, slotDate, slotNumber, pageName) {
   try {
-    // Check if slot is still available
     const existing = await supabaseQuery(
       `product_suggestions?slot_date=eq.${slotDate}&slot_number=eq.${slotNumber}&assigned_page=eq.${encodeURIComponent(pageName)}&status=eq.Approved`
     );
@@ -160,11 +154,9 @@ async function bookProductSlot(productId, slotDate, slotNumber, pageName) {
       throw new Error('This slot is already booked');
     }
     
-    // Get day name
     const dateObj = new Date(slotDate);
     const dayName = getDayName(dateObj.getDay());
     
-    // Update product with slot assignment
     await supabaseQuery(
       `product_suggestions?id=eq.${productId}`,
       'PATCH',
@@ -183,7 +175,7 @@ async function bookProductSlot(productId, slotDate, slotNumber, pageName) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// STUDIO CALENDAR CORE (UPDATED)
+/* STUDIO CALENDAR CORE (UPDATED) */
 // ═══════════════════════════════════════════════════════════════
 
 async function upsertStudioCalendarEntry(entry) {
@@ -240,11 +232,42 @@ async function getStudioCalendarItem(id) {
   return rows.length ? rows[0] : null;
 }
 
+// ═══════════════════════════════════════════════════════════════
+// DM APPROVAL HELPERS
+// ═══════════════════════════════════════════════════════════════
+
+async function getDmApprovals() {
+  return await supabaseQuery('dm_approvals?order=created_at.desc');
+}
+
+async function updateDmApproval(id, data) {
+  return await supabaseQuery(
+    `dm_approvals?id=eq.${id}`,
+    'PATCH',
+    data
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+/* STUDIO STATUS UPDATE (WITH HEAD → DM FLOW) */
+// ═══════════════════════════════════════════════════════════════
+
 async function updateStudioStatus(id, statusData) {
   const payload = {
     studio_status: statusData.studio_status
   };
-  
+
+  // Map studio_status → approval_status for filters
+  if (statusData.studio_status === 'Approved') {
+    payload.approval_status = 'Approved by Head';
+  } else if (statusData.studio_status === 'Submitted for Review') {
+    payload.approval_status = 'Submitted for Review';
+  } else if (statusData.studio_status === 'Working') {
+    payload.approval_status = 'Working';
+  } else if (statusData.studio_status === 'Received') {
+    payload.approval_status = 'Received';
+  }
+
   // If submitting for review, require content link
   if (statusData.studio_status === 'Submitted for Review') {
     if (!statusData.content_link) {
@@ -252,8 +275,8 @@ async function updateStudioStatus(id, statusData) {
     }
     payload.content_link = statusData.content_link;
   }
-  
-  // If approving, require password
+
+  // If approving (Head), require password
   if (statusData.studio_status === 'Approved') {
     if (!statusData.password || statusData.password !== HEAD_APPROVAL_PASSWORD) {
       throw new Error('Invalid approval password');
@@ -263,19 +286,49 @@ async function updateStudioStatus(id, statusData) {
     payload.approved_by = statusData.approved_by || 'Content Head';
     payload.content_link = statusData.content_link || null;
   }
-  
+
   payload.updated_at = new Date().toISOString();
-  
+
+  // Update studio_calendar row
   await supabaseQuery(`studio_calendar?id=eq.${id}`, 'PATCH', payload);
+
+  // If Head approved, create or reset DM approval record
+  if (statusData.studio_status === 'Approved') {
+    const existingDm = await supabaseQuery(
+      `dm_approvals?content_id=eq.${id}&source_type=eq.studio`
+    );
+
+    const dmPayload = {
+      content_id: id,
+      source_type: 'studio',
+      scheduled_live_date: statusData.date || null,
+      page_name: statusData.page_name || null,
+      dm_status: 'Pending'
+    };
+
+    if (existingDm.length > 0) {
+      await supabaseQuery(
+        `dm_approvals?id=eq.${existingDm[0].id}`,
+        'PATCH',
+        dmPayload
+      );
+    } else {
+      await supabaseQuery('dm_approvals', 'POST', dmPayload);
+    }
+  }
+
   return { success: true };
 }
+
+// ═══════════════════════════════════════════════════════════════
+/* STUDIO SLOTS / EXTRA CONTENT (unchanged) */
+// ═══════════════════════════════════════════════════════════════
 
 async function generateEmptySlotsForMonth(year, month) {
   try {
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0);
     
-    // Get ALL existing slots for the entire month at once
     const startDateStr = startDate.toISOString().split('T')[0];
     const endDateStr = endDate.toISOString().split('T')[0];
     
@@ -283,14 +336,12 @@ async function generateEmptySlotsForMonth(year, month) {
       `studio_calendar?date=gte.${startDateStr}&date=lte.${endDateStr}&slot_type=eq.lead_form`
     );
     
-    // Create a Set for fast lookup of existing slots
     const existingKeys = new Set(
       existingSlots.map(s => `${s.date}_${s.slot_number}`)
     );
     
     const slots = [];
     
-    // Loop through all days in the month
     for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
       const dateStr = d.toISOString().split('T')[0];
       const dayOfWeek = d.getDay();
@@ -298,11 +349,9 @@ async function generateEmptySlotsForMonth(year, month) {
       
       if (!schedule) continue;
       
-      // Create missing empty slots for this day
       for (let slotNum = 1; slotNum <= schedule.slots; slotNum++) {
         const slotKey = `${dateStr}_${slotNum}`;
         
-        // Only add if it doesn't exist
         if (!existingKeys.has(slotKey)) {
           slots.push({
             date: dateStr,
@@ -322,7 +371,6 @@ async function generateEmptySlotsForMonth(year, month) {
       }
     }
     
-    // Insert empty slots only if there are new ones
     if (slots.length > 0) {
       await supabaseQuery('studio_calendar', 'POST', slots);
     }
@@ -717,7 +765,6 @@ async function updateProductReview(row, reviewData) {
     updateData.slot_number = reviewData.slotNumber || null;
     updateData.rejection_reason = '';
     
-    // Get day name if slot date provided
     if (reviewData.slotDate) {
       const dateObj = new Date(reviewData.slotDate);
       updateData.slot_day_name = getDayName(dateObj.getDay());
@@ -900,7 +947,6 @@ async function submitContentBooking(bookingData) {
 
     const result = await supabaseQuery('content_calendar', 'POST', booking);
     
-    // Add to studio calendar
     await upsertStudioCalendarEntry({
       date: bookingData.date,
       source_type: 'content_calendar',
@@ -1070,7 +1116,6 @@ async function generateCategorySlots(startDate, endDate, slotsPerDay, isSeasonal
     if (slots.length > 0) {
       await supabaseQuery('category_slots', 'POST', slots);
     }
-
     return { success: true, slotsCreated: slots.length };
   } catch (error) {
     console.error('generateCategorySlots error:', error);
@@ -1209,13 +1254,13 @@ async function updateHotProduct(productId, updateData) {
     throw error;
   }
 }
+
 // ═══════════════════════════════════════════════════════════════
 // PRODUCT PERFORMANCE API
 // ═══════════════════════════════════════════════════════════════
 
 async function searchProductPerformance(keyword, startDate, endDate) {
   try {
-    // Build URL with date range (dates are required now)
     let url = `${SUPABASE_URL}/rest/v1/meta_ads_performance?`;
 
     if (startDate && endDate) {
@@ -1224,7 +1269,6 @@ async function searchProductPerformance(keyword, startDate, endDate) {
 
     url += `order=date.desc`;
 
-    // Fetch all data in date range
     const response = await fetch(url, {
       headers: {
         'apikey': SUPABASE_KEY,
@@ -1238,7 +1282,6 @@ async function searchProductPerformance(keyword, startDate, endDate) {
 
     const allData = await response.json();
 
-    // Filter by keyword
     const keywordLower = keyword.toLowerCase();
     const results = allData.filter(row => 
       (row.campaign_name && row.campaign_name.toLowerCase().includes(keywordLower)) ||
@@ -1250,21 +1293,16 @@ async function searchProductPerformance(keyword, startDate, endDate) {
       return { level: 'none', data: [], aggregated: [] };
     }
 
-    // Priority Order: Account > Campaign > Adset > Ad
-    // Check if multiple ad accounts match
     const uniqueAccounts = [...new Set(results.map(r => r.ad_account_id).filter(Boolean))];
 
     let aggregationLevel = 'ad';
     let dataToAggregate = results;
     let groupBy = 'ad_name';
 
-    // 1. Check Account level (if multiple accounts)
     if (uniqueAccounts.length > 1) {
       aggregationLevel = 'account';
       groupBy = 'ad_account_id';
-    }
-    // 2. Check Campaign level
-    else {
+    } else {
       const campaignMatches = results.filter(r => 
         r.campaign_name && r.campaign_name.toLowerCase().includes(keywordLower)
       );
@@ -1273,9 +1311,7 @@ async function searchProductPerformance(keyword, startDate, endDate) {
         aggregationLevel = 'campaign';
         dataToAggregate = campaignMatches;
         groupBy = 'campaign_name';
-      } 
-      // 3. Check Adset level
-      else {
+      } else {
         const adsetMatches = results.filter(r => 
           r.adset_name && r.adset_name.toLowerCase().includes(keywordLower)
         );
@@ -1284,31 +1320,28 @@ async function searchProductPerformance(keyword, startDate, endDate) {
           aggregationLevel = 'adset';
           dataToAggregate = adsetMatches;
           groupBy = 'adset_name';
-        }
-        // 4. Default to Ad level
-        else {
+        } else {
           const adMatches = results.filter(r => 
             r.ad_name && r.ad_name.toLowerCase().includes(keywordLower)
           );
-
           if (adMatches.length > 0) {
             dataToAggregate = adMatches;
+            groupBy = 'ad_name';
           }
         }
       }
     }
 
-    // Aggregate by groupBy field
     const grouped = {};
     dataToAggregate.forEach(row => {
       const key = row[groupBy] || 'Unknown';
       if (!grouped[key]) {
         grouped[key] = {
           name: key,
-          campaign_name: row.campaign_name || 'N/A',
-          adset_name: row.adset_name || 'N/A',
-          ad_name: row.ad_name || 'N/A',
-          objective: row.objective || 'N/A',
+          campaign_name: row.campaign_name || 'NA',
+          adset_name: row.adset_name || 'NA',
+          ad_name: row.ad_name || 'NA',
+          objective: row.objective || 'NA',
           amount_spent: 0,
           reach: 0,
           impression: 0,
@@ -1316,7 +1349,7 @@ async function searchProductPerformance(keyword, startDate, endDate) {
           results: 0,
           direct_orders: 0,
           dates: [],
-          ad_account_id: row.ad_account_id || 'N/A'
+          ad_account_id: row.ad_account_id || 'NA'
         };
       }
 
@@ -1329,7 +1362,6 @@ async function searchProductPerformance(keyword, startDate, endDate) {
       grouped[key].dates.push(row.date);
     });
 
-    // Calculate metrics
     const aggregated = Object.values(grouped).map(item => {
       const cpc = item.clicks > 0 ? (item.amount_spent / item.clicks).toFixed(2) : 0;
       const cpm = item.impression > 0 ? ((item.amount_spent / item.impression) * 1000).toFixed(2) : 0;
@@ -1337,9 +1369,7 @@ async function searchProductPerformance(keyword, startDate, endDate) {
       const conversionRate = item.clicks > 0 ? ((item.direct_orders / item.clicks) * 100).toFixed(2) : 0;
 
       const sortedDates = item.dates.sort();
-      const dateRange = sortedDates.length > 0 
-        ? `${sortedDates[0]} to ${sortedDates[sortedDates.length - 1]}` 
-        : 'N/A';
+      const dateRange = sortedDates.length > 0 ? `${sortedDates[0]} to ${sortedDates[sortedDates.length - 1]}` : 'NA';
 
       return {
         ...item,
@@ -1358,7 +1388,6 @@ async function searchProductPerformance(keyword, startDate, endDate) {
       aggregated: aggregated,
       totalRecords: results.length
     };
-
   } catch (error) {
     console.error('searchProductPerformance error:', error);
     throw error;
