@@ -240,16 +240,55 @@ async function getDmApprovals() {
   return await supabaseQuery('dm_approvals?order=created_at.desc');
 }
 
+// ═════════════════════════════════════════════════════════════
+/* UPDATED: DM APPROVAL UPDATE - NOW SYNCS WITH STUDIO_CALENDAR */
+// ═════════════════════════════════════════════════════════════
 async function updateDmApproval(id, data) {
-  return await supabaseQuery(
-    `dm_approvals?id=eq.${id}`,
-    'PATCH',
-    data
-  );
+  const payload = {
+    dm_status: data.dm_status,
+    updated_at: new Date().toISOString()
+  };
+
+  if (data.dm_status === 'Approved') {
+    payload.approved_at = new Date().toISOString();
+    payload.dm_approved_by = data.approved_by || 'DM';
+    
+    // Update studio_calendar
+    const dmRecord = await supabaseQuery(`dm_approvals?id=eq.${id}`);
+    if (dmRecord.length > 0) {
+      await supabaseQuery(
+        `studio_calendar?id=eq.${dmRecord[0].content_id}`,
+        'PATCH',
+        {
+          approval_status: 'Approved by DM',
+          dm_approved_at: new Date().toISOString(),
+          dm_approved_by: data.approved_by || 'DM'
+        }
+      );
+    }
+  } else if (data.dm_status === 'Rejected') {
+    payload.dm_rejection_reason = data.rejection_reason || '';
+    
+    // Update studio_calendar
+    const dmRecord = await supabaseQuery(`dm_approvals?id=eq.${id}`);
+    if (dmRecord.length > 0) {
+      await supabaseQuery(
+        `studio_calendar?id=eq.${dmRecord[0].content_id}`,
+        'PATCH',
+        {
+          approval_status: 'Rejected by DM',
+          dm_rejection_reason: data.rejection_reason || ''
+        }
+      );
+    }
+  }
+
+  await supabaseQuery(`dm_approvals?id=eq.${id}`, 'PATCH', payload);
+  return { success: true };
 }
 
 // ═══════════════════════════════════════════════════════════════
-/* STUDIO STATUS UPDATE (WITH HEAD → DM FLOW) */
+/* UPDATED: STUDIO STATUS UPDATE (WITH HEAD REJECTION & RESUBMISSION) */
 // ═══════════════════════════════════════════════════════════════
 
 async function updateStudioStatus(id, statusData) {
@@ -261,7 +300,14 @@ async function updateStudioStatus(id, statusData) {
   if (statusData.studio_status === 'Approved') {
     payload.approval_status = 'Approved by Head';
   } else if (statusData.studio_status === 'Submitted for Review') {
-    payload.approval_status = 'Submitted for Review';
+    // Check if this is a resubmission
+    const current = await supabaseQuery(`studio_calendar?id=eq.${id}`);
+    if (current.length && (current[0].approval_status === 'Rejected by Head' || 
+                           current[0].approval_status === 'Rejected by DM')) {
+      payload.approval_status = 'Resubmitted for Review';
+    } else {
+      payload.approval_status = 'Submitted for Review';
+    }
   } else if (statusData.studio_status === 'Working') {
     payload.approval_status = 'Working';
   } else if (statusData.studio_status === 'Received') {
@@ -287,6 +333,19 @@ async function updateStudioStatus(id, statusData) {
     payload.content_link = statusData.content_link || null;
   }
 
+  // ADDED: If rejecting (Head), require password and reason
+  if (statusData.studio_status === 'Rejected by Head') {
+    if (!statusData.password || statusData.password !== HEAD_APPROVAL_PASSWORD) {
+      throw new Error('Invalid password');
+    }
+    if (!statusData.rejection_reason) {
+      throw new Error('Rejection reason is required');
+    }
+    payload.approval_status = 'Rejected by Head';
+    payload.head_rejection_reason = statusData.rejection_reason;
+    payload.head_rejected_at = new Date().toISOString();
+  }
+
   payload.updated_at = new Date().toISOString();
 
   // Update studio_calendar row
@@ -303,6 +362,7 @@ async function updateStudioStatus(id, statusData) {
       source_type: 'studio',
       scheduled_live_date: statusData.date || null,
       page_name: statusData.page_name || null,
+      drive_link: statusData.content_link || null,  // ADDED: Drive link
       dm_status: 'Pending'
     };
 
