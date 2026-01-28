@@ -2758,7 +2758,7 @@
             // PRIORITY 3: Show category or page name
             else {
               const category = item.content_details?.split('-')[1]?.trim() || '';
-              displayText = category || item.page_name || 'Daily Post';
+              displayText = item.page_name || 'Daily Post';
             }
             
             slotDiv.innerHTML = `
@@ -3379,4 +3379,5 @@
   </script>
 </body>
 </html>
+
 
