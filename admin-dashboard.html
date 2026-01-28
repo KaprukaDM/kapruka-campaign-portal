@@ -2659,17 +2659,16 @@
             }
             
             let displayText;
-            if (item.head_approved) {
-              const category = item.content_details?.split('-')[1]?.trim() || '';
-              displayText = `${category}${item.product_code ? ' • ' + item.product_code : ''}`;
-            } else {
-              // NEW: Show department name for extra content, page name for regular content
-              if (item.department) {
-                displayText = item.department;
-              } else {
-                const category = item.content_details?.split('-')[1]?.trim() || '';
-                displayText = item.page_name || 'Daily Post';
-              }
+            if (item.department) {
+            displayText = item.department;
+            }
+            else if (item.head_approved) {
+            const category = item.content_details?.split('-')[1]?.trim() || '';
+            displayText = `${category}${item.product_code ? ' • ' + item.product_code : ''}`;
+            }
+            else {
+            const category = item.content_details?.split('-')[1]?.trim() || '';
+            displayText = category || item.page_name || 'Daily Post';
             }
             
             slotDiv.innerHTML = `
@@ -3258,3 +3257,4 @@
   </script>
 </body>
 </html>
+
