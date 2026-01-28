@@ -114,6 +114,8 @@
       position: relative;
       display: flex;
       flex-direction: column;
+      /* ✅ FIX: Prevent overflow */
+      overflow: hidden;
     }
     .day-cell:hover {
       transform: translateY(-3px);
@@ -133,7 +135,6 @@
       background: linear-gradient(135deg, #FFE5E5, #FFF0F0);
       border-color: #FF69B4;
     }
-    /* ✅ NEW: Full booked indicator */
     .day-cell.fully-booked {
       background: linear-gradient(135deg, #C8E6C9, #A5D6A7);
       border-color: #4CAF50;
@@ -165,7 +166,13 @@
       font-weight: 600;
       text-transform: uppercase;
       flex-shrink: 0;
+      /* ✅ FIX: Truncate long theme names */
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
+
+    /* ✅ FIXED: Better slot preview styling with overflow control */
     .slot-preview {
       font-size: 9px;
       background: rgba(94,58,142,0.1);
@@ -176,6 +183,10 @@
       font-weight: 500;
       cursor: pointer;
       transition: all 0.2s;
+      /* ✅ FIX: Contain overflow */
+      overflow: hidden;
+      word-wrap: break-word;
+      min-height: 20px;
     }
     .slot-preview:hover {
       background: rgba(94,58,142,0.2);
@@ -191,7 +202,6 @@
       color: #856404;
       border-left: 3px solid #ffc107;
     }
-    /* ✅ NEW: Rejected slot style */
     .slot-preview.rejected {
       background: #f8d7da;
       color: #721c24;
@@ -199,12 +209,20 @@
       text-decoration: line-through;
       opacity: 0.6;
     }
+
+    /* ✅ FIXED: Product code display with truncation */
     .slot-code {
       font-weight: 700;
-      font-size: 10px;
+      font-size: 9px;
       margin-top: 2px;
       display: block;
+      /* ✅ FIX: Truncate long product codes */
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 100%;
     }
+
     .loading {
       position: fixed;
       top: 0;
@@ -277,7 +295,6 @@
       margin-bottom: 20px;
       text-align: center;
     }
-    /* ✅ NEW: Fully booked message */
     .fully-booked-message {
       background: linear-gradient(135deg, #4CAF50, #45a049);
       color: white;
@@ -330,7 +347,6 @@
       border-color: #388e3c;
       box-shadow: 0 5px 15px rgba(76,175,80,0.3);
     }
-    /* ✅ NEW: Rejected slot card */
     .slot-card.rejected {
       background: #fff5f5;
       border-color: #ffcdd2;
@@ -389,6 +405,9 @@
       border-radius: 5px;
       display: inline-block;
       margin-top: 5px;
+      /* ✅ FIX: Word wrap for long codes */
+      word-wrap: break-word;
+      max-width: 100%;
     }
     .form-group {
       margin-bottom: 20px;
@@ -441,6 +460,7 @@
       .day-cell { min-height: 80px; padding: 5px; }
       .day-number { font-size: 12px; }
       .slot-preview { font-size: 8px; }
+      .slot-code { font-size: 8px; }
       .modal-content { padding: 20px; }
     }
   </style>
@@ -563,10 +583,13 @@
       }
     }
 
-    // ═══════════════════════════════════════════════════════════════
-    // ✅ FIXED: Rejected bookings are now available for re-booking
-    // ✅ ADDED: "Fully Booked" badge when all slots are taken
-    // ═══════════════════════════════════════════════════════════════
+    // ✅ FIXED: Truncate long product codes for display
+    function truncateCode(code, maxLength = 12) {
+      if (!code) return '';
+      if (code.length <= maxLength) return code;
+      return code.substring(0, maxLength) + '...';
+    }
+
     function createDayCell(day, dateStr, dayBookings) {
       const cell = document.createElement('div');
       cell.className = 'day-cell';
@@ -587,12 +610,10 @@
 
       cell.innerHTML = `
         <div class="day-number">${day}</div>
-        ${themes.length > 0 ? `<div class="day-theme">${themeNames}</div>` : ''}
+        ${themes.length > 0 ? `<div class="day-theme" title="${themeNames}">${themeNames}</div>` : ''}
       `;
 
       const availableSlots = calendarData.categorySlots.filter(s => s.date === dateStr);
-
-      // ✅ FIX: Only count Approved/Pending bookings (NOT Rejected)
       const activeBookings = dayBookings.filter(b => b.status === 'Approved' || b.status === 'Pending');
 
       const allSlotsFilled = availableSlots.length > 0 && 
@@ -602,14 +623,12 @@
 
       if (allSlotsFilled) {
         cell.classList.add('fully-booked');
-        // ✅ ADD: Fully booked badge
         const badge = document.createElement('div');
         badge.className = 'fully-booked-badge';
         badge.textContent = 'FULL';
         cell.appendChild(badge);
       }
 
-      // Show all bookings (including rejected ones)
       if (dayBookings.length > 0) {
         dayBookings.forEach(booking => {
           const slotDiv = document.createElement('div');
@@ -625,12 +644,17 @@
 
           const statusIcon = booking.status === 'Approved' ? '✓' : 
                             booking.status === 'Pending' ? '⏳' : '✗';
+
+          // ✅ FIX: Truncate category and product code
+          const categoryShort = booking.category.length > 15 ? booking.category.substring(0, 15) + '...' : booking.category;
+          const productCodeShort = truncateCode(booking.product_code, 10);
+
           slotDiv.innerHTML = `
             <div style="display:flex;justify-content:space-between;align-items:center;width:100%;">
-              <span>${booking.category}</span>
+              <span title="${booking.category}">${categoryShort}</span>
               <span>${statusIcon}</span>
             </div>
-            ${booking.product_code ? `<span class="slot-code">📦 ${booking.product_code}</span>` : ''}
+            ${booking.product_code ? `<span class="slot-code" title="${booking.product_code}">📦 ${productCodeShort}</span>` : ''}
           `;
 
           slotDiv.style.cursor = 'pointer';
@@ -643,7 +667,6 @@
         });
       }
 
-      // ✅ FIX: Show available slots (excluding only active bookings, not rejected ones)
       if (availableSlots.length > 0) {
         availableSlots.forEach(slot => {
           const isSlotBooked = activeBookings.some(b => b.slot_number === slot.slot_number);
@@ -651,13 +674,13 @@
           if (!isSlotBooked) {
             const slotDiv = document.createElement('div');
             slotDiv.className = 'slot-preview';
-            slotDiv.innerHTML = `<span>${slot.category}</span><span>○</span>`;
+            const categoryShort = slot.category.length > 15 ? slot.category.substring(0, 15) + '...' : slot.category;
+            slotDiv.innerHTML = `<span title="${slot.category}">${categoryShort}</span><span>○</span>`;
             cell.appendChild(slotDiv);
           }
         });
       }
 
-      // ✅ FIX: Check for available slots (rejected slots are now available)
       const hasAvailableSlots = availableSlots.some(slot => 
         !activeBookings.some(b => b.slot_number === slot.slot_number)
       );
@@ -726,7 +749,7 @@
 
           <div style="margin-bottom:15px;">
             <strong style="color:#666;font-size:12px;text-transform:uppercase;">Product Code</strong>
-            <div style="background:#d4edda;color:#155724;padding:10px 15px;border-radius:8px;margin-top:5px;font-family:monospace;font-size:16px;font-weight:700;">
+            <div style="background:#d4edda;color:#155724;padding:10px 15px;border-radius:8px;margin-top:5px;font-family:monospace;font-size:16px;font-weight:700;word-wrap:break-word;">
               📦 ${booking.product_code || 'N/A'}
             </div>
           </div>
@@ -774,10 +797,6 @@
       modal.style.display = 'flex';
     }
 
-    // ═══════════════════════════════════════════════════════════════
-    // ✅ UPDATED: Show "Fully Booked" message when no slots available
-    // ✅ FIXED: Rejected slots are now available for booking
-    // ═══════════════════════════════════════════════════════════════
     function openBookingModal(date, themes, slots, bookings) {
       selectedDate = date;
       const modal = document.getElementById('modal');
@@ -823,8 +842,6 @@
       `;
 
       const slotsContainer = document.getElementById('slotsContainer');
-
-      // ✅ FIX: Only treat Approved/Pending as booked (NOT Rejected)
       let hasAvailableSlots = false;
 
       slots.forEach(slot => {
@@ -849,7 +866,6 @@
           `;
           slotCard.onclick = () => showBookingDetails(existingBooking, date, themes);
         } else if (existingBooking && existingBooking.status === 'Rejected') {
-          // ✅ Show rejected bookings but allow re-booking
           slotCard.className = 'slot-card rejected';
           slotCard.innerHTML = `
             <div class="slot-header">
@@ -877,7 +893,6 @@
         slotsContainer.appendChild(slotCard);
       });
 
-      // ✅ NEW: Show "Fully Booked" message if no available slots
       if (!hasAvailableSlots) {
         slotsContainer.innerHTML = `
           <div class="fully-booked-message">
