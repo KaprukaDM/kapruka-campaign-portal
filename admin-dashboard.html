@@ -1238,6 +1238,15 @@
               <option value="approveddm">Approved by DM</option>
               <option value="rejecteddm">Rejected by DM</option>
             </select>
+            <label style="color:#5e3a8e;font-weight:600;margin-right:10px;margin-left:20px;">Filter by Person:</label>
+            <select id="studioPersonFilter" onchange="loadStudioCalendar()" style="padding:10px;border-radius:8px;border:2px solid #e8e8e8;font-size:14px;">
+              <option value="all">All Team Members</option>
+              <option value="Ashani">Ashani</option>
+              <option value="Kasun">Kasun</option>
+              <option value="Danoj">Danoj</option>
+              <option value="Kavindya">Kavindya</option>
+              <option value="unassigned">Unassigned</option>
+            </select>
           </div>
 
           <div class="calendar-grid" id="studioCalendarGrid">
@@ -1439,6 +1448,17 @@
 
   <script src="js/supabase-api.js"></script>
   <script>
+    // ═══════════════════════════════════════════════════════════
+    // TEAM MEMBERS LIST
+    // ═══════════════════════════════════════════════════════════
+    const TEAM_MEMBERS = [
+      'Ashani',
+      'Kasun',
+      'Danoj',
+      'Kavindya'
+      // Add more names as needed
+    ];
+
     // ═══════════════════════════════════════════════════════════
     // GLOBAL VARIABLES
     // ═══════════════════════════════════════════════════════════
@@ -2490,6 +2510,17 @@
             return true;
           });
         }
+
+        // ✅ NEW: PERSON FILTER
+        const personFilter = document.getElementById('studioPersonFilter')?.value || 'all';
+        if (personFilter !== 'all') {
+          data = data.filter(item => {
+            if (personFilter === 'unassigned') {
+              return !item.assigned_to || item.assigned_to === '';
+            }
+            return item.assigned_to === personFilter;
+          });
+        }
         
         studioCalendarData = data;
 
@@ -2619,6 +2650,7 @@
               <span class="slot-number">S${slotNum}</span>
               ${statusBadge}
               <span class="slot-page">${slotData.page_name || schedule.page}</span>
+              ${getAssignedPersonDisplay(slotData)}
               `;
               
               slotDiv.onclick = () => showSlotDetails(slotData, dateStr);
@@ -2678,6 +2710,7 @@
               <span class="slot-number">📅</span>
               ${statusBadge}
               <span class="slot-page">${displayText}</span>
+              ${getAssignedPersonDisplay(item)}
             `;
             
             slotDiv.onclick = () => showSlotDetails(item, dateStr);
@@ -2703,6 +2736,11 @@
       const statusOptions = ['Received', 'Working', 'Submitted for Review', 'Approved', 'Rejected by Head'].map(status => 
         `<option value="${status}" ${slotData.studio_status === status ? 'selected' : ''}>${status}</option>`
       ).join('');
+
+      // ✅ NEW: Team member options for assigned_to dropdown
+      const teamMemberOptions = TEAM_MEMBERS
+        .map(member => `<option value="${member}" ${slotData.assigned_to === member ? 'selected' : ''}>${member}</option>`)
+        .join('');
 
       const content = `
         <button class="close-modal" onclick="closeModal()">×</button>
@@ -2733,6 +2771,7 @@
               <strong style="color:#5e3a8e;">Reference Link:</strong> 
               ${slotData.reference_links ? `<a href="${slotData.reference_links}" target="_blank" style="color:#5e3a8e;">View</a>` : '-'}
             </div>
+            ${slotData.assigned_to ? `<div><strong style="color:#5e3a8e;">👤 Assigned To:</strong> <span style="background:#E3F2FD;padding:5px 12px;border-radius:20px;font-weight:600;">${slotData.assigned_to}</span></div>` : ''}
             <div>
               <strong style="color:#5e3a8e;">Current Status:</strong> 
               <span class="badge ${slotData.head_approved ? 'badge-approved' : slotData.studio_status === 'Working' ? 'badge-working' : 'badge-received'}">${slotData.approval_status || slotData.studio_status}</span>
@@ -2747,6 +2786,14 @@
             <label>Update Status</label>
             <select id="studioStatus" required>
               ${statusOptions}
+            </select>
+          </div>
+          <!-- ✅ NEW: Assigned To Dropdown (shows when status = Working) -->
+          <div class="form-group" id="assignedToGroup" style="display:none;">
+            <label>👤 Assign To</label>
+            <select id="assignedTo">
+              <option value="">-- Select Team Member --</option>
+              ${teamMemberOptions}
             </select>
           </div>
           <div class="form-group" id="contentLinkGroup" style="display:none;">
@@ -2776,14 +2823,20 @@
       const passwordGroup = document.getElementById('passwordGroup');
       const rejectionGroup = document.getElementById('rejectionGroup');
       const rejectionReasonGroup = document.getElementById('rejectionReasonGroup');
+      const assignedToGroup = document.getElementById('assignedToGroup'); // ✅ NEW
 
       statusSelect.addEventListener('change', () => {
         contentLinkGroup.style.display = 'none';
         passwordGroup.style.display = 'none';
         rejectionGroup.style.display = 'none';
         rejectionReasonGroup.style.display = 'none';
+        assignedToGroup.style.display = 'none'; // ✅ NEW
 
-        if (statusSelect.value === 'Submitted for Review') {
+        // ✅ NEW: Show assigned_to when status = Working
+        if (statusSelect.value === 'Working') {
+          assignedToGroup.style.display = 'block';
+        }
+        else if (statusSelect.value === 'Submitted for Review') {
           contentLinkGroup.style.display = 'block';
         } else if (statusSelect.value === 'Approved') {
           contentLinkGroup.style.display = 'block';
@@ -2804,6 +2857,7 @@
         const password = document.getElementById('approvalPassword')?.value;
         const rejectionPassword = document.getElementById('rejectionPassword')?.value;
         const rejectionReason = document.getElementById('rejectionReason')?.value;
+        const assignedTo = document.getElementById('assignedTo')?.value || null; // ✅ NEW
 
         try {
           showLoading();
@@ -2814,7 +2868,8 @@
             rejection_reason: rejectionReason || null,
             approved_by: 'Content Head',
             date: slotData.date,
-            page_name: slotData.page_name
+            page_name: slotData.page_name,
+            assigned_to: assignedTo // ✅ NEW: Save assigned person
           });
           
           closeModal();
@@ -2835,6 +2890,11 @@
           alert('Error: ' + error.message);
         }
       });
+    }
+
+    // ✅ NEW: Helper function to display assigned person in slots
+    function getAssignedPersonDisplay(slotData) {
+      return slotData.assigned_to ? `<div style="font-size:9px;margin-top:3px;color:#1976D2;">👤 ${slotData.assigned_to}</div>` : '';
     }
 
     function changeStudioMonth(delta) {
