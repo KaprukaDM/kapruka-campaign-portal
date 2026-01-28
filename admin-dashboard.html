@@ -2597,8 +2597,16 @@
               let statusBadge = '';
               if (isEmpty) {
                 statusBadge = '<span class="slot-status status-empty">Empty</span>';
+              } else if (slotData.approval_status === 'Approved by DM') {
+                statusBadge = '<span class="slot-status status-approved">✓ DM Approved</span>';
+              } else if (slotData.approval_status === 'Rejected by DM') {
+                statusBadge = '<span class="slot-status" style="background:#EF5350;color:white;">✗ DM Rejected</span>';
+              } else if (slotData.approval_status === 'Rejected by Head') {
+                statusBadge = '<span class="slot-status" style="background:#FF9800;color:white;">✗ Head Rejected</span>';
+              } else if (slotData.approval_status === 'Resubmitted for Review') {
+                statusBadge = '<span class="slot-status status-review">Resubmitted</span>';
               } else if (slotData.head_approved) {
-                statusBadge = '<span class="slot-status status-approved">✓ Approved</span>';
+                statusBadge = '<span class="slot-status status-approved">✓ Head Approved</span>';
               } else if (slotData.studio_status === 'Submitted for Review') {
                 statusBadge = '<span class="slot-status status-review">Review</span>';
               } else if (slotData.studio_status === 'Working') {
@@ -2632,8 +2640,16 @@
             slotDiv.className = 'slot-item content-calendar';
             
             let statusBadge = '';
-            if (item.head_approved) {
-              statusBadge = '<span class="slot-status status-approved">✓ Approved</span>';
+            if (item.approval_status === 'Approved by DM') {
+              statusBadge = '<span class="slot-status status-approved">✓ DM Approved</span>';
+            } else if (item.approval_status === 'Rejected by DM') {
+              statusBadge = '<span class="slot-status" style="background:#EF5350;color:white;">✗ DM Rejected</span>';
+            } else if (item.approval_status === 'Rejected by Head') {
+              statusBadge = '<span class="slot-status" style="background:#FF9800;color:white;">✗ Head Rejected</span>';
+            } else if (item.approval_status === 'Resubmitted for Review') {
+              statusBadge = '<span class="slot-status status-review">Resubmitted</span>';
+            } else if (item.head_approved) {
+              statusBadge = '<span class="slot-status status-approved">✓ Head Approved</span>';
             } else if (item.studio_status === 'Submitted for Review') {
               statusBadge = '<span class="slot-status status-review">Review</span>';
             } else if (item.studio_status === 'Working') {
@@ -2647,8 +2663,13 @@
               const category = item.content_details?.split('-')[1]?.trim() || '';
               displayText = `${category}${item.product_code ? ' • ' + item.product_code : ''}`;
             } else {
-              const category = item.content_details?.split('-')[1]?.trim() || '';
-              displayText = item.page_name || 'Daily Post';
+              // NEW: Show department name for extra content, page name for regular content
+              if (item.department) {
+                displayText = item.department;
+              } else {
+                const category = item.content_details?.split('-')[1]?.trim() || '';
+                displayText = item.page_name || 'Daily Post';
+              }
             }
             
             slotDiv.innerHTML = `
@@ -2789,10 +2810,20 @@
             date: slotData.date,
             page_name: slotData.page_name
           });
-          hideLoading();
+          
           closeModal();
+          
+          // Force complete reload - clear cache
+          studioCalendarData = [];
+          
+          // Wait for DB to update
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // Reload calendar with fresh data
+          await loadStudioCalendar();
+          
+          hideLoading();
           alert('✅ Status updated!');
-          loadStudioCalendar();
         } catch (error) {
           hideLoading();
           alert('Error: ' + error.message);
@@ -2826,6 +2857,18 @@
           <div class="form-group">
             <label>Date *</label>
             <input type="date" id="extraDate" required>
+          </div>
+          <div class="form-group">
+            <label>Department *</label>
+            <select id="extraDepartment" required>
+              <option value="">Select Department</option>
+              <option value="Kapruka Product">Kapruka Product</option>
+              <option value="Partner Central">Partner Central</option>
+              <option value="Global Shop">Global Shop</option>
+              <option value="Corporate Marketing">Corporate Marketing</option>
+              <option value="Top Management Request">Top Management Request</option>
+              <option value="Other Departments">Other Departments</option>
+            </select>
           </div>
           <div class="form-group">
             <label>Page *</label>
@@ -2863,6 +2906,7 @@
 
         const extraData = {
           date: document.getElementById('extraDate').value,
+          department: document.getElementById('extraDepartment').value,
           page_name: document.getElementById('extraPage').value,
           format: document.getElementById('extraFormat').value,
           content_details: document.getElementById('extraDetails').value,
