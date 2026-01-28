@@ -768,6 +768,77 @@
       font-size: 10px;
     }
 
+    /* NEW: DM Approvals Styles */
+    .dm-approval-item {
+      background: white;
+      border: 2px solid #e8e8e8;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 15px;
+      transition: var(--transition);
+    }
+
+    .dm-approval-item:hover {
+      border-color: var(--accent-gold);
+      box-shadow: var(--shadow-md);
+    }
+
+    .dm-approval-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .dm-approval-info {
+      flex: 1;
+      min-width: 250px;
+    }
+
+    .dm-approval-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .dm-field {
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+
+    .dm-field strong {
+      color: var(--primary-purple);
+      font-weight: 600;
+      margin-right: 8px;
+    }
+
+    .dm-field a {
+      color: #1976D2;
+      text-decoration: none;
+      word-break: break-all;
+    }
+
+    .dm-field a:hover {
+      text-decoration: underline;
+    }
+
+    .rejection-reason {
+      background: #FFEBEE;
+      border-left: 4px solid #D32F2F;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 10px;
+      font-size: 13px;
+    }
+
+    .rejection-reason strong {
+      color: #D32F2F;
+      display: block;
+      margin-bottom: 5px;
+    }
+
     /* Responsive */
     @media (max-width: 1200px) {
       .calendar-grid {
@@ -853,8 +924,9 @@
         <button class="tab-btn" onclick="switchTab('products')">💡 Lead Form Products Approval</button>
         <button class="tab-btn" onclick="switchTab('content')">📅 Content Calendar Approval</button>
         <button class="tab-btn" onclick="switchTab('studio')">🎬 Studio Calendar</button>
-        <button class="tab-btn" onclick="switchTab('hotproducts')">🔥 Hot Products</button>
+        <!-- NEW: DM Approvals Tab -->
         <button class="tab-btn" onclick="switchTab('dmapprovals')">✅ DM Approvals</button>
+        <button class="tab-btn" onclick="switchTab('hotproducts')">🔥 Hot Products</button>
         <button class="tab-btn" onclick="switchTab('departments')">🏢 Department Config</button>
         <button class="tab-btn" style="margin-left:auto;background:#d32f2f;" onclick="logout()">Logout</button>
       </div>
@@ -1152,6 +1224,7 @@
             <button onclick="changeStudioMonth(1)">Next ▶</button>
           </div>
 
+          <!-- UPDATED: Added new filter options -->
           <div style="margin-bottom:20px;">
             <label style="color:#5e3a8e;font-weight:600;margin-right:10px;">Filter by Status:</label>
             <select id="studioFilter" onchange="loadStudioCalendar()" style="padding:10px;border-radius:8px;border:2px solid #e8e8e8;font-size:14px;">
@@ -1159,7 +1232,11 @@
               <option value="received">Not Started (Received)</option>
               <option value="working">Working</option>
               <option value="submitted">Submitted for Review</option>
+              <option value="resubmitted">Resubmitted for Review</option>
               <option value="approved">Approved by Head</option>
+              <option value="rejectedhead">Rejected by Head</option>
+              <option value="approveddm">Approved by DM</option>
+              <option value="rejecteddm">Rejected by DM</option>
             </select>
           </div>
 
@@ -1172,6 +1249,49 @@
             <div class="calendar-day-header">Fri</div>
             <div class="calendar-day-header">Sat</div>
           </div>
+        </div>
+      </div>
+
+      <!-- NEW: DM APPROVALS TAB -->
+      <div id="tab-dmapprovals" class="tab-content">
+        <div class="card">
+          <h2>✅ Digital Marketing Approvals</h2>
+          
+          <div class="filters-container">
+            <div class="filter-group">
+              <label>Status</label>
+              <select id="filterDmStatus" onchange="applyDmFilters()">
+                <option value="">All Statuses</option>
+                <option value="Pending">Pending</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label>Source Type</label>
+              <select id="filterDmSource" onchange="applyDmFilters()">
+                <option value="">All Sources</option>
+                <option value="studio">Studio</option>
+                <option value="content_calendar">Content Calendar</option>
+                <option value="product_suggestion">Product Suggestion</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label>Page</label>
+              <select id="filterDmPage" onchange="applyDmFilters()">
+                <option value="">All Pages</option>
+                <option value="Kapruka FB">Kapruka FB</option>
+                <option value="Electronic Factory">Electronic Factory</option>
+                <option value="Social Mart">Social Mart</option>
+                <option value="Fashion Factory">Fashion Factory</option>
+                <option value="Toys Factory">Toys Factory</option>
+                <option value="Handbag Factory">Handbag Factory</option>
+                <option value="TikTok Video">TikTok Video</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="dmApprovalsContainer"></div>
         </div>
       </div>
 
@@ -1314,67 +1434,6 @@
           </div>
         </div>
       </div>
-
-      <!-- ============================================ -->
-      <!-- DM APPROVALS TAB -->
-      <!-- ============================================ -->
-      <div id="tab-dmapprovals" class="tab-content">
-        <div class="card">
-          <h2>✅ Digital Marketing Approvals</h2>
-          <p style="color:#666; margin-bottom:25px;">
-            Content approved by Head, pending DM review
-          </p>
-
-          <!-- Filters -->
-          <div class="filters-container">
-            <div class="filter-group">
-              <label>🔍 Search</label>
-              <input 
-                type="text" 
-                id="dmSearch" 
-                placeholder="Search by page, content ID..." 
-                oninput="filterDmApprovals()"
-              />
-            </div>
-
-            <div class="filter-group">
-              <label>Status</label>
-              <select id="dmStatusFilter" onchange="filterDmApprovals()">
-                <option value="">All Statuses</option>
-                <option value="Pending">Pending</option>
-                <option value="Approved">Approved</option>
-                <option value="Rejected">Rejected</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Table -->
-          <div class="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Content ID</th>
-                  <th>Date Approved</th>
-                  <th>Source</th>
-                  <th>Page</th>
-                  <th>Go Live Date</th>
-                  <th>Drive Link</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="dmApprovalsTable">
-                <tr>
-                  <td colspan="8" style="text-align:center; padding:40px;">
-                    Loading...
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
     </div>
   </div>
 
@@ -1390,10 +1449,11 @@
     let currentStudioYear = 2026;
     let studioCalendarData = [];
 
-    // NEW: Store original data for filtering
+    // Store original data for filtering
     let allRequests = [];
     let allProducts = [];
     let allContentBookings = [];
+    let allDmApprovals = []; // NEW
 
     // ═══════════════════════════════════════════════════════════
     // UTILITY FUNCTIONS
@@ -1415,7 +1475,7 @@
       document.getElementById('modal').style.display = 'none';
     }
 
-    // NEW: Date filter utilities
+    // Date filter utilities
     function getDateRange(filterType) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -1440,6 +1500,13 @@
       return date >= start && date < end;
     }
 
+    // NEW: Format date helper
+    function formatDate(dateString) {
+      if (!dateString) return 'N/A';
+      const d = new Date(dateString);
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
     // ═══════════════════════════════════════════════════════════
     // LOGIN & NAVIGATION
     // ═══════════════════════════════════════════════════════════
@@ -1462,7 +1529,7 @@
 
           setTimeout(() => {
             const hash = window.location.hash.substring(1);
-            if (hash && ['requests', 'products', 'content', 'studio', 'hotproducts', 'departments'].includes(hash)) {
+            if (hash && ['requests', 'products', 'content', 'studio', 'dmapprovals', 'hotproducts', 'departments'].includes(hash)) {
               switchTab(hash);
             }
           }, 300);
@@ -1547,7 +1614,10 @@
       const tabBtns = document.querySelectorAll('.tab-btn');
       tabBtns.forEach(btn => {
         const btnText = btn.textContent.toLowerCase();
-        if (btnText.includes(tab) || (tab === 'hotproducts' && btnText.includes('hot')) || (tab === 'departments' && btnText.includes('department'))) {
+        if (btnText.includes(tab) || 
+            (tab === 'hotproducts' && btnText.includes('hot')) || 
+            (tab === 'departments' && btnText.includes('department')) ||
+            (tab === 'dmapprovals' && btnText.includes('dm'))) {
           btn.classList.add('active');
         }
       });
@@ -1562,6 +1632,8 @@
         loadStudioCalendar();
       } else if (tab === 'departments') {
         loadDepartments();
+      } else if (tab === 'dmapprovals') { // NEW
+        loadDmApprovals();
       }
     }
     
@@ -2214,12 +2286,10 @@
       }).join('');
     }
 
-    // MODIFIED: Remove date prompt - use the booking date as go-live date
     async function approveContentBooking(id) {
       const reviewer = prompt('Enter your name:');
       if (!reviewer) return;
 
-      // Get the booking to use its date
       const booking = allContentBookings.find(b => b.id === id);
       if (!booking) {
         alert('Booking not found');
@@ -2231,7 +2301,7 @@
         await updateContentBooking(id, {
           status: 'Approved',
           reviewer,
-          goLiveDate: booking.date  // Use the booking date as go-live date
+          goLiveDate: booking.date
         });
         hideLoading();
         alert('✅ Booking approved and synced to Studio Calendar!');
@@ -2391,7 +2461,7 @@
     }
 
     // ═══════════════════════════════════════════════════════════
-    // STUDIO CALENDAR
+    // STUDIO CALENDAR (UPDATED WITH NEW FILTERS)
     // ═══════════════════════════════════════════════════════════
     async function loadStudioCalendar() {
       try {
@@ -2412,7 +2482,11 @@
             if (filterValue === 'received') return item.studio_status === 'Received';
             if (filterValue === 'working') return item.studio_status === 'Working';
             if (filterValue === 'submitted') return item.studio_status === 'Submitted for Review';
+            if (filterValue === 'resubmitted') return item.approval_status === 'Resubmitted for Review'; // NEW
             if (filterValue === 'approved') return item.head_approved === true;
+            if (filterValue === 'rejectedhead') return item.approval_status === 'Rejected by Head'; // NEW
+            if (filterValue === 'approveddm') return item.approval_status === 'Approved by DM'; // NEW
+            if (filterValue === 'rejecteddm') return item.approval_status === 'Rejected by DM'; // NEW
             return true;
           });
         }
@@ -2593,8 +2667,17 @@
       }
     }
 
+    // UPDATED: Added rejection reason display
     function showSlotDetails(slotData, dateStr) {
-      const statusOptions = ['Received', 'Working', 'Submitted for Review', 'Approved'].map(status => 
+      // NEW: Show rejection reasons if they exist
+      const rejectionInfo = slotData.head_rejection_reason || slotData.dm_rejection_reason ? `
+        <div style="background:#FFEBEE;padding:15px;border-radius:8px;margin-bottom:20px;border-left:4px solid #D32F2F;">
+          <strong style="color:#D32F2F;">❌ Rejection Reason:</strong>
+          <p style="margin-top:8px;">${slotData.head_rejection_reason || slotData.dm_rejection_reason}</p>
+        </div>
+      ` : '';
+
+      const statusOptions = ['Received', 'Working', 'Submitted for Review', 'Approved', 'Rejected by Head'].map(status => 
         `<option value="${status}" ${slotData.studio_status === status ? 'selected' : ''}>${status}</option>`
       ).join('');
 
@@ -2625,10 +2708,12 @@
             </div>
             <div>
               <strong style="color:#5e3a8e;">Current Status:</strong> 
-              <span class="badge ${slotData.head_approved ? 'badge-approved' : slotData.studio_status === 'Working' ? 'badge-working' : 'badge-received'}">${slotData.head_approved ? 'Approved by Head' : slotData.studio_status}</span>
+              <span class="badge ${slotData.head_approved ? 'badge-approved' : slotData.studio_status === 'Working' ? 'badge-working' : 'badge-received'}">${slotData.approval_status || slotData.studio_status}</span>
             </div>
           </div>
         </div>
+
+        ${rejectionInfo}
 
         <form id="updateStatusForm">
           <div class="form-group">
@@ -2645,6 +2730,14 @@
             <label>Head Approval Password *</label>
             <input type="password" id="approvalPassword" placeholder="Enter password">
           </div>
+          <div class="form-group" id="rejectionGroup" style="display:none;">
+            <label>Rejection Password *</label>
+            <input type="password" id="rejectionPassword" placeholder="Enter password">
+          </div>
+          <div class="form-group" id="rejectionReasonGroup" style="display:none;">
+            <label>Rejection Reason *</label>
+            <textarea id="rejectionReason" rows="3" placeholder="Explain why this content is being rejected..."></textarea>
+          </div>
           <button type="submit" class="btn btn-primary" style="width:100%;">Update Status</button>
         </form>
       `;
@@ -2654,17 +2747,23 @@
       const statusSelect = document.getElementById('studioStatus');
       const contentLinkGroup = document.getElementById('contentLinkGroup');
       const passwordGroup = document.getElementById('passwordGroup');
+      const rejectionGroup = document.getElementById('rejectionGroup');
+      const rejectionReasonGroup = document.getElementById('rejectionReasonGroup');
 
       statusSelect.addEventListener('change', () => {
+        contentLinkGroup.style.display = 'none';
+        passwordGroup.style.display = 'none';
+        rejectionGroup.style.display = 'none';
+        rejectionReasonGroup.style.display = 'none';
+
         if (statusSelect.value === 'Submitted for Review') {
           contentLinkGroup.style.display = 'block';
-          passwordGroup.style.display = 'none';
         } else if (statusSelect.value === 'Approved') {
           contentLinkGroup.style.display = 'block';
           passwordGroup.style.display = 'block';
-        } else {
-          contentLinkGroup.style.display = 'none';
-          passwordGroup.style.display = 'none';
+        } else if (statusSelect.value === 'Rejected by Head') {
+          rejectionGroup.style.display = 'block';
+          rejectionReasonGroup.style.display = 'block';
         }
       });
 
@@ -2676,14 +2775,19 @@
         const newStatus = document.getElementById('studioStatus').value;
         const contentLink = document.getElementById('contentLink')?.value;
         const password = document.getElementById('approvalPassword')?.value;
+        const rejectionPassword = document.getElementById('rejectionPassword')?.value;
+        const rejectionReason = document.getElementById('rejectionReason')?.value;
 
         try {
           showLoading();
           await updateStudioStatus(slotData.id, {
             studio_status: newStatus,
             content_link: contentLink || null,
-            password: password || null,
-            approved_by: 'Content Head'
+            password: password || rejectionPassword || null,
+            rejection_reason: rejectionReason || null,
+            approved_by: 'Content Head',
+            date: slotData.date,
+            page_name: slotData.page_name
           });
           hideLoading();
           closeModal();
@@ -2710,7 +2814,6 @@
       loadStudioCalendar();
     }
 
-    // MODIFIED: Format field changed to dropdown with specific options
     function openAddExtraContentModal() {
       const pageOptions = Object.values(PAGE_SCHEDULE).map(config => `
         <option value="${config.page}">${config.page}</option>
@@ -2774,6 +2877,165 @@
           closeModal();
           alert('✅ Extra content added!');
           loadStudioCalendar();
+        } catch (error) {
+          hideLoading();
+          alert('Error: ' + error.message);
+        }
+      });
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // NEW: DM APPROVALS
+    // ═══════════════════════════════════════════════════════════
+    async function loadDmApprovals() {
+      try {
+        showLoading();
+        allDmApprovals = await getDmApprovals();
+        hideLoading();
+        
+        applyDmFilters();
+      } catch (error) {
+        hideLoading();
+        alert('Error loading DM approvals: ' + error.message);
+      }
+    }
+
+    function applyDmFilters() {
+      const status = document.getElementById('filterDmStatus').value.toLowerCase();
+      const source = document.getElementById('filterDmSource').value.toLowerCase();
+      const page = document.getElementById('filterDmPage').value.toLowerCase();
+
+      const filtered = allDmApprovals.filter(dm => {
+        const matchStatus = !status || dm.dm_status.toLowerCase() === status;
+        const matchSource = !source || dm.source_type.toLowerCase() === source;
+        const matchPage = !page || (dm.page_name && dm.page_name.toLowerCase() === page);
+        return matchStatus && matchSource && matchPage;
+      });
+
+      renderDmApprovals(filtered);
+    }
+
+    function renderDmApprovals(approvals) {
+      const container = document.getElementById('dmApprovalsContainer');
+      
+      if (approvals.length === 0) {
+        container.innerHTML = '<p style="text-align:center;padding:40px;color:#999;">No approvals found</p>';
+        return;
+      }
+
+      container.innerHTML = approvals.map(dm => {
+        const rejectionHtml = dm.dm_rejection_reason ? `
+          <div class="rejection-reason">
+            <strong>Rejection Reason:</strong> ${dm.dm_rejection_reason}
+          </div>
+        ` : '';
+
+        const getStatusBadge = (status) => {
+          if (status === 'Pending') return '<span class="badge badge-pending">Pending</span>';
+          if (status === 'Approved') return '<span class="badge badge-approved">Approved</span>';
+          if (status === 'Rejected') return '<span class="badge badge-rejected">Rejected</span>';
+          return `<span class="badge">${status}</span>`;
+        };
+
+        return `
+          <div class="dm-approval-item">
+            <div class="dm-approval-header">
+              <div class="dm-approval-info">
+                <div class="dm-field">
+                  <strong>Content ID:</strong> ${dm.content_id}
+                </div>
+                <div class="dm-field">
+                  <strong>Source Type:</strong> ${dm.source_type}
+                </div>
+                ${dm.page_name ? `
+                  <div class="dm-field">
+                    <strong>Page:</strong> ${dm.page_name}
+                  </div>
+                ` : ''}
+                ${dm.drive_link ? `
+                  <div class="dm-field">
+                    <strong>Content Link:</strong> <a href="${dm.drive_link}" target="_blank">View Content</a>
+                  </div>
+                ` : ''}
+                ${dm.scheduled_live_date ? `
+                  <div class="dm-field">
+                    <strong>Scheduled Live Date:</strong> ${dm.scheduled_live_date}
+                  </div>
+                ` : ''}
+                <div class="dm-field">
+                  <strong>Status:</strong> ${getStatusBadge(dm.dm_status)}
+                </div>
+                ${dm.approved_at ? `
+                  <div class="dm-field">
+                    <strong>Approved At:</strong> ${formatDate(dm.approved_at)}
+                  </div>
+                ` : ''}
+                ${rejectionHtml}
+              </div>
+              <div class="dm-approval-actions">
+                ${dm.dm_status === 'Pending' ? `
+                  <button class="btn btn-success" onclick="approveDmContent(${dm.id})">✅ Approve</button>
+                  <button class="btn btn-danger" onclick="rejectDmContent(${dm.id})">❌ Reject</button>
+                ` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function approveDmContent(id) {
+      const approverName = prompt('Enter your name:');
+      if (!approverName) return;
+
+      const confirmMsg = 'Approve this content for publishing?';
+      if (!confirm(confirmMsg)) return;
+
+      try {
+        showLoading();
+        await updateDmApproval(id, {
+          dm_status: 'Approved',
+          approved_by: approverName
+        });
+        hideLoading();
+        alert('✅ Content approved!');
+        loadDmApprovals();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    }
+
+    function rejectDmContent(id) {
+      const content = `
+        <button class="close-modal" onclick="closeModal()">×</button>
+        <h3>❌ Reject Content</h3>
+        <form id="rejectDmForm">
+          <div class="form-group">
+            <label>Rejection Reason *</label>
+            <textarea id="dmRejectionReason" required rows="4" placeholder="Explain why this content is being rejected..."></textarea>
+          </div>
+          <button type="submit" class="btn btn-danger" style="width:100%;">Reject Content</button>
+        </form>
+      `;
+
+      showModal(content);
+
+      document.getElementById('rejectDmForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const reason = document.getElementById('dmRejectionReason').value;
+
+        try {
+          showLoading();
+          await updateDmApproval(id, {
+            dm_status: 'Rejected',
+            rejection_reason: reason
+          });
+          hideLoading();
+          closeModal();
+          alert('❌ Content rejected');
+          loadDmApprovals();
         } catch (error) {
           hideLoading();
           alert('Error: ' + error.message);
@@ -2945,219 +3207,6 @@
         alert('Error: ' + error.message);
       }
     }
-
-
-    let allDmApprovals = [];
-
-    // ═══════════════════════════════════════════════════════════
-    // DM APPROVALS
-    // ═══════════════════════════════════════════════════════════
-
-    async function loadDmApprovals() {
-      try {
-        showLoading();
-        allDmApprovals = await getDmApprovals();
-
-        // Enrich with studio_calendar data
-        for (const dm of allDmApprovals) {
-          const studioItem = await getStudioCalendarItem(dm.content_id);
-          if (studioItem) {
-            dm.studio_data = studioItem;
-            dm.page_name = studioItem.pagename;
-            dm.scheduled_live_date = studioItem.date;
-          }
-        }
-
-        renderDmApprovalsTable(allDmApprovals);
-        hideLoading();
-      } catch (error) {
-        hideLoading();
-        document.getElementById('dmApprovalsTable').innerHTML = `
-          <tr>
-            <td colspan="8" style="text-align:center; padding:40px; color:#d32f2f;">
-              Error: ${error.message}
-            </td>
-          </tr>
-        `;
-      }
-    }
-
-    function filterDmApprovals() {
-      const searchTerm = document.getElementById('dmSearch').value.toLowerCase();
-      const statusFilter = document.getElementById('dmStatusFilter').value;
-
-      let filtered = allDmApprovals;
-
-      // Search filter
-      if (searchTerm) {
-        filtered = filtered.filter(dm => 
-          (dm.page_name && dm.page_name.toLowerCase().includes(searchTerm)) ||
-          (dm.content_id && dm.content_id.toString().includes(searchTerm))
-        );
-      }
-
-      // Status filter
-      if (statusFilter) {
-        filtered = filtered.filter(dm => dm.dm_status === statusFilter);
-      }
-
-      renderDmApprovalsTable(filtered);
-    }
-
-    function renderDmApprovalsTable(dmApprovals) {
-      const tbody = document.getElementById('dmApprovalsTable');
-
-      if (dmApprovals.length === 0) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="8" style="text-align:center; padding:40px;">
-              No DM approvals found
-            </td>
-          </tr>
-        `;
-        return;
-      }
-
-      tbody.innerHTML = dmApprovals.map(dm => {
-        let badgeClass = 'badge-pending';
-        if (dm.dm_status === 'Approved') badgeClass = 'badge-approved';
-        if (dm.dm_status === 'Rejected') badgeClass = 'badge-rejected';
-
-        const approvedDate = dm.studio_data && dm.studio_data.headapprovedat 
-          ? new Date(dm.studio_data.headapprovedat).toLocaleDateString()
-          : new Date(dm.created_at).toLocaleDateString();
-
-        const driveLinkDisplay = dm.drive_link 
-          ? `<a href="${dm.drive_link}" target="_blank" style="color:#5e3a8e;">View</a>`
-          : '<span style="color:#999;">—</span>';
-
-        const actions = dm.dm_status === 'Pending' 
-          ? `
-            <button class="btn btn-success" onclick="approveDm(${dm.id})">
-              ✅ Approve
-            </button>
-            <button class="btn btn-danger" onclick="rejectDm(${dm.id})">
-              ❌ Reject
-            </button>
-            <button class="btn btn-warning" onclick="editDmLink(${dm.id})">
-              🔗 Edit Link
-            </button>
-          `
-          : `<span style="color:#999;">—</span>`;
-
-        return `
-          <tr>
-            <td>${dm.content_id}</td>
-            <td>${approvedDate}</td>
-            <td><span class="badge badge-received">${dm.source_type}</span></td>
-            <td>${dm.page_name || '—'}</td>
-            <td>${dm.scheduled_live_date || '—'}</td>
-            <td>${driveLinkDisplay}</td>
-            <td><span class="badge ${badgeClass}">${dm.dm_status}</span></td>
-            <td>
-              <div class="action-btns">
-                ${actions}
-              </div>
-            </td>
-          </tr>
-        `;
-      }).join('');
-    }
-
-    async function approveDm(dmId) {
-      const dmName = prompt('Enter your name (DM):');
-      if (!dmName) return;
-
-      try {
-        showLoading();
-
-        const dm = allDmApprovals.find(d => d.id === dmId);
-        if (!dm) throw new Error('DM approval not found');
-
-        // Update dm_approvals
-        await updateDmApproval(dmId, {
-          dm_status: 'Approved',
-          approved_at: new Date().toISOString(),
-          dm_rejection_reason: null,
-          updated_at: new Date().toISOString()
-        });
-
-        // Update studio_calendar
-        await supabaseQuery(`studio_calendar?id=eq.${dm.content_id}`, 'PATCH', {
-          approval_status: 'Approved by DM',
-          dm_approved_by: dmName,
-          dm_approved_at: new Date().toISOString(),
-          dm_rejection_reason: null
-        });
-
-        hideLoading();
-        alert('✅ Content approved by DM!');
-        loadDmApprovals();
-      } catch (error) {
-        hideLoading();
-        alert('Error: ' + error.message);
-      }
-    }
-
-    async function rejectDm(dmId) {
-      const reason = prompt('Enter rejection reason:');
-      if (!reason) return;
-
-      const dmName = prompt('Enter your name (DM):');
-      if (!dmName) return;
-
-      try {
-        showLoading();
-
-        const dm = allDmApprovals.find(d => d.id === dmId);
-        if (!dm) throw new Error('DM approval not found');
-
-        // Update dm_approvals
-        await updateDmApproval(dmId, {
-          dm_status: 'Rejected',
-          dm_rejection_reason: reason,
-          updated_at: new Date().toISOString()
-        });
-
-        // Update studio_calendar
-        await supabaseQuery(`studio_calendar?id=eq.${dm.content_id}`, 'PATCH', {
-          approval_status: 'Rejected by DM',
-          studio_status: 'Rejected',
-          dm_rejection_reason: reason,
-          dm_approved_by: dmName
-        });
-
-        hideLoading();
-        alert('❌ Content rejected by DM');
-        loadDmApprovals();
-      } catch (error) {
-        hideLoading();
-        alert('Error: ' + error.message);
-      }
-    }
-
-    async function editDmLink(dmId) {
-      const dm = allDmApprovals.find(d => d.id === dmId);
-      if (!dm) return;
-
-      const newLink = prompt('Enter Google Drive link:', dm.drive_link || '');
-      if (newLink === null) return;
-
-      try {
-        showLoading();
-        await updateDmApproval(dmId, {
-          drive_link: newLink,
-          updated_at: new Date().toISOString()
-        });
-        hideLoading();
-        alert('🔗 Drive link updated!');
-        loadDmApprovals();
-      } catch (error) {
-        hideLoading();
-        alert('Error: ' + error.message);
-      }
-    }
-
 
     // Initialize
     currentStudioMonth = 1;
