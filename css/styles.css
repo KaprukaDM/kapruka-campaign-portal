@@ -408,6 +408,32 @@ textarea {
 }
 
 /* ═══════════════════════════════════════════════════════════════
+   CALENDAR SLOT TEXT OVERFLOW FIX
+   ═══════════════════════════════════════════════════════════════ */
+
+.slot-page {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+  max-width: 100%;
+  line-height: 1.3;
+  font-size: 13px;
+  margin-top: 5px;
+}
+
+.slot-div {
+  overflow: hidden;
+  word-wrap: break-word;
+}
+
+.slots-container {
+  overflow: visible;
+}
+
+/* ═══════════════════════════════════════════════════════════════
    RESPONSIVE
    ═══════════════════════════════════════════════════════════════ */
 
