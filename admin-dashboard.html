@@ -1555,8 +1555,20 @@
     // ═══════════════════════════════════════════════════════════
     // UTILITY FUNCTIONS
     // ═══════════════════════════════════════════════════════════
+    // Overlay state helpers
+    let _previousBodyOverflow = '';
+    let _lastFocusedElement = null;
+    let _modalKeydownHandler = null;
+    let _modalClickHandler = null;
+
     function showLoading() {
       const loading = document.getElementById('loading');
+      // ensure overlay is last in DOM to avoid stacking context issues
+      if (loading.parentNode !== document.body) document.body.appendChild(loading);
+
+      _previousBodyOverflow = document.body.style.overflow || '';
+      document.body.style.overflow = 'hidden';
+
       loading.style.display = 'flex';
       loading.setAttribute('aria-hidden', 'false');
       document.body.classList.add('overlay-open');
@@ -1567,10 +1579,20 @@
       loading.style.display = 'none';
       loading.setAttribute('aria-hidden', 'true');
       document.body.classList.remove('overlay-open');
+
+      // restore scroll
+      document.body.style.overflow = _previousBodyOverflow || '';
     }
 
     function showModal(content) {
       const modal = document.getElementById('modal');
+      // ensure modal is appended to body so it can't be clipped by other stacking contexts
+      if (modal.parentNode !== document.body) document.body.appendChild(modal);
+
+      _lastFocusedElement = document.activeElement;
+      _previousBodyOverflow = document.body.style.overflow || '';
+      document.body.style.overflow = 'hidden';
+
       document.getElementById('modalContent').innerHTML = content;
       modal.style.display = 'flex';
       modal.setAttribute('aria-hidden', 'false');
@@ -1580,13 +1602,44 @@
       const focusTarget = modal.querySelector('#modalContent [tabindex], #modalContent button, #modalContent a, #modalContent input, #modalContent select, #modalContent textarea');
       if (focusTarget) focusTarget.focus();
       else modal.querySelector('#modalContent').focus();
+
+      // click outside to close
+      _modalClickHandler = (e) => {
+        if (e.target === modal) closeModal();
+      };
+      modal.addEventListener('click', _modalClickHandler);
+
+      // ESC to close
+      _modalKeydownHandler = (e) => {
+        if (e.key === 'Escape' || e.key === 'Esc') {
+          closeModal();
+        }
+      };
+      document.addEventListener('keydown', _modalKeydownHandler);
     }
 
     function closeModal() {
       const modal = document.getElementById('modal');
+
       modal.style.display = 'none';
       modal.setAttribute('aria-hidden', 'true');
+
+      // remove handlers
+      if (_modalClickHandler) {
+        modal.removeEventListener('click', _modalClickHandler);
+        _modalClickHandler = null;
+      }
+      if (_modalKeydownHandler) {
+        document.removeEventListener('keydown', _modalKeydownHandler);
+        _modalKeydownHandler = null;
+      }
+
       document.body.classList.remove('overlay-open');
+      document.body.style.overflow = _previousBodyOverflow || '';
+
+      // restore focus
+      try { if (_lastFocusedElement && typeof _lastFocusedElement.focus === 'function') _lastFocusedElement.focus(); } catch (err) {}
+      _lastFocusedElement = null;
     }
 
     // Date filter utilities
