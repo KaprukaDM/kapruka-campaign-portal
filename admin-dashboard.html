@@ -420,8 +420,9 @@
       display: none;
       align-items: center;
       justify-content: center;
-      z-index: 9999;
+      z-index: 2147483647 !important;
       backdrop-filter: blur(5px);
+      pointer-events: auto;
     }
 
     .spinner {
@@ -446,9 +447,10 @@
       display: none;
       align-items: center;
       justify-content: center;
-      z-index: 10000;
+      z-index: 2147483647 !important;
       padding: 20px;
       backdrop-filter: blur(5px);
+      pointer-events: auto;
     }
 
     .modal-content {
@@ -682,6 +684,12 @@
       position: relative;
       display: flex;
       flex-direction: column;
+      z-index: 0; /* ensure days are below global overlays */
+    }
+
+    /* Avoid hover stacking issues by keeping hover z-index lower than modals */
+    .calendar-day:hover {
+      z-index: 1;
     }
 
     .calendar-day:hover {
@@ -3379,5 +3387,6 @@
   </script>
 </body>
 </html>
+
 
 
