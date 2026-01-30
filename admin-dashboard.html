@@ -1632,27 +1632,53 @@
     let _modalKeydownHandler = null;
     let _modalClickHandler = null;
 
+    function _isAnyOverlayVisible() {
+      const modal = document.getElementById('modal');
+      const loading = document.getElementById('loading');
+      return (modal && modal.style.display && modal.style.display !== 'none') ||
+             (loading && loading.style.display && loading.style.display !== 'none');
+    }
+
+    function _updateBodyOverflowBasedOnOverlays() {
+      if (_isAnyOverlayVisible()) {
+        if (!document.body.classList.contains('overlay-open')) {
+          _previousBodyOverflow = document.body.style.overflow || '';
+          document.body.classList.add('overlay-open');
+        }
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = _previousBodyOverflow || '';
+        document.body.classList.remove('overlay-open');
+      }
+    }
+
+    // Developer helper to manually unlock page scroll if something goes wrong
+    function unlockScroll() {
+      const modal = document.getElementById('modal');
+      const loading = document.getElementById('loading');
+      if (modal) modal.style.display = 'none';
+      if (loading) loading.style.display = 'none';
+      document.body.classList.remove('overlay-open');
+      document.body.style.overflow = _previousBodyOverflow || '';
+      if (_modalClickHandler && modal) modal.removeEventListener('click', _modalClickHandler);
+      if (_modalKeydownHandler) { document.removeEventListener('keydown', _modalKeydownHandler); _modalKeydownHandler = null; }
+    }
+
     function showLoading() {
       const loading = document.getElementById('loading');
       // ensure overlay is last in DOM to avoid stacking context issues
       if (loading.parentNode !== document.body) document.body.appendChild(loading);
 
-      _previousBodyOverflow = document.body.style.overflow || '';
-      document.body.style.overflow = 'hidden';
-
       loading.style.display = 'flex';
       loading.setAttribute('aria-hidden', 'false');
-      document.body.classList.add('overlay-open');
+      _updateBodyOverflowBasedOnOverlays();
     }
 
     function hideLoading() {
       const loading = document.getElementById('loading');
       loading.style.display = 'none';
       loading.setAttribute('aria-hidden', 'true');
-      document.body.classList.remove('overlay-open');
-
-      // restore scroll
-      document.body.style.overflow = _previousBodyOverflow || '';
+      _updateBodyOverflowBasedOnOverlays();
     }
 
     function showModal(content) {
@@ -1661,13 +1687,10 @@
       if (modal.parentNode !== document.body) document.body.appendChild(modal);
 
       _lastFocusedElement = document.activeElement;
-      _previousBodyOverflow = document.body.style.overflow || '';
-      document.body.style.overflow = 'hidden';
 
       document.getElementById('modalContent').innerHTML = content;
       modal.style.display = 'flex';
       modal.setAttribute('aria-hidden', 'false');
-      document.body.classList.add('overlay-open');
 
       // Move focus into the modal for accessibility
       const focusTarget = modal.querySelector('#modalContent [tabindex], #modalContent button, #modalContent a, #modalContent input, #modalContent select, #modalContent textarea');
@@ -1687,6 +1710,8 @@
         }
       };
       document.addEventListener('keydown', _modalKeydownHandler);
+
+      _updateBodyOverflowBasedOnOverlays();
     }
 
     function closeModal() {
@@ -1705,12 +1730,11 @@
         _modalKeydownHandler = null;
       }
 
-      document.body.classList.remove('overlay-open');
-      document.body.style.overflow = _previousBodyOverflow || '';
-
       // restore focus
       try { if (_lastFocusedElement && typeof _lastFocusedElement.focus === 'function') _lastFocusedElement.focus(); } catch (err) {}
       _lastFocusedElement = null;
+
+      _updateBodyOverflowBasedOnOverlays();
     }
 
     // Date filter utilities
@@ -1773,6 +1797,9 @@
           }, 300);
         }
       }
+
+      // ensure scroll state is correct on load (recover from any stuck overlay state)
+      try { _updateBodyOverflowBasedOnOverlays(); } catch (err) { /* ignore */ }
     });
 
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
