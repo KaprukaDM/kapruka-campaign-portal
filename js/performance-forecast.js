@@ -29,17 +29,17 @@ const OBJECTIVE_INFO = {
     description: 'Drive website clicks. Forecast based on your historical traffic campaigns.',
     icon: '🔗'
   },
-  'APP_INSTALLS': {
+  APP_INSTALLS: {
     title: 'App Installs',
     description: 'Drive mobile app installations. Forecast based on your historical app install campaigns.',
     icon: '📱'
   },
-  'VIDEO_VIEWS': {
+  VIDEO_VIEWS: {
     title: 'Video Views',
     description: 'Maximize video views. Forecast based on your historical video campaigns.',
     icon: '🎥'
   },
-  'MESSAGES': {
+  MESSAGES: {
     title: 'Messages',
     description: 'Generate conversations via Messenger. Forecast based on your historical messaging campaigns.',
     icon: '💬'
@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Handle objective selection change
 function handleObjectiveChange() {
   const objective = objectiveSelect.value;
-  
+
   if (objective && OBJECTIVE_INFO[objective]) {
     const info = OBJECTIVE_INFO[objective];
     objectiveInfo.innerHTML = `
@@ -115,7 +115,7 @@ function syncBudgetValues() {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   });
-  
+
   if (value > 0) {
     budgetDisplay.style.display = 'flex';
   } else {
@@ -127,7 +127,7 @@ function syncBudgetValues() {
 function updateButtonState() {
   const objective = objectiveSelect.value;
   const budget = parseFloat(budgetInput.value) || 0;
-  
+
   forecastBtn.disabled = !objective || budget < 10;
 }
 
@@ -154,9 +154,9 @@ async function generateForecast() {
   try {
     // Call the forecast API with real data
     const result = await getPerformanceForecast(objective, budget);
-    
+
     if (!result.success) {
-      throw new Error('Failed to generate forecast');
+      throw new Error(result.error || 'Failed to generate forecast');
     }
 
     // Display results
@@ -176,10 +176,182 @@ async function generateForecast() {
   }
 }
 
+// Fetch historical data and generate forecast
+async function getPerformanceForecast(objective, budget) {
+  try {
+    // Fetch historical data from meta_ads_performance table
+    const historicalData = await fetchHistoricalData(objective);
+
+    if (!historicalData || historicalData.length === 0) {
+      throw new Error(`No historical data found for objective: ${objective}`);
+    }
+
+    // Calculate averages from historical data
+    const stats = calculateHistoricalStats(historicalData);
+
+    // Generate forecast based on budget and historical averages
+    const forecast = generateForecastFromStats(stats, budget, objective);
+
+    return {
+      success: true,
+      objective: objective,
+      budget: budget,
+      historicalData: stats,
+      forecast: forecast
+    };
+
+  } catch (error) {
+    console.error('getPerformanceForecast error:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+// Fetch historical data from Supabase
+async function fetchHistoricalData(objective) {
+  try {
+    // Map objectives to database objective names
+    const objectiveMapping = {
+      'CONVERSIONS': 'OUTCOME_SALES',
+      'LEAD_GENERATION': 'OUTCOME_LEADS',
+      'ENGAGEMENT': 'OUTCOME_ENGAGEMENT',
+      'REACH': 'OUTCOME_AWARENESS',
+      'TRAFFIC': 'OUTCOME_TRAFFIC',
+      'APP_INSTALLS': 'OUTCOME_APP_PROMOTION',
+      'VIDEO_VIEWS': 'OUTCOME_ENGAGEMENT',
+      'MESSAGES': 'OUTCOME_LEADS'
+    };
+
+    const dbObjective = objectiveMapping[objective] || objective;
+
+    // Fetch from meta_ads_performance table
+    const url = `${SUPABASE_URL}/rest/v1/meta_ads_performance?objective=eq.${encodeURIComponent(dbObjective)}&order=date.desc&limit=1000`;
+
+    const response = await fetch(url, {
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // If no data with exact objective match, fetch all data
+    if (!data || data.length === 0) {
+      const allUrl = `${SUPABASE_URL}/rest/v1/meta_ads_performance?order=date.desc&limit=1000`;
+      const allResponse = await fetch(allUrl, {
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!allResponse.ok) {
+        throw new Error(`API Error: ${allResponse.status}`);
+      }
+
+      return await allResponse.json();
+    }
+
+    return data;
+
+  } catch (error) {
+    console.error('fetchHistoricalData error:', error);
+    throw error;
+  }
+}
+
+// Calculate statistics from historical data
+function calculateHistoricalStats(data) {
+  let totalSpent = 0;
+  let totalReach = 0;
+  let totalImpressions = 0;
+  let totalClicks = 0;
+  let totalOrders = 0;
+  let totalResults = 0;
+  let recordCount = data.length;
+
+  data.forEach(row => {
+    totalSpent += parseFloat(row.amount_spent || 0);
+    totalReach += parseInt(row.reach || 0);
+    totalImpressions += parseInt(row.impression || 0);
+    totalClicks += parseInt(row.clicks || 0);
+    totalOrders += parseInt(row.if_direct_orders || 0);
+    totalResults += parseInt(row.results || 0);
+  });
+
+  // Calculate averages
+  const avgCPC = totalClicks > 0 ? totalSpent / totalClicks : 0.5;
+  const avgCPM = totalImpressions > 0 ? (totalSpent / totalImpressions) * 1000 : 5;
+  const avgCTR = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 1;
+  const avgConversionRate = totalClicks > 0 ? (totalOrders / totalClicks) * 100 : 2;
+  const avgCostPerOrder = totalOrders > 0 ? totalSpent / totalOrders : 20;
+  const avgReachPerDollar = totalSpent > 0 ? totalReach / totalSpent : 1000;
+  const avgImpressionsPerDollar = totalSpent > 0 ? totalImpressions / totalSpent : 1500;
+
+  return {
+    recordCount: recordCount,
+    totalSpent: totalSpent,
+    avgCPC: avgCPC,
+    avgCPM: avgCPM,
+    avgCTR: avgCTR,
+    avgConversionRate: avgConversionRate,
+    avgCostPerOrder: avgCostPerOrder,
+    avgReachPerDollar: avgReachPerDollar,
+    avgImpressionsPerDollar: avgImpressionsPerDollar
+  };
+}
+
+// Generate forecast from statistics and budget
+function generateForecastFromStats(stats, budget, objective) {
+  // Base calculations
+  const estimatedReach = Math.round(budget * stats.avgReachPerDollar);
+  const estimatedImpressions = Math.round(budget * stats.avgImpressionsPerDollar);
+  const estimatedClicks = Math.round(estimatedImpressions * (stats.avgCTR / 100));
+
+  // Conversion/order calculations
+  let estimatedOrders = 0;
+  let costPerOrder = 0;
+
+  if (objective === 'CONVERSIONS' || objective === 'LEAD_GENERATION') {
+    estimatedOrders = Math.round(estimatedClicks * (stats.avgConversionRate / 100));
+    costPerOrder = estimatedOrders > 0 ? budget / estimatedOrders : stats.avgCostPerOrder;
+
+    // Ensure at least some orders if budget is reasonable
+    if (estimatedOrders === 0 && budget >= stats.avgCostPerOrder) {
+      estimatedOrders = Math.floor(budget / stats.avgCostPerOrder);
+      costPerOrder = stats.avgCostPerOrder;
+    }
+  }
+
+  // Results for engagement/reach objectives
+  let estimatedResults = 0;
+  if (objective === 'ENGAGEMENT' || objective === 'REACH') {
+    estimatedResults = Math.round(estimatedClicks * 1.5); // Engagement is typically higher than clicks
+  }
+
+  return {
+    reach: estimatedReach,
+    impressions: estimatedImpressions,
+    clicks: estimatedClicks,
+    orders: estimatedOrders,
+    costPerOrder: costPerOrder,
+    results: estimatedResults
+  };
+}
+
 // Display forecast results based on real data
 function displayResults(data) {
   const { objective, budget, historicalData, forecast } = data;
-  
+
   // Build info banner about data source
   let infoBanner = `
     <div class="success-message" style="margin-bottom: 20px;">
@@ -187,10 +359,10 @@ function displayResults(data) {
       <small>Total historical spend analyzed: $${historicalData.totalSpent.toLocaleString('en-US', {minimumFractionDigits: 2})}</small>
     </div>
   `;
-  
+
   // Build results cards HTML
   let resultsHTML = infoBanner + '<div class="results-grid">';
-  
+
   // Primary metrics based on objective
   if (objective === 'CONVERSIONS' || objective === 'LEAD_GENERATION') {
     resultsHTML += `
@@ -206,7 +378,7 @@ function displayResults(data) {
       </div>
     `;
   }
-  
+
   // Always show: Reach, Impressions, Clicks
   resultsHTML += `
     <div class="result-card ${objective === 'REACH' ? 'primary' : ''}">
@@ -225,7 +397,7 @@ function displayResults(data) {
       <div class="result-unit">link clicks</div>
     </div>
   `;
-  
+
   // Show results for engagement/reach objectives
   if (forecast.results > 0 && (objective === 'ENGAGEMENT' || objective === 'REACH')) {
     resultsHTML += `
@@ -236,11 +408,11 @@ function displayResults(data) {
       </div>
     `;
   }
-  
+
   resultsHTML += '</div>';
-  
+
   resultsContainer.innerHTML = resultsHTML;
-  
+
   // Build detailed table with historical averages
   let tableHTML = `
     <tr>
@@ -267,7 +439,7 @@ function displayResults(data) {
       <td>From real data</td>
     </tr>
   `;
-  
+
   if (historicalData.avgConversionRate > 0) {
     tableHTML += `
       <tr>
@@ -282,7 +454,7 @@ function displayResults(data) {
       </tr>
     `;
   }
-  
+
   tableHTML += `
     <tr style="background: #f8f9fa;">
       <td colspan="3"><strong>🎯 Forecasted Performance</strong></td>
@@ -303,7 +475,7 @@ function displayResults(data) {
       <td>${Math.round(forecast.clicks * 0.80).toLocaleString()} - ${Math.round(forecast.clicks * 1.20).toLocaleString()}</td>
     </tr>
   `;
-  
+
   if (forecast.orders > 0) {
     tableHTML += `
       <tr>
@@ -318,7 +490,7 @@ function displayResults(data) {
       </tr>
     `;
   }
-  
+
   if (forecast.results > 0) {
     tableHTML += `
       <tr>
@@ -328,7 +500,7 @@ function displayResults(data) {
       </tr>
     `;
   }
-  
+
   tableBody.innerHTML = tableHTML;
   tableContainer.style.display = 'block';
 }
