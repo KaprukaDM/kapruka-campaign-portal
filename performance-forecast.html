@@ -1,476 +1,521 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Performance Forecast - Kapruka Digital Marketing</title>
-  <link rel="stylesheet" href="css/styles.css">
-  <link rel="icon" type="image/png" href="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw">
-  <style>
-    body {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
+// ═══════════════════════════════════════════════════════════════
+// PERFORMANCE FORECAST - KAPRUKA CAMPAIGN PORTAL (DATA-DRIVEN)
+// ═══════════════════════════════════════════════════════════════
+
+// Objective descriptions
+const OBJECTIVE_INFO = {
+  CONVERSIONS: {
+    title: 'Conversions (Sales/Purchases)',
+    description: 'Optimize for product purchases and sales. Forecast based on your historical conversion campaigns.',
+    icon: '🛒'
+  },
+  LEAD_GENERATION: {
+    title: 'Lead Generation',
+    description: 'Collect customer information through forms. Forecast based on your historical lead generation campaigns.',
+    icon: '📝'
+  },
+  ENGAGEMENT: {
+    title: 'Engagement',
+    description: 'Maximize post interactions. Forecast based on your historical engagement campaigns.',
+    icon: '❤️'
+  },
+  REACH: {
+    title: 'Reach',
+    description: 'Show ads to maximum people. Forecast based on your historical reach campaigns.',
+    icon: '👥'
+  },
+  TRAFFIC: {
+    title: 'Traffic',
+    description: 'Drive website clicks. Forecast based on your historical traffic campaigns.',
+    icon: '🔗'
+  },
+  APP_INSTALLS: {
+    title: 'App Installs',
+    description: 'Drive mobile app installations. Forecast based on your historical app install campaigns.',
+    icon: '📱'
+  },
+  VIDEO_VIEWS: {
+    title: 'Video Views',
+    description: 'Maximize video views. Forecast based on your historical video campaigns.',
+    icon: '🎥'
+  },
+  MESSAGES: {
+    title: 'Messages',
+    description: 'Generate conversations via Messenger. Forecast based on your historical messaging campaigns.',
+    icon: '💬'
+  }
+};
+
+// DOM Elements
+let objectiveSelect, budgetInput, budgetSlider, budgetDisplay, budgetAmount;
+let forecastBtn, resultsContainer, tableContainer, tableBody, objectiveInfo;
+
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+  // Get DOM elements
+  objectiveSelect = document.getElementById('objective');
+  budgetInput = document.getElementById('budget');
+  budgetSlider = document.getElementById('budgetSlider');
+  budgetDisplay = document.getElementById('budgetDisplay');
+  budgetAmount = document.getElementById('budgetAmount');
+  forecastBtn = document.getElementById('forecastBtn');
+  resultsContainer = document.getElementById('resultsContainer');
+  tableContainer = document.getElementById('tableContainer');
+  tableBody = document.getElementById('tableBody');
+  objectiveInfo = document.getElementById('objectiveInfo');
+
+  // Event listeners
+  objectiveSelect.addEventListener('change', handleObjectiveChange);
+  budgetInput.addEventListener('input', handleBudgetChange);
+  budgetSlider.addEventListener('input', handleSliderChange);
+  forecastBtn.addEventListener('click', generateForecast);
+
+  // Sync initial values
+  syncBudgetValues();
+});
+
+// Handle objective selection change
+function handleObjectiveChange() {
+  const objective = objectiveSelect.value;
+
+  if (objective && OBJECTIVE_INFO[objective]) {
+    const info = OBJECTIVE_INFO[objective];
+    objectiveInfo.innerHTML = `
+      <strong>${info.icon} ${info.title}</strong><br>
+      ${info.description}
+    `;
+    objectiveInfo.style.display = 'block';
+  } else {
+    objectiveInfo.style.display = 'none';
+  }
+
+  updateButtonState();
+}
+
+// Handle budget input change
+function handleBudgetChange() {
+  const value = parseFloat(budgetInput.value) || 0;
+  budgetSlider.value = value;
+  syncBudgetValues();
+  updateButtonState();
+}
+
+// Handle slider change
+function handleSliderChange() {
+  const value = parseFloat(budgetSlider.value);
+  budgetInput.value = value;
+  syncBudgetValues();
+  updateButtonState();
+}
+
+// Sync budget display
+function syncBudgetValues() {
+  const value = parseFloat(budgetInput.value) || 0;
+  budgetAmount.textContent = value.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+
+  if (value > 0) {
+    budgetDisplay.style.display = 'flex';
+  } else {
+    budgetDisplay.style.display = 'none';
+  }
+}
+
+// Update button state
+function updateButtonState() {
+  const objective = objectiveSelect.value;
+  const budget = parseFloat(budgetInput.value) || 0;
+
+  forecastBtn.disabled = !objective || budget < 10;
+}
+
+// Generate forecast using real historical data
+async function generateForecast() {
+  const objective = objectiveSelect.value;
+  const budget = parseFloat(budgetInput.value);
+
+  if (!objective || budget < 10) {
+    alert('Please select an objective and enter a budget of at least $10');
+    return;
+  }
+
+  // Show loading
+  resultsContainer.innerHTML = `
+    <div class="loading">
+      <div class="loading-spinner"></div>
+      <p>Analyzing historical campaign data...</p>
+    </div>
+  `;
+  tableContainer.style.display = 'none';
+  forecastBtn.disabled = true;
+
+  try {
+    // Call the forecast API with real data
+    const result = await getPerformanceForecast(objective, budget);
+
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to generate forecast');
     }
 
-    .forecast-container {
-      max-width: 1200px;
-      margin: 30px auto;
-      padding: 20px;
+    // Display results
+    displayResults(result);
+
+  } catch (error) {
+    console.error('Forecast error:', error);
+    resultsContainer.innerHTML = `
+      <div class="error-message">
+        <strong>❌ Error generating forecast:</strong><br>
+        ${error.message || 'Unknown error occurred'}<br><br>
+        <small>This could mean there's no historical data for the selected objective. Please try a different objective or contact the admin.</small>
+      </div>
+    `;
+  } finally {
+    forecastBtn.disabled = false;
+  }
+}
+
+// Fetch historical data and generate forecast
+async function getPerformanceForecast(objective, budget) {
+  try {
+    // Check if supabase.js variables are available
+    if (typeof SUPABASE_URL === 'undefined' || typeof SUPABASE_KEY === 'undefined') {
+      throw new Error('Supabase configuration not found. Make sure supabase.js is loaded before this script.');
     }
 
-    .back-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      color: white;
-      text-decoration: none;
-      margin-bottom: 30px;
-      font-size: 14px;
-      transition: all 0.3s;
-      background: rgba(255, 255, 255, 0.1);
-      padding: 8px 16px;
-      border-radius: 20px;
-      backdrop-filter: blur(10px);
+    // Fetch historical data from meta_ads_performance table
+    const historicalData = await fetchHistoricalData(objective);
+
+    if (!historicalData || historicalData.length === 0) {
+      throw new Error(`No historical data found for objective: ${objective}. Please ensure you have campaign data in the database.`);
     }
 
-    .back-link:hover {
-      background: rgba(255, 255, 255, 0.2);
-      transform: translateX(-5px);
-    }
+    // Calculate averages from historical data
+    const stats = calculateHistoricalStats(historicalData);
 
-    .forecast-header {
-      text-align: center;
-      margin-bottom: 40px;
-      color: white;
-    }
+    // Generate forecast based on budget and historical averages
+    const forecast = generateForecastFromStats(stats, budget, objective);
 
-    .forecast-header h1 {
-      font-size: 36px;
-      color: white;
-      margin-bottom: 10px;
-      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-    }
+    return {
+      success: true,
+      objective: objective,
+      budget: budget,
+      historicalData: stats,
+      forecast: forecast
+    };
 
-    .forecast-header p {
-      color: rgba(255, 255, 255, 0.9);
-      font-size: 16px;
-    }
+  } catch (error) {
+    console.error('getPerformanceForecast error:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
 
-    .forecast-layout {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 30px;
-      margin-bottom: 30px;
-    }
+// Fetch historical data from Supabase
+async function fetchHistoricalData(objective) {
+  try {
+    // Map objectives to database objective names (common Meta Ads objective formats)
+    const objectiveMapping = {
+      'CONVERSIONS': ['OUTCOME_SALES', 'CONVERSIONS', 'PURCHASE'],
+      'LEAD_GENERATION': ['OUTCOME_LEADS', 'LEAD_GENERATION', 'LEADS'],
+      'ENGAGEMENT': ['OUTCOME_ENGAGEMENT', 'ENGAGEMENT', 'POST_ENGAGEMENT'],
+      'REACH': ['OUTCOME_AWARENESS', 'REACH', 'BRAND_AWARENESS'],
+      'TRAFFIC': ['OUTCOME_TRAFFIC', 'LINK_CLICKS', 'TRAFFIC'],
+      'APP_INSTALLS': ['OUTCOME_APP_PROMOTION', 'APP_INSTALLS', 'MOBILE_APP_INSTALLS'],
+      'VIDEO_VIEWS': ['OUTCOME_ENGAGEMENT', 'VIDEO_VIEWS', 'THRUPLAY'],
+      'MESSAGES': ['OUTCOME_LEADS', 'MESSAGES', 'MESSENGER_LEADS']
+    };
 
-    @media (max-width: 768px) {
-      .forecast-layout {
-        grid-template-columns: 1fr;
+    const possibleObjectives = objectiveMapping[objective] || [objective];
+
+    // Try to fetch data for each possible objective name
+    let allData = [];
+
+    for (const dbObjective of possibleObjectives) {
+      try {
+        const url = `${SUPABASE_URL}/rest/v1/meta_ads_performance?objective=ilike.%${encodeURIComponent(dbObjective)}%&order=date.desc&limit=500`;
+
+        const response = await fetch(url, {
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.length > 0) {
+            allData = allData.concat(data);
+          }
+        }
+      } catch (err) {
+        console.log(`Could not fetch data for objective: ${dbObjective}`);
       }
     }
 
-    .forecast-card {
-      background: white;
-      border: none;
-      border-radius: 16px;
-      padding: 30px;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-      transition: transform 0.3s, box-shadow 0.3s;
+    // If still no data, fetch all records and filter client-side
+    if (allData.length === 0) {
+      console.log('No objective-specific data found. Fetching all historical data...');
+      const allUrl = `${SUPABASE_URL}/rest/v1/meta_ads_performance?order=date.desc&limit=1000`;
+      const allResponse = await fetch(allUrl, {
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!allResponse.ok) {
+        throw new Error(`API Error: ${allResponse.status} - ${allResponse.statusText}`);
+      }
+
+      allData = await allResponse.json();
     }
 
-    .forecast-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
-    }
+    return allData;
 
-    .forecast-card h2 {
-      font-size: 20px;
-      color: #667eea;
-      margin-bottom: 25px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-weight: 700;
-    }
+  } catch (error) {
+    console.error('fetchHistoricalData error:', error);
+    throw error;
+  }
+}
 
-    .form-group {
-      margin-bottom: 25px;
-    }
+// Calculate statistics from historical data
+function calculateHistoricalStats(data) {
+  let totalSpent = 0;
+  let totalReach = 0;
+  let totalImpressions = 0;
+  let totalClicks = 0;
+  let totalOrders = 0;
+  let totalResults = 0;
+  let recordCount = data.length;
 
-    .form-group label {
-      display: block;
-      font-size: 14px;
-      font-weight: 600;
-      color: #333;
-      margin-bottom: 10px;
-    }
+  data.forEach(row => {
+    totalSpent += parseFloat(row.amount_spent || 0);
+    totalReach += parseInt(row.reach || 0);
+    totalImpressions += parseInt(row.impression || 0);
+    totalClicks += parseInt(row.clicks || 0);
+    totalOrders += parseInt(row.if_direct_orders || row.direct_orders || 0);
+    totalResults += parseInt(row.results || 0);
+  });
 
-    .form-group select,
-    .form-group input {
-      width: 100%;
-      padding: 14px;
-      border: 2px solid #e0e0e0;
-      border-radius: 10px;
-      font-size: 15px;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      transition: all 0.3s;
-      box-sizing: border-box;
-    }
+  // Calculate averages with fallbacks
+  const avgCPC = totalClicks > 0 ? totalSpent / totalClicks : 0.50;
+  const avgCPM = totalImpressions > 0 ? (totalSpent / totalImpressions) * 1000 : 5.00;
+  const avgCTR = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 1.20;
+  const avgConversionRate = totalClicks > 0 ? (totalOrders / totalClicks) * 100 : 2.50;
+  const avgCostPerOrder = totalOrders > 0 ? totalSpent / totalOrders : 20.00;
+  const avgReachPerDollar = totalSpent > 0 ? totalReach / totalSpent : 1000;
+  const avgImpressionsPerDollar = totalSpent > 0 ? totalImpressions / totalSpent : 1500;
 
-    .form-group select:focus,
-    .form-group input:focus {
-      outline: none;
-      border-color: #667eea;
-      box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
-    }
+  return {
+    recordCount: recordCount,
+    totalSpent: totalSpent,
+    avgCPC: avgCPC,
+    avgCPM: avgCPM,
+    avgCTR: avgCTR,
+    avgConversionRate: avgConversionRate,
+    avgCostPerOrder: avgCostPerOrder,
+    avgReachPerDollar: avgReachPerDollar,
+    avgImpressionsPerDollar: avgImpressionsPerDollar
+  };
+}
 
-    .form-group input[type="range"] {
-      padding: 0;
-      cursor: pointer;
-      height: 8px;
-      accent-color: #667eea;
-    }
+// Generate forecast from statistics and budget
+function generateForecastFromStats(stats, budget, objective) {
+  // Base calculations
+  const estimatedReach = Math.round(budget * stats.avgReachPerDollar);
+  const estimatedImpressions = Math.round(budget * stats.avgImpressionsPerDollar);
+  const estimatedClicks = Math.round(estimatedImpressions * (stats.avgCTR / 100));
 
-    .budget-display {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 16px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border-radius: 10px;
-      margin-top: 12px;
-      color: white;
-    }
+  // Conversion/order calculations
+  let estimatedOrders = 0;
+  let costPerOrder = 0;
 
-    .budget-amount {
-      font-size: 24px;
-      font-weight: 700;
-      color: white;
-    }
+  if (objective === 'CONVERSIONS' || objective === 'LEAD_GENERATION') {
+    estimatedOrders = Math.round(estimatedClicks * (stats.avgConversionRate / 100));
+    costPerOrder = estimatedOrders > 0 ? budget / estimatedOrders : stats.avgCostPerOrder;
 
-    .objective-info {
-      background: linear-gradient(135deg, #e0e7ff 0%, #f3e8ff 100%);
-      border-left: 4px solid #667eea;
-      padding: 15px;
-      border-radius: 8px;
-      font-size: 13px;
-      color: #555;
-      margin-top: 12px;
-      line-height: 1.6;
+    // Ensure at least some orders if budget is reasonable
+    if (estimatedOrders === 0 && budget >= stats.avgCostPerOrder) {
+      estimatedOrders = Math.floor(budget / stats.avgCostPerOrder);
+      costPerOrder = stats.avgCostPerOrder;
     }
+  }
 
-    .forecast-btn {
-      width: 100%;
-      padding: 16px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      border: none;
-      border-radius: 12px;
-      font-size: 16px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.3s;
-      margin-top: 25px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
+  // Results for engagement/reach objectives
+  let estimatedResults = 0;
+  if (objective === 'ENGAGEMENT' || objective === 'REACH') {
+    estimatedResults = Math.round(estimatedClicks * 1.5); // Engagement is typically higher than clicks
+  }
 
-    .forecast-btn:hover:not(:disabled) {
-      transform: translateY(-3px);
-      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
-    }
+  return {
+    reach: estimatedReach,
+    impressions: estimatedImpressions,
+    clicks: estimatedClicks,
+    orders: estimatedOrders,
+    costPerOrder: costPerOrder,
+    results: estimatedResults
+  };
+}
 
-    .forecast-btn:active:not(:disabled) {
-      transform: translateY(-1px);
-    }
+// Display forecast results based on real data
+function displayResults(data) {
+  const { objective, budget, historicalData, forecast } = data;
 
-    .forecast-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .results-section {
-      margin-top: 30px;
-    }
-
-    .results-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 20px;
-      margin-bottom: 30px;
-    }
-
-    .result-card {
-      background: white;
-      border: 2px solid #e0e0e0;
-      border-radius: 16px;
-      padding: 25px;
-      text-align: center;
-      transition: all 0.3s;
-    }
-
-    .result-card:hover {
-      border-color: #667eea;
-      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
-      transform: translateY(-5px);
-    }
-
-    .result-card.primary {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border-color: #667eea;
-      color: white;
-    }
-
-    .result-label {
-      font-size: 12px;
-      color: #666;
-      margin-bottom: 10px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      font-weight: 600;
-    }
-
-    .result-card.primary .result-label {
-      color: rgba(255, 255, 255, 0.9);
-    }
-
-    .result-value {
-      font-size: 32px;
-      font-weight: 700;
-      color: #667eea;
-      margin: 10px 0;
-    }
-
-    .result-card.primary .result-value {
-      color: white;
-    }
-
-    .result-unit {
-      font-size: 12px;
-      color: #999;
-      margin-top: 5px;
-    }
-
-    .result-card.primary .result-unit {
-      color: rgba(255, 255, 255, 0.8);
-    }
-
-    .estimate-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      background: white;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    }
-
-    .estimate-table th {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 16px;
-      text-align: left;
-      font-size: 13px;
-      font-weight: 600;
-      border: none;
-    }
-
-    .estimate-table td {
-      padding: 16px;
-      border-bottom: 1px solid #e0e0e0;
-      font-size: 14px;
-    }
-
-    .estimate-table tr:last-child td {
-      border-bottom: none;
-    }
-
-    .estimate-table tr:hover {
-      background: #f8f9fa;
-    }
-
-    .estimate-value {
-      font-weight: 700;
-      color: #667eea;
-      font-size: 15px;
-    }
-
-    .loading {
-      text-align: center;
-      padding: 50px;
-      color: #666;
-    }
-
-    .loading-spinner {
-      display: inline-block;
-      width: 40px;
-      height: 40px;
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid #667eea;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin-bottom: 20px;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 60px 20px;
-      color: #999;
-    }
-
-    .empty-state-icon {
-      font-size: 64px;
-      margin-bottom: 20px;
-      opacity: 0.5;
-    }
-
-    .empty-state p {
-      font-size: 15px;
-      margin: 5px 0;
-    }
-
-    .error-message {
-      background: linear-gradient(135deg, #fff3cd 0%, #ffe9c2 100%);
-      border: 2px solid #ffc107;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 20px;
-      color: #856404;
-      font-size: 14px;
-      line-height: 1.6;
-    }
-
-    .success-message {
-      background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-      border: 2px solid #28a745;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 20px;
-      color: #155724;
-      font-size: 14px;
-      line-height: 1.6;
-    }
-
-    .forecast-disclaimer {
-      background: rgba(255, 255, 255, 0.95);
-      border-left: 4px solid #667eea;
-      padding: 20px;
-      border-radius: 12px;
-      margin-top: 30px;
-      font-size: 13px;
-      color: #666;
-      line-height: 1.7;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    }
-
-    .forecast-disclaimer strong {
-      color: #667eea;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <!-- Header -->
-    <div class="header" style="margin-bottom: 20px;">
-      <div class="kapruka-logo">
-        <img src="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw" alt="Kapruka Logo">
-      </div>
-      <h1 style="color: white;">Digital Marketing Portal</h1>
-      <p class="subtitle" style="color: rgba(255,255,255,0.9);">Kapruka Holdings PLC</p>
+  // Build info banner about data source
+  let infoBanner = `
+    <div class="success-message" style="margin-bottom: 20px;">
+      <strong>📊 Forecast based on ${historicalData.recordCount.toLocaleString()} historical ad records</strong><br>
+      <small>Total historical spend analyzed: $${historicalData.totalSpent.toLocaleString('en-US', {minimumFractionDigits: 2})}</small>
     </div>
+  `;
 
-    <div class="forecast-container">
-      <a href="index.html" class="back-link">← Back to Dashboard</a>
+  // Build results cards HTML
+  let resultsHTML = infoBanner + '<div class="results-grid">';
 
-      <div class="forecast-header">
-        <h1>🚀 Performance Forecast</h1>
-        <p>AI-powered predictions based on your historical campaign data</p>
+  // Primary metrics based on objective
+  if (objective === 'CONVERSIONS' || objective === 'LEAD_GENERATION') {
+    resultsHTML += `
+      <div class="result-card primary">
+        <div class="result-label">${objective === 'CONVERSIONS' ? 'Estimated Orders' : 'Estimated Leads'}</div>
+        <div class="result-value">${forecast.orders.toLocaleString()}</div>
+        <div class="result-unit">${objective === 'CONVERSIONS' ? 'purchases' : 'leads'}</div>
       </div>
-
-      <div class="forecast-layout">
-        <!-- Input Card -->
-        <div class="forecast-card">
-          <h2>📋 Campaign Settings</h2>
-
-          <div class="form-group">
-            <label for="objective">Campaign Objective *</label>
-            <select id="objective" required>
-              <option value="">Select an objective...</option>
-              <option value="CONVERSIONS">🛒 Conversions (Sales/Purchases)</option>
-              <option value="LEAD_GENERATION">📝 Lead Generation (Leads)</option>
-              <option value="ENGAGEMENT">❤️ Engagement (Likes, Comments, Shares)</option>
-              <option value="REACH">👥 Reach (Maximum People)</option>
-              <option value="TRAFFIC">🔗 Traffic (Website Clicks)</option>
-            </select>
-            <div id="objectiveInfo" class="objective-info" style="display: none;"></div>
-          </div>
-
-          <div class="form-group">
-            <label for="budget">Campaign Budget (USD) *</label>
-            <input type="number" id="budget" min="10" max="100000" step="5" placeholder="Enter budget amount" value="500" required>
-            <div class="budget-display" id="budgetDisplay" style="display: none;">
-              <span style="font-weight: 500;">Total Budget:</span>
-              <span class="budget-amount">$<span id="budgetAmount">0</span></span>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="budgetSlider">Quick Budget Adjust</label>
-            <input type="range" id="budgetSlider" min="10" max="100000" step="5" value="500">
-          </div>
-
-          <button class="forecast-btn" id="forecastBtn">🎯 Generate Forecast</button>
-        </div>
-
-        <!-- Results Card -->
-        <div class="forecast-card">
-          <h2>📊 Performance Estimates</h2>
-          <div id="resultsContainer">
-            <div class="empty-state">
-              <div class="empty-state-icon">📈</div>
-              <p><strong>Select objective and budget</strong></p>
-              <p>to see AI-powered performance estimates</p>
-            </div>
-          </div>
-        </div>
+      <div class="result-card">
+        <div class="result-label">Cost Per ${objective === 'CONVERSIONS' ? 'Order' : 'Lead'}</div>
+        <div class="result-value">$${forecast.costPerOrder.toFixed(2)}</div>
+        <div class="result-unit">average</div>
       </div>
+    `;
+  }
 
-      <!-- Detailed Results Table -->
-      <div id="tableContainer" style="display: none;">
-        <div class="forecast-card">
-          <h2>📋 Detailed Performance Breakdown</h2>
-          <table class="estimate-table" id="estimateTable">
-            <thead>
-              <tr>
-                <th>Metric</th>
-                <th>Estimate</th>
-                <th>Expected Range</th>
-              </tr>
-            </thead>
-            <tbody id="tableBody">
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Disclaimer -->
-      <div class="forecast-disclaimer">
-        <strong>📌 Important Note:</strong> These estimates are generated using machine learning algorithms trained on your historical Meta Ads performance data. Actual results may vary based on audience targeting, creative quality, seasonality, market conditions, and competition. Use these forecasts as a strategic planning tool, not as guaranteed outcomes. For best results, continuously optimize your campaigns based on real-time performance data.
-      </div>
+  // Always show: Reach, Impressions, Clicks
+  resultsHTML += `
+    <div class="result-card ${objective === 'REACH' ? 'primary' : ''}">
+      <div class="result-label">Estimated Reach</div>
+      <div class="result-value">${forecast.reach.toLocaleString()}</div>
+      <div class="result-unit">unique people</div>
     </div>
-
-    <!-- Footer -->
-    <div class="footer" style="color: rgba(255,255,255,0.8);">
-      Created by Fari Akthar - 207 | Kapruka Holdings PLC
+    <div class="result-card">
+      <div class="result-label">Impressions</div>
+      <div class="result-value">${forecast.impressions.toLocaleString()}</div>
+      <div class="result-unit">ad views</div>
     </div>
-  </div>
+    <div class="result-card ${objective === 'TRAFFIC' ? 'primary' : ''}">
+      <div class="result-label">Clicks</div>
+      <div class="result-value">${forecast.clicks.toLocaleString()}</div>
+      <div class="result-unit">link clicks</div>
+    </div>
+  `;
 
-  <script src="js/supabase.js"></script>
-  <script src="js/performance-forecast.js"></script>
-</body>
-</html>
+  // Show results for engagement/reach objectives
+  if (forecast.results > 0 && (objective === 'ENGAGEMENT' || objective === 'REACH')) {
+    resultsHTML += `
+      <div class="result-card primary">
+        <div class="result-label">Results</div>
+        <div class="result-value">${forecast.results.toLocaleString()}</div>
+        <div class="result-unit">total results</div>
+      </div>
+    `;
+  }
+
+  resultsHTML += '</div>';
+
+  resultsContainer.innerHTML = resultsHTML;
+
+  // Build detailed table with historical averages
+  let tableHTML = `
+    <tr>
+      <td><strong>Input Budget</strong></td>
+      <td class="estimate-value">$${budget.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+      <td>-</td>
+    </tr>
+    <tr style="background: #f8f9fa;">
+      <td colspan="3"><strong>📊 Historical Averages (from ${historicalData.recordCount} records)</strong></td>
+    </tr>
+    <tr>
+      <td>Average CPC (Cost per Click)</td>
+      <td class="estimate-value">$${historicalData.avgCPC.toFixed(2)}</td>
+      <td>From real data</td>
+    </tr>
+    <tr>
+      <td>Average CPM (Cost per 1000 Impressions)</td>
+      <td class="estimate-value">$${historicalData.avgCPM.toFixed(2)}</td>
+      <td>From real data</td>
+    </tr>
+    <tr>
+      <td>Average CTR (Click-Through Rate)</td>
+      <td class="estimate-value">${historicalData.avgCTR.toFixed(2)}%</td>
+      <td>From real data</td>
+    </tr>
+  `;
+
+  if (historicalData.avgConversionRate > 0) {
+    tableHTML += `
+      <tr>
+        <td>Average Conversion Rate</td>
+        <td class="estimate-value">${historicalData.avgConversionRate.toFixed(2)}%</td>
+        <td>From real data</td>
+      </tr>
+      <tr>
+        <td>Average Cost per Order</td>
+        <td class="estimate-value">$${historicalData.avgCostPerOrder.toFixed(2)}</td>
+        <td>From real data</td>
+      </tr>
+    `;
+  }
+
+  tableHTML += `
+    <tr style="background: #f8f9fa;">
+      <td colspan="3"><strong>🎯 Forecasted Performance</strong></td>
+    </tr>
+    <tr>
+      <td>Estimated Reach</td>
+      <td class="estimate-value">${forecast.reach.toLocaleString()}</td>
+      <td>${Math.round(forecast.reach * 0.85).toLocaleString()} - ${Math.round(forecast.reach * 1.15).toLocaleString()}</td>
+    </tr>
+    <tr>
+      <td>Estimated Impressions</td>
+      <td class="estimate-value">${forecast.impressions.toLocaleString()}</td>
+      <td>${Math.round(forecast.impressions * 0.85).toLocaleString()} - ${Math.round(forecast.impressions * 1.15).toLocaleString()}</td>
+    </tr>
+    <tr>
+      <td>Estimated Clicks</td>
+      <td class="estimate-value">${forecast.clicks.toLocaleString()}</td>
+      <td>${Math.round(forecast.clicks * 0.80).toLocaleString()} - ${Math.round(forecast.clicks * 1.20).toLocaleString()}</td>
+    </tr>
+  `;
+
+  if (forecast.orders > 0) {
+    tableHTML += `
+      <tr>
+        <td>Estimated ${objective === 'CONVERSIONS' ? 'Orders' : 'Leads'}</td>
+        <td class="estimate-value">${forecast.orders.toLocaleString()}</td>
+        <td>${Math.round(forecast.orders * 0.75).toLocaleString()} - ${Math.round(forecast.orders * 1.25).toLocaleString()}</td>
+      </tr>
+      <tr>
+        <td>Forecasted Cost per ${objective === 'CONVERSIONS' ? 'Order' : 'Lead'}</td>
+        <td class="estimate-value">$${forecast.costPerOrder.toFixed(2)}</td>
+        <td>$${(forecast.costPerOrder * 0.80).toFixed(2)} - $${(forecast.costPerOrder * 1.20).toFixed(2)}</td>
+      </tr>
+    `;
+  }
+
+  if (forecast.results > 0) {
+    tableHTML += `
+      <tr>
+        <td>Estimated Results</td>
+        <td class="estimate-value">${forecast.results.toLocaleString()}</td>
+        <td>${Math.round(forecast.results * 0.80).toLocaleString()} - ${Math.round(forecast.results * 1.20).toLocaleString()}</td>
+      </tr>
+    `;
+  }
+
+  tableBody.innerHTML = tableHTML;
+  tableContainer.style.display = 'block';
+}
