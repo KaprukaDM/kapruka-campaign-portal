@@ -1462,10 +1462,6 @@ async function searchProductPerformance(keyword, startDate, endDate) {
     throw error;
   }
 }
-// ═══════════════════════════════════════════════════════════════
-// PERFORMANCE FORECAST API (BASED ON HISTORICAL DATA)
-// ═══════════════════════════════════════════════════════════════
-
 async function getPerformanceForecast(objective, budget) {
   try {
     // Fetch all historical data for the specified objective
