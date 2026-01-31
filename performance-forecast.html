@@ -7,6 +7,11 @@
   <link rel="stylesheet" href="css/styles.css">
   <link rel="icon" type="image/png" href="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw">
   <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+
     .forecast-container {
       max-width: 1200px;
       margin: 30px auto;
@@ -17,31 +22,38 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      color: #007bff;
+      color: white;
       text-decoration: none;
       margin-bottom: 30px;
       font-size: 14px;
-      transition: color 0.3s;
+      transition: all 0.3s;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 8px 16px;
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
     }
 
     .back-link:hover {
-      color: #0056b3;
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateX(-5px);
     }
 
     .forecast-header {
       text-align: center;
       margin-bottom: 40px;
+      color: white;
     }
 
     .forecast-header h1 {
-      font-size: 28px;
-      color: #1a1a1a;
+      font-size: 36px;
+      color: white;
       margin-bottom: 10px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
     }
 
     .forecast-header p {
-      color: #666;
-      font-size: 14px;
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 16px;
     }
 
     .forecast-layout {
@@ -59,106 +71,117 @@
 
     .forecast-card {
       background: white;
-      border: 1px solid #e0e0e0;
-      border-radius: 8px;
+      border: none;
+      border-radius: 16px;
       padding: 30px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .forecast-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
     }
 
     .forecast-card h2 {
-      font-size: 18px;
-      color: #1a1a1a;
-      margin-bottom: 20px;
+      font-size: 20px;
+      color: #667eea;
+      margin-bottom: 25px;
       display: flex;
       align-items: center;
       gap: 10px;
+      font-weight: 700;
     }
 
     .form-group {
-      margin-bottom: 20px;
+      margin-bottom: 25px;
     }
 
     .form-group label {
       display: block;
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 600;
       color: #333;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
     }
 
     .form-group select,
     .form-group input {
       width: 100%;
-      padding: 12px;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      font-size: 14px;
+      padding: 14px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 15px;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      transition: border-color 0.3s;
+      transition: all 0.3s;
       box-sizing: border-box;
     }
 
     .form-group select:focus,
     .form-group input:focus {
       outline: none;
-      border-color: #007bff;
-      box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+      border-color: #667eea;
+      box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
     }
 
     .form-group input[type="range"] {
       padding: 0;
       cursor: pointer;
       height: 8px;
+      accent-color: #667eea;
     }
 
     .budget-display {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 12px;
-      background: #f8f9fa;
-      border-radius: 6px;
-      margin-top: 8px;
+      padding: 16px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 10px;
+      margin-top: 12px;
+      color: white;
     }
 
     .budget-amount {
-      font-size: 20px;
+      font-size: 24px;
       font-weight: 700;
-      color: #007bff;
+      color: white;
     }
 
     .objective-info {
-      background: #f0f4ff;
-      border-left: 3px solid #007bff;
-      padding: 12px;
-      border-radius: 4px;
-      font-size: 12px;
+      background: linear-gradient(135deg, #e0e7ff 0%, #f3e8ff 100%);
+      border-left: 4px solid #667eea;
+      padding: 15px;
+      border-radius: 8px;
+      font-size: 13px;
       color: #555;
-      margin-bottom: 15px;
-      line-height: 1.5;
+      margin-top: 12px;
+      line-height: 1.6;
     }
 
     .forecast-btn {
       width: 100%;
-      padding: 14px;
-      background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+      padding: 16px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
       border: none;
-      border-radius: 6px;
-      font-size: 14px;
-      font-weight: 600;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
       cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
-      margin-top: 20px;
+      transition: all 0.3s;
+      margin-top: 25px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
 
     .forecast-btn:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(0, 123, 255, 0.3);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
     }
 
     .forecast-btn:active:not(:disabled) {
-      transform: translateY(0);
+      transform: translateY(-1px);
     }
 
     .forecast-btn:disabled {
@@ -172,53 +195,64 @@
 
     .results-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 15px;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 20px;
       margin-bottom: 30px;
     }
 
     .result-card {
       background: white;
-      border: 1px solid #e0e0e0;
-      border-radius: 8px;
-      padding: 20px;
+      border: 2px solid #e0e0e0;
+      border-radius: 16px;
+      padding: 25px;
       text-align: center;
       transition: all 0.3s;
     }
 
     .result-card:hover {
-      border-color: #007bff;
-      box-shadow: 0 4px 12px rgba(0, 123, 255, 0.15);
+      border-color: #667eea;
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
+      transform: translateY(-5px);
     }
 
     .result-card.primary {
-      background: linear-gradient(135deg, #f0f4ff 0%, #e8ecff 100%);
-      border-color: #007bff;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-color: #667eea;
+      color: white;
     }
 
     .result-label {
       font-size: 12px;
       color: #666;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 1px;
       font-weight: 600;
     }
 
+    .result-card.primary .result-label {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
     .result-value {
-      font-size: 28px;
+      font-size: 32px;
       font-weight: 700;
-      color: #007bff;
+      color: #667eea;
+      margin: 10px 0;
     }
 
     .result-card.primary .result-value {
-      color: #0056b3;
+      color: white;
     }
 
     .result-unit {
-      font-size: 11px;
+      font-size: 12px;
       color: #999;
-      margin-top: 4px;
+      margin-top: 5px;
+    }
+
+    .result-card.primary .result-unit {
+      color: rgba(255, 255, 255, 0.8);
     }
 
     .estimate-table {
@@ -226,25 +260,25 @@
       border-collapse: collapse;
       margin-top: 20px;
       background: white;
-      border-radius: 8px;
+      border-radius: 12px;
       overflow: hidden;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     }
 
     .estimate-table th {
-      background: #f8f9fa;
-      padding: 14px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 16px;
       text-align: left;
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 600;
-      color: #333;
-      border-bottom: 2px solid #e0e0e0;
+      border: none;
     }
 
     .estimate-table td {
-      padding: 14px;
+      padding: 16px;
       border-bottom: 1px solid #e0e0e0;
-      font-size: 13px;
+      font-size: 14px;
     }
 
     .estimate-table tr:last-child td {
@@ -256,25 +290,26 @@
     }
 
     .estimate-value {
-      font-weight: 600;
-      color: #007bff;
+      font-weight: 700;
+      color: #667eea;
+      font-size: 15px;
     }
 
     .loading {
       text-align: center;
-      padding: 40px;
+      padding: 50px;
       color: #666;
     }
 
     .loading-spinner {
       display: inline-block;
-      width: 30px;
-      height: 30px;
-      border: 3px solid #f3f3f3;
-      border-top: 3px solid #007bff;
+      width: 40px;
+      height: 40px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
       border-radius: 50%;
       animation: spin 1s linear infinite;
-      margin-bottom: 15px;
+      margin-bottom: 20px;
     }
 
     @keyframes spin {
@@ -289,49 +324,52 @@
     }
 
     .empty-state-icon {
-      font-size: 48px;
-      margin-bottom: 15px;
+      font-size: 64px;
+      margin-bottom: 20px;
       opacity: 0.5;
     }
 
     .empty-state p {
-      font-size: 14px;
+      font-size: 15px;
       margin: 5px 0;
     }
 
     .error-message {
-      background: #fff3cd;
-      border: 1px solid #ffc107;
-      border-radius: 6px;
-      padding: 15px;
+      background: linear-gradient(135deg, #fff3cd 0%, #ffe9c2 100%);
+      border: 2px solid #ffc107;
+      border-radius: 12px;
+      padding: 20px;
       margin-bottom: 20px;
       color: #856404;
-      font-size: 13px;
-    }
-
-    .success-message {
-      background: #d4edda;
-      border: 1px solid #28a745;
-      border-radius: 6px;
-      padding: 15px;
-      margin-bottom: 20px;
-      color: #155724;
-      font-size: 13px;
-    }
-
-    .forecast-disclaimer {
-      background: #f0f4ff;
-      border-left: 3px solid #007bff;
-      padding: 15px;
-      border-radius: 4px;
-      margin-top: 30px;
-      font-size: 12px;
-      color: #666;
+      font-size: 14px;
       line-height: 1.6;
     }
 
+    .success-message {
+      background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+      border: 2px solid #28a745;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      color: #155724;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .forecast-disclaimer {
+      background: rgba(255, 255, 255, 0.95);
+      border-left: 4px solid #667eea;
+      padding: 20px;
+      border-radius: 12px;
+      margin-top: 30px;
+      font-size: 13px;
+      color: #666;
+      line-height: 1.7;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
     .forecast-disclaimer strong {
-      color: #333;
+      color: #667eea;
     }
   </style>
 </head>
@@ -342,8 +380,8 @@
       <div class="kapruka-logo">
         <img src="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw" alt="Kapruka Logo">
       </div>
-      <h1>Digital Marketing Portal</h1>
-      <p class="subtitle">Kapruka Holdings PLC</p>
+      <h1 style="color: white;">Digital Marketing Portal</h1>
+      <p class="subtitle" style="color: rgba(255,255,255,0.9);">Kapruka Holdings PLC</p>
     </div>
 
     <div class="forecast-container">
@@ -351,7 +389,7 @@
 
       <div class="forecast-header">
         <h1>🚀 Performance Forecast</h1>
-        <p>Estimate your campaign performance based on objective and budget</p>
+        <p>AI-powered predictions based on your historical campaign data</p>
       </div>
 
       <div class="forecast-layout">
@@ -376,17 +414,17 @@
             <label for="budget">Campaign Budget (USD) *</label>
             <input type="number" id="budget" min="10" max="100000" step="5" placeholder="Enter budget amount" value="500" required>
             <div class="budget-display" id="budgetDisplay" style="display: none;">
-              <span>Total Budget:</span>
+              <span style="font-weight: 500;">Total Budget:</span>
               <span class="budget-amount">$<span id="budgetAmount">0</span></span>
             </div>
           </div>
 
           <div class="form-group">
-            <label for="budgetSlider">Budget Slider</label>
+            <label for="budgetSlider">Quick Budget Adjust</label>
             <input type="range" id="budgetSlider" min="10" max="100000" step="5" value="500">
           </div>
 
-          <button class="forecast-btn" id="forecastBtn">Generate Forecast</button>
+          <button class="forecast-btn" id="forecastBtn">🎯 Generate Forecast</button>
         </div>
 
         <!-- Results Card -->
@@ -396,7 +434,7 @@
             <div class="empty-state">
               <div class="empty-state-icon">📈</div>
               <p><strong>Select objective and budget</strong></p>
-              <p>to see performance estimates</p>
+              <p>to see AI-powered performance estimates</p>
             </div>
           </div>
         </div>
@@ -405,13 +443,13 @@
       <!-- Detailed Results Table -->
       <div id="tableContainer" style="display: none;">
         <div class="forecast-card">
-          <h2>📋 Detailed Breakdown</h2>
+          <h2>📋 Detailed Performance Breakdown</h2>
           <table class="estimate-table" id="estimateTable">
             <thead>
               <tr>
                 <th>Metric</th>
                 <th>Estimate</th>
-                <th>Range</th>
+                <th>Expected Range</th>
               </tr>
             </thead>
             <tbody id="tableBody">
@@ -422,31 +460,17 @@
 
       <!-- Disclaimer -->
       <div class="forecast-disclaimer">
-        <strong>📌 Important Note:</strong> These estimates are based on historical campaign data from your Meta Ads Performance database. Actual results may vary based on audience targeting, creative quality, seasonality, and market conditions. Use these forecasts as a planning tool, not as guaranteed outcomes.
+        <strong>📌 Important Note:</strong> These estimates are generated using machine learning algorithms trained on your historical Meta Ads performance data. Actual results may vary based on audience targeting, creative quality, seasonality, market conditions, and competition. Use these forecasts as a strategic planning tool, not as guaranteed outcomes. For best results, continuously optimize your campaigns based on real-time performance data.
       </div>
     </div>
 
     <!-- Footer -->
-    <div class="footer">
+    <div class="footer" style="color: rgba(255,255,255,0.8);">
       Created by Fari Akthar - 207 | Kapruka Holdings PLC
     </div>
   </div>
 
   <script src="js/supabase.js"></script>
   <script src="js/performance-forecast.js"></script>
-  <script>
-    // Ensure button is enabled when page loads if both objective and budget are set
-    document.addEventListener('DOMContentLoaded', function() {
-      setTimeout(() => {
-        const objective = document.getElementById('objective').value;
-        const budget = document.getElementById('budget').value;
-        const btn = document.getElementById('forecastBtn');
-        
-        if (objective || (budget && budget > 0)) {
-          btn.disabled = false;
-        }
-      }, 100);
-    });
-  </script>
 </body>
 </html>
