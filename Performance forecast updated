@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Performance Forecast - Kapruka Digital Marketing</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .forecast-container {
+      max-width: 1200px;
+      margin: 30px auto;
+      padding: 20px;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #007bff;
+      text-decoration: none;
+      margin-bottom: 30px;
+      font-size: 14px;
+      transition: color 0.3s;
+    }
+
+    .back-link:hover {
+      color: #0056b3;
+    }
+
+    .forecast-header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .forecast-header h1 {
+      font-size: 28px;
+      color: #1a1a1a;
+      margin-bottom: 10px;
+    }
+
+    .forecast-header p {
+      color: #666;
+      font-size: 14px;
+    }
+
+    .forecast-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      margin-bottom: 30px;
+    }
+
+    @media (max-width: 768px) {
+      .forecast-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .forecast-card {
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .forecast-card h2 {
+      font-size: 18px;
+      color: #1a1a1a;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 8px;
+    }
+
+    .form-group select,
+    .form-group input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      transition: border-color 0.3s;
+    }
+
+    .form-group select:focus,
+    .form-group input:focus {
+      outline: none;
+      border-color: #007bff;
+      box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    }
+
+    .form-group input[type="range"] {
+      padding: 0;
+      cursor: pointer;
+      height: 8px;
+    }
+
+    .budget-display {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      margin-top: 8px;
+    }
+
+    .budget-amount {
+      font-size: 20px;
+      font-weight: 700;
+      color: #007bff;
+    }
+
+    .objective-info {
+      background: #f0f4ff;
+      border-left: 3px solid #007bff;
+      padding: 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      color: #555;
+      margin-bottom: 15px;
+      line-height: 1.5;
+    }
+
+    .forecast-btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      margin-top: 20px;
+    }
+
+    .forecast-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0, 123, 255, 0.3);
+    }
+
+    .forecast-btn:active {
+      transform: translateY(0);
+    }
+
+    .forecast-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .results-section {
+      margin-top: 30px;
+    }
+
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    .result-card {
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      transition: all 0.3s;
+    }
+
+    .result-card:hover {
+      border-color: #007bff;
+      box-shadow: 0 4px 12px rgba(0, 123, 255, 0.15);
+    }
+
+    .result-card.primary {
+      background: linear-gradient(135deg, #f0f4ff 0%, #e8ecff 100%);
+      border-color: #007bff;
+    }
+
+    .result-label {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+
+    .result-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: #007bff;
+    }
+
+    .result-card.primary .result-value {
+      color: #0056b3;
+    }
+
+    .result-unit {
+      font-size: 11px;
+      color: #999;
+      margin-top: 4px;
+    }
+
+    .estimate-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .estimate-table th {
+      background: #f8f9fa;
+      padding: 14px;
+      text-align: left;
+      font-size: 12px;
+      font-weight: 600;
+      color: #333;
+      border-bottom: 2px solid #e0e0e0;
+    }
+
+    .estimate-table td {
+      padding: 14px;
+      border-bottom: 1px solid #e0e0e0;
+      font-size: 13px;
+    }
+
+    .estimate-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .estimate-table tr:hover {
+      background: #f8f9fa;
+    }
+
+    .estimate-value {
+      font-weight: 600;
+      color: #007bff;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 30px;
+      height: 30px;
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #007bff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 15px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #999;
+    }
+
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 15px;
+      opacity: 0.5;
+    }
+
+    .empty-state p {
+      font-size: 14px;
+      margin: 5px 0;
+    }
+
+    .error-message {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      border-radius: 6px;
+      padding: 15px;
+      margin-bottom: 20px;
+      color: #856404;
+      font-size: 13px;
+    }
+
+    .success-message {
+      background: #d4edda;
+      border: 1px solid #28a745;
+      border-radius: 6px;
+      padding: 15px;
+      margin-bottom: 20px;
+      color: #155724;
+      font-size: 13px;
+    }
+
+    .forecast-disclaimer {
+      background: #f0f4ff;
+      border-left: 3px solid #007bff;
+      padding: 15px;
+      border-radius: 4px;
+      margin-top: 30px;
+      font-size: 12px;
+      color: #666;
+      line-height: 1.6;
+    }
+
+    .forecast-disclaimer strong {
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header" style="margin-bottom: 20px;">
+      <div class="kapruka-logo">
+        <img src="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw" alt="Kapruka Logo">
+      </div>
+      <h1>Digital Marketing Portal</h1>
+      <p class="subtitle">Kapruka Holdings PLC</p>
+    </div>
+
+    <div class="forecast-container">
+      <a href="index.html" class="back-link">← Back to Dashboard</a>
+
+      <div class="forecast-header">
+        <h1>🚀 Performance Forecast</h1>
+        <p>Estimate your campaign performance based on objective and budget</p>
+      </div>
+
+      <div class="forecast-layout">
+        <!-- Input Card -->
+        <div class="forecast-card">
+          <h2>📋 Campaign Settings</h2>
+
+          <div class="form-group">
+            <label for="objective">Campaign Objective *</label>
+            <select id="objective" required>
+              <option value="">Select an objective...</option>
+              <option value="CONVERSIONS">🛒 Conversions (Sales/Purchases)</option>
+              <option value="LEAD_GENERATION">📝 Lead Generation (Leads)</option>
+              <option value="ENGAGEMENT">❤️ Engagement (Likes, Comments, Shares)</option>
+              <option value="REACH">👥 Reach (Maximum People)</option>
+              <option value="TRAFFIC">🔗 Traffic (Website Clicks)</option>
+            </select>
+            <div id="objectiveInfo" class="objective-info" style="display: none;"></div>
+          </div>
+
+          <div class="form-group">
+            <label for="budget">Budget (USD) *</label>
+            <input type="number" id="budget" min="10" max="100000" step="5" placeholder="Enter budget amount" required>
+            <div class="budget-display" id="budgetDisplay" style="display: none;">
+              <span>Total Budget:</span>
+              <span class="budget-amount">$<span id="budgetAmount">0</span></span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="budgetSlider">Budget Slider</label>
+            <input type="range" id="budgetSlider" min="10" max="100000" step="5" value="500">
+          </div>
+
+          <button class="forecast-btn" id="forecastBtn" disabled>Generate Forecast</button>
+        </div>
+
+        <!-- Results Card -->
+        <div class="forecast-card">
+          <h2>📊 Performance Estimates</h2>
+          <div id="resultsContainer">
+            <div class="empty-state">
+              <div class="empty-state-icon">📈</div>
+              <p><strong>Select objective and budget</strong></p>
+              <p>to see performance estimates</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detailed Results Table -->
+      <div id="tableContainer" style="display: none;">
+        <div class="forecast-card">
+          <h2>📋 Detailed Breakdown</h2>
+          <table class="estimate-table" id="estimateTable">
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th>Estimate</th>
+                <th>Range</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody">
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Disclaimer -->
+      <div class="forecast-disclaimer">
+        <strong>📌 Important Note:</strong> These estimates are based on historical campaign data from your Meta Ads Performance database. Actual results may vary based on audience targeting, creative quality, seasonality, and market conditions. Use these forecasts as a planning tool, not as guaranteed outcomes.
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      Created by Fari Akthar - 207 | Kapruka Holdings PLC
+    </div>
+  </div>
+
+  <script src="js/supabase.js"></script>
+  <script src="js/performance-forecast.js"></script>
+</body>
+</html>
