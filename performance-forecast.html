@@ -94,6 +94,7 @@
       font-size: 14px;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       transition: border-color 0.3s;
+      box-sizing: border-box;
     }
 
     .form-group select:focus,
@@ -146,21 +147,21 @@
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
+      transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
       margin-top: 20px;
     }
 
-    .forecast-btn:hover {
+    .forecast-btn:hover:not(:disabled) {
       transform: translateY(-2px);
       box-shadow: 0 6px 16px rgba(0, 123, 255, 0.3);
     }
 
-    .forecast-btn:active {
+    .forecast-btn:active:not(:disabled) {
       transform: translateY(0);
     }
 
     .forecast-btn:disabled {
-      opacity: 0.6;
+      opacity: 0.5;
       cursor: not-allowed;
     }
 
@@ -170,7 +171,7 @@
 
     .results-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       gap: 15px;
       margin-bottom: 30px;
     }
@@ -371,7 +372,7 @@
           </div>
 
           <div class="form-group">
-            <label for="budget">Budget (USD) *</label>
+            <label for="budget">Campaign Budget (USD) *</label>
             <input type="number" id="budget" min="10" max="100000" step="5" placeholder="Enter budget amount" required>
             <div class="budget-display" id="budgetDisplay" style="display: none;">
               <span>Total Budget:</span>
