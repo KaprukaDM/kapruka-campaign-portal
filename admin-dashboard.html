@@ -3,160 +3,3588 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kapruka Digital Marketing Portal</title>
-  <link rel="stylesheet" href="css/styles.css">
+  <title>Admin Dashboard - Kapruka</title>
   <link rel="icon" type="image/png" href="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --primary-purple: #5e3a8e;
+      --primary-purple-dark: #3d2461;
+      --primary-purple-darker: #1a0b2e;
+      --accent-gold: #FFD700;
+      --bg-gradient: linear-gradient(135deg, #1a0b2e 0%, #3d2461 50%, #5e3a8e 100%);
+      --card-bg: rgba(255,255,255,0.98);
+      --border-radius: 16px;
+      --border-radius-lg: 24px;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.1);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.15);
+      --shadow-lg: 0 8px 32px rgba(0,0,0,0.2);
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-gradient);
+      min-height: 100vh;
+      padding: 30px 20px;
+      color: #333;
+    }
+
+    .container { 
+      max-width: 1800px; 
+      margin: 0 auto; 
+    }
+
+    /* Header */
+    .header { 
+      text-align: center; 
+      margin-bottom: 40px; 
+    }
+
+    .kapruka-logo {
+      width: 100px;
+      height: 100px;
+      margin: 0 auto 25px;
+      border-radius: 50%;
+      overflow: hidden;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+      animation: float 3s ease-in-out infinite;
+      border: 4px solid rgba(255,215,0,0.3);
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .kapruka-logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 42px;
+      background: linear-gradient(135deg, #FFD700, #FFF, #FFD700);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    .subtitle {
+      color: rgba(255,255,255,0.85);
+      font-size: 14px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+
+    /* Login Card */
+    .login-card {
+      background: var(--card-bg);
+      padding: 45px;
+      border-radius: var(--border-radius-lg);
+      box-shadow: var(--shadow-lg);
+      max-width: 420px;
+      margin: 0 auto;
+    }
+
+    .login-card h2 {
+      font-family: 'Playfair Display', serif;
+      color: var(--primary-purple);
+      font-size: 26px;
+      margin-bottom: 25px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .admin-content { display: none; }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+      background: rgba(255,255,255,0.1);
+      padding: 12px;
+      border-radius: var(--border-radius);
+      backdrop-filter: blur(10px);
+    }
+
+    .tab-btn {
+      padding: 12px 24px;
+      background: rgba(255,255,255,0.15);
+      color: white;
+      border: 2px solid rgba(255,255,255,0.2);
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: var(--transition);
+      backdrop-filter: blur(5px);
+      white-space: nowrap;
+    }
+
+    .tab-btn:hover {
+      background: rgba(255,215,0,0.25);
+      border-color: var(--accent-gold);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(255,215,0,0.2);
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, var(--primary-purple), var(--primary-purple-dark));
+      border-color: var(--accent-gold);
+      box-shadow: 0 4px 16px rgba(255,215,0,0.3);
+      transform: translateY(-2px);
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Cards */
+    .card {
+      background: var(--card-bg);
+      padding: 32px;
+      border-radius: var(--border-radius-lg);
+      box-shadow: var(--shadow-lg);
+      margin-bottom: 25px;
+      overflow-x: auto; /* FIX #3 - allow card horizontal scroll on narrow screens */
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .card h2 {
+      font-family: 'Playfair Display', serif;
+      color: var(--primary-purple);
+      font-size: 26px;
+      margin-bottom: 20px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Filters */
+    .filters-container {
+      background: #f9f9f9;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      align-items: end;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .filter-group label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--primary-purple);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .filter-group input,
+    .filter-group select {
+      padding: 10px 12px;
+      border: 2px solid #e8e8e8;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      transition: var(--transition);
+    }
+
+    .filter-group input:focus,
+    .filter-group select:focus {
+      outline: none;
+      border-color: var(--accent-gold);
+      box-shadow: 0 0 0 3px rgba(255,215,0,0.1);
+    }
+
+    /* Make studio filters easier to tap/read */
+    #studioFilter, #studioPersonFilter {
+      min-width: 220px;
+      background: #fff;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .filter-help {
+      font-size: 12px;
+      color: #666;
+      margin-top: 6px;
+    }
+
+    .date-range-inputs {
+      display: none;
+      grid-column: 1 / -1;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-top: 10px;
+    }
+
+    .date-range-inputs.active {
+      display: grid;
+    }
+
+    /* Forms */
+    .form-group { margin-bottom: 18px; }
+
+    label {
+      display: block;
+      color: var(--primary-purple);
+      font-weight: 600;
+      margin-bottom: 8px;
+      font-size: 13px;
+      letter-spacing: 0.3px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid #e8e8e8;
+      border-radius: 12px;
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      transition: var(--transition);
+      background: #fff;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent-gold);
+      box-shadow: 0 0 0 4px rgba(255,215,0,0.1);
+    }
+
+    input:hover, select:hover, textarea:hover {
+      border-color: #d0d0d0;
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 12px 28px;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary-purple), var(--primary-purple-dark));
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(94,58,142,0.4);
+    }
+
+    .btn-warning {
+      background: linear-gradient(135deg, #FFA726, #F57C00);
+      color: white;
+    }
+
+    .btn-warning:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(245,124,0,0.4);
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, #66BB6A, #43A047);
+      color: white;
+    }
+
+    .btn-success:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(67,160,71,0.4);
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, #EF5350, #E53935);
+      color: white;
+    }
+
+    .btn-danger:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(229,57,53,0.4);
+    }
+
+    .btn-complete {
+      background: linear-gradient(135deg, #9E9E9E, #757575);
+      color: white;
+    }
+
+    .btn-complete:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(117,117,117,0.4);
+    }
+
+    /* Tables */
+    .table-container {
+      overflow-x: auto;
+      margin-top: 20px;
+      border-radius: 12px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+    }
+
+    th {
+      background: linear-gradient(135deg, var(--primary-purple), var(--primary-purple-dark));
+      color: white;
+      padding: 16px 14px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 14px;
+      border-bottom: 1px solid #f5f5f5;
+      font-size: 13px;
+      vertical-align: middle;
+    }
+
+    tr:hover { 
+      background: #fafafa; 
+      transition: background 0.2s;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-block;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .badge-submitted { background: #E1BEE7; color: #4A148C; }
+    .badge-working { background: #FFF9C4; color: #F57F17; }
+    .badge-live { background: #C8E6C9; color: #1B5E20; }
+    .badge-completed { background: #E0E0E0; color: #424242; }
+    .badge-rejected { background: #FFCDD2; color: #C62828; }
+    .badge-pending { background: #FFF9C4; color: #F57F17; }
+    .badge-approved { background: #C8E6C9; color: #1B5E20; }
+    .badge-received { background: #E3F2FD; color: #1565C0; }
+    .badge-review { background: #FFF3E0; color: #E65100; }
+
+    /* Action Buttons */
+    .action-btns {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .action-btns button {
+      padding: 7px 14px;
+      font-size: 12px;
+    }
+
+    /* Loading */
+    .loading {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.85);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2147483647 !important;
+      backdrop-filter: blur(5px);
+      pointer-events: auto;
+    }
+
+    .spinner {
+      width: 60px;
+      height: 60px;
+      border: 5px solid rgba(255,215,0,0.3);
+      border-top-color: var(--accent-gold);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Modal */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.85);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2147483647 !important;
+      padding: 20px;
+      backdrop-filter: blur(5px);
+      pointer-events: auto;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 35px;
+      border-radius: var(--border-radius-lg);
+      max-width: 800px;
+      max-height: 90vh;
+      overflow-y: auto;
+      position: relative;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+
+    .modal-content input,
+    .modal-content select,
+    .modal-content textarea {
+      padding: 10px 12px;
+      font-size: 14px;
+      border-radius: 8px;
+      border: 1px solid #e0e0e0;
+    }
+
+    .modal h3 {
+      font-family: 'Playfair Display', serif;
+      color: var(--primary-purple);
+      font-size: 22px;
+      margin-bottom: 20px;
+      font-weight: 700;
+    }
+
+    .close-modal {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: #f5f5f5;
+      border: none;
+      font-size: 28px;
+      cursor: pointer;
+      color: #666;
+      line-height: 1;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+    }
+
+    .close-modal:hover { 
+      background: #e0e0e0;
+      color: #333;
+      transform: rotate(90deg);
+    }
+
+    /* Checkboxes and Radio */
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      padding: 10px;
+      border-radius: 8px;
+      transition: var(--transition);
+    }
+
+    .checkbox-label:hover {
+      background: #f9f9f9;
+    }
+
+    .checkbox-label input {
+      width: auto;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    .radio-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .radio-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      padding: 12px;
+      border: 2px solid #e8e8e8;
+      border-radius: 10px;
+      transition: var(--transition);
+      background: white;
+    }
+
+    .radio-label:hover {
+      border-color: var(--accent-gold);
+      background: #fffef0;
+      transform: translateX(4px);
+    }
+
+    .radio-label input {
+      width: auto;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    /* Stats */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 18px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      padding: 22px;
+      border-radius: 14px;
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition);
+    }
+
+    .stat-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-md);
+    }
+
+    /* Calendar */
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .month-nav {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .month-nav button {
+      background: var(--primary-purple);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: var(--transition);
+      font-size: 14px;
+    }
+
+    .month-nav button:hover {
+      background: var(--primary-purple-dark);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .month-nav h3 {
+      font-size: 22px;
+      color: var(--primary-purple);
+      min-width: 200px;
+      text-align: center;
+      margin: 0;
+      font-weight: 700;
+    }
+
+    .dashboard-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 14px;
+      margin-bottom: 30px;
+    }
+
+    .dashboard-stat {
+      padding: 18px;
+      border-radius: 14px;
+      text-align: center;
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition);
+    }
+
+    .dashboard-stat:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      opacity: 0.8;
+      letter-spacing: 0.5px;
+    }
+
+    /* ===== STUDIO CALENDAR LAYOUT (RESPONSIVE) ===== */
+    .studio-calendar-wrapper {
+      overflow-x: auto; /* FIX #1 - allow horizontal scroll instead of breaking layout */
+      -webkit-overflow-scrolling: touch;
+      margin-top: 12px;
+    }
+
+    .calendar-container {
+      min-width: 100%;
+    }
+
+    .calendar-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .calendar-grid {
+      display: grid;
+      gap: 12px;
+      margin-top: 12px;
+      grid-template-columns: repeat(7, minmax(140px, 1fr)); /* FIX #2 - desktop base */
+    }
+
+    /* Mobile/Tablet breakpoints - progressive shrink of minimum cell width */
+    @media (max-width: 1200px) {
+      .calendar-grid { grid-template-columns: repeat(7, minmax(120px, 1fr)); }
+    }
+    @media (max-width: 992px) {
+      .calendar-grid { grid-template-columns: repeat(7, minmax(100px, 1fr)); }
+    }
+    @media (max-width: 768px) {
+      .calendar-grid { grid-template-columns: repeat(7, minmax(80px, 1fr)); }
+      .month-nav { gap: 12px; }
+    }
+    @media (max-width: 480px) {
+      .calendar-grid { grid-template-columns: repeat(7, minmax(60px, 1fr)); }
+      .month-nav { flex-direction: column; gap: 8px; align-items: stretch; }
+      .month-nav button { width: 100%; padding: 12px; font-size: 14px; }
+    }
+
+    /* Small floating add button for each day */
+    .day-add-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: none;
+      background: var(--primary-purple);
+      color: white;
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 5;
+    }
+
+    .day-add-btn:focus { outline: 2px solid rgba(255,215,0,0.4); }
+
+    .calendar-day-header {
+      background: var(--primary-purple);
+      color: white;
+      padding: 14px;
+      text-align: center;
+      font-weight: 700;
+      border-radius: 10px;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .calendar-day {
+      background: white;
+      border: 2px solid #e8e8e8;
+      border-radius: 14px;
+      min-height: 180px;
+      padding: 12px;
+      cursor: pointer;
+      transition: var(--transition);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      z-index: 0; /* ensure days are below global overlays */
+    }
+
+    /* Avoid hover stacking issues by keeping hover z-index lower than modals */
+    .calendar-day:hover {
+      z-index: 1;
+    }
+
+    .calendar-day:hover {
+      border-color: var(--accent-gold);
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-md);
+    }
+
+    /* When an overlay is active, visually de-emphasize calendar and disable interaction */
+    .overlay-open .calendar-day,
+    .overlay-open .calendar-day * {
+      pointer-events: none !important;
+      user-select: none !important;
+      opacity: 0.6;
+      filter: blur(1px) saturate(0.9);
+    }
+
+    .overlay-open .tabs,
+    .overlay-open .tabs * {
+      pointer-events: none !important;
+    }
+
+    .calendar-day.empty {
+      background: #f5f5f5;
+      cursor: default;
+      opacity: 0.6;
+    }
+
+    .calendar-day.empty:hover {
+      transform: none;
+      box-shadow: none;
+      border-color: #e8e8e8;
+    }
+
+    .day-number {
+      font-weight: 700;
+      color: var(--primary-purple);
+      font-size: 17px;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #e8e8e8;
+    }
+
+    .day-slots {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .slot-item {
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 12px;
+      line-height: 1.3;
+      margin-bottom: 8px;
+      border-left: 3px solid;
+      background: white;
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition);
+      word-break: break-word; /* FIX #3 - wrap long text */
+      overflow-wrap: anywhere;
+      white-space: normal;
+    }
+
+    .slot-item:hover {
+      transform: translateX(4px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .slot-item.lead-form {
+      background: #E3F2FD;
+      border-left-color: #1976D2;
+    }
+
+    .slot-item.lead-form.booked {
+      background: #C8E6C9;
+      border-left-color: #43A047;
+    }
+
+    .slot-item.lead-form.empty {
+      background: #f5f5f5;
+      border-left-color: #bdbdbd;
+      color: #999;
+    }
+
+    .slot-item.content-calendar {
+      background: #FFF9C4;
+      border-left-color: #F57C00;
+    }
+
+    .slot-item.tiktok {
+      background: #F3E5F5;
+      border-left-color: #8E24AA;
+    }
+
+    .slot-number {
+      font-weight: 700;
+      font-size: 11px;
+      display: inline-block;
+      min-width: 34px;
+    }
+
+    .slot-status {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: 800;
+      margin-left: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .slot-page {
+      display: inline-block;
+      max-width: calc(100% - 120px);
+      vertical-align: middle;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+      margin-left: 6px;
+      font-weight: 600;
+    }
+
+    .status-empty { background: #e0e0e0; color: #666; }
+    .status-booked { background: #81C784; color: #1B5E20; }
+    .status-received { background: #90CAF9; color: #0D47A1; }
+    .status-working { background: #FFB74D; color: #E65100; }
+    .status-review { background: #FFD54F; color: #F57F00; }
+    .status-approved { background: #66BB6A; color: #1B5E20; }
+
+    .slot-page {
+      display: block;
+      font-weight: 600;
+      color: var(--primary-purple);
+      margin-top: 3px;
+      font-size: 10px;
+    }
+
+    /* NEW: DM Approvals Styles */
+    .dm-approval-item {
+      background: white;
+      border: 2px solid #e8e8e8;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 15px;
+      transition: var(--transition);
+    }
+
+    .dm-approval-item:hover {
+      border-color: var(--accent-gold);
+      box-shadow: var(--shadow-md);
+    }
+
+    .dm-approval-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .dm-approval-info {
+      flex: 1;
+      min-width: 250px;
+    }
+
+    .dm-approval-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .dm-field {
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+
+    .dm-field strong {
+      color: var(--primary-purple);
+      font-weight: 600;
+      margin-right: 8px;
+    }
+
+    .dm-field a {
+      color: #1976D2;
+      text-decoration: none;
+      word-break: break-all;
+    }
+
+    .dm-field a:hover {
+      text-decoration: underline;
+    }
+
+    .rejection-reason {
+      background: #FFEBEE;
+      border-left: 4px solid #D32F2F;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 10px;
+      font-size: 13px;
+    }
+
+    .rejection-reason strong {
+      color: #D32F2F;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+      .calendar-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      h1 { font-size: 32px; }
+      .tabs { 
+        flex-direction: column; 
+        padding: 10px;
+      }
+      .tab-btn { width: 100%; }
+      table { font-size: 12px; }
+      th, td { padding: 10px 8px; }
+      .calendar-grid {
+        grid-template-columns: 1fr;
+      }
+      .calendar-day {
+        min-height: auto;
+      }
+      .card {
+        padding: 20px;
+      }
+      .filters-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--primary-purple);
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--primary-purple-dark);
+    }
+  </style>
 </head>
 <body>
+  <div class="loading" id="loading" aria-hidden="true" role="status" aria-label="Loading overlay"><div class="spinner"></div></div>
+  <div class="modal" id="modal" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="modal-content" id="modalContent" tabindex="-1"></div>
+  </div>
+
   <div class="container">
-    <!-- Header Section -->
     <div class="header">
       <div class="kapruka-logo">
-        <img src="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw" alt="Kapruka Logo">
+        <img src="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw" alt="Kapruka">
       </div>
-      <h1>Digital Marketing Portal</h1>
-      <p class="subtitle">Kapruka Holdings PLC</p>
+      <h1>Admin Dashboard</h1>
+      <p class="subtitle">Campaign Management</p>
     </div>
 
-    <!-- Option Cards -->
-    <div class="options-grid">
-      <!-- Campaign Booking Card -->
-      <a href="campaign-booking.html" class="option-card">
-        <div class="option-title">📋 Book Campaign Slot</div>
-        <div class="option-desc">
-         This is exclusively for departmental heads. (Special Request)
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-card">
+      <h2>🔐 Admin Login</h2>
+      <form id="loginForm">
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="adminPassword" required placeholder="Enter admin password">
         </div>
-        <div class="option-features">
-          <div class="feature-item">
-            <div class="feature-icon">✓</div>
-            <span>View available slots by department</span>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon">✓</div>
-            <span>Real-time booking confirmation</span>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon">✓</div>
-            <span>Track campaign status</span>
-          </div>
-        </div>
-      </a>
-
-      <!-- Product Suggestion Card -->
-      <a href="product-suggestion.html" class="option-card">
-        <div class="option-title">💡 Social Media Direct Order (Factory Pages)</div>
-        <div class="option-desc">
-          Submit product suggestions for Facebook lead form campaigns with weekly submission tracking.
-        </div>
-        <div class="option-features">
-          <div class="feature-item">
-            <div class="feature-icon">✓</div>
-            <span>Submit product recommendations</span>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon">✓</div>
-            <span>Track approval status</span>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon">✓</div>
-            <span>View weekly targets and progress</span>
-          </div>
-        </div>
-      </a>
-
-      <!-- Content Calendar Card -->
-      <a href="content-calendar.html" class="option-card">
-        <div class="option-title">📅 Content Calendar (Kapruka Official Page)</div>
-        <div class="option-desc">
-          Plan and schedule social media content across platforms with collaborative team management.
-        </div>
-        <div class="option-features">
-          <div class="feature-item">
-            <div class="feature-icon">✓</div>
-            <span>Schedule posts for multiple platforms</span>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon">✓</div>
-            <span>Track post status and approvals</span>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon">✓</div>
-            <span>Weekly and monthly content overview</span>
-          </div>
-        </div>
-      </a>
-
-      <!-- Hot Products Card (NEW) -->
-      <a href="hot-products.html" class="option-card">
-        <div class="option-title">🔥 Hot Products</div>
-        <div class="option-desc">
-          Browse and manage hot product suggestions by category with real-time listing status tracking.
-        </div>
-        <div class="option-features">
-          <div class="feature-item">
-            <div class="feature-icon">✓</div>
-            <span>Browse products by 20 categories</span>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon">✓</div>
-            <span>Mark products as listed on Kapruka</span>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon">✓</div>
-            <span>Track listing status and links</span>
-          </div>
-        </div>
-      </a>
-
-      <!-- Product Performance Card -->
-      <a href="product-performance.html" class="option-card">
-        <div class="option-title">📊 Product Performance</div>
-        <div class="option-desc">
-          Search and analyze Meta Ads campaign performance by product, campaign, or keyword with detailed metrics.
-        </div>
-        <div class="option-features">
-          <div class="feature-item">
-            <div class="feature-icon">✓</div>
-            <span>Search by product code or keyword</span>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon">✓</div>
-            <span>View aggregated performance metrics</span>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon">✓</div>
-            <span>Track ROI and ad effectiveness</span>
-          </div>
-        </div>
-      </a>
-
-      <!-- Performance Forecast Card (NEW) -->
-      <a href="performance-forecast.html" class="option-card">
-        <div class="option-title">🚀 Performance Forecast</div>
-        <div class="option-desc">
-          Estimate campaign performance based on objective and budget with AI-powered predictive analytics.
-        </div>
-        <div class="option-features">
-          <div class="feature-item">
-            <div class="feature-icon">✓</div>
-            <span>Select campaign objective</span>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon">✓</div>
-            <span>Define your advertising budget</span>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon">✓</div>
-            <span>Get detailed performance estimates</span>
-          </div>
-        </div>
-      </a>
+        <button type="submit" class="btn btn-primary" style="width:100%;">Login</button>
+      </form>
     </div>
 
-    <!-- Footer -->
-    <div class="footer">
-      Created by Fari Akthar - 207 | Kapruka Holdings PLC
+    <!-- Admin Content -->
+    <div id="adminContent" class="admin-content">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('requests')">📋 Campaign Requests</button>
+        <button class="tab-btn" onclick="switchTab('products')">💡 Lead Form Products Approval</button>
+        <button class="tab-btn" onclick="switchTab('content')">📅 Content Calendar Approval</button>
+        <button class="tab-btn" onclick="switchTab('studio')">🎬 Studio Calendar</button>
+        <!-- NEW: DM Approvals Tab -->
+        <button class="tab-btn" onclick="switchTab('dmapprovals')">✅ DM Approvals</button>
+        <button class="tab-btn" onclick="switchTab('hotproducts')">🔥 Hot Products</button>
+        <button class="tab-btn" onclick="switchTab('departments')">🏢 Department Config</button>
+        <button class="tab-btn" style="margin-left:auto;background:#d32f2f;" onclick="logout()">Logout</button>
+      </div>
+
+      <!-- Campaign Requests Tab -->
+      <div id="tab-requests" class="tab-content active">
+        <div class="card">
+          <h2>📋 Campaign Requests</h2>
+          
+          <!-- Filters -->
+          <div class="filters-container">
+            <div class="filter-group">
+              <label>🔍 Search</label>
+              <input type="text" id="requestsSearch" placeholder="Search..." oninput="filterRequests()">
+            </div>
+            <div class="filter-group">
+              <label>📊 Status</label>
+              <select id="requestsStatus" onchange="filterRequests()">
+                <option value="">All Statuses</option>
+                <option value="Request Submitted">Request Submitted</option>
+                <option value="Working">Working</option>
+                <option value="Live">Live</option>
+                <option value="Completed">Completed</option>
+                <option value="Rejected">Rejected</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label>📅 Date Filter</label>
+              <select id="requestsDateFilter" onchange="handleRequestsDateFilter()">
+                <option value="">All Dates</option>
+                <option value="today">Today</option>
+                <option value="yesterday">Yesterday</option>
+                <option value="3days">Last 3 Days</option>
+                <option value="custom">Custom Range</option>
+              </select>
+            </div>
+          </div>
+          <div class="date-range-inputs" id="requestsDateRange">
+            <div class="filter-group">
+              <label>From Date</label>
+              <input type="date" id="requestsDateFrom" onchange="filterRequests()">
+            </div>
+            <div class="filter-group">
+              <label>To Date</label>
+              <input type="date" id="requestsDateTo" onchange="filterRequests()">
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Request ID</th>
+                  <th>Date</th>
+                  <th>Department</th>
+                  <th>Month</th>
+                  <th>Slot</th>
+                  <th>Campaign</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="requestsTable">
+                <tr><td colspan="8" style="text-align:center;padding:40px;">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Product Suggestions Tab -->
+      <div id="tab-products" class="tab-content">
+        <div class="card">
+          <h2>💡 Lead Form Products Suggestions</h2>
+          
+          <!-- Filters -->
+          <div class="filters-container">
+            <div class="filter-group">
+              <label>🔍 Search</label>
+              <input type="text" id="productsSearch" placeholder="Search..." oninput="filterProducts()">
+            </div>
+            <div class="filter-group">
+              <label>📊 Status</label>
+              <select id="productsStatus" onchange="filterProducts()">
+                <option value="">All Statuses</option>
+                <option value="Pending">Pending</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label>📅 Date Filter</label>
+              <select id="productsDateFilter" onchange="handleProductsDateFilter()">
+                <option value="">All Dates</option>
+                <option value="today">Today</option>
+                <option value="yesterday">Yesterday</option>
+                <option value="3days">Last 3 Days</option>
+                <option value="custom">Custom Range</option>
+              </select>
+            </div>
+          </div>
+          <div class="date-range-inputs" id="productsDateRange">
+            <div class="filter-group">
+              <label>From Date</label>
+              <input type="date" id="productsDateFrom" onchange="filterProducts()">
+            </div>
+            <div class="filter-group">
+              <label>To Date</label>
+              <input type="date" id="productsDateTo" onchange="filterProducts()">
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Submission ID</th>
+                  <th>Date</th>
+                  <th>Product Link</th>
+                  <th>Category</th>
+                  <th>Margin %</th>
+                  <th>Status</th>
+                  <th>Page Name</th>
+                  <th>Slot Date</th>
+                  <th>Slot #</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="productsTable">
+                <tr><td colspan="10" style="text-align:center;padding:40px;">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Content Calendar Tab -->
+      <div id="tab-content" class="tab-content">
+        <div class="card">
+          <h2>📅 Add Content Theme</h2>
+          <form id="themeForm">
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px;">
+              <div class="form-group">
+                <label>Theme Name</label>
+                <input type="text" id="themeName" required placeholder="e.g., Valentine's Day">
+              </div>
+              <div class="form-group">
+                <label>Slots Per Day</label>
+                <input type="number" id="slotsPerDay" required placeholder="e.g., 3" min="1" max="10" value="3">
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px;">
+              <div class="form-group">
+                <label>Start Date</label>
+                <input type="date" id="themeStart" required>
+              </div>
+              <div class="form-group">
+                <label>End Date</label>
+                <input type="date" id="themeEnd" required>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px;">
+              <div class="form-group">
+                <label>Theme Color</label>
+                <input type="color" id="themeColor" value="#422B73">
+              </div>
+              <div class="form-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="isSeasonal">
+                  <span>Seasonal Theme (no categories)</span>
+                </label>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Theme</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <h2>🗂️ Content Bookings Approval</h2>
+          
+          <!-- Filters -->
+          <div class="filters-container">
+            <div class="filter-group">
+              <label>🔍 Search</label>
+              <input type="text" id="contentSearch" placeholder="Search..." oninput="filterContentBookings()">
+            </div>
+            <div class="filter-group">
+              <label>📊 Status</label>
+              <select id="contentStatus" onchange="filterContentBookings()">
+                <option value="">All Statuses</option>
+                <option value="Pending">Pending</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label>📅 Date Filter</label>
+              <select id="contentDateFilter" onchange="handleContentDateFilter()">
+                <option value="">All Dates</option>
+                <option value="today">Today</option>
+                <option value="yesterday">Yesterday</option>
+                <option value="3days">Last 3 Days</option>
+                <option value="custom">Custom Range</option>
+              </select>
+            </div>
+          </div>
+          <div class="date-range-inputs" id="contentDateRange">
+            <div class="filter-group">
+              <label>From Date</label>
+              <input type="date" id="contentDateFrom" onchange="filterContentBookings()">
+            </div>
+            <div class="filter-group">
+              <label>To Date</label>
+              <input type="date" id="contentDateTo" onchange="filterContentBookings()">
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Slot</th>
+                  <th>Category</th>
+                  <th>Product Code</th>
+                  <th>Status</th>
+                  <th>Go Live</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="contentTable">
+                <tr><td colspan="7" style="text-align:center;padding:40px;">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>🎨 Themes</h2>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Theme</th>
+                  <th>Start</th>
+                  <th>End</th>
+                  <th>Slots/Day</th>
+                  <th>Type</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="themesTable">
+                <tr><td colspan="6" style="text-align:center;padding:40px;">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- STUDIO CALENDAR TAB -->
+      <div id="tab-studio" class="tab-content">
+        <div class="card">
+          <div class="calendar-header">
+            <h2 style="margin:0;">🎬 Studio Calendar</h2>
+            <button class="btn btn-success" onclick="openAddExtraContentModal()">➕ Add Extra Content</button>
+          </div>
+
+          <!-- Dashboard Stats -->
+          <div class="dashboard-stats">
+            <div class="dashboard-stat" style="background:#E8F5E9;">
+              <div class="stat-value" style="color:#1B5E20;" id="totalSlots">0</div>
+              <div class="stat-label" style="color:#2E7D32;">Total Slots</div>
+            </div>
+            <div class="dashboard-stat" style="background:#E3F2FD;">
+              <div class="stat-value" style="color:#0D47A1;" id="bookedSlots">0</div>
+              <div class="stat-label" style="color:#1565C0;">Booked</div>
+            </div>
+            <div class="dashboard-stat" style="background:#C8E6C9;">
+              <div class="stat-value" style="color:#1B5E20;" id="completedSlots">0</div>
+              <div class="stat-label" style="color:#2E7D32;">Completed</div>
+            </div>
+            <div class="dashboard-stat" style="background:#FFF3E0;">
+              <div class="stat-value" style="color:#E65100;" id="approvedSlots">0</div>
+              <div class="stat-label" style="color:#EF6C00;">Head Approved</div>
+            </div>
+            <div class="dashboard-stat" style="background:#F3E5F5;">
+              <div class="stat-value" style="color:#6A1B9A;" id="completionRate">0%</div>
+              <div class="stat-label" style="color:#7B1FA2;">Completion Rate</div>
+            </div>
+          </div>
+
+          <div class="studio-calendar-wrapper">
+            <div class="calendar-container">
+              <div class="month-nav">
+                <button onclick="changeStudioMonth(-1)" title="Previous month" aria-label="Previous month">◀ Previous</button>
+                <h3 id="studioMonthTitle">January 2026</h3>
+                <button onclick="changeStudioMonth(1)" title="Next month" aria-label="Next month">Next ▶</button>
+              </div>
+
+              <!-- Filters -->
+              <div class="calendar-filters" style="margin-bottom:20px;">
+                <label style="color:#5e3a8e;font-weight:600;margin-right:10px;">Filter by Status:</label>
+                <select id="studioFilter" onchange="loadStudioCalendar()" style="padding:10px;border-radius:8px;border:2px solid #e8e8e8;font-size:14px;">
+                  <option value="all">All Content</option>
+                  <option value="received">Not Started (Received)</option>
+                  <option value="working">Working</option>
+                  <option value="submitted">Submitted for Review</option>
+                  <option value="resubmitted">Resubmitted for Review</option>
+                  <option value="approved">Approved by Head</option>
+                  <option value="rejectedhead">Rejected by Head</option>
+                  <option value="approveddm">Approved by DM</option>
+                  <option value="rejecteddm">Rejected by DM</option>
+                </select>
+                <label style="color:#5e3a8e;font-weight:600;margin-right:10px;margin-left:20px;">Filter by Person:</label>
+                <select id="studioPersonFilter" onchange="loadStudioCalendar()" style="padding:10px;border-radius:8px;border:2px solid #e8e8e8;font-size:14px;" aria-label="Filter by person">
+                  <option value="all">All Team Members</option>
+                  <option value="Ashani">Ashani</option>
+                  <option value="Kasun">Kasun</option>
+                  <option value="Amandi">Amandi</option>
+                  <option value="Danoj">Danoj</option>
+                  <option value="Kavindya">Kavindya</option>
+                  <option value="unassigned">Unassigned</option>
+                </select>
+
+                <div style="font-size:12px;color:#666;margin-top:8px;">Select a person to filter the calendar. Choose <strong>Unassigned</strong> to see unallocated slots.</div>
+              </div>
+
+              <!-- Legend: quick reference -->
+              <div class="calendar-legend" style="margin-bottom:12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:13px;color:#444;">
+                <div style="display:flex;align-items:center;gap:8px;background:#fff;padding:8px 12px;border-radius:10px;box-shadow:var(--shadow-sm);">
+                  <span style="font-weight:700;color:#1976D2;">S#</span>
+                  <span style="color:#666;">Slot number</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;background:#fff;padding:8px 12px;border-radius:10px;box-shadow:var(--shadow-sm);">
+                  <span style="font-weight:700;color:#E65100;">●</span>
+                  <span style="color:#666;">Status badges show progress</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;background:#fff;padding:8px 12px;border-radius:10px;box-shadow:var(--shadow-sm);">
+                  <span style="font-weight:700;color:#1976D2;">👤</span>
+                  <span style="color:#666;">Assigned person (when set)</span>
+                </div>
+              </div>
+
+              <div class="calendar-weekdays">
+                <div class="calendar-day-header">Sun</div>
+                <div class="calendar-day-header">Mon</div>
+                <div class="calendar-day-header">Tue</div>
+                <div class="calendar-day-header">Wed</div>
+                <div class="calendar-day-header">Thu</div>
+                <div class="calendar-day-header">Fri</div>
+                <div class="calendar-day-header">Sat</div>
+              </div>
+
+              <div class="calendar-grid" id="studioCalendarGrid" role="grid" aria-label="Studio calendar grid">
+                <!-- days injected here -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- NEW: DM APPROVALS TAB -->
+      <div id="tab-dmapprovals" class="tab-content">
+        <div class="card">
+          <h2>✅ Digital Marketing Approvals</h2>
+          
+          <div class="filters-container">
+            <div class="filter-group">
+              <label>Status</label>
+              <select id="filterDmStatus" onchange="applyDmFilters()">
+                <option value="">All Statuses</option>
+                <option value="Pending">Pending</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label>Source Type</label>
+              <select id="filterDmSource" onchange="applyDmFilters()">
+                <option value="">All Sources</option>
+                <option value="studio">Studio</option>
+                <option value="content_calendar">Content Calendar</option>
+                <option value="product_suggestion">Product Suggestion</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label>Page</label>
+              <select id="filterDmPage" onchange="applyDmFilters()">
+                <option value="">All Pages</option>
+                <option value="Kapruka FB">Kapruka FB</option>
+                <option value="Electronic Factory">Electronic Factory</option>
+                <option value="Social Mart">Social Mart</option>
+                <option value="Fashion Factory">Fashion Factory</option>
+                <option value="Toys Factory">Toys Factory</option>
+                <option value="Handbag Factory">Handbag Factory</option>
+                <option value="TikTok Video">TikTok Video</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="dmApprovalsContainer"></div>
+        </div>
+      </div>
+
+      <!-- HOT PRODUCTS TAB -->
+      <div id="tab-hotproducts" class="tab-content">
+        <div class="card">
+          <h2>🔥 Hot Products Management</h2>
+          <p style="color:#666;margin-bottom:25px;">Add and manage hot product suggestions by category</p>
+
+          <div class="stats-grid">
+            <div class="stat-card" style="background:#E8F5E9;">
+              <div style="color:#2E7D32;font-size:12px;font-weight:600;text-transform:uppercase;margin-bottom:8px;">Total Products</div>
+              <div style="color:#1B5E20;font-size:32px;font-weight:700;" id="adminTotalProducts">0</div>
+            </div>
+            <div class="stat-card" style="background:#E3F2FD;">
+              <div style="color:#1565C0;font-size:12px;font-weight:600;text-transform:uppercase;margin-bottom:8px;">Listed Products</div>
+              <div style="color:#0D47A1;font-size:32px;font-weight:700;" id="adminListedProducts">0</div>
+            </div>
+            <div class="stat-card" style="background:#FFF3E0;">
+              <div style="color:#E65100;font-size:12px;font-weight:600;text-transform:uppercase;margin-bottom:8px;">Categories</div>
+              <div style="color:#BF360C;font-size:32px;font-weight:700;" id="adminCategoryCount">0</div>
+            </div>
+          </div>
+
+          <div style="background:#f9f9f9;padding:25px;border-radius:12px;margin-bottom:30px;">
+            <h3 style="color:#5e3a8e;margin-bottom:20px;">➕ Add New Product</h3>
+            <form id="addHotProductForm" style="display:grid;gap:15px;">
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:15px;">
+                <div>
+                  <label style="display:block;color:#5e3a8e;font-weight:600;margin-bottom:8px;font-size:13px;">Category</label>
+                  <select id="hotProductCategory" required style="width:100%;padding:12px;border:2px solid #e8e8e8;border-radius:8px;font-size:14px;">
+                    <option value="">Select Category</option>
+                    <option value="Cakes">Cakes</option>
+                    <option value="Flowers">Flowers</option>
+                    <option value="Chocolates">Chocolates</option>
+                    <option value="Electronics">Electronics</option>
+                    <option value="Fashion">Fashion</option>
+                    <option value="Clothing">Clothing</option>
+                    <option value="Food & Restaurants">Food & Restaurants</option>
+                    <option value="Fruits">Fruits</option>
+                    <option value="Soft Toys & Kids Toys">Soft Toys & Kids Toys</option>
+                    <option value="Grocery & Hampers">Grocery & Hampers</option>
+                    <option value="Greeting Cards & Party Supplies">Greeting Cards & Party Supplies</option>
+                    <option value="Sports and Bicycles">Sports and Bicycles</option>
+                    <option value="Mother and Baby">Mother and Baby</option>
+                    <option value="Jewellery and Watches">Jewellery and Watches</option>
+                    <option value="Cosmetics & Perfumes">Cosmetics & Perfumes</option>
+                    <option value="Customized Gifts">Customized Gifts</option>
+                    <option value="Health and Wellness">Health and Wellness</option>
+                    <option value="Home & Lifestyle">Home & Lifestyle</option>
+                    <option value="Combo and Gift Sets">Combo and Gift Sets</option>
+                    <option value="Books & Stationery">Books & Stationery</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="display:block;color:#5e3a8e;font-weight:600;margin-bottom:8px;font-size:13px;">Product Link</label>
+                  <input type="url" id="hotProductLink" required placeholder="https://example.com/product" style="width:100%;padding:12px;border:2px solid #e8e8e8;border-radius:8px;font-size:14px;">
+                </div>
+                <div>
+                  <label style="display:block;color:#5e3a8e;font-weight:600;margin-bottom:8px;font-size:13px;">Sales Count</label>
+                  <input type="number" id="hotProductSales" value="0" min="0" style="width:100%;padding:12px;border:2px solid #e8e8e8;border-radius:8px;font-size:14px;">
+                </div>
+              </div>
+              <button type="submit" style="padding:14px 32px;background:linear-gradient(135deg,#5e3a8e,#3d2461);color:white;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;">
+                ➕ Add Product
+              </button>
+            </form>
+          </div>
+
+          <div id="hotProductsTableBody"></div>
+        </div>
+      </div>
+
+      <!-- Department Config Tab -->
+      <div id="tab-departments" class="tab-content">
+        <div class="card">
+          <h2>🏢 Add Department</h2>
+          <form id="deptForm">
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
+              <div class="form-group">
+                <label>Month</label>
+                <select id="deptMonth" required>
+                  <option value="January 2026">January 2026</option>
+                  <option value="February 2026">February 2026</option>
+                  <option value="March 2026">March 2026</option>
+                  <option value="April 2026">April 2026</option>
+                  <option value="May 2026">May 2026</option>
+                  <option value="June 2026">June 2026</option>
+                  <option value="July 2026">July 2026</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Department Name</label>
+                <input type="text" id="deptName" required placeholder="e.g., Marketing">
+              </div>
+              <div class="form-group">
+                <label>Budget ($k)</label>
+                <input type="number" id="deptBudget" required placeholder="e.g., 200">
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
+              <div class="form-group">
+                <label>Slots</label>
+                <input type="number" id="deptSlots" required placeholder="e.g., 10">
+              </div>
+              <div class="form-group">
+                <label>Color</label>
+                <input type="color" id="deptColor" value="#E8F5E9">
+              </div>
+              <div class="form-group">
+                <label>Active</label>
+                <select id="deptActive">
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Department</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <h2>📋 Existing Departments</h2>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Month</th>
+                  <th>Department</th>
+                  <th>Budget</th>
+                  <th>Slots</th>
+                  <th>Active</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="deptsTable">
+                <tr><td colspan="6" style="text-align:center;padding:40px;">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
+
+  <script src="js/supabase-api.js"></script>
+  <script>
+    // ═══════════════════════════════════════════════════════════
+    // TEAM MEMBERS LIST
+    // ═══════════════════════════════════════════════════════════
+    const TEAM_MEMBERS = [
+      'Ashani',
+      'Kasun',
+      'Amandi',
+      'Danoj',
+      'Kavindya'
+      // Add more names as needed
+    ];
+
+    // ═══════════════════════════════════════════════════════════
+    // GLOBAL VARIABLES
+    // ═══════════════════════════════════════════════════════════
+    let isLoggedIn = false;
+    let isSuperAdmin = false;
+    let allHotProducts = [];
+    let currentStudioMonth = 1;
+    let currentStudioYear = 2026;
+    let studioCalendarData = [];
+
+    // Store original data for filtering
+    let allRequests = [];
+    let allProducts = [];
+    let allContentBookings = [];
+    let allDmApprovals = []; // NEW
+
+    // ═══════════════════════════════════════════════════════════
+    // UTILITY FUNCTIONS
+    // ═══════════════════════════════════════════════════════════
+    // Overlay state helpers
+    let _previousBodyOverflow = '';
+    let _lastFocusedElement = null;
+    let _modalKeydownHandler = null;
+    let _modalClickHandler = null;
+
+    function _isAnyOverlayVisible() {
+      const modal = document.getElementById('modal');
+      const loading = document.getElementById('loading');
+      return (modal && modal.style.display && modal.style.display !== 'none') ||
+             (loading && loading.style.display && loading.style.display !== 'none');
+    }
+
+    function _updateBodyOverflowBasedOnOverlays() {
+      if (_isAnyOverlayVisible()) {
+        if (!document.body.classList.contains('overlay-open')) {
+          _previousBodyOverflow = document.body.style.overflow || '';
+          document.body.classList.add('overlay-open');
+        }
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = _previousBodyOverflow || '';
+        document.body.classList.remove('overlay-open');
+      }
+    }
+
+    // Developer helper to manually unlock page scroll if something goes wrong
+    function unlockScroll() {
+      const modal = document.getElementById('modal');
+      const loading = document.getElementById('loading');
+      if (modal) modal.style.display = 'none';
+      if (loading) loading.style.display = 'none';
+      document.body.classList.remove('overlay-open');
+      document.body.style.overflow = _previousBodyOverflow || '';
+      if (_modalClickHandler && modal) modal.removeEventListener('click', _modalClickHandler);
+      if (_modalKeydownHandler) { document.removeEventListener('keydown', _modalKeydownHandler); _modalKeydownHandler = null; }
+    }
+
+    function showLoading() {
+      const loading = document.getElementById('loading');
+      // ensure overlay is last in DOM to avoid stacking context issues
+      if (loading.parentNode !== document.body) document.body.appendChild(loading);
+
+      loading.style.display = 'flex';
+      loading.setAttribute('aria-hidden', 'false');
+      _updateBodyOverflowBasedOnOverlays();
+    }
+
+    function hideLoading() {
+      const loading = document.getElementById('loading');
+      loading.style.display = 'none';
+      loading.setAttribute('aria-hidden', 'true');
+      _updateBodyOverflowBasedOnOverlays();
+    }
+
+    function showModal(content) {
+      const modal = document.getElementById('modal');
+      // ensure modal is appended to body so it can't be clipped by other stacking contexts
+      if (modal.parentNode !== document.body) document.body.appendChild(modal);
+
+      _lastFocusedElement = document.activeElement;
+
+      document.getElementById('modalContent').innerHTML = content;
+      modal.style.display = 'flex';
+      modal.setAttribute('aria-hidden', 'false');
+
+      // Move focus into the modal for accessibility
+      const focusTarget = modal.querySelector('#modalContent [tabindex], #modalContent button, #modalContent a, #modalContent input, #modalContent select, #modalContent textarea');
+      if (focusTarget) focusTarget.focus();
+      else modal.querySelector('#modalContent').focus();
+
+      // click outside to close
+      _modalClickHandler = (e) => {
+        if (e.target === modal) closeModal();
+      };
+      modal.addEventListener('click', _modalClickHandler);
+
+      // ESC to close
+      _modalKeydownHandler = (e) => {
+        if (e.key === 'Escape' || e.key === 'Esc') {
+          closeModal();
+        }
+      };
+      document.addEventListener('keydown', _modalKeydownHandler);
+
+      _updateBodyOverflowBasedOnOverlays();
+    }
+
+    function closeModal() {
+      const modal = document.getElementById('modal');
+
+      modal.style.display = 'none';
+      modal.setAttribute('aria-hidden', 'true');
+
+      // remove handlers
+      if (_modalClickHandler) {
+        modal.removeEventListener('click', _modalClickHandler);
+        _modalClickHandler = null;
+      }
+      if (_modalKeydownHandler) {
+        document.removeEventListener('keydown', _modalKeydownHandler);
+        _modalKeydownHandler = null;
+      }
+
+      // restore focus
+      try { if (_lastFocusedElement && typeof _lastFocusedElement.focus === 'function') _lastFocusedElement.focus(); } catch (err) {}
+      _lastFocusedElement = null;
+
+      _updateBodyOverflowBasedOnOverlays();
+    }
+
+    // Date filter utilities
+    function getDateRange(filterType) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      switch(filterType) {
+        case 'today':
+          return { start: today, end: new Date(today.getTime() + 24*60*60*1000) };
+        case 'yesterday':
+          const yesterday = new Date(today.getTime() - 24*60*60*1000);
+          return { start: yesterday, end: today };
+        case '3days':
+          const threeDaysAgo = new Date(today.getTime() - 3*24*60*60*1000);
+          return { start: threeDaysAgo, end: new Date(today.getTime() + 24*60*60*1000) };
+        default:
+          return null;
+      }
+    }
+
+    function isDateInRange(dateStr, start, end) {
+      const date = new Date(dateStr);
+      date.setHours(0, 0, 0, 0);
+      return date >= start && date < end;
+    }
+
+    // NEW: Format date helper
+    function formatDate(dateString) {
+      if (!dateString) return 'N/A';
+      const d = new Date(dateString);
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // LOGIN & NAVIGATION
+    // ═══════════════════════════════════════════════════════════
+    window.addEventListener('DOMContentLoaded', function() {
+      const loggedIn = sessionStorage.getItem('adminLoggedIn');
+      const role = sessionStorage.getItem('adminRole');
+
+      if (loggedIn === 'true') {
+        isLoggedIn = true;
+        isSuperAdmin = (role === 'superadmin');
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('adminContent').style.display = 'block';
+
+        if (isSuperAdmin) {
+          setupStudioOnlyView();
+          switchTab('studio');
+          loadStudioCalendar();
+        } else {
+          loadAllData();
+
+          setTimeout(() => {
+            const hash = window.location.hash.substring(1);
+            if (hash && ['requests', 'products', 'content', 'studio', 'dmapprovals', 'hotproducts', 'departments'].includes(hash)) {
+              switchTab(hash);
+            }
+          }, 300);
+        }
+      }
+
+      // ensure scroll state is correct on load (recover from any stuck overlay state)
+      try { _updateBodyOverflowBasedOnOverlays(); } catch (err) { /* ignore */ }
+    });
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const password = document.getElementById('adminPassword').value;
+
+      if (verifySuperAdminPassword(password)) {
+        isLoggedIn = true;
+        isSuperAdmin = true;
+        sessionStorage.setItem('adminLoggedIn', 'true');
+        sessionStorage.setItem('adminRole', 'superadmin');
+
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('adminContent').style.display = 'block';
+
+        setupStudioOnlyView();
+        switchTab('studio');
+        loadStudioCalendar();
+      } else if (verifyAdminPassword(password)) {
+        isLoggedIn = true;
+        isSuperAdmin = false;
+        sessionStorage.setItem('adminLoggedIn', 'true');
+        sessionStorage.setItem('adminRole', 'admin');
+
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('adminContent').style.display = 'block';
+
+        loadAllData();
+      } else {
+        alert('Invalid password');
+      }
+    });
+
+    function logout() {
+      isLoggedIn = false;
+      isSuperAdmin = false;
+      sessionStorage.removeItem('adminLoggedIn');
+      sessionStorage.removeItem('adminRole');
+      document.getElementById('loginScreen').style.display = 'block';
+      document.getElementById('adminContent').style.display = 'none';
+      document.getElementById('adminPassword').value = '';
+      window.location.hash = '';
+    }
+
+    function setupStudioOnlyView() {
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        const text = btn.textContent.toLowerCase();
+        const isStudio = text.includes('studio');
+        const isLogout = text.includes('logout');
+        if (!isStudio && !isLogout) {
+          btn.style.display = 'none';
+        }
+      });
+
+      document.querySelectorAll('.tab-content').forEach(tab => {
+        if (tab.id !== 'tab-studio') {
+          tab.style.display = 'none';
+        } else {
+          tab.classList.add('active');
+          tab.style.display = 'block';
+        }
+      });
+    }
+
+    function switchTab(tab) {
+      if (isSuperAdmin && tab !== 'studio') {
+        tab = 'studio';
+      }
+
+      if (window.location.hash !== '#' + tab) {
+        window.location.hash = tab;
+      }
+      
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      
+      const tabBtns = document.querySelectorAll('.tab-btn');
+      tabBtns.forEach(btn => {
+        const btnText = btn.textContent.toLowerCase();
+        if (btnText.includes(tab) || 
+            (tab === 'hotproducts' && btnText.includes('hot')) || 
+            (tab === 'departments' && btnText.includes('department')) ||
+            (tab === 'dmapprovals' && btnText.includes('dm'))) {
+          btn.classList.add('active');
+        }
+      });
+      
+      document.getElementById('tab-' + tab).classList.add('active');
+
+      if (tab === 'content') {
+        loadContentData();
+      } else if (tab === 'hotproducts') {
+        loadHotProducts();
+      } else if (tab === 'studio') {
+        loadStudioCalendar();
+      } else if (tab === 'departments') {
+        loadDepartments();
+      } else if (tab === 'dmapprovals') { // NEW
+        loadDmApprovals();
+      }
+    }
+    
+    window.addEventListener('hashchange', function() {
+      const hash = window.location.hash.substring(1);
+      if (hash) {
+        switchTab(hash);
+      }
+    });
+
+    async function loadAllData() {
+      loadRequests();
+      loadProducts();
+      loadDepartments();
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // CAMPAIGN REQUESTS - WITH FILTERS
+    // ═══════════════════════════════════════════════════════════
+    async function loadRequests() {
+      try {
+        allRequests = await getAllRequests();
+        renderRequestsTable(allRequests);
+      } catch (error) {
+        document.getElementById('requestsTable').innerHTML = 
+          '<tr><td colspan="8" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
+      }
+    }
+
+    function handleRequestsDateFilter() {
+      const filterType = document.getElementById('requestsDateFilter').value;
+      const dateRangeDiv = document.getElementById('requestsDateRange');
+      
+      if (filterType === 'custom') {
+        dateRangeDiv.classList.add('active');
+      } else {
+        dateRangeDiv.classList.remove('active');
+        filterRequests();
+      }
+    }
+
+    function filterRequests() {
+      const searchTerm = document.getElementById('requestsSearch').value.toLowerCase();
+      const statusFilter = document.getElementById('requestsStatus').value;
+      const dateFilterType = document.getElementById('requestsDateFilter').value;
+      
+      let filtered = allRequests;
+
+      // Search filter
+      if (searchTerm) {
+        filtered = filtered.filter(r => 
+          r.requestId.toLowerCase().includes(searchTerm) ||
+          r.department.toLowerCase().includes(searchTerm) ||
+          r.campaign.toLowerCase().includes(searchTerm) ||
+          r.month.toLowerCase().includes(searchTerm)
+        );
+      }
+
+      // Status filter
+      if (statusFilter) {
+        filtered = filtered.filter(r => r.status === statusFilter);
+      }
+
+      // Date filter
+      if (dateFilterType && dateFilterType !== 'custom') {
+        const range = getDateRange(dateFilterType);
+        if (range) {
+          filtered = filtered.filter(r => isDateInRange(r.timestamp, range.start, range.end));
+        }
+      } else if (dateFilterType === 'custom') {
+        const fromDate = document.getElementById('requestsDateFrom').value;
+        const toDate = document.getElementById('requestsDateTo').value;
+        
+        if (fromDate || toDate) {
+          filtered = filtered.filter(r => {
+            const date = new Date(r.timestamp);
+            date.setHours(0, 0, 0, 0);
+            
+            if (fromDate && toDate) {
+              return date >= new Date(fromDate) && date <= new Date(toDate);
+            } else if (fromDate) {
+              return date >= new Date(fromDate);
+            } else {
+              return date <= new Date(toDate);
+            }
+          });
+        }
+      }
+
+      renderRequestsTable(filtered);
+    }
+
+    function renderRequestsTable(requests) {
+      const tbody = document.getElementById('requestsTable');
+
+      if (requests.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;">No requests found</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = requests.map(r => {
+        let badgeClass = 'badge-working';
+        if (r.status === 'Request Submitted') badgeClass = 'badge-submitted';
+        if (r.status === 'Live') badgeClass = 'badge-live';
+        if (r.status === 'Rejected') badgeClass = 'badge-rejected';
+        if (r.status === 'Completed') badgeClass = 'badge-completed';
+
+        return `
+          <tr>
+            <td>${r.requestId}</td>
+            <td>${new Date(r.timestamp).toLocaleDateString()}</td>
+            <td>${r.department}</td>
+            <td>${r.month}</td>
+            <td>${r.slot}</td>
+            <td>${r.campaign}</td>
+            <td><span class="badge ${badgeClass}">${r.status}</span></td>
+            <td>
+              <div class="action-btns">
+                <button class="btn btn-warning" onclick="updateStatus(${r.row}, 'Working')">Working</button>
+                <button class="btn btn-success" onclick="updateStatus(${r.row}, 'Live')">Live</button>
+                <button class="btn btn-complete" onclick="updateStatus(${r.row}, 'Completed')">Complete</button>
+                <button class="btn btn-danger" onclick="updateStatus(${r.row}, 'Rejected')">Reject</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function updateStatus(row, status) {
+      const reviewer = prompt('Enter your name:');
+      if (!reviewer) return;
+
+      const comments = status === 'Rejected' ? prompt('Rejection reason (optional):') : '';
+
+      try {
+        showLoading();
+        await updateRequestStatus(row, status, reviewer, comments || '');
+        hideLoading();
+        alert(`Status updated to: ${status}`);
+        loadRequests();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // PRODUCT SUGGESTIONS - WITH FILTERS
+    // ═══════════════════════════════════════════════════════════
+    async function loadProducts() {
+      try {
+        allProducts = await getAllProductSuggestions();
+        renderProductsTable(allProducts);
+      } catch (error) {
+        document.getElementById('productsTable').innerHTML = 
+          '<tr><td colspan="10" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
+      }
+    }
+
+    function handleProductsDateFilter() {
+      const filterType = document.getElementById('productsDateFilter').value;
+      const dateRangeDiv = document.getElementById('productsDateRange');
+      
+      if (filterType === 'custom') {
+        dateRangeDiv.classList.add('active');
+      } else {
+        dateRangeDiv.classList.remove('active');
+        filterProducts();
+      }
+    }
+
+    function filterProducts() {
+      const searchTerm = document.getElementById('productsSearch').value.toLowerCase();
+      const statusFilter = document.getElementById('productsStatus').value;
+      const dateFilterType = document.getElementById('productsDateFilter').value;
+      
+      let filtered = allProducts;
+
+      // Search filter
+      if (searchTerm) {
+        filtered = filtered.filter(p => 
+          p.submissionId.toLowerCase().includes(searchTerm) ||
+          p.category.toLowerCase().includes(searchTerm) ||
+          p.productLink.toLowerCase().includes(searchTerm) ||
+          (p.assignedPage && p.assignedPage.toLowerCase().includes(searchTerm))
+        );
+      }
+
+      // Status filter
+      if (statusFilter) {
+        filtered = filtered.filter(p => p.status === statusFilter);
+      }
+
+      // Date filter
+      if (dateFilterType && dateFilterType !== 'custom') {
+        const range = getDateRange(dateFilterType);
+        if (range) {
+          filtered = filtered.filter(p => isDateInRange(p.timestamp, range.start, range.end));
+        }
+      } else if (dateFilterType === 'custom') {
+        const fromDate = document.getElementById('productsDateFrom').value;
+        const toDate = document.getElementById('productsDateTo').value;
+        
+        if (fromDate || toDate) {
+          filtered = filtered.filter(p => {
+            const date = new Date(p.timestamp);
+            date.setHours(0, 0, 0, 0);
+            
+            if (fromDate && toDate) {
+              return date >= new Date(fromDate) && date <= new Date(toDate);
+            } else if (fromDate) {
+              return date >= new Date(fromDate);
+            } else {
+              return date <= new Date(toDate);
+            }
+          });
+        }
+      }
+
+      renderProductsTable(filtered);
+    }
+
+    function renderProductsTable(products) {
+      const tbody = document.getElementById('productsTable');
+
+      if (products.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:40px;">No products found</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = products.map(p => {
+        let badgeClass = p.status === 'Approved' ? 'badge-approved' : 
+                        p.status === 'Rejected' ? 'badge-rejected' : 'badge-pending';
+
+        const actions = p.status === 'Approved' 
+          ? `<button class="btn btn-warning" onclick="editProduct(${p.row})">Edit</button>`
+          : `
+            <button class="btn btn-success" onclick="reviewProduct(${p.row}, 'Approved')">Approve</button>
+            <button class="btn btn-danger" onclick="reviewProduct(${p.row}, 'Rejected')">Reject</button>
+          `;
+
+        return `
+          <tr>
+            <td>${p.submissionId}</td>
+            <td>${new Date(p.timestamp).toLocaleDateString()}</td>
+            <td><a href="${p.productLink}" target="_blank" style="color:#5e3a8e;">View</a></td>
+            <td>${p.category}</td>
+            <td>${p.margin}%</td>
+            <td><span class="badge ${badgeClass}">${p.status}</span></td>
+            <td>${p.assignedPage || '-'}</td>
+            <td>${p.slotDate || '-'}</td>
+            <td>${p.slotNumber || '-'}</td>
+            <td>
+              <div class="action-btns">
+                ${actions}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function reviewProduct(row, status) {
+      const reviewerName = prompt('Enter your name:');
+      if (!reviewerName) return;
+
+      if (status === 'Approved') {
+        showApprovalModal(row, reviewerName);
+      } else {
+        const rejectionReason = prompt('Rejection Reason:');
+        if (!rejectionReason) return;
+
+        try {
+          showLoading();
+          await updateProductReview(row, {
+            status: 'Rejected',
+            reviewerName,
+            rejectionReason
+          });
+          hideLoading();
+          alert('Product rejected!');
+          loadProducts();
+        } catch (error) {
+          hideLoading();
+          alert('Error: ' + error.message);
+        }
+      }
+    }
+
+    async function showApprovalModal(row, reviewerName) {
+      try {
+        showLoading();
+        
+        const products = await getAllProductSuggestions();
+        const product = products.find(p => p.row === row);
+        
+        if (!product) {
+          hideLoading();
+          alert('Product not found');
+          return;
+        }
+
+        let selectedPage = null;
+        for (const [day, config] of Object.entries(PAGE_SCHEDULE)) {
+          if (product.category && config.page.toLowerCase().includes(product.category.toLowerCase())) {
+            selectedPage = config.page;
+            break;
+          }
+        }
+
+        const pageOptions = Object.values(PAGE_SCHEDULE).map(config => `
+          <label class="radio-label">
+            <input type="radio" name="pageName" value="${config.page}" ${config.page === selectedPage ? 'checked' : ''} required>
+            <span>${config.page}</span>
+          </label>
+        `).join('');
+
+        hideLoading();
+
+        const content = `
+          <button class="close-modal" onclick="closeModal()">×</button>
+          <h3>✅ Approve Product</h3>
+          <form id="approvalForm">
+            <div class="form-group">
+              <label>Select Page *</label>
+              <div class="radio-group">
+                ${pageOptions}
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Reference (Optional)</label>
+              <textarea id="productReference" rows="3" placeholder="Add any reference notes or links..."></textarea>
+            </div>
+            <div id="slotsDisplay" style="margin-top:20px;"></div>
+            <button type="submit" class="btn btn-success" style="width:100%;margin-top:20px;">Approve & Assign Slot</button>
+          </form>
+        `;
+
+        showModal(content);
+
+        document.querySelectorAll('input[name="pageName"]').forEach(radio => {
+          radio.addEventListener('change', async (e) => {
+            const pageName = e.target.value;
+            await loadAvailableSlots(pageName);
+          });
+        });
+
+        if (selectedPage) {
+          await loadAvailableSlots(selectedPage);
+        }
+
+        document.getElementById('approvalForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const assignedPage = document.querySelector('input[name="pageName"]:checked')?.value;
+          const productReference = document.getElementById('productReference').value;
+          const selectedSlot = document.querySelector('input[name="slotSelection"]:checked');
+
+          if (!assignedPage) {
+            alert('Please select a page');
+            return;
+          }
+
+          let slotDate = null;
+          let slotNumber = null;
+
+          if (selectedSlot) {
+            const slotData = JSON.parse(selectedSlot.value);
+            slotDate = slotData.date;
+            slotNumber = slotData.slotNumber;
+          }
+
+          try {
+            showLoading();
+            await updateProductReview(row, {
+              status: 'Approved',
+              reviewerName,
+              assignedPage,
+              productReference,
+              slotDate,
+              slotNumber
+            });
+            hideLoading();
+            closeModal();
+            alert('✅ Product approved and slot assigned!');
+            loadProducts();
+          } catch (error) {
+            hideLoading();
+            alert('Error: ' + error.message);
+          }
+        });
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    }
+
+    async function loadAvailableSlots(pageName) {
+      try {
+        const slotsDisplay = document.getElementById('slotsDisplay');
+        slotsDisplay.innerHTML = '<p style="text-align:center;color:#999;">Loading available slots...</p>';
+
+        const slots = await getAvailableSlotsForPage(pageName);
+        
+        if (slots.length === 0) {
+          slotsDisplay.innerHTML = '<p style="text-align:center;color:#d32f2f;">No available slots found for next 2 weeks</p>';
+          return;
+        }
+
+        const groupedByDate = {};
+        slots.forEach(slot => {
+          if (!groupedByDate[slot.date]) {
+            groupedByDate[slot.date] = [];
+          }
+          groupedByDate[slot.date].push(slot);
+        });
+
+        let html = '<div class="form-group"><label>Select Slot (Optional - Next 2 Weeks) *</label><div class="radio-group">';
+        
+        Object.keys(groupedByDate).sort().forEach(date => {
+          const dateSlots = groupedByDate[date];
+          const dateObj = new Date(date);
+          const dateStr = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+          
+          dateSlots.forEach(slot => {
+            const isAvailable = slot.available;
+            const slotData = JSON.stringify({ date: slot.date, slotNumber: slot.slotNumber });
+            
+            html += `
+              <label class="radio-label" style="${!isAvailable ? 'opacity:0.5;' : ''}">
+                <input type="radio" name="slotSelection" value='${slotData}' ${!isAvailable ? 'disabled' : ''}>
+                <span>${dateStr} - Slot ${slot.slotNumber} ${!isAvailable ? '(Booked)' : '✓'}</span>
+              </label>
+            `;
+          });
+        });
+        
+        html += '</div></div>';
+        slotsDisplay.innerHTML = html;
+      } catch (error) {
+        document.getElementById('slotsDisplay').innerHTML = 
+          '<p style="text-align:center;color:#d32f2f;">Error loading slots: ' + error.message + '</p>';
+      }
+    }
+
+    async function editProduct(row) {
+      const products = await getAllProductSuggestions();
+      const product = products.find(p => p.row === row);
+      
+      if (!product) {
+        alert('Product not found');
+        return;
+      }
+
+      const pageOptions = Object.values(PAGE_SCHEDULE).map(config => `
+        <label class="radio-label">
+          <input type="radio" name="editPageName" value="${config.page}" ${config.page === product.assignedPage ? 'checked' : ''} required>
+          <span>${config.page}</span>
+        </label>
+      `).join('');
+
+      const content = `
+        <button class="close-modal" onclick="closeModal()">×</button>
+        <h3>✏️ Edit Product Assignment</h3>
+        <form id="editForm">
+          <div class="form-group">
+            <label>Page Name</label>
+            <div class="radio-group">
+              ${pageOptions}
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Go Live Date</label>
+            <input type="date" id="editGoLiveDate" value="${product.goLiveDate || ''}" required>
+          </div>
+          <button type="submit" class="btn btn-warning" style="width:100%;">Update</button>
+        </form>
+      `;
+
+      showModal(content);
+
+      document.getElementById('editForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const assignedPage = document.querySelector('input[name="editPageName"]:checked')?.value;
+        const goLiveDate = document.getElementById('editGoLiveDate').value;
+
+        try {
+          showLoading();
+          await updateProductReview(row, {
+            status: 'Approved',
+            reviewerName: product.reviewerName,
+            assignedPage,
+            goLiveDate
+          });
+          hideLoading();
+          closeModal();
+          alert('✅ Product updated!');
+          loadProducts();
+        } catch (error) {
+          hideLoading();
+          alert('Error: ' + error.message);
+        }
+      });
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // CONTENT CALENDAR - WITH FILTERS & APPROVAL FIX
+    // ═══════════════════════════════════════════════════════════
+    async function loadContentData() {
+      loadContentBookings();
+      loadThemes();
+    }
+
+    document.getElementById('themeForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const themeData = {
+        themeName: document.getElementById('themeName').value,
+        startDate: document.getElementById('themeStart').value,
+        endDate: document.getElementById('themeEnd').value,
+        slotsPerDay: document.getElementById('slotsPerDay').value,
+        themeColor: document.getElementById('themeColor').value,
+        isSeasonal: document.getElementById('isSeasonal').checked
+      };
+
+      try {
+        showLoading();
+        await addTheme(themeData);
+        hideLoading();
+        alert('✅ Theme added successfully!');
+        document.getElementById('themeForm').reset();
+        loadThemes();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    });
+
+    async function loadContentBookings() {
+      try {
+        allContentBookings = await getAllContentBookings();
+        renderContentBookingsTable(allContentBookings);
+      } catch (error) {
+        document.getElementById('contentTable').innerHTML = 
+          '<tr><td colspan="7" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
+      }
+    }
+
+    function handleContentDateFilter() {
+      const filterType = document.getElementById('contentDateFilter').value;
+      const dateRangeDiv = document.getElementById('contentDateRange');
+      
+      if (filterType === 'custom') {
+        dateRangeDiv.classList.add('active');
+      } else {
+        dateRangeDiv.classList.remove('active');
+        filterContentBookings();
+      }
+    }
+
+    function filterContentBookings() {
+      const searchTerm = document.getElementById('contentSearch').value.toLowerCase();
+      const statusFilter = document.getElementById('contentStatus').value;
+      const dateFilterType = document.getElementById('contentDateFilter').value;
+      
+      let filtered = allContentBookings;
+
+      // Search filter
+      if (searchTerm) {
+        filtered = filtered.filter(b => 
+          b.category.toLowerCase().includes(searchTerm) ||
+          b.productCode.toLowerCase().includes(searchTerm) ||
+          b.date.toLowerCase().includes(searchTerm)
+        );
+      }
+
+      // Status filter
+      if (statusFilter) {
+        filtered = filtered.filter(b => b.status === statusFilter);
+      }
+
+      // Date filter (using the booking date)
+      if (dateFilterType && dateFilterType !== 'custom') {
+        const range = getDateRange(dateFilterType);
+        if (range) {
+          filtered = filtered.filter(b => isDateInRange(b.date, range.start, range.end));
+        }
+      } else if (dateFilterType === 'custom') {
+        const fromDate = document.getElementById('contentDateFrom').value;
+        const toDate = document.getElementById('contentDateTo').value;
+        
+        if (fromDate || toDate) {
+          filtered = filtered.filter(b => {
+            const date = new Date(b.date);
+            date.setHours(0, 0, 0, 0);
+            
+            if (fromDate && toDate) {
+              return date >= new Date(fromDate) && date <= new Date(toDate);
+            } else if (fromDate) {
+              return date >= new Date(fromDate);
+            } else {
+              return date <= new Date(toDate);
+            }
+          });
+        }
+      }
+
+      renderContentBookingsTable(filtered);
+    }
+
+    function renderContentBookingsTable(bookings) {
+      const tbody = document.getElementById('contentTable');
+
+      if (bookings.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;">No bookings found</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = bookings.map(b => {
+        let badgeClass = b.status === 'Approved' ? 'badge-approved' : 
+                        b.status === 'Rejected' ? 'badge-rejected' : 'badge-pending';
+
+        let actions;
+        if (b.status === 'Pending') {
+          actions = `
+            <button class="btn btn-success" onclick="approveContentBooking(${b.id})">Approve</button>
+            <button class="btn btn-danger" onclick="rejectContentBooking(${b.id})">Reject</button>
+          `;
+        } else if (b.status === 'Approved') {
+          actions = `<button class="btn btn-warning" onclick="editContentBooking(${b.id})">Edit</button>`;
+        } else {
+          actions = `<span style="color:#999;">-</span>`;
+        }
+
+        return `
+          <tr>
+            <td>${b.date}</td>
+            <td>${b.slotNumber}</td>
+            <td>${b.category}</td>
+            <td>${b.productCode}</td>
+            <td><span class="badge ${badgeClass}">${b.status}</span></td>
+            <td>${b.goLiveDate || b.date}</td>
+            <td>
+              <div class="action-btns">
+                ${actions}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function approveContentBooking(id) {
+      const reviewer = prompt('Enter your name:');
+      if (!reviewer) return;
+
+      const booking = allContentBookings.find(b => b.id === id);
+      if (!booking) {
+        alert('Booking not found');
+        return;
+      }
+
+      try {
+        showLoading();
+        await updateContentBooking(id, {
+          status: 'Approved',
+          reviewer,
+          goLiveDate: booking.date
+        });
+        hideLoading();
+        alert('✅ Booking approved and synced to Studio Calendar!');
+        loadContentBookings();
+        if (document.getElementById('tab-studio').classList.contains('active')) {
+          setTimeout(() => loadStudioCalendar(), 500);
+        }
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    }
+
+    async function rejectContentBooking(id) {
+      const reviewer = prompt('Enter your name:');
+      if (!reviewer) return;
+
+      const rejectionReason = prompt('Rejection reason:');
+      if (!rejectionReason) return;
+
+      try {
+        showLoading();
+        await updateContentBooking(id, {
+          status: 'Rejected',
+          reviewer,
+          rejectionReason
+        });
+        hideLoading();
+        alert('Booking rejected');
+        loadContentBookings();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    }
+
+    async function editContentBooking(id) {
+      try {
+        const bookings = await getAllContentBookings();
+        const booking = bookings.find(b => b.id === id);
+        
+        if (!booking) {
+          alert('Booking not found');
+          return;
+        }
+
+        const content = `
+          <button class="close-modal" onclick="closeModal()">×</button>
+          <h3>✏️ Edit Content Booking</h3>
+          <form id="editContentForm">
+            <div class="form-group">
+              <label>Product Code</label>
+              <input type="text" id="editProductCode" value="${booking.productCode}" required>
+            </div>
+            <div class="action-btns" style="margin-top:20px;">
+              <button type="submit" class="btn btn-success" style="flex:1;">Update</button>
+              <button type="button" class="btn btn-danger" onclick="rejectApprovedBooking(${id})" style="flex:1;">Reject Approval</button>
+            </div>
+          </form>
+        `;
+
+        showModal(content);
+
+        document.getElementById('editContentForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const newProductCode = document.getElementById('editProductCode').value;
+
+          try {
+            showLoading();
+            await updateContentBooking(id, {
+              status: 'Approved',
+              productCode: newProductCode,
+              reviewer: booking.reviewer,
+              goLiveDate: booking.goLiveDate || booking.date
+            });
+            hideLoading();
+            closeModal();
+            alert('✅ Content booking updated!');
+            loadContentBookings();
+            if (document.getElementById('tab-studio').classList.contains('active')) {
+              setTimeout(() => loadStudioCalendar(), 500);
+            }
+          } catch (error) {
+            hideLoading();
+            alert('Error: ' + error.message);
+          }
+        });
+      } catch (error) {
+        alert('Error: ' + error.message);
+      }
+    }
+
+    async function rejectApprovedBooking(id) {
+      if (!confirm('Are you sure you want to reject this approved booking?')) return;
+
+      const rejectionReason = prompt('Rejection Reason:');
+      if (!rejectionReason) return;
+
+      try {
+        showLoading();
+        await updateContentBooking(id, {
+          status: 'Rejected',
+          rejectionReason: rejectionReason,
+          reviewer: 'Admin'
+        });
+        hideLoading();
+        closeModal();
+        alert('Booking rejected!');
+        loadContentBookings();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    }
+
+    async function loadThemes() {
+      try {
+        const themes = await getAllThemes();
+        const tbody = document.getElementById('themesTable');
+
+        if (themes.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;">No themes yet</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = themes.map(t => `
+          <tr>
+            <td>${t.theme_name}</td>
+            <td>${t.start_date}</td>
+            <td>${t.end_date}</td>
+            <td>${t.slots_per_day}</td>
+            <td>${t.is_seasonal ? 'Seasonal' : 'Regular'}</td>
+            <td>
+              <button class="btn btn-danger" onclick="deleteThemeConfirm(${t.id})">Delete</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (error) {
+        document.getElementById('themesTable').innerHTML = 
+          '<tr><td colspan="6" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
+      }
+    }
+
+    async function deleteThemeConfirm(id) {
+      if (!confirm('Delete this theme? All associated slots will be removed.')) return;
+
+      try {
+        showLoading();
+        await deleteTheme(id);
+        hideLoading();
+        alert('Theme deleted');
+        loadThemes();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // STUDIO CALENDAR (UPDATED WITH NEW FILTERS)
+    // ═══════════════════════════════════════════════════════════
+    async function loadStudioCalendar() {
+      try {
+        showLoading();
+        
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                       'July', 'August', 'September', 'October', 'November', 'December'];
+        document.getElementById('studioMonthTitle').textContent = 
+          `${months[currentStudioMonth - 1]} ${currentStudioYear}`;
+
+        await generateEmptySlotsForMonth(currentStudioYear, currentStudioMonth);
+
+        let data = await getStudioCalendarForMonth(currentStudioYear, currentStudioMonth);
+        
+        const filterValue = document.getElementById('studioFilter')?.value || 'all';
+        if (filterValue !== 'all') {
+          data = data.filter(item => {
+            if (filterValue === 'received') return item.studio_status === 'Received';
+            if (filterValue === 'working') return item.studio_status === 'Working';
+            if (filterValue === 'submitted') return item.studio_status === 'Submitted for Review';
+            if (filterValue === 'resubmitted') return item.approval_status === 'Resubmitted for Review'; // NEW
+            if (filterValue === 'approved') return item.head_approved === true;
+            if (filterValue === 'rejectedhead') return item.approval_status === 'Rejected by Head'; // NEW
+            if (filterValue === 'approveddm') return item.approval_status === 'Approved by DM'; // NEW
+            if (filterValue === 'rejecteddm') return item.approval_status === 'Rejected by DM'; // NEW
+            return true;
+          });
+        }
+
+        // ✅ NEW: PERSON FILTER
+        const personFilter = document.getElementById('studioPersonFilter')?.value || 'all';
+        if (personFilter !== 'all') {
+          data = data.filter(item => {
+            if (personFilter === 'unassigned') {
+              return !item.assigned_to || item.assigned_to === '';
+            }
+            return item.assigned_to === personFilter;
+          });
+        }
+        
+        studioCalendarData = data;
+
+        const startDate = `${currentStudioYear}-${String(currentStudioMonth).padStart(2, '0')}-01`;
+        const lastDay = new Date(currentStudioYear, currentStudioMonth, 0).getDate();
+        const endDate = `${currentStudioYear}-${String(currentStudioMonth).padStart(2, '0')}-${lastDay}`;
+        const themes = await getAllThemes();
+        const monthThemes = themes.filter(t => t.start_date <= endDate && t.end_date >= startDate);
+
+        updateDashboardStats(data);
+        renderCalendarGrid(data, monthThemes);
+        
+        hideLoading();
+      } catch (error) {
+        hideLoading();
+        console.error('loadStudioCalendar error:', error);
+        alert('Error loading studio calendar: ' + error.message);
+      }
+    }
+
+    function updateDashboardStats(data) {
+      const totalSlots = data.length;
+      const bookedSlots = data.filter(d => d.booking_status === 'booked').length;
+      const completedSlots = data.filter(d => d.studio_status === 'Approved' && d.head_approved).length;
+      const approvedSlots = data.filter(d => d.head_approved).length;
+      const completionRate = totalSlots > 0 ? Math.round((completedSlots / totalSlots) * 100) : 0;
+
+      document.getElementById('totalSlots').textContent = totalSlots;
+      document.getElementById('bookedSlots').textContent = bookedSlots;
+      document.getElementById('completedSlots').textContent = completedSlots;
+      document.getElementById('approvedSlots').textContent = approvedSlots;
+      document.getElementById('completionRate').textContent = completionRate + '%';
+    }
+
+    function renderCalendarGrid(data, monthThemes = []) {
+      const grid = document.getElementById('studioCalendarGrid');
+      
+      // Clear entirely (weekdays are now rendered separately)
+      grid.innerHTML = '';
+
+      const firstDay = new Date(currentStudioYear, currentStudioMonth - 1, 1);
+      const lastDay = new Date(currentStudioYear, currentStudioMonth, 0);
+      const startDayOfWeek = firstDay.getDay();
+      const daysInMonth = lastDay.getDate();
+
+      for (let i = 0; i < startDayOfWeek; i++) {
+        const emptyDay = document.createElement('div');
+        emptyDay.className = 'calendar-day empty';
+        grid.appendChild(emptyDay);
+      }
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(currentStudioYear, currentStudioMonth - 1, day);  
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const dayStr = String(date.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${dayStr}`;
+        const dayOfWeek = date.getDay();
+        
+        const dayDiv = document.createElement('div');
+        dayDiv.className = 'calendar-day';
+        dayDiv.style.position = 'relative';
+
+        // add per-day add button that pre-fills the modal date
+        const addBtn = document.createElement('button');
+        addBtn.className = 'day-add-btn';
+        addBtn.title = 'Add content to this date';
+        addBtn.textContent = '+';
+        addBtn.onclick = (e) => { e.stopPropagation(); openAddExtraContentModal(dateStr); };
+        dayDiv.appendChild(addBtn);
+
+        const activeTheme = monthThemes.find(t => dateStr >= t.start_date && dateStr <= t.end_date);
+        if (activeTheme) {
+          dayDiv.style.borderTop = `4px solid ${activeTheme.theme_color}`;
+          dayDiv.style.borderRadius = '12px';
+        }
+        
+        const dayNumber = document.createElement('div');
+        dayNumber.className = 'day-number';
+        dayNumber.textContent = day;
+        dayDiv.appendChild(dayNumber);
+        
+        if (activeTheme) {
+          const themeName = document.createElement('div');
+          themeName.style.cssText = 'font-size:10px;font-weight:600;color:' + activeTheme.theme_color + ';margin-bottom:5px;text-align:center;';
+          themeName.textContent = activeTheme.theme_name;
+          dayDiv.appendChild(themeName);
+        }
+
+        const slotsContainer = document.createElement('div');
+        slotsContainer.className = 'day-slots';
+
+        const dayData = data.filter(d => d.date === dateStr);
+        const schedule = PAGE_SCHEDULE[dayOfWeek];
+        
+        if (schedule) {
+          const expectedSlots = schedule.slots;
+          
+          for (let slotNum = 1; slotNum <= expectedSlots; slotNum++) {
+            const slotData = dayData.find(d => 
+              d.slot_type === 'lead_form' && 
+              d.slot_number === slotNum
+            );
+
+            const slotDiv = document.createElement('div');
+            
+            if (slotData) {
+              const isBooked = slotData.booking_status === 'booked';
+              const isEmpty = slotData.booking_status === 'empty';
+              
+              slotDiv.className = `slot-item lead-form ${isBooked ? 'booked' : 'empty'}`;
+              
+              let statusBadge = '';
+              if (isEmpty) {
+                statusBadge = '<span class="slot-status status-empty">Empty</span>';
+              } else if (slotData.approval_status === 'Approved by DM') {
+                statusBadge = '<span class="slot-status status-approved">✓ DM Approved</span>';
+              } else if (slotData.approval_status === 'Rejected by DM') {
+                statusBadge = '<span class="slot-status" style="background:#EF5350;color:white;">✗ DM Rejected</span>';
+              } else if (slotData.approval_status === 'Rejected by Head') {
+                statusBadge = '<span class="slot-status" style="background:#FF9800;color:white;">✗ Head Rejected</span>';
+              } else if (slotData.approval_status === 'Resubmitted for Review') {
+                statusBadge = '<span class="slot-status status-review">Resubmitted</span>';
+              } else if (slotData.head_approved) {
+                statusBadge = '<span class="slot-status status-approved">✓ Head Approved</span>';
+              } else if (slotData.studio_status === 'Submitted for Review') {
+                statusBadge = '<span class="slot-status status-review">Review</span>';
+              } else if (slotData.studio_status === 'Working') {
+                statusBadge = '<span class="slot-status status-working">Working</span>';
+              } else {
+                statusBadge = '<span class="slot-status status-received">Received</span>';
+              }
+              
+              slotDiv.innerHTML = `
+              <span class="slot-number">S${slotNum}</span>
+              ${statusBadge}
+              <span class="slot-page">${slotData.page_name || schedule.page}</span>
+              ${getAssignedPersonDisplay(slotData)}
+              `;
+              
+              slotDiv.onclick = () => showSlotDetails(slotData, dateStr);
+            } else {
+              slotDiv.className = 'slot-item lead-form empty';
+              slotDiv.innerHTML = `
+                <span class="slot-number">S${slotNum}</span>
+                <span class="slot-status status-empty">Empty</span>
+                <span class="slot-page">${schedule.page}</span>
+              `;
+            }
+            
+            slotsContainer.appendChild(slotDiv);
+          }
+
+          const contentItems = dayData.filter(d => d.slot_type === 'content_calendar');
+          contentItems.forEach(item => {
+            const slotDiv = document.createElement('div');
+            slotDiv.className = 'slot-item content-calendar';
+            
+            let statusBadge = '';
+            if (item.approval_status === 'Approved by DM') {
+              statusBadge = '<span class="slot-status status-approved">✓ DM Approved</span>';
+            } else if (item.approval_status === 'Rejected by DM') {
+              statusBadge = '<span class="slot-status" style="background:#EF5350;color:white;">✗ DM Rejected</span>';
+            } else if (item.approval_status === 'Rejected by Head') {
+              statusBadge = '<span class="slot-status" style="background:#FF9800;color:white;">✗ Head Rejected</span>';
+            } else if (item.approval_status === 'Resubmitted for Review') {
+              statusBadge = '<span class="slot-status status-review">Resubmitted</span>';
+            } else if (item.head_approved) {
+              statusBadge = '<span class="slot-status status-approved">✓ Head Approved</span>';
+            } else if (item.studio_status === 'Submitted for Review') {
+              statusBadge = '<span class="slot-status status-review">Review</span>';
+            } else if (item.studio_status === 'Working') {
+              statusBadge = '<span class="slot-status status-working">Working</span>';
+            } else {
+              statusBadge = '<span class="slot-status status-received">Received</span>';
+            }
+            
+            let displayText;
+            // PRIORITY 1: Check for department first (extra content)
+            if (item.department) {
+              displayText = item.department;
+            }
+            // PRIORITY 2: If approved, show category + product code
+            else if (item.head_approved) {
+              const category = item.content_details?.split('-')[1]?.trim() || '';
+              displayText = `${category}${item.product_code ? ' • ' + item.product_code : ''}`;
+            }
+            // PRIORITY 3: Show category or page name
+            else {
+              const category = item.content_details?.split('-')[1]?.trim() || '';
+              displayText = item.page_name || 'Daily Post';
+            }
+            
+            slotDiv.innerHTML = `
+              <span class="slot-number">📅</span>
+              ${statusBadge}
+              <span class="slot-page">${displayText}</span>
+              ${getAssignedPersonDisplay(item)}
+            `;
+            
+            slotDiv.onclick = () => showSlotDetails(item, dateStr);
+            slotsContainer.appendChild(slotDiv);
+          });
+        }
+
+        dayDiv.appendChild(slotsContainer);
+        grid.appendChild(dayDiv);
+      }
+    }
+
+    // UPDATED: Added rejection reason display
+    function showSlotDetails(slotData, dateStr) {
+      // NEW: Show rejection reasons if they exist
+      const rejectionInfo = slotData.head_rejection_reason || slotData.dm_rejection_reason ? `
+        <div style="background:#FFEBEE;padding:15px;border-radius:8px;margin-bottom:20px;border-left:4px solid #D32F2F;">
+          <strong style="color:#D32F2F;">❌ Rejection Reason:</strong>
+          <p style="margin-top:8px;">${slotData.head_rejection_reason || slotData.dm_rejection_reason}</p>
+        </div>
+      ` : '';
+
+      const statusOptions = ['Received', 'Working', 'Submitted for Review', 'Approved', 'Rejected by Head'].map(status => 
+        `<option value="${status}" ${slotData.studio_status === status ? 'selected' : ''}>${status}</option>`
+      ).join('');
+
+      // ✅ NEW: Team member options for assigned_to dropdown
+      const teamMemberOptions = TEAM_MEMBERS
+        .map(member => `<option value="${member}" ${slotData.assigned_to === member ? 'selected' : ''}>${member}</option>`)
+        .join('');
+
+      const content = `
+        <button class="close-modal" onclick="closeModal()">×</button>
+        <h3>📝 Slot Details - ${dateStr}</h3>
+        <div style="background:#f9f9f9;padding:20px;border-radius:12px;margin-bottom:20px;">
+          <div style="display:grid;gap:15px;">
+            <div>
+              <strong style="color:#5e3a8e;">Type:</strong> 
+              <span>${slotData.slot_type === 'lead_form' ? '🔵 Lead Form' : '🟢 Content Calendar'}</span>
+            </div>
+            <div>
+              <strong style="color:#5e3a8e;">Page:</strong> 
+              <span>${slotData.page_name || '-'}</span>
+            </div>
+            <div>
+              <strong style="color:#5e3a8e;">Department:</strong> 
+              <span>${slotData.department || '-'}</span>
+            </div>
+            <div>
+              <strong style="color:#5e3a8e;">Product Code:</strong> 
+              <span>${slotData.product_code || '-'}</span>
+            </div>
+            <div>
+              <strong style="color:#5e3a8e;">Content:</strong> 
+              <span>${slotData.content_details || '-'}</span>
+            </div>
+            <div>
+              <strong style="color:#5e3a8e;">Reference Link:</strong> 
+              ${slotData.reference_links ? `<a href="${slotData.reference_links}" target="_blank" style="color:#5e3a8e;">View</a>` : '-'}
+            </div>
+            ${slotData.assigned_to ? `<div><strong style="color:#5e3a8e;">👤 Assigned To:</strong> <span style="background:#E3F2FD;padding:5px 12px;border-radius:20px;font-weight:600;">${slotData.assigned_to}</span></div>` : ''}
+            <div>
+              <strong style="color:#5e3a8e;">Current Status:</strong> 
+              <span class="badge ${slotData.head_approved ? 'badge-approved' : slotData.studio_status === 'Working' ? 'badge-working' : 'badge-received'}">${slotData.approval_status || slotData.studio_status}</span>
+            </div>
+          </div>
+        </div>
+
+        ${rejectionInfo}
+
+        <form id="updateStatusForm">
+          <div class="form-group">
+            <label>Update Status</label>
+            <select id="studioStatus" required>
+              ${statusOptions}
+            </select>
+          </div>
+          <!-- ✅ NEW: Assigned To Dropdown (shows when status = Working) -->
+          <div class="form-group" id="assignedToGroup" style="display:none;">
+            <label>👤 Assign To</label>
+            <select id="assignedTo">
+              <option value="">-- Select Team Member --</option>
+              ${teamMemberOptions}
+            </select>
+          </div>
+          <div class="form-group" id="contentLinkGroup" style="display:none;">
+            <label>Content Link *</label>
+            <input type="url" id="contentLink" placeholder="https://..." value="${slotData.content_link || ''}">
+          </div>
+          <div class="form-group" id="passwordGroup" style="display:none;">
+            <label>Head Approval Password *</label>
+            <input type="password" id="approvalPassword" placeholder="Enter password">
+          </div>
+          <div class="form-group" id="rejectionGroup" style="display:none;">
+            <label>Rejection Password *</label>
+            <input type="password" id="rejectionPassword" placeholder="Enter password">
+          </div>
+          <div class="form-group" id="rejectionReasonGroup" style="display:none;">
+            <label>Rejection Reason *</label>
+            <textarea id="rejectionReason" rows="3" placeholder="Explain why this content is being rejected..."></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%;">Update Status</button>
+        </form>
+      `;
+
+      showModal(content);
+
+      const statusSelect = document.getElementById('studioStatus');
+      const contentLinkGroup = document.getElementById('contentLinkGroup');
+      const passwordGroup = document.getElementById('passwordGroup');
+      const rejectionGroup = document.getElementById('rejectionGroup');
+      const rejectionReasonGroup = document.getElementById('rejectionReasonGroup');
+      const assignedToGroup = document.getElementById('assignedToGroup'); // ✅ NEW
+
+      statusSelect.addEventListener('change', () => {
+        contentLinkGroup.style.display = 'none';
+        passwordGroup.style.display = 'none';
+        rejectionGroup.style.display = 'none';
+        rejectionReasonGroup.style.display = 'none';
+        assignedToGroup.style.display = 'none'; // ✅ NEW
+
+        // ✅ NEW: Show assigned_to when status = Working
+        if (statusSelect.value === 'Working') {
+          assignedToGroup.style.display = 'block';
+        }
+        else if (statusSelect.value === 'Submitted for Review') {
+          contentLinkGroup.style.display = 'block';
+        } else if (statusSelect.value === 'Approved') {
+          contentLinkGroup.style.display = 'block';
+          passwordGroup.style.display = 'block';
+        } else if (statusSelect.value === 'Rejected by Head') {
+          rejectionGroup.style.display = 'block';
+          rejectionReasonGroup.style.display = 'block';
+        }
+      });
+
+      statusSelect.dispatchEvent(new Event('change'));
+
+      document.getElementById('updateStatusForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const newStatus = document.getElementById('studioStatus').value;
+        const contentLink = document.getElementById('contentLink')?.value;
+        const password = document.getElementById('approvalPassword')?.value;
+        const rejectionPassword = document.getElementById('rejectionPassword')?.value;
+        const rejectionReason = document.getElementById('rejectionReason')?.value;
+        const assignedTo = document.getElementById('assignedTo')?.value || null; // ✅ NEW
+
+        try {
+          showLoading();
+          await updateStudioStatus(slotData.id, {
+            studio_status: newStatus,
+            content_link: contentLink || null,
+            password: password || rejectionPassword || null,
+            rejection_reason: rejectionReason || null,
+            approved_by: 'Content Head',
+            date: slotData.date,
+            page_name: slotData.page_name,
+            assigned_to: assignedTo // ✅ NEW: Save assigned person
+          });
+          
+          closeModal();
+          
+          // Force complete reload - clear cache
+          studioCalendarData = [];
+          
+          // Wait for DB to update
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // Reload calendar with fresh data
+          await loadStudioCalendar();
+          
+          hideLoading();
+          alert('✅ Status updated!');
+        } catch (error) {
+          hideLoading();
+          alert('Error: ' + error.message);
+        }
+      });
+    }
+
+    // ✅ NEW: Helper function to display assigned person in slots
+    function getAssignedPersonDisplay(slotData) {
+      return slotData.assigned_to ? `<div style="font-size:9px;margin-top:3px;color:#1976D2;">👤 ${slotData.assigned_to}</div>` : '';
+    }
+
+    function changeStudioMonth(delta) {
+      currentStudioMonth += delta;
+      
+      if (currentStudioMonth > 12) {
+        currentStudioMonth = 1;
+        currentStudioYear++;
+      } else if (currentStudioMonth < 1) {
+        currentStudioMonth = 12;
+        currentStudioYear--;
+      }
+      
+      loadStudioCalendar();
+    }
+
+    function openAddExtraContentModal(prefillDate = null) {
+      const pageOptions = Object.values(PAGE_SCHEDULE).map(config => `
+        <option value="${config.page}">${config.page}</option>
+      `).join('');
+
+      const content = `
+        <button class="close-modal" onclick="closeModal()">×</button>
+        <h3>➕ Add Extra Content</h3>
+        <form id="extraContentForm">
+          <div class="form-group">
+            <label>Date *</label>
+            <input type="date" id="extraDate" required>
+          </div>
+          <div class="form-group">
+            <label>Department *</label>
+            <select id="extraDepartment" required>
+              <option value="">Select Department</option>
+              <option value="Kapruka Product">Kapruka Product</option>
+              <option value="Partner Central">Partner Central</option>
+              <option value="Global Shop">Global Shop</option>
+              <option value="Corporate Marketing">Corporate Marketing</option>
+              <option value="Top Management Request">Top Management Request</option>
+              <option value="Other Departments">Other Departments</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Page *</label>
+            <select id="extraPage" required>
+              ${pageOptions}
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Format *</label>
+            <select id="extraFormat" required>
+              <option value="">Select Format</option>
+              <option value="Video">Video</option>
+              <option value="Image">Image</option>
+              <option value="Cover Photo">Cover Photo</option>
+              <option value="Carousel">Carousel</option>
+              <option value="Album">Album</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Content Details *</label>
+            <textarea id="extraDetails" required rows="3" placeholder="Describe the content..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Reference Links</label>
+            <textarea id="extraLinks" rows="2" placeholder="https://..."></textarea>
+          </div>
+          <button type="submit" class="btn btn-success" style="width:100%;">Add Content</button>
+        </form>
+      `;
+
+      showModal(content);
+
+      // If a date was provided, pre-fill and lock the date field
+      if (prefillDate) {
+        const dateInput = document.getElementById('extraDate');
+        if (dateInput) {
+          dateInput.value = prefillDate;
+          dateInput.disabled = true;
+        }
+      }
+
+      document.getElementById('extraContentForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const extraData = {
+          date: document.getElementById('extraDate').value,
+          department: document.getElementById('extraDepartment').value,
+          page_name: document.getElementById('extraPage').value,
+          format: document.getElementById('extraFormat').value,
+          content_details: document.getElementById('extraDetails').value,
+          reference_links: document.getElementById('extraLinks').value,
+          created_by: 'Admin'
+        };
+
+        try {
+          showLoading();
+          await addExtraContent(extraData);
+          hideLoading();
+          closeModal();
+          alert('✅ Extra content added!');
+          loadStudioCalendar();
+        } catch (error) {
+          hideLoading();
+          alert('Error: ' + error.message);
+        }
+      });
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // NEW: DM APPROVALS
+    // ═══════════════════════════════════════════════════════════
+    async function loadDmApprovals() {
+      try {
+        showLoading();
+        allDmApprovals = await getDmApprovals();
+        hideLoading();
+        
+        applyDmFilters();
+      } catch (error) {
+        hideLoading();
+        alert('Error loading DM approvals: ' + error.message);
+      }
+    }
+
+    function applyDmFilters() {
+      const status = document.getElementById('filterDmStatus').value.toLowerCase();
+      const source = document.getElementById('filterDmSource').value.toLowerCase();
+      const page = document.getElementById('filterDmPage').value.toLowerCase();
+
+      const filtered = allDmApprovals.filter(dm => {
+        const matchStatus = !status || dm.dm_status.toLowerCase() === status;
+        const matchSource = !source || dm.source_type.toLowerCase() === source;
+        const matchPage = !page || (dm.page_name && dm.page_name.toLowerCase() === page);
+        return matchStatus && matchSource && matchPage;
+      });
+
+      renderDmApprovals(filtered);
+    }
+
+    function renderDmApprovals(approvals) {
+      const container = document.getElementById('dmApprovalsContainer');
+      
+      if (approvals.length === 0) {
+        container.innerHTML = '<p style="text-align:center;padding:40px;color:#999;">No approvals found</p>';
+        return;
+      }
+
+      container.innerHTML = approvals.map(dm => {
+        const rejectionHtml = dm.dm_rejection_reason ? `
+          <div class="rejection-reason">
+            <strong>Rejection Reason:</strong> ${dm.dm_rejection_reason}
+          </div>
+        ` : '';
+
+        const getStatusBadge = (status) => {
+          if (status === 'Pending') return '<span class="badge badge-pending">Pending</span>';
+          if (status === 'Approved') return '<span class="badge badge-approved">Approved</span>';
+          if (status === 'Rejected') return '<span class="badge badge-rejected">Rejected</span>';
+          return `<span class="badge">${status}</span>`;
+        };
+
+        return `
+          <div class="dm-approval-item">
+            <div class="dm-approval-header">
+              <div class="dm-approval-info">
+                <div class="dm-field">
+                  <strong>Content ID:</strong> ${dm.content_id}
+                </div>
+                <div class="dm-field">
+                  <strong>Source Type:</strong> ${dm.source_type}
+                </div>
+                ${dm.page_name ? `
+                  <div class="dm-field">
+                    <strong>Page:</strong> ${dm.page_name}
+                  </div>
+                ` : ''}
+                ${dm.drive_link ? `
+                  <div class="dm-field">
+                    <strong>Content Link:</strong> <a href="${dm.drive_link}" target="_blank">View Content</a>
+                  </div>
+                ` : ''}
+                ${dm.scheduled_live_date ? `
+                  <div class="dm-field">
+                    <strong>Scheduled Live Date:</strong> ${dm.scheduled_live_date}
+                  </div>
+                ` : ''}
+                <div class="dm-field">
+                  <strong>Status:</strong> ${getStatusBadge(dm.dm_status)}
+                </div>
+                ${dm.approved_at ? `
+                  <div class="dm-field">
+                    <strong>Approved At:</strong> ${formatDate(dm.approved_at)}
+                  </div>
+                ` : ''}
+                ${rejectionHtml}
+              </div>
+              <div class="dm-approval-actions">
+                ${dm.dm_status === 'Pending' ? `
+                  <button class="btn btn-success" onclick="approveDmContent(${dm.id})">✅ Approve</button>
+                  <button class="btn btn-danger" onclick="rejectDmContent(${dm.id})">❌ Reject</button>
+                ` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function approveDmContent(id) {
+      const approverName = prompt('Enter your name:');
+      if (!approverName) return;
+
+      const confirmMsg = 'Approve this content for publishing?';
+      if (!confirm(confirmMsg)) return;
+
+      try {
+        showLoading();
+        await updateDmApproval(id, {
+          dm_status: 'Approved',
+          approved_by: approverName
+        });
+        hideLoading();
+        alert('✅ Content approved!');
+        loadDmApprovals();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    }
+
+    function rejectDmContent(id) {
+      const content = `
+        <button class="close-modal" onclick="closeModal()">×</button>
+        <h3>❌ Reject Content</h3>
+        <form id="rejectDmForm">
+          <div class="form-group">
+            <label>Rejection Reason *</label>
+            <textarea id="dmRejectionReason" required rows="4" placeholder="Explain why this content is being rejected..."></textarea>
+          </div>
+          <button type="submit" class="btn btn-danger" style="width:100%;">Reject Content</button>
+        </form>
+      `;
+
+      showModal(content);
+
+      document.getElementById('rejectDmForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const reason = document.getElementById('dmRejectionReason').value;
+
+        try {
+          showLoading();
+          await updateDmApproval(id, {
+            dm_status: 'Rejected',
+            rejection_reason: reason
+          });
+          hideLoading();
+          closeModal();
+          alert('❌ Content rejected');
+          loadDmApprovals();
+        } catch (error) {
+          hideLoading();
+          alert('Error: ' + error.message);
+        }
+      });
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // HOT PRODUCTS
+    // ═══════════════════════════════════════════════════════════
+    document.getElementById('addHotProductForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const productData = {
+        category: document.getElementById('hotProductCategory').value,
+        productLink: document.getElementById('hotProductLink').value,
+        salesCount: document.getElementById('hotProductSales').value
+      };
+
+      try {
+        showLoading();
+        await addHotProduct(productData);
+        hideLoading();
+        alert('✅ Product added!');
+        document.getElementById('addHotProductForm').reset();
+        loadHotProducts();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    });
+
+    async function loadHotProducts() {
+      try {
+        showLoading();
+        allHotProducts = await getAllHotProducts();
+        hideLoading();
+        
+        const listed = allHotProducts.filter(p => p.listed).length;
+        const categories = [...new Set(allHotProducts.map(p => p.category))].length;
+        
+        document.getElementById('adminTotalProducts').textContent = allHotProducts.length;
+        document.getElementById('adminListedProducts').textContent = listed;
+        document.getElementById('adminCategoryCount').textContent = categories;
+        
+        const tbody = document.getElementById('hotProductsTableBody');
+        
+        if (allHotProducts.length === 0) {
+          tbody.innerHTML = '<p style="text-align:center;padding:40px;color:#999;">No products found</p>';
+          return;
+        }
+        
+        tbody.innerHTML = allHotProducts.map(p => `
+          <div style="background:white;padding:20px;border-radius:12px;margin-bottom:15px;border:2px solid #e8e8e8;">
+            <div style="display:grid;grid-template-columns:auto 1fr auto;gap:20px;align-items:center;">
+              <div>
+                <div style="font-weight:700;color:#5e3a8e;margin-bottom:5px;">ID: ${p.id}</div>
+                <div style="font-size:12px;color:#666;">${p.category}</div>
+              </div>
+              <div>
+                <a href="${p.product_link}" target="_blank" style="color:#5e3a8e;font-size:14px;word-break:break-all;">
+                  ${p.product_link}
+                </a>
+                <div style="margin-top:5px;">
+                  <span style="background:#E3F2FD;padding:4px 8px;border-radius:6px;font-size:11px;font-weight:600;">
+                    Sales: ${p.sales_count || 0}
+                  </span>
+                  <span style="background:${p.listed ? '#C8E6C9' : '#FFCDD2'};padding:4px 8px;border-radius:6px;font-size:11px;font-weight:600;margin-left:5px;">
+                    ${p.listed ? 'Listed' : 'Unlisted'}
+                  </span>
+                </div>
+              </div>
+              <div>
+                <button onclick="deleteHotProductConfirm(${p.id})" style="padding:8px 16px;background:#d32f2f;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;">
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      } catch (error) {
+        hideLoading();
+        alert('Error loading hot products: ' + error.message);
+      }
+    }
+
+    async function deleteHotProductConfirm(id) {
+      if (!confirm('Delete this product?')) return;
+      
+      try {
+        showLoading();
+        await deleteHotProduct(id);
+        hideLoading();
+        alert('Product deleted');
+        loadHotProducts();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // DEPARTMENTS
+    // ═══════════════════════════════════════════════════════════
+    document.getElementById('deptForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const config = {
+        month: document.getElementById('deptMonth').value,
+        department: document.getElementById('deptName').value,
+        budget: document.getElementById('deptBudget').value,
+        slots: document.getElementById('deptSlots').value,
+        color: document.getElementById('deptColor').value,
+        active: document.getElementById('deptActive').value
+      };
+
+      try {
+        showLoading();
+        await addDepartment(config);
+        hideLoading();
+        alert('✅ Department added!');
+        document.getElementById('deptForm').reset();
+        loadDepartments();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    });
+
+    async function loadDepartments() {
+      try {
+        const depts = await getAllDepartments();
+        const tbody = document.getElementById('deptsTable');
+
+        if (depts.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;">No departments yet</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = depts.map(d => `
+          <tr>
+            <td>${d.month}</td>
+            <td>${d.department}</td>
+            <td>$${d.budget}k</td>
+            <td>${d.slots}</td>
+            <td>${d.active}</td>
+            <td>
+              <button class="btn btn-danger" onclick="deleteDept(${d.row})">Delete</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (error) {
+        document.getElementById('deptsTable').innerHTML = 
+          '<tr><td colspan="6" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
+      }
+    }
+
+    async function deleteDept(row) {
+      if (!confirm('Delete this department?')) return;
+
+      try {
+        showLoading();
+        await deleteDepartment(row);
+        hideLoading();
+        alert('Department deleted');
+        loadDepartments();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    }
+
+    // Initialize
+    currentStudioMonth = 1;
+    currentStudioYear = 2026;
+  </script>
 </body>
 </html>
+
+
