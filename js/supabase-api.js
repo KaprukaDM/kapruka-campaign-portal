@@ -1462,3 +1462,92 @@ async function searchProductPerformance(keyword, startDate, endDate) {
     throw error;
   }
 }
+// ═══════════════════════════════════════════════════════════════
+// PERFORMANCE FORECAST API (BASED ON HISTORICAL DATA)
+// ═══════════════════════════════════════════════════════════════
+
+async function getPerformanceForecast(objective, budget) {
+  try {
+    // Fetch all historical data for the specified objective
+    const allData = await supabaseQuery(
+      `meta_ads_performance?objective=eq.${encodeURIComponent(objective)}&order=date.desc`
+    );
+
+    if (allData.length === 0) {
+      throw new Error(`No historical data found for objective: ${objective}`);
+    }
+
+    // Calculate aggregated metrics from historical data
+    let totalSpent = 0;
+    let totalReach = 0;
+    let totalImpressions = 0;
+    let totalClicks = 0;
+    let totalResults = 0;
+    let totalOrders = 0;
+    let recordCount = allData.length;
+
+    allData.forEach(row => {
+      totalSpent += parseFloat(row.amount_spent || 0);
+      totalReach += parseInt(row.reach || 0);
+      totalImpressions += parseInt(row.impression || 0);
+      totalClicks += parseInt(row.clicks || 0);
+      totalResults += parseInt(row.results || 0);
+      totalOrders += parseInt(row.if_direct_orders || 0);
+    });
+
+    // Calculate average performance metrics
+    const avgCPC = totalClicks > 0 ? totalSpent / totalClicks : 0;
+    const avgCPM = totalImpressions > 0 ? (totalSpent / totalImpressions) * 1000 : 0;
+    const avgCTR = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
+    const avgConversionRate = totalClicks > 0 ? (totalOrders / totalClicks) * 100 : 0;
+    const avgReachPerDollar = totalSpent > 0 ? totalReach / totalSpent : 0;
+    const avgImpressionsPerDollar = totalSpent > 0 ? totalImpressions / totalSpent : 0;
+    const avgCostPerResult = totalResults > 0 ? totalSpent / totalResults : 0;
+    const avgCostPerOrder = totalOrders > 0 ? totalSpent / totalOrders : 0;
+
+    // Calculate forecasts based on the provided budget
+    const forecastedClicks = avgCPC > 0 ? Math.round(budget / avgCPC) : 0;
+    const forecastedImpressions = avgCPM > 0 ? Math.round((budget / avgCPM) * 1000) : 0;
+    const forecastedReach = Math.round(budget * avgReachPerDollar);
+    const forecastedOrders = Math.round(forecastedClicks * (avgConversionRate / 100));
+    const forecastedResults = avgCostPerResult > 0 ? Math.round(budget / avgCostPerResult) : 0;
+
+    // Calculate cost per metrics for the forecast
+    const forecastedCostPerOrder = forecastedOrders > 0 ? budget / forecastedOrders : 0;
+    const forecastedCostPerResult = forecastedResults > 0 ? budget / forecastedResults : 0;
+
+    return {
+      success: true,
+      objective: objective,
+      budget: budget,
+      historicalData: {
+        recordCount: recordCount,
+        totalSpent: totalSpent,
+        avgCPC: avgCPC,
+        avgCPM: avgCPM,
+        avgCTR: avgCTR,
+        avgConversionRate: avgConversionRate,
+        avgReachPerDollar: avgReachPerDollar,
+        avgImpressionsPerDollar: avgImpressionsPerDollar,
+        avgCostPerResult: avgCostPerResult,
+        avgCostPerOrder: avgCostPerOrder
+      },
+      forecast: {
+        reach: forecastedReach,
+        impressions: forecastedImpressions,
+        clicks: forecastedClicks,
+        results: forecastedResults,
+        orders: forecastedOrders,
+        ctr: avgCTR,
+        cpc: avgCPC,
+        cpm: avgCPM,
+        costPerResult: forecastedCostPerResult,
+        costPerOrder: forecastedCostPerOrder,
+        conversionRate: avgConversionRate
+      }
+    };
+  } catch (error) {
+    console.error('getPerformanceForecast error:', error);
+    throw error;
+  }
+}
