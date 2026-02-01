@@ -519,16 +519,9 @@
       try {
         showLoading();
 
-        // Query Supabase
-        const query = {
-          table: 'experiment_campaigns',
-          select: '*',
-          gte: { date: startDate },
-          lte: { date: endDate },
-          order: { campaign_name: 'asc', date: 'desc' }
-        };
+        // ✅ FIXED: Call the function from supabase-api.js
+        const data = await getExperimentCampaigns(startDate, endDate);
 
-        const data = await supabaseQuery(query);
         hideLoading();
 
         if (!data || data.length === 0) {
@@ -637,8 +630,8 @@
           verdict = 'WINNER';
         } else {
           // Compare to best
-          const convDiff = ((bestConv - conv) / bestConv) * 100;
-          const cpcDiff = ((cpc - bestCPC) / bestCPC) * 100;
+          const convDiff = bestConv > 0 ? ((bestConv - conv) / bestConv) * 100 : 0;
+          const cpcDiff = bestCPC > 0 ? ((cpc - bestCPC) / bestCPC) * 100 : 0;
 
           // Loser if significantly worse (>30% less conversions OR >30% higher CPC)
           if (convDiff > 30 || cpcDiff > 30) {
