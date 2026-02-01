@@ -14,7 +14,7 @@
       min-height: 100vh;
       padding: 40px 20px;
     }
-    .container { max-width: 1800px; margin: 0 auto; }
+    .container { max-width: 1900px; margin: 0 auto; }
 
     .header {
       text-align: center;
@@ -251,7 +251,7 @@
       gap: 15px;
     }
 
-    /* IMPROVED TABLE STYLES */
+    /* TABLE STYLES */
     .table-wrapper {
       overflow-x: auto;
       border-radius: 12px;
@@ -266,7 +266,7 @@
     .experiments-table th {
       background: linear-gradient(135deg, #5e3a8e, #3d2461);
       color: white;
-      padding: 18px 16px;
+      padding: 18px 14px;
       text-align: left;
       font-weight: 700;
       font-size: 11px;
@@ -278,7 +278,7 @@
       z-index: 10;
     }
     .experiments-table td {
-      padding: 20px 16px;
+      padding: 18px 14px;
       border-bottom: 1px solid #f0f0f0;
       vertical-align: top;
     }
@@ -300,34 +300,35 @@
       font-size: 11px;
       letter-spacing: 0.5px;
     }
+    .source-badge.tiktok {
+      background: linear-gradient(135deg, #00f2ea, #ff0050);
+    }
 
-    /* Campaign Name - More Readable */
+    /* Campaign Name */
     .campaign-name {
       font-weight: 700;
       color: #5e3a8e;
-      font-size: 14px;
+      font-size: 13px;
       line-height: 1.4;
-      max-width: 350px;
+      max-width: 280px;
+      word-wrap: break-word;
     }
 
-    /* Ad Count Badge */
-    .ad-count-badge {
-      display: inline-block;
-      background: #E3F2FD;
-      color: #1565C0;
-      padding: 4px 10px;
-      border-radius: 12px;
-      font-size: 11px;
-      font-weight: 700;
-      margin-top: 8px;
+    /* Ad Name */
+    .ad-name {
+      color: #333;
+      font-size: 12px;
+      line-height: 1.5;
+      max-width: 280px;
+      word-wrap: break-word;
     }
 
-    /* Metrics - Improved Layout */
+    /* Metrics Grid */
     .metrics-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px 12px;
-      min-width: 220px;
+      min-width: 200px;
     }
     .metric-item {
       display: flex;
@@ -338,7 +339,7 @@
     .metric-label {
       color: #666;
       font-weight: 600;
-      font-size: 11px;
+      font-size: 10px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
@@ -353,14 +354,14 @@
       font-size: 14px;
     }
 
-    /* Verdict - Larger and More Prominent */
+    /* Verdict */
     .verdict-badge {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 10px 20px;
+      gap: 6px;
+      padding: 8px 16px;
       border-radius: 25px;
-      font-size: 13px;
+      font-size: 11px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.5px;
@@ -382,7 +383,7 @@
       border: 2px solid #2196F3;
     }
     .verdict-icon {
-      font-size: 16px;
+      font-size: 14px;
     }
 
     .loading {
@@ -481,7 +482,7 @@
     <div class="stats-grid">
       <div class="stat-card active">
         <div class="stat-icon">🧪</div>
-        <div class="stat-label">Total Campaigns</div>
+        <div class="stat-label">Testing</div>
         <div class="stat-value" id="activeCount">0</div>
       </div>
       <div class="stat-card winner">
@@ -499,7 +500,7 @@
     <!-- Experiments Table -->
     <div class="experiments-card">
       <h2>
-        <span>Campaign Performance (Aggregated)</span>
+        <span>Experiment Results</span>
       </h2>
       <div class="table-wrapper">
         <table class="experiments-table">
@@ -507,8 +508,8 @@
             <tr>
               <th>Source</th>
               <th>Campaign Name</th>
-              <th>Cumulative Metrics</th>
-              <th>Avg CPC</th>
+              <th>Ad Name</th>
+              <th>Performance Metrics</th>
               <th>Verdict</th>
             </tr>
           </thead>
@@ -528,6 +529,7 @@
   <script src="js/supabase-api.js"></script>
   <script>
     const CORRECT_PASSWORD = 'AK11';
+    const USD_TO_LKR = 330; // ✅ Exchange rate: $1 = ₹330
 
     function checkPassword() {
       const input = document.getElementById('passwordInput').value;
@@ -591,7 +593,7 @@
           return;
         }
 
-        analyzeAndDisplayAggregated(data);
+        analyzeAndDisplay(data);
 
       } catch (error) {
         hideLoading();
@@ -600,33 +602,13 @@
       }
     }
 
-    // ✅ NEW: Aggregate by campaign_id
-    function analyzeAndDisplayAggregated(data) {
+    function analyzeAndDisplay(data) {
       const campaigns = {};
-
-      // Group by campaign_id (not campaign_name)
       data.forEach(row => {
-        const key = row.campaign_id || row.campaign_name;
-        if (!campaigns[key]) {
-          campaigns[key] = {
-            campaign_id: row.campaign_id,
-            campaign_name: row.campaign_name,
-            source: row.source,
-            total_spent: 0,
-            total_conversions: 0,
-            total_leads: 0,
-            total_results: 0,
-            ad_count: 0,
-            ads: []
-          };
+        if (!campaigns[row.campaign_name]) {
+          campaigns[row.campaign_name] = [];
         }
-
-        campaigns[key].total_spent += parseFloat(row.amount_spent) || 0;
-        campaigns[key].total_conversions += parseInt(row.conversions) || 0;
-        campaigns[key].total_leads += parseInt(row.leads) || 0;
-        campaigns[key].total_results += parseInt(row.results) || 0;
-        campaigns[key].ad_count += 1;
-        campaigns[key].ads.push(row);
+        campaigns[row.campaign_name].push(row);
       });
 
       let testingCount = 0;
@@ -635,31 +617,43 @@
 
       const rows = [];
 
-      Object.keys(campaigns).forEach(key => {
-        const camp = campaigns[key];
+      Object.keys(campaigns).forEach(campaignName => {
+        const ads = campaigns[campaignName];
 
-        // Calculate average CPC
-        const totalActions = camp.total_conversions + camp.total_leads;
-        const avgCPC = totalActions > 0 ? camp.total_spent / totalActions : 0;
+        if (ads.length === 1) {
+          const ad = ads[0];
+          const verdict = evaluateSingleAd(ad);
 
-        // Evaluate campaign
-        const verdict = evaluateCampaign(camp.total_conversions, avgCPC);
+          if (verdict === 'WINNER') winnerCount++;
+          else if (verdict === 'LOSER') loserCount++;
+          else testingCount++;
 
-        if (verdict === 'WINNER') winnerCount++;
-        else if (verdict === 'LOSER') loserCount++;
-        else testingCount++;
+          rows.push(createRow(ad, verdict));
 
-        rows.push(createAggregatedRow(camp, avgCPC, verdict));
+        } else {
+          const comparison = compareAds(ads);
+
+          comparison.forEach(result => {
+            if (result.verdict === 'WINNER') winnerCount++;
+            else if (result.verdict === 'LOSER') loserCount++;
+            else testingCount++;
+
+            rows.push(createRow(result.ad, result.verdict));
+          });
+        }
       });
 
-      document.getElementById('activeCount').textContent = Object.keys(campaigns).length;
+      document.getElementById('activeCount').textContent = testingCount;
       document.getElementById('winnerCount').textContent = winnerCount;
       document.getElementById('loserCount').textContent = loserCount;
 
       document.getElementById('experimentsTableBody').innerHTML = rows.join('');
     }
 
-    function evaluateCampaign(conversions, cpc) {
+    function evaluateSingleAd(ad) {
+      const conversions = parseInt(ad.conversions) || 0;
+      const cpc = parseFloat(ad.cpc) || 0;
+
       if (conversions >= 15 && cpc < 0.40) {
         return 'WINNER';
       } else if (conversions < 3 || cpc > 1.50) {
@@ -668,7 +662,39 @@
       return 'TESTING';
     }
 
-    function createAggregatedRow(camp, avgCPC, verdict) {
+    function compareAds(ads) {
+      const sorted = [...ads].sort((a, b) => {
+        const convDiff = (parseInt(b.conversions) || 0) - (parseInt(a.conversions) || 0);
+        if (convDiff !== 0) return convDiff;
+        return (parseFloat(a.cpc) || 999) - (parseFloat(b.cpc) || 999);
+      });
+
+      const best = sorted[0];
+      const bestConv = parseInt(best.conversions) || 0;
+      const bestCPC = parseFloat(best.cpc) || 999;
+
+      return sorted.map((ad, index) => {
+        const conv = parseInt(ad.conversions) || 0;
+        const cpc = parseFloat(ad.cpc) || 999;
+
+        let verdict = 'TESTING';
+
+        if (index === 0) {
+          verdict = 'WINNER';
+        } else {
+          const convDiff = bestConv > 0 ? ((bestConv - conv) / bestConv) * 100 : 0;
+          const cpcDiff = bestCPC > 0 ? ((cpc - bestCPC) / bestCPC) * 100 : 0;
+
+          if (convDiff > 40 || cpcDiff > 40) {
+            verdict = 'LOSER';
+          }
+        }
+
+        return { ad, verdict };
+      });
+    }
+
+    function createRow(ad, verdict) {
       const verdictClass = verdict === 'WINNER' ? 'verdict-winner' : 
                           verdict === 'LOSER' ? 'verdict-loser' : 'verdict-testing';
       const verdictIcon = verdict === 'WINNER' ? '🟢' : 
@@ -676,37 +702,49 @@
       const verdictLabel = verdict === 'WINNER' ? 'Winner' :
                           verdict === 'LOSER' ? 'Loser' : 'Testing';
 
+      // ✅ Convert TikTok USD to LKR
+      const isTikTok = (ad.source || '').toUpperCase() === 'TIKTOK';
+      const spent = parseFloat(ad.amount_spent) || 0;
+      const cpc = parseFloat(ad.cpc) || 0;
+
+      const displaySpent = isTikTok ? (spent * USD_TO_LKR) : spent;
+      const displayCPC = isTikTok ? (cpc * USD_TO_LKR) : cpc;
+      const currency = isTikTok ? 'Rs.' : '$';
+
       return `
         <tr>
           <td>
-            <span class="source-badge">${camp.source || 'META'}</span>
+            <span class="source-badge ${isTikTok ? 'tiktok' : ''}">${ad.source || 'META'}</span>
           </td>
           <td>
-            <div class="campaign-name">${camp.campaign_name}</div>
-            <div class="ad-count-badge">${camp.ad_count} Ad${camp.ad_count > 1 ? 's' : ''}</div>
+            <div class="campaign-name">${ad.campaign_name}</div>
+          </td>
+          <td>
+            <div class="ad-name">${ad.ad_name}</div>
           </td>
           <td>
             <div class="metrics-grid">
               <div class="metric-item">
-                <span class="metric-label">Total Spent</span>
-                <span class="metric-value">$${camp.total_spent.toFixed(2)}</span>
+                <span class="metric-label">Spent</span>
+                <span class="metric-value">${currency}${displaySpent.toFixed(2)}</span>
               </div>
               <div class="metric-item">
-                <span class="metric-label">Conversions</span>
-                <span class="metric-value highlight">${camp.total_conversions}</span>
+                <span class="metric-label">Conv.</span>
+                <span class="metric-value highlight">${ad.conversions || 0}</span>
               </div>
               <div class="metric-item">
                 <span class="metric-label">Leads</span>
-                <span class="metric-value">${camp.total_leads}</span>
+                <span class="metric-value">${ad.leads || 0}</span>
+              </div>
+              <div class="metric-item">
+                <span class="metric-label">CPC</span>
+                <span class="metric-value highlight">${currency}${displayCPC.toFixed(3)}</span>
               </div>
               <div class="metric-item">
                 <span class="metric-label">Results</span>
-                <span class="metric-value">${camp.total_results}</span>
+                <span class="metric-value">${ad.results || 0}</span>
               </div>
             </div>
-          </td>
-          <td>
-            <div class="metric-value highlight">$${avgCPC.toFixed(3)}</div>
           </td>
           <td>
             <span class="verdict-badge ${verdictClass}">
