@@ -1478,3 +1478,63 @@ async function searchProductPerformance(keyword, startDate, endDate) {
 }
 
 console.log('✅ Supabase API loaded successfully with global variables');
+
+// ==========================================
+// EXPERIMENT CAMPAIGNS API
+// ==========================================
+
+/**
+ * Get experiment campaigns with date filtering
+ */
+async function getExperimentCampaigns(startDate, endDate) {
+  try {
+    const url = `${SUPABASE_URL}/rest/v1/experiment_campaigns?date=gte.${startDate}&date=lte.${endDate}&order=campaign_name.asc,date.desc`;
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch experiments: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('getExperimentCampaigns error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get all experiment campaigns (no date filter)
+ */
+async function getAllExperimentCampaigns() {
+  try {
+    const url = `${SUPABASE_URL}/rest/v1/experiment_campaigns?order=date.desc,campaign_name.asc`;
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch all experiments: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('getAllExperimentCampaigns error:', error);
+    throw error;
+  }
+}
