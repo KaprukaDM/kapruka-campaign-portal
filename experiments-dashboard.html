@@ -307,16 +307,19 @@
       color: #5e3a8e;
       font-size: 14px;
       line-height: 1.4;
-      max-width: 250px;
+      max-width: 350px;
     }
 
-    /* Ad Name - Better Formatting */
-    .ad-name {
-      color: #333;
-      font-size: 12px;
-      line-height: 1.5;
-      max-width: 300px;
-      word-wrap: break-word;
+    /* Ad Count Badge */
+    .ad-count-badge {
+      display: inline-block;
+      background: #E3F2FD;
+      color: #1565C0;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+      margin-top: 8px;
     }
 
     /* Metrics - Improved Layout */
@@ -324,7 +327,7 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px 12px;
-      min-width: 200px;
+      min-width: 220px;
     }
     .metric-item {
       display: flex;
@@ -478,7 +481,7 @@
     <div class="stats-grid">
       <div class="stat-card active">
         <div class="stat-icon">🧪</div>
-        <div class="stat-label">Testing</div>
+        <div class="stat-label">Total Campaigns</div>
         <div class="stat-value" id="activeCount">0</div>
       </div>
       <div class="stat-card winner">
@@ -496,16 +499,16 @@
     <!-- Experiments Table -->
     <div class="experiments-card">
       <h2>
-        <span>Experiment Results</span>
+        <span>Campaign Performance (Aggregated)</span>
       </h2>
       <div class="table-wrapper">
         <table class="experiments-table">
           <thead>
             <tr>
               <th>Source</th>
-              <th>Campaign</th>
-              <th>Ad Name</th>
-              <th>Performance Metrics</th>
+              <th>Campaign Name</th>
+              <th>Cumulative Metrics</th>
+              <th>Avg CPC</th>
               <th>Verdict</th>
             </tr>
           </thead>
@@ -526,7 +529,6 @@
   <script>
     const CORRECT_PASSWORD = 'AK11';
 
-    // Password check
     function checkPassword() {
       const input = document.getElementById('passwordInput').value;
       if (input === CORRECT_PASSWORD) {
@@ -589,7 +591,7 @@
           return;
         }
 
-        analyzeAndDisplay(data);
+        analyzeAndDisplayAggregated(data);
 
       } catch (error) {
         hideLoading();
@@ -598,13 +600,33 @@
       }
     }
 
-    function analyzeAndDisplay(data) {
+    // ✅ NEW: Aggregate by campaign_id
+    function analyzeAndDisplayAggregated(data) {
       const campaigns = {};
+
+      // Group by campaign_id (not campaign_name)
       data.forEach(row => {
-        if (!campaigns[row.campaign_name]) {
-          campaigns[row.campaign_name] = [];
+        const key = row.campaign_id || row.campaign_name;
+        if (!campaigns[key]) {
+          campaigns[key] = {
+            campaign_id: row.campaign_id,
+            campaign_name: row.campaign_name,
+            source: row.source,
+            total_spent: 0,
+            total_conversions: 0,
+            total_leads: 0,
+            total_results: 0,
+            ad_count: 0,
+            ads: []
+          };
         }
-        campaigns[row.campaign_name].push(row);
+
+        campaigns[key].total_spent += parseFloat(row.amount_spent) || 0;
+        campaigns[key].total_conversions += parseInt(row.conversions) || 0;
+        campaigns[key].total_leads += parseInt(row.leads) || 0;
+        campaigns[key].total_results += parseInt(row.results) || 0;
+        campaigns[key].ad_count += 1;
+        campaigns[key].ads.push(row);
       });
 
       let testingCount = 0;
@@ -613,44 +635,31 @@
 
       const rows = [];
 
-      Object.keys(campaigns).forEach(campaignName => {
-        const ads = campaigns[campaignName];
+      Object.keys(campaigns).forEach(key => {
+        const camp = campaigns[key];
 
-        if (ads.length === 1) {
-          const ad = ads[0];
-          const verdict = evaluateSingleAd(ad);
+        // Calculate average CPC
+        const totalActions = camp.total_conversions + camp.total_leads;
+        const avgCPC = totalActions > 0 ? camp.total_spent / totalActions : 0;
 
-          if (verdict === 'WINNER') winnerCount++;
-          else if (verdict === 'LOSER') loserCount++;
-          else testingCount++;
+        // Evaluate campaign
+        const verdict = evaluateCampaign(camp.total_conversions, avgCPC);
 
-          rows.push(createRow(ad, verdict));
+        if (verdict === 'WINNER') winnerCount++;
+        else if (verdict === 'LOSER') loserCount++;
+        else testingCount++;
 
-        } else {
-          const comparison = compareAds(ads);
-
-          comparison.forEach(result => {
-            if (result.verdict === 'WINNER') winnerCount++;
-            else if (result.verdict === 'LOSER') loserCount++;
-            else testingCount++;
-
-            rows.push(createRow(result.ad, result.verdict));
-          });
-        }
+        rows.push(createAggregatedRow(camp, avgCPC, verdict));
       });
 
-      document.getElementById('activeCount').textContent = testingCount;
+      document.getElementById('activeCount').textContent = Object.keys(campaigns).length;
       document.getElementById('winnerCount').textContent = winnerCount;
       document.getElementById('loserCount').textContent = loserCount;
 
       document.getElementById('experimentsTableBody').innerHTML = rows.join('');
     }
 
-    function evaluateSingleAd(ad) {
-      const conversions = parseInt(ad.conversions) || 0;
-      const cpc = parseFloat(ad.cpc) || 0;
-
-      // FIXED LOGIC: More realistic thresholds
+    function evaluateCampaign(conversions, cpc) {
       if (conversions >= 15 && cpc < 0.40) {
         return 'WINNER';
       } else if (conversions < 3 || cpc > 1.50) {
@@ -659,39 +668,7 @@
       return 'TESTING';
     }
 
-    function compareAds(ads) {
-      const sorted = [...ads].sort((a, b) => {
-        const convDiff = (parseInt(b.conversions) || 0) - (parseInt(a.conversions) || 0);
-        if (convDiff !== 0) return convDiff;
-        return (parseFloat(a.cpc) || 999) - (parseFloat(b.cpc) || 999);
-      });
-
-      const best = sorted[0];
-      const bestConv = parseInt(best.conversions) || 0;
-      const bestCPC = parseFloat(best.cpc) || 999;
-
-      return sorted.map((ad, index) => {
-        const conv = parseInt(ad.conversions) || 0;
-        const cpc = parseFloat(ad.cpc) || 999;
-
-        let verdict = 'TESTING';
-
-        if (index === 0) {
-          verdict = 'WINNER';
-        } else {
-          const convDiff = bestConv > 0 ? ((bestConv - conv) / bestConv) * 100 : 0;
-          const cpcDiff = bestCPC > 0 ? ((cpc - bestCPC) / bestCPC) * 100 : 0;
-
-          if (convDiff > 40 || cpcDiff > 40) {
-            verdict = 'LOSER';
-          }
-        }
-
-        return { ad, verdict };
-      });
-    }
-
-    function createRow(ad, verdict) {
+    function createAggregatedRow(camp, avgCPC, verdict) {
       const verdictClass = verdict === 'WINNER' ? 'verdict-winner' : 
                           verdict === 'LOSER' ? 'verdict-loser' : 'verdict-testing';
       const verdictIcon = verdict === 'WINNER' ? '🟢' : 
@@ -702,37 +679,34 @@
       return `
         <tr>
           <td>
-            <span class="source-badge">${ad.source || 'META'}</span>
+            <span class="source-badge">${camp.source || 'META'}</span>
           </td>
           <td>
-            <div class="campaign-name">${ad.campaign_name}</div>
-          </td>
-          <td>
-            <div class="ad-name">${ad.ad_name}</div>
+            <div class="campaign-name">${camp.campaign_name}</div>
+            <div class="ad-count-badge">${camp.ad_count} Ad${camp.ad_count > 1 ? 's' : ''}</div>
           </td>
           <td>
             <div class="metrics-grid">
               <div class="metric-item">
-                <span class="metric-label">Spent</span>
-                <span class="metric-value">$${parseFloat(ad.amount_spent).toFixed(2)}</span>
+                <span class="metric-label">Total Spent</span>
+                <span class="metric-value">$${camp.total_spent.toFixed(2)}</span>
               </div>
               <div class="metric-item">
-                <span class="metric-label">Conv.</span>
-                <span class="metric-value highlight">${ad.conversions || 0}</span>
+                <span class="metric-label">Conversions</span>
+                <span class="metric-value highlight">${camp.total_conversions}</span>
               </div>
               <div class="metric-item">
                 <span class="metric-label">Leads</span>
-                <span class="metric-value">${ad.leads || 0}</span>
-              </div>
-              <div class="metric-item">
-                <span class="metric-label">CPC</span>
-                <span class="metric-value highlight">$${parseFloat(ad.cpc).toFixed(3)}</span>
+                <span class="metric-value">${camp.total_leads}</span>
               </div>
               <div class="metric-item">
                 <span class="metric-label">Results</span>
-                <span class="metric-value">${ad.results || 0}</span>
+                <span class="metric-value">${camp.total_results}</span>
               </div>
             </div>
+          </td>
+          <td>
+            <div class="metric-value highlight">$${avgCPC.toFixed(3)}</div>
           </td>
           <td>
             <span class="verdict-badge ${verdictClass}">
