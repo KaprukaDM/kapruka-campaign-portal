@@ -2,8 +2,14 @@
 // SUPABASE API CLIENT - KAPRUKA CAMPAIGN PORTAL (UPDATED)
 // ═══════════════════════════════════════════════════════════════
 
-const SUPABASE_URL = 'https://ivllhheqqiseagmctfyp.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml2bGxoaGVxcWlzZWFnbWN0ZnlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1NzQzMzksImV4cCI6MjA4NDE1MDMzOX0.OnkYNACtdknKDY2KqLfiGN0ORXpKaW906fD0TtSJlIk';
+// ⚠️ GLOBAL VARIABLES - These are accessible from other scripts
+window.SUPABASE_URL = 'https://ivllhheqqiseagmctfyp.supabase.co';
+window.SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml2bGxoaGVxcWlzZWFnbWN0ZnlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1NzQzMzksImV4cCI6MjA4NDE1MDMzOX0.OnkYNACtdknKDY2KqLfiGN0ORXpKaW906fD0TtSJlIk';
+
+// Also create non-window versions for backward compatibility
+const SUPABASE_URL = window.SUPABASE_URL;
+const SUPABASE_KEY = window.SUPABASE_KEY;
+
 const ADMIN_PASSWORD = 'Kapruka2026!Admin';
 const HEAD_APPROVAL_PASSWORD = '207';
 const SUPERADMIN_PASSWORD = 'Superadmin';  // Change this!
@@ -76,7 +82,7 @@ async function getAvailableSlotsForPage(pageName) {
     // Get page schedule info
     let dayOfWeek = null;
     let slotsPerDay = 3;
-    
+
     for (const [day, config] of Object.entries(PAGE_SCHEDULE)) {
       if (config.page === pageName) {
         dayOfWeek = parseInt(day);
@@ -84,40 +90,40 @@ async function getAvailableSlotsForPage(pageName) {
         break;
       }
     }
-    
+
     if (dayOfWeek === null) {
       throw new Error('Invalid page name');
     }
-    
+
     // Get dates for next 3 weeks matching this day
     const availableDates = [];
     const today = new Date();
-    
+
     for (let i = 0; i < 21; i++) {
       const checkDate = new Date(today);
       checkDate.setDate(today.getDate() + i);
-      
+
       if (checkDate.getDay() === dayOfWeek) {
         availableDates.push(checkDate.toISOString().split('T')[0]);
       }
     }
-    
+
     // CHECK BOTH product_suggestions AND studio_calendar
     const todayStr = today.toISOString().split('T')[0];
-    
+
     // Get booked slots from product_suggestions
     const bookedFromProducts = await supabaseQuery(
       `product_suggestions?assigned_page=eq.${encodeURIComponent(pageName)}&status=eq.Approved&slot_date=gte.${todayStr}`
     );
-    
+
     // Get booked slots from studio_calendar (includes manual bookings)
     const bookedFromStudio = await supabaseQuery(
       `studio_calendar?page_name=eq.${encodeURIComponent(pageName)}&booking_status=eq.booked&date=gte.${todayStr}`
     );
-    
+
     // Build availability map
     const slots = [];
-    
+
     for (const date of availableDates) {
       for (let slotNum = 1; slotNum <= slotsPerDay; slotNum++) {
         const isBookedInProducts = bookedFromProducts.some(
@@ -127,7 +133,7 @@ async function getAvailableSlotsForPage(pageName) {
           s => s.date === date && s.slot_number === slotNum
         );
         const isBooked = isBookedInProducts || isBookedInStudio;
-        
+
         slots.push({
           date: date,
           slotNumber: slotNum,
@@ -136,7 +142,7 @@ async function getAvailableSlotsForPage(pageName) {
         });
       }
     }
-    
+
     return slots;
   } catch (error) {
     console.error('getAvailableSlotsForPage error:', error);
@@ -149,14 +155,14 @@ async function bookProductSlot(productId, slotDate, slotNumber, pageName) {
     const existing = await supabaseQuery(
       `product_suggestions?slot_date=eq.${slotDate}&slot_number=eq.${slotNumber}&assigned_page=eq.${encodeURIComponent(pageName)}&status=eq.Approved`
     );
-    
+
     if (existing.length > 0) {
       throw new Error('This slot is already booked');
     }
-    
+
     const dateObj = new Date(slotDate);
     const dayName = getDayName(dateObj.getDay());
-    
+
     await supabaseQuery(
       `product_suggestions?id=eq.${productId}`,
       'PATCH',
@@ -166,7 +172,7 @@ async function bookProductSlot(productId, slotDate, slotNumber, pageName) {
         slot_day_name: dayName
       }
     );
-    
+
     return { success: true };
   } catch (error) {
     console.error('bookProductSlot error:', error);
@@ -253,7 +259,7 @@ async function updateDmApproval(id, data) {
   if (data.dm_status === 'Approved') {
     payload.approved_at = new Date().toISOString();
     payload.dm_approved_by = data.approved_by || 'DM';
-    
+
     // Update studio_calendar
     const dmRecord = await supabaseQuery(`dm_approvals?id=eq.${id}`);
     if (dmRecord.length > 0) {
@@ -269,7 +275,7 @@ async function updateDmApproval(id, data) {
     }
   } else if (data.dm_status === 'Rejected') {
     payload.dm_rejection_reason = data.rejection_reason || '';
-    
+
     // Update studio_calendar
     const dmRecord = await supabaseQuery(`dm_approvals?id=eq.${id}`);
     if (dmRecord.length > 0) {
@@ -295,11 +301,11 @@ async function updateDmApproval(id, data) {
 async function updateStudioStatus(id, statusData) {
   const payload = {
     studio_status: statusData.studio_status
-  }
+  };
+
   if (statusData.assigned_to !== undefined) {
-  payload.assigned_to = statusData.assigned_to;
-}  
-    ;
+    payload.assigned_to = statusData.assigned_to;
+  }
 
   // Map studio_status → approval_status for filters
   if (statusData.studio_status === 'Approved') {
@@ -393,30 +399,30 @@ async function generateEmptySlotsForMonth(year, month) {
   try {
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0);
-    
+
     const startDateStr = startDate.toISOString().split('T')[0];
     const endDateStr = endDate.toISOString().split('T')[0];
-    
+
     const existingSlots = await supabaseQuery(
       `studio_calendar?date=gte.${startDateStr}&date=lte.${endDateStr}&slot_type=eq.lead_form`
     );
-    
+
     const existingKeys = new Set(
       existingSlots.map(s => `${s.date}_${s.slot_number}`)
     );
-    
+
     const slots = [];
-    
+
     for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
       const dateStr = d.toISOString().split('T')[0];
       const dayOfWeek = d.getDay();
       const schedule = PAGE_SCHEDULE[dayOfWeek];
-      
+
       if (!schedule) continue;
-      
+
       for (let slotNum = 1; slotNum <= schedule.slots; slotNum++) {
         const slotKey = `${dateStr}_${slotNum}`;
-        
+
         if (!existingKeys.has(slotKey)) {
           slots.push({
             date: dateStr,
@@ -435,11 +441,11 @@ async function generateEmptySlotsForMonth(year, month) {
         }
       }
     }
-    
+
     if (slots.length > 0) {
       await supabaseQuery('studio_calendar', 'POST', slots);
     }
-    
+
     return { success: true, slotsCreated: slots.length };
   } catch (error) {
     console.error('generateEmptySlotsForMonth error:', error);
@@ -833,7 +839,7 @@ async function updateProductReview(row, reviewData) {
     updateData.slot_date = reviewData.slotDate || null;
     updateData.slot_number = reviewData.slotNumber || null;
     updateData.rejection_reason = '';
-    
+
     if (reviewData.slotDate) {
       const dateObj = new Date(reviewData.slotDate);
       updateData.slot_day_name = getDayName(dateObj.getDay());
@@ -1015,7 +1021,7 @@ async function submitContentBooking(bookingData) {
     };
 
     const result = await supabaseQuery('content_calendar', 'POST', booking);
-    
+
     await upsertStudioCalendarEntry({
       date: bookingData.date,
       source_type: 'content_calendar',
@@ -1028,7 +1034,7 @@ async function submitContentBooking(bookingData) {
       slot_type: 'content_calendar',
       booking_status: 'booked'
     });
-    
+
     return { success: true, bookingId: result[0].id };
   } catch (error) {
     console.error('submitContentBooking error:', error);
@@ -1299,7 +1305,6 @@ async function deleteHotProduct(id) {
   }
 }
 
-// HOT PRODUCTS UPDATE
 async function updateHotProduct(productId, updateData) {
   try {
     const data = {};
@@ -1308,8 +1313,8 @@ async function updateHotProduct(productId, updateData) {
       data.listed = updateData.listed;
     }
 
-    if (updateData.kapruka_link !== undefined) {
-      data.kapruka_link = updateData.kapruka_link || null;
+    if (updateData.kaprukaLink !== undefined) {
+      data.kapruka_link = updateData.kaprukaLink || null;
     }
 
     if (updateData.salesCount !== undefined) {
@@ -1350,29 +1355,32 @@ async function searchProductPerformance(keyword, startDate, endDate) {
     }
 
     const allData = await response.json();
-
     const keywordLower = keyword.toLowerCase();
-    const results = allData.filter(row => 
+
+    const results = allData.filter(row =>
       (row.campaign_name && row.campaign_name.toLowerCase().includes(keywordLower)) ||
       (row.adset_name && row.adset_name.toLowerCase().includes(keywordLower)) ||
       (row.ad_name && row.ad_name.toLowerCase().includes(keywordLower))
     );
 
     if (results.length === 0) {
-      return { level: 'none', data: [], aggregated: [] };
+      return {
+        level: 'none',
+        data: [],
+        aggregated: []
+      };
     }
 
     const uniqueAccounts = [...new Set(results.map(r => r.ad_account_id).filter(Boolean))];
-
     let aggregationLevel = 'ad';
     let dataToAggregate = results;
     let groupBy = 'ad_name';
 
-    if (uniqueAccounts.length > 1) {
+    if (uniqueAccounts.length === 1) {
       aggregationLevel = 'account';
       groupBy = 'ad_account_id';
     } else {
-      const campaignMatches = results.filter(r => 
+      const campaignMatches = results.filter(r =>
         r.campaign_name && r.campaign_name.toLowerCase().includes(keywordLower)
       );
 
@@ -1381,7 +1389,7 @@ async function searchProductPerformance(keyword, startDate, endDate) {
         dataToAggregate = campaignMatches;
         groupBy = 'campaign_name';
       } else {
-        const adsetMatches = results.filter(r => 
+        const adsetMatches = results.filter(r =>
           r.adset_name && r.adset_name.toLowerCase().includes(keywordLower)
         );
 
@@ -1390,9 +1398,10 @@ async function searchProductPerformance(keyword, startDate, endDate) {
           dataToAggregate = adsetMatches;
           groupBy = 'adset_name';
         } else {
-          const adMatches = results.filter(r => 
+          const adMatches = results.filter(r =>
             r.ad_name && r.ad_name.toLowerCase().includes(keywordLower)
           );
+
           if (adMatches.length > 0) {
             dataToAggregate = adMatches;
             groupBy = 'ad_name';
@@ -1402,15 +1411,17 @@ async function searchProductPerformance(keyword, startDate, endDate) {
     }
 
     const grouped = {};
+
     dataToAggregate.forEach(row => {
       const key = row[groupBy] || 'Unknown';
+
       if (!grouped[key]) {
         grouped[key] = {
           name: key,
-          campaign_name: row.campaign_name || 'NA',
-          adset_name: row.adset_name || 'NA',
-          ad_name: row.ad_name || 'NA',
-          objective: row.objective || 'NA',
+          campaign_name: row.campaign_name || 'N/A',
+          adset_name: row.adset_name || 'N/A',
+          ad_name: row.ad_name || 'N/A',
+          objective: row.objective || 'N/A',
           amount_spent: 0,
           reach: 0,
           impression: 0,
@@ -1418,7 +1429,7 @@ async function searchProductPerformance(keyword, startDate, endDate) {
           results: 0,
           direct_orders: 0,
           dates: [],
-          ad_account_id: row.ad_account_id || 'NA'
+          ad_account_id: row.ad_account_id || 'N/A'
         };
       }
 
@@ -1438,7 +1449,9 @@ async function searchProductPerformance(keyword, startDate, endDate) {
       const conversionRate = item.clicks > 0 ? ((item.direct_orders / item.clicks) * 100).toFixed(2) : 0;
 
       const sortedDates = item.dates.sort();
-      const dateRange = sortedDates.length > 0 ? `${sortedDates[0]} to ${sortedDates[sortedDates.length - 1]}` : 'NA';
+      const dateRange = sortedDates.length > 0 
+        ? `${sortedDates[0]} to ${sortedDates[sortedDates.length - 1]}`
+        : 'N/A';
 
       return {
         ...item,
@@ -1457,8 +1470,11 @@ async function searchProductPerformance(keyword, startDate, endDate) {
       aggregated: aggregated,
       totalRecords: results.length
     };
+
   } catch (error) {
     console.error('searchProductPerformance error:', error);
     throw error;
   }
 }
+
+console.log('✅ Supabase API loaded successfully with global variables');
