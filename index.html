@@ -6,6 +6,58 @@
   <title>Kapruka Digital Marketing Portal</title>
   <link rel="stylesheet" href="css/styles.css">
   <link rel="icon" type="image/png" href="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw">
+  <style>
+    /* Experiments floating button */
+    .experiments-btn {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      background: linear-gradient(135deg, rgba(255,215,0,0.9), rgba(255,165,0,0.9));
+      color: #1a0b2e;
+      padding: 16px 28px;
+      border-radius: 50px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 15px;
+      box-shadow: 0 8px 25px rgba(255,215,0,0.4);
+      transition: all 0.3s;
+      border: 3px solid rgba(255,255,255,0.3);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      backdrop-filter: blur(10px);
+    }
+    .experiments-btn:hover {
+      transform: translateY(-5px) scale(1.05);
+      box-shadow: 0 12px 35px rgba(255,215,0,0.6);
+      background: linear-gradient(135deg, #FFD700, #FFA500);
+    }
+    .experiments-btn .icon {
+      font-size: 20px;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+    .experiments-btn .label {
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    @media (max-width: 768px) {
+      .experiments-btn {
+        bottom: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        font-size: 13px;
+      }
+      .experiments-btn .icon {
+        font-size: 18px;
+      }
+    }
+  </style>
 </head>
 <body>
   <div class="container">
@@ -86,7 +138,7 @@
         </div>
       </a>
 
-      <!-- Hot Products Card (NEW) -->
+      <!-- Hot Products Card -->
       <a href="hot-products.html" class="option-card">
         <div class="option-title">🔥 Hot Products</div>
         <div class="option-desc">
@@ -130,7 +182,7 @@
         </div>
       </a>
 
-      <!-- Performance Forecast Card (NEW) -->
+      <!-- Performance Forecast Card -->
       <a href="performance-forecast.html" class="option-card">
         <div class="option-title">🚀 Performance Forecast</div>
         <div class="option-desc">
@@ -158,5 +210,11 @@
       Created by Fari Akthar - 207 | Kapruka Holdings PLC
     </div>
   </div>
+
+  <!-- Floating Experiments Button (Password Protected) -->
+  <a href="experiments-dashboard.html" class="experiments-btn">
+    <span class="icon">🧪</span>
+    <span class="label">Experiments</span>
+  </a>
 </body>
 </html>
