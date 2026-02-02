@@ -460,7 +460,7 @@
         <img src="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw" alt="Kapruka">
       </div>
       <h1>Campaign Experiments</h1>
-      <p class="subtitle">A/B Testing & Performance Analysis</p>
+      <p class="subtitle">A/B Testing & Performance Analysis - Active Ads Only</p>
     </div>
 
     <!-- Date Filter -->
@@ -500,7 +500,7 @@
     <!-- Experiments Table -->
     <div class="experiments-card">
       <h2>
-        <span>Experiment Results</span>
+        <span>Active Experiment Results (Yesterday's Data)</span>
       </h2>
       <div class="table-wrapper">
         <table class="experiments-table">
@@ -529,7 +529,7 @@
   <script src="js/supabase-api.js"></script>
   <script>
     const CORRECT_PASSWORD = 'AK11';
-    const USD_TO_LKR = 330; // ✅ Exchange rate: $1 = ₹330
+    const USD_TO_LKR = 330;
 
     function checkPassword() {
       const input = document.getElementById('passwordInput').value;
@@ -574,6 +574,19 @@
       await loadExperiments();
     });
 
+    // Helper function to check if a date is yesterday
+    function isYesterday(dateString) {
+      if (!dateString) return false;
+
+      const date = new Date(dateString);
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      return date.getDate() === yesterday.getDate() &&
+             date.getMonth() === yesterday.getMonth() &&
+             date.getFullYear() === yesterday.getFullYear();
+    }
+
     async function loadExperiments() {
       const startDate = document.getElementById('startDate').value;
       const endDate = document.getElementById('endDate').value;
@@ -589,7 +602,7 @@
         hideLoading();
 
         if (!data || data.length === 0) {
-          displayEmpty();
+          displayEmpty('No experiments found in this date range');
           return;
         }
 
@@ -603,8 +616,16 @@
     }
 
     function analyzeAndDisplay(data) {
+      // Filter only active ads (reported yesterday)
+      const activeData = data.filter(row => isYesterday(row.date_start));
+
+      if (activeData.length === 0) {
+        displayEmpty('No active ads from yesterday found');
+        return;
+      }
+
       const campaigns = {};
-      data.forEach(row => {
+      activeData.forEach(row => {
         if (!campaigns[row.campaign_name]) {
           campaigns[row.campaign_name] = [];
         }
@@ -702,7 +723,6 @@
       const verdictLabel = verdict === 'WINNER' ? 'Winner' :
                           verdict === 'LOSER' ? 'Loser' : 'Testing';
 
-      // ✅ Convert TikTok USD to LKR
       const isTikTok = (ad.source || '').toUpperCase() === 'TIKTOK';
       const spent = parseFloat(ad.amount_spent) || 0;
       const cpc = parseFloat(ad.cpc) || 0;
@@ -756,7 +776,7 @@
       `;
     }
 
-    function displayEmpty() {
+    function displayEmpty(message = 'No experiments found in this date range') {
       document.getElementById('activeCount').textContent = '0';
       document.getElementById('winnerCount').textContent = '0';
       document.getElementById('loserCount').textContent = '0';
@@ -765,7 +785,7 @@
         <tr>
           <td colspan="5" class="empty-state">
             <div class="icon">🔍</div>
-            <p>No experiments found in this date range</p>
+            <p>${message}</p>
           </td>
         </tr>
       `;
