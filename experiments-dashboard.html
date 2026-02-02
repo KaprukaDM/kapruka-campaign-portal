@@ -303,6 +303,9 @@
     .source-badge.tiktok {
       background: linear-gradient(135deg, #00f2ea, #ff0050);
     }
+    .source-badge.google {
+      background: linear-gradient(135deg, #4285F4, #34A853);
+    }
 
     /* Campaign Name */
     .campaign-name {
@@ -574,7 +577,7 @@
       await loadExperiments();
     });
 
-    // Helper function to check if a date is yesterday
+    // ✅ FIXED: Helper function to check if a date is yesterday
     function isYesterday(dateString) {
       if (!dateString) return false;
 
@@ -616,8 +619,8 @@
     }
 
     function analyzeAndDisplay(data) {
-      // Filter only active ads (reported yesterday)
-      const activeData = data.filter(row => isYesterday(row.date_start));
+      // ✅ FIXED: Filter only active ads using "date" field (not "date_start")
+      const activeData = data.filter(row => isYesterday(row.date));
 
       if (activeData.length === 0) {
         displayEmpty('No active ads from yesterday found');
@@ -723,7 +726,9 @@
       const verdictLabel = verdict === 'WINNER' ? 'Winner' :
                           verdict === 'LOSER' ? 'Loser' : 'Testing';
 
-      const isTikTok = (ad.source || '').toUpperCase() === 'TIKTOK';
+      const source = (ad.source || 'META').toUpperCase();
+      const isTikTok = source === 'TIKTOK';
+      const isGoogle = source === 'GOOGLE';
       const spent = parseFloat(ad.amount_spent) || 0;
       const cpc = parseFloat(ad.cpc) || 0;
 
@@ -731,10 +736,12 @@
       const displayCPC = isTikTok ? (cpc * USD_TO_LKR) : cpc;
       const currency = isTikTok ? 'Rs.' : '$';
 
+      const sourceBadgeClass = isTikTok ? 'tiktok' : (isGoogle ? 'google' : '');
+
       return `
         <tr>
           <td>
-            <span class="source-badge ${isTikTok ? 'tiktok' : ''}">${ad.source || 'META'}</span>
+            <span class="source-badge ${sourceBadgeClass}">${source}</span>
           </td>
           <td>
             <div class="campaign-name">${ad.campaign_name}</div>
