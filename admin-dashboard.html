@@ -2891,6 +2891,8 @@
                 statusBadge = '<span class="slot-status" style="background:#FF9800;color:white;">✗ Head Rejected</span>';
               } else if (slotData.approval_status === 'Resubmitted for Review') {
                 statusBadge = '<span class="slot-status status-review">Resubmitted</span>';
+              } else if (slotData.studio_status === 'Hold' || slotData.studio_status === 'On Hold') {
+                statusBadge = '<span class="slot-status status-hold">HOLD</span>';
               } else if (slotData.head_approved) {
                 statusBadge = '<span class="slot-status status-approved">✓ Head Approved</span>';
               } else if (slotData.studio_status === 'Submitted for Review') {
@@ -2935,6 +2937,8 @@
               statusBadge = '<span class="slot-status" style="background:#FF9800;color:white;">✗ Head Rejected</span>';
             } else if (item.approval_status === 'Resubmitted for Review') {
               statusBadge = '<span class="slot-status status-review">Resubmitted</span>';
+            } else if (item.studio_status === 'Hold' || item.studio_status === 'On Hold') {
+              statusBadge = '<span class="slot-status status-hold">HOLD</span>';
             } else if (item.head_approved) {
               statusBadge = '<span class="slot-status status-approved">✓ Head Approved</span>';
             } else if (item.studio_status === 'Submitted for Review') {
@@ -3091,6 +3095,7 @@
       const rejectionGroup = document.getElementById('rejectionGroup');
       const rejectionReasonGroup = document.getElementById('rejectionReasonGroup');
       const assignedToGroup = document.getElementById('assignedToGroup'); // ✅ NEW
+      const holdReasonGroup = document.getElementById('holdReasonGroup');
 
       statusSelect.addEventListener('change', () => {
         contentLinkGroup.style.display = 'none';
@@ -3098,10 +3103,14 @@
         rejectionGroup.style.display = 'none';
         rejectionReasonGroup.style.display = 'none';
         assignedToGroup.style.display = 'none'; // ✅ NEW
+        holdReasonGroup.style.display = 'none';
 
         // ✅ NEW: Show assigned_to when status = Working
         if (statusSelect.value === 'Working') {
           assignedToGroup.style.display = 'block';
+        }
+        else if (statusSelect.value === 'Hold' || statusSelect.value === 'On Hold') {
+          holdReasonGroup.style.display = 'block';
         }
         else if (statusSelect.value === 'Submitted for Review') {
           contentLinkGroup.style.display = 'block';
@@ -3602,6 +3611,3 @@
   </script>
 </body>
 </html>
-
-
-
