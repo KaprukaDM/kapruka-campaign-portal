@@ -3002,6 +3002,14 @@
         <h3>📝 Slot Details - ${dateStr}</h3>
         <div style="background:#f9f9f9;padding:20px;border-radius:12px;margin-bottom:20px;">
           <div style="display:grid;gap:15px;">
+
+           <div>
+           <strong style="color:#5e3a8e">Slot ID:</strong> 
+           <code style="background:#E3F2FD;padding:5px 10px;border-radius:6px;font-family:monospace;font-size:13px">${slotData.id}
+           </code>
+           </div>
+
+          
             <div>
               <strong style="color:#5e3a8e;">Type:</strong> 
               <span>${slotData.slot_type === 'lead_form' ? '🔵 Lead Form' : '🟢 Content Calendar'}</span>
@@ -3594,5 +3602,6 @@
   </script>
 </body>
 </html>
+
 
 
