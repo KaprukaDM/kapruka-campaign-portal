@@ -19,7 +19,7 @@ function verifySuperAdminPassword(password) {
 }
 
 const VALID_STATUSES = ['Request Submitted', 'Working', 'Live', 'Completed', 'Rejected'];
-const STUDIO_STATUSES = ['Received', 'Working', 'Submitted for Review', 'Approved'];
+const STUDIO_STATUSES = ['Received', 'Working', 'Submitted for Review', 'Approved', 'Rejected by Head', 'Hold'];
 
 // Page assignments by day of week
 const PAGE_SCHEDULE = {
@@ -355,6 +355,16 @@ async function updateStudioStatus(id, statusData) {
     payload.approval_status = 'Rejected by Head';
     payload.head_rejection_reason = statusData.rejection_reason;
     payload.head_rejected_at = new Date().toISOString();
+  }
+
+  // Handle Hold status
+  if (statusData.studio_status === 'Hold') {
+    if (!statusData.hold_reason) {
+      throw new Error('Hold reason is required when setting status to Hold');
+    }
+    payload.approval_status = 'On Hold';
+    payload.hold_reason = statusData.hold_reason;
+    payload.hold_at = new Date().toISOString();
   }
 
   payload.updated_at = new Date().toISOString();
