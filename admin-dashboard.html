@@ -398,8 +398,6 @@
     .badge-approved { background: #C8E6C9; color: #1B5E20; }
     .badge-received { background: #E3F2FD; color: #1565C0; }
     .badge-review { background: #FFF3E0; color: #E65100; }
-    .badge-hold { background: #FFE082; color: #F57F00; }
-    .status-hold { background: #FFE082; color: #F57F00; }
 
     /* Action Buttons */
     .action-btns {
@@ -1393,13 +1391,13 @@
               </div>
 
               <div class="calendar-weekdays">
+                <div class="calendar-day-header">Sun</div>
                 <div class="calendar-day-header">Mon</div>
                 <div class="calendar-day-header">Tue</div>
                 <div class="calendar-day-header">Wed</div>
                 <div class="calendar-day-header">Thu</div>
                 <div class="calendar-day-header">Fri</div>
                 <div class="calendar-day-header">Sat</div>
-                <div class="calendar-day-header">Sun</div>
               </div>
 
               <div class="calendar-grid" id="studioCalendarGrid" role="grid" aria-label="Studio calendar grid">
@@ -2810,7 +2808,7 @@
 
       const firstDay = new Date(currentStudioYear, currentStudioMonth - 1, 1);
       const lastDay = new Date(currentStudioYear, currentStudioMonth, 0);
-      const startDayOfWeek = (firstDay.getDay() + 6) % 7; // Monday = 0, Sunday = 6
+      const startDayOfWeek = firstDay.getDay();
       const daysInMonth = lastDay.getDate();
 
       for (let i = 0; i < startDayOfWeek; i++) {
@@ -2988,7 +2986,7 @@
         </div>
       ` : '';
 
-      const statusOptions = ['Received', 'Working', 'Submitted for Review', 'Approved', 'Rejected by Head', 'Hold'].map(status => 
+      const statusOptions = ['Received', 'Working', 'Submitted for Review', 'Approved', 'Rejected by Head'].map(status => 
         `<option value="${status}" ${slotData.studio_status === status ? 'selected' : ''}>${status}</option>`
       ).join('');
 
@@ -3005,6 +3003,10 @@
             <div>
               <strong style="color:#5e3a8e;">Type:</strong> 
               <span>${slotData.slot_type === 'lead_form' ? '🔵 Lead Form' : '🟢 Content Calendar'}</span>
+            </div>
+            <div>
+              <strong style="color:#5e3a8e;">Slot ID:</strong> 
+              <code style="background:#E3F2FD;padding:5px 10px;border-radius:6px;font-family:monospace;font-size:13px;color:#0D47A1;">${slotData.id}</code>
             </div>
             <div>
               <strong style="color:#5e3a8e;">Page:</strong> 
@@ -3067,10 +3069,6 @@
             <label>Rejection Reason *</label>
             <textarea id="rejectionReason" rows="3" placeholder="Explain why this content is being rejected..."></textarea>
           </div>
-          <div class="form-group" id="holdReasonGroup" style="display:none;">
-            <label>Reason for Hold *</label>
-            <textarea id="holdReason" rows="3" placeholder="Explain why this content is on hold..."></textarea>
-          </div>
           <button type="submit" class="btn btn-primary" style="width:100%;">Update Status</button>
         </form>
       `;
@@ -3116,7 +3114,6 @@
         const password = document.getElementById('approvalPassword')?.value;
         const rejectionPassword = document.getElementById('rejectionPassword')?.value;
         const rejectionReason = document.getElementById('rejectionReason')?.value;
-          const holdReason = document.getElementById('holdReason')?.value;
         const assignedTo = document.getElementById('assignedTo')?.value || null; // ✅ NEW
 
         try {
@@ -3126,7 +3123,6 @@
             content_link: contentLink || null,
             password: password || rejectionPassword || null,
             rejection_reason: rejectionReason || null,
-            hold_reason: holdReason || null,
             approved_by: 'Content Head',
             date: slotData.date,
             page_name: slotData.page_name,
