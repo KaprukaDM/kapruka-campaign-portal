@@ -19,6 +19,100 @@
             flex-direction: column;
         }
 
+        /* Password Screen */
+        .password-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .password-screen.hidden {
+            display: none;
+        }
+
+        .password-box {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .password-box h2 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .password-box p {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .password-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 20px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .password-input:focus {
+            border-color: #667eea;
+        }
+
+        .password-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .password-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .password-error {
+            color: #f44336;
+            font-size: 14px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .password-error.show {
+            display: block;
+        }
+
+        /* Main App */
+        .main-app {
+            display: none;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .main-app.visible {
+            display: flex;
+        }
+
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -78,28 +172,46 @@
         .sidebar-header h2 {
             font-size: 18px;
             font-weight: 600;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
         }
 
-        .filter-tabs {
+        .page-filters {
             display: flex;
-            gap: 10px;
+            flex-direction: column;
+            gap: 8px;
         }
 
-        .filter-tab {
-            padding: 6px 12px;
+        .page-filter {
+            padding: 10px 12px;
             background: white;
-            border: 1px solid #ddd;
-            border-radius: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
             font-size: 13px;
             cursor: pointer;
             transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        .filter-tab.active {
+        .page-filter:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .page-filter.active {
             background: #667eea;
             color: white;
             border-color: #667eea;
+        }
+
+        .page-filter .count {
+            margin-left: auto;
+            background: rgba(0,0,0,0.1);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
         }
 
         .conversation-list {
@@ -133,9 +245,11 @@
         }
 
         .conversation-page {
-            font-size: 13px;
+            font-size: 11px;
             color: #667eea;
-            font-weight: 600;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .conversation-time {
@@ -143,10 +257,16 @@
             color: #999;
         }
 
-        .conversation-id {
-            font-size: 14px;
-            font-weight: 500;
+        .conversation-name {
+            font-size: 15px;
+            font-weight: 600;
             color: #333;
+            margin-bottom: 3px;
+        }
+
+        .conversation-id {
+            font-size: 12px;
+            color: #999;
             margin-bottom: 5px;
         }
 
@@ -175,7 +295,7 @@
         }
 
         .chat-header-info h3 {
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 600;
             margin-bottom: 4px;
         }
@@ -183,6 +303,17 @@
         .chat-header-info p {
             font-size: 13px;
             color: #666;
+        }
+
+        .chat-header-info .page-badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 5px;
         }
 
         .chat-actions {
@@ -415,69 +546,91 @@
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>💬 Messenger Hub</h1>
-        <div class="header-actions">
-            <button class="header-btn" onclick="location.reload()">🔄 Refresh</button>
-            <button class="header-btn" onclick="window.location.href='index.html'">← Back to Portal</button>
+    <!-- Password Screen -->
+    <div class="password-screen" id="passwordScreen">
+        <div class="password-box">
+            <h2>🔒 Messenger Hub</h2>
+            <p>Enter password to access</p>
+            <input type="password" 
+                   class="password-input" 
+                   id="passwordInput" 
+                   placeholder="Enter password"
+                   onkeypress="if(event.key==='Enter') checkPassword()">
+            <button class="password-btn" onclick="checkPassword()">Unlock</button>
+            <div class="password-error" id="passwordError">Incorrect password. Try again.</div>
         </div>
     </div>
 
-    <div class="container">
-        <!-- Sidebar: Conversations List -->
-        <div class="sidebar">
-            <div class="sidebar-header">
-                <h2>Conversations</h2>
-                <div class="filter-tabs">
-                    <div class="filter-tab active" onclick="filterConversations('all')">All</div>
-                    <div class="filter-tab" onclick="filterConversations('facebook')">Facebook</div>
-                </div>
+    <!-- Main App -->
+    <div class="main-app" id="mainApp">
+        <div class="header">
+            <h1>💬 Messenger Hub</h1>
+            <div class="header-actions">
+                <button class="header-btn" onclick="location.reload()">🔄 Refresh</button>
+                <button class="header-btn" onclick="logout()">🔓 Logout</button>
+                <button class="header-btn" onclick="window.location.href='index.html'">← Back</button>
             </div>
-            <ul class="conversation-list" id="conversationList">
-                <li class="loading">
-                    <div class="loading-spinner"></div>
-                    Loading conversations...
-                </li>
-            </ul>
         </div>
 
-        <!-- Chat Area -->
-        <div class="chat-area">
-            <div class="chat-header" id="chatHeader" style="display: none;">
-                <div class="chat-header-info">
-                    <h3 id="chatTitle">Select a conversation</h3>
-                    <p id="chatSubtitle"></p>
+        <div class="container">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <h2>Conversations</h2>
+                    <div class="page-filters" id="pageFilters">
+                        <div class="page-filter active" onclick="filterByPage('all')">
+                            📘 All Pages
+                            <span class="count" id="countAll">0</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="chat-actions">
-                    <button class="action-btn" onclick="refreshCurrentChat()">🔄 Refresh</button>
-                </div>
+                <ul class="conversation-list" id="conversationList">
+                    <li class="loading">
+                        <div class="loading-spinner"></div>
+                        Loading conversations...
+                    </li>
+                </ul>
             </div>
-            <div class="messages-container" id="messagesContainer">
-                <div class="empty-state">
-                    <div class="empty-state-icon">💬</div>
-                    <h3>No conversation selected</h3>
-                    <p>Select a conversation from the list to start messaging</p>
+
+            <!-- Chat Area -->
+            <div class="chat-area">
+                <div class="chat-header" id="chatHeader" style="display: none;">
+                    <div class="chat-header-info">
+                        <h3 id="chatTitle">Select a conversation</h3>
+                        <p id="chatSubtitle"></p>
+                        <span class="page-badge" id="pageBadge"></span>
+                    </div>
+                    <div class="chat-actions">
+                        <button class="action-btn" onclick="refreshCurrentChat()">🔄 Refresh</button>
+                    </div>
                 </div>
-            </div>
-            <div class="reply-area">
-                <div class="reply-input-wrapper">
-                    <input type="text" 
-                           class="reply-input" 
-                           id="replyInput" 
-                           placeholder="Type your message..." 
-                           disabled>
+                <div class="messages-container" id="messagesContainer">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">💬</div>
+                        <h3>No conversation selected</h3>
+                        <p>Select a conversation from the list to start messaging</p>
+                    </div>
                 </div>
-                <button class="send-btn" 
-                        id="sendBtn" 
-                        onclick="sendReply()" 
-                        disabled>
-                    Send
-                </button>
+                <div class="reply-area">
+                    <div class="reply-input-wrapper">
+                        <input type="text" 
+                               class="reply-input" 
+                               id="replyInput" 
+                               placeholder="Type your message..." 
+                               disabled>
+                    </div>
+                    <button class="send-btn" 
+                            id="sendBtn" 
+                            onclick="sendReply()" 
+                            disabled>
+                        Send
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
     <script src="js/messenger-supabase.js"></script>
-    <script src="js/messenger-hub.js"></script>
+    <script src="js/messenger-hub-protected.js"></script>
 </body>
 </html>
