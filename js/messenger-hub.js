@@ -153,18 +153,41 @@ function renderConversations() {
         return;
     }
 
-    list.innerHTML = filteredConversations.map(conv => `
-        <li class="conversation-item ${currentConversation && currentConversation.id === conv.conversation_id ? 'active' : ''}" 
-            onclick="selectConversation('${conv.conversation_id}', '${escapeQuotes(conv.page_name || 'Facebook Page')}', '${conv.page_id}', '${conv.customer_psid}', '${escapeQuotes(conv.customer_name || 'Unknown Customer')}')">
-            <div class="conversation-header">
-                <div class="conversation-page">${conv.page_name || 'Facebook Page'}</div>
-                <div class="conversation-time">${formatTime(conv.last_message_time)}</div>
-            </div>
-            <div class="conversation-name">${conv.customer_name || 'Unknown Customer'}</div>
-            <div class="conversation-id">ID: ${conv.customer_psid.substring(0, 20)}...</div>
-            <div class="conversation-preview">Click to view messages</div>
-        </li>
-    `).join('');
+    list.innerHTML = filteredConversations.map(conv => {
+        const convId = escapeQuotes(conv.conversation_id);
+        const pageName = escapeQuotes(conv.page_name || 'Facebook Page');
+        const customerName = escapeQuotes(conv.customer_name || 'Unknown Customer');
+        
+        return `
+            <li class="conversation-item ${currentConversation && currentConversation.id === conv.conversation_id ? 'active' : ''}" 
+                data-conversation-id="${conv.conversation_id}"
+                data-page-name="${conv.page_name || 'Facebook Page'}"
+                data-page-id="${conv.page_id}"
+                data-customer-psid="${conv.customer_psid}"
+                data-customer-name="${conv.customer_name || 'Unknown Customer'}">
+                <div class="conversation-header">
+                    <div class="conversation-page">${conv.page_name || 'Facebook Page'}</div>
+                    <div class="conversation-time">${formatTime(conv.last_message_time)}</div>
+                </div>
+                <div class="conversation-name">${conv.customer_name || 'Unknown Customer'}</div>
+                <div class="conversation-id">ID: ${conv.customer_psid.substring(0, 20)}...</div>
+                <div class="conversation-preview">Click to view messages</div>
+            </li>
+        `;
+    }).join('');
+
+    // Attach event listeners to conversation items
+    document.querySelectorAll('.conversation-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const conversationId = this.getAttribute('data-conversation-id');
+            const pageName = this.getAttribute('data-page-name');
+            const pageId = this.getAttribute('data-page-id');
+            const customerPsid = this.getAttribute('data-customer-psid');
+            const customerName = this.getAttribute('data-customer-name');
+            
+            selectConversation(conversationId, pageName, pageId, customerPsid, customerName);
+        });
+    });
 }
 
 // Select and load a conversation
@@ -185,7 +208,7 @@ async function selectConversation(conversationId, pageName, pageId, customerPsid
     document.querySelectorAll('.conversation-item').forEach(item => {
         item.classList.remove('active');
     });
-    event.target.closest('.conversation-item').classList.add('active');
+    document.querySelector(`[data-conversation-id="${conversationId}"]`).classList.add('active');
 }
 
 // Load messages for current conversation
