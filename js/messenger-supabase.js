@@ -1,132 +1,389 @@
-// Messenger Hub Supabase Configuration
-// Separate from main portal Supabase API
+// Messenger Hub - Password Protected with Page Filtering
 
-const MESSENGER_CONFIG = {
-    supabaseUrl: 'https://txtarwndhuccthrhodlo.supabase.co',
-    supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR4dGFyd25kaHVjY3RocmhvZGxvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxNjczNTksImV4cCI6MjA4NTc0MzM1OX0.Fi-ygjyoSw5dVSy3q70ZbrtKBm3sj5KJ_x2fKrd11H4',
-    renderApiUrl: 'https://chathubfactory.onrender.com'
-};
+// Password Configuration
+const MESSENGER_PASSWORD = 'kapruka2026'; // Change this to your desired password
 
-// Supabase Client (using REST API - no library needed)
-class MessengerSupabaseClient {
-    constructor(url, key) {
-        this.url = url;
-        this.key = key;
-        this.headers = {
-            'apikey': key,
-            'Authorization': `Bearer ${key}`,
-            'Content-Type': 'application/json'
-        };
-    }
+let conversations = [];
+let currentConversation = null;
+let currentMessages = [];
+let currentPageFilter = 'all';
+let autoRefreshInterval = null;
+let pageStats = {};
 
-    async query(table, method = 'GET', filters = {}, body = null) {
-        let url = `${this.url}/rest/v1/${table}`;
+// Check password on page load
+document.addEventListener('DOMContentLoaded', () => {
+    checkAuth();
+});
 
-        // Add filters to URL
-        const params = new URLSearchParams();
-        if (filters.select) params.append('select', filters.select);
-        if (filters.eq) {
-            Object.keys(filters.eq).forEach(key => {
-                params.append(key, `eq.${filters.eq[key]}`);
-            });
-        }
-        if (filters.order) params.append('order', filters.order);
-        if (filters.limit) params.append('limit', filters.limit);
-
-        if (params.toString()) url += '?' + params.toString();
-
-        const options = {
-            method,
-            headers: this.headers
-        };
-
-        if (body) {
-            options.body = JSON.stringify(body);
-        }
-
-        try {
-            const response = await fetch(url, options);
-            const data = await response.json();
-            return { data, error: !response.ok ? data : null };
-        } catch (error) {
-            return { data: null, error: error.message };
-        }
-    }
-
-    // Get all conversations
-    async getConversations() {
-        return this.query('conversations', 'GET', {
-            select: '*',
-            eq: { status: 'active' },
-            order: 'last_message_time.desc'
-        });
-    }
-
-    // Get messages for a conversation
-    async getMessages(conversationId) {
-        return this.query('messages', 'GET', {
-            select: '*',
-            eq: { conversation_id: conversationId },
-            order: 'created_at.asc'
-        });
-    }
-
-    // Insert a new message (for display purposes)
-    async insertMessage(messageData) {
-        return this.query('messages', 'POST', {}, messageData);
+function checkAuth() {
+    const isAuthenticated = sessionStorage.getItem('messengerAuth');
+    if (isAuthenticated === 'true') {
+        showMainApp();
     }
 }
 
-// Initialize Supabase Client
-const messengerSupabase = new MessengerSupabaseClient(
-    MESSENGER_CONFIG.supabaseUrl,
-    MESSENGER_CONFIG.supabaseKey
-);
+function checkPassword() {
+    const input = document.getElementById('passwordInput');
+    const password = input.value;
 
-// Render API Client
-class RenderAPIClient {
-    constructor(baseUrl) {
-        this.baseUrl = baseUrl;
-    }
-
-    async sendMessage(pageId, recipientId, messageText) {
-        try {
-            const response = await fetch(`${this.baseUrl}/api/send`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    page_id: pageId,
-                    recipient_id: recipientId,
-                    message_text: messageText
-                })
-            });
-
-            return await response.json();
-        } catch (error) {
-            return { success: false, error: error.message };
-        }
-    }
-
-    async getConversations() {
-        try {
-            const response = await fetch(`${this.baseUrl}/api/conversations`);
-            return await response.json();
-        } catch (error) {
-            return { success: false, error: error.message };
-        }
-    }
-
-    async getConversation(conversationId) {
-        try {
-            const response = await fetch(`${this.baseUrl}/api/conversation/${conversationId}`);
-            return await response.json();
-        } catch (error) {
-            return { success: false, error: error.message };
-        }
+    if (password === MESSENGER_PASSWORD) {
+        sessionStorage.setItem('messengerAuth', 'true');
+        showMainApp();
+    } else {
+        document.getElementById('passwordError').classList.add('show');
+        input.value = '';
+        input.focus();
+        setTimeout(() => {
+            document.getElementById('passwordError').classList.remove('show');
+        }, 3000);
     }
 }
 
-// Initialize Render API Client
-const renderAPI = new RenderAPIClient(MESSENGER_CONFIG.renderApiUrl);
+function logout() {
+    sessionStorage.removeItem('messengerAuth');
+    location.reload();
+}
+
+function showMainApp() {
+    document.getElementById('passwordScreen').classList.add('hidden');
+    document.getElementById('mainApp').classList.add('visible');
+
+    // Initialize app
+    loadConversations();
+    setupEventListeners();
+    startAutoRefresh();
+}
+
+// Setup event listeners
+function setupEventListeners() {
+    const replyInput = document.getElementById('replyInput');
+    replyInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendReply();
+        }
+    });
+}
+
+// Load all conversations
+async function loadConversations() {
+    try {
+        const result = await messengerSupabase.getConversations();
+
+        if (result.error) {
+            showToast('Error loading conversations: ' + result.error, 'error');
+            return;
+        }
+
+        conversations = result.data || [];
+        calculatePageStats();
+        renderPageFilters();
+        renderConversations();
+    } catch (error) {
+        showToast('Failed to load conversations', 'error');
+        console.error(error);
+    }
+}
+
+// Calculate statistics by page
+function calculatePageStats() {
+    pageStats = {};
+    conversations.forEach(conv => {
+        const pageKey = conv.page_id || 'unknown';
+        if (!pageStats[pageKey]) {
+            pageStats[pageKey] = {
+                name: conv.page_name || 'Unknown Page',
+                count: 0
+            };
+        }
+        pageStats[pageKey].count++;
+    });
+}
+
+// Render page filter buttons
+function renderPageFilters() {
+    const container = document.getElementById('pageFilters');
+    const totalCount = conversations.length;
+
+    let html = `
+        <div class="page-filter ${currentPageFilter === 'all' ? 'active' : ''}" onclick="filterByPage('all')">
+            📘 All Pages
+            <span class="count">${totalCount}</span>
+        </div>
+    `;
+
+    Object.keys(pageStats).forEach(pageId => {
+        const page = pageStats[pageId];
+        html += `
+            <div class="page-filter ${currentPageFilter === pageId ? 'active' : ''}" 
+                 onclick="filterByPage('${pageId}')">
+                📄 ${page.name}
+                <span class="count">${page.count}</span>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+}
+
+// Filter conversations by page
+function filterByPage(pageId) {
+    currentPageFilter = pageId;
+    renderPageFilters();
+    renderConversations();
+}
+
+// Render conversations in sidebar
+function renderConversations() {
+    const list = document.getElementById('conversationList');
+
+    let filteredConversations = conversations;
+    if (currentPageFilter !== 'all') {
+        filteredConversations = conversations.filter(c => c.page_id === currentPageFilter);
+    }
+
+    if (filteredConversations.length === 0) {
+        list.innerHTML = `
+            <li class="loading">
+                <div class="empty-state">
+                    <p>No conversations for this page</p>
+                </div>
+            </li>
+        `;
+        return;
+    }
+
+    list.innerHTML = filteredConversations.map(conv => {
+        const isActive = currentConversation && currentConversation.id === conv.conversation_id;
+        return `
+            <li class="conversation-item ${isActive ? 'active' : ''}" 
+                data-conv-id="${conv.conversation_id}"
+                onclick="selectConversation('${conv.conversation_id}', '${escapeQuotes(conv.page_name || 'Facebook Page')}', '${conv.page_id}', '${conv.customer_psid}', '${escapeQuotes(conv.customer_name || 'Unknown Customer')}')">
+                <div class="conversation-header">
+                    <div class="conversation-page">${conv.page_name || 'Facebook Page'}</div>
+                    <div class="conversation-time">${formatTime(conv.last_message_time)}</div>
+                </div>
+                <div class="conversation-name">${conv.customer_name || 'Unknown Customer'}</div>
+                <div class="conversation-id">ID: ${conv.customer_psid.substring(0, 20)}...</div>
+                <div class="conversation-preview">Click to view messages</div>
+            </li>
+        `;
+    }).join('');
+}
+
+// Select and load a conversation
+async function selectConversation(conversationId, pageName, pageId, customerPsid, customerName) {
+    currentConversation = {
+        id: conversationId,
+        pageName: pageName,
+        pageId: pageId,
+        customerPsid: customerPsid,
+        customerName: customerName
+    };
+
+    await loadMessages();
+    enableReplyArea();
+    updateChatHeader();
+
+    // Update active state in sidebar (without using event.target)
+    document.querySelectorAll('.conversation-item').forEach(item => {
+        if (item.getAttribute('data-conv-id') === conversationId) {
+            item.classList.add('active');
+        } else {
+            item.classList.remove('active');
+        }
+    });
+}
+
+// Load messages for current conversation
+async function loadMessages() {
+    if (!currentConversation) return;
+
+    try {
+        const result = await messengerSupabase.getMessages(currentConversation.id);
+
+        if (result.error) {
+            showToast('Error loading messages: ' + result.error, 'error');
+            return;
+        }
+
+        currentMessages = result.data || [];
+        renderMessages();
+    } catch (error) {
+        showToast('Failed to load messages', 'error');
+        console.error(error);
+    }
+}
+
+// Render messages in chat area
+function renderMessages() {
+    const container = document.getElementById('messagesContainer');
+
+    if (currentMessages.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">📭</div>
+                <h3>No messages yet</h3>
+                <p>Start the conversation by sending a message</p>
+            </div>
+        `;
+        return;
+    }
+
+    let html = '';
+    let lastDate = '';
+
+    currentMessages.forEach(msg => {
+        const msgDate = new Date(msg.created_at).toLocaleDateString();
+
+        // Add date divider if date changed
+        if (msgDate !== lastDate) {
+            html += `<div class="message-date-divider">${formatDate(msg.created_at)}</div>`;
+            lastDate = msgDate;
+        }
+
+        html += `
+            <div class="message ${msg.sender_type}">
+                <div class="message-bubble">${escapeHtml(msg.message_text)}</div>
+                <div class="message-time">${formatMessageTime(msg.created_at)}</div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+
+    // Scroll to bottom
+    container.scrollTop = container.scrollHeight;
+}
+
+// Update chat header
+function updateChatHeader() {
+    const header = document.getElementById('chatHeader');
+    const title = document.getElementById('chatTitle');
+    const subtitle = document.getElementById('chatSubtitle');
+    const badge = document.getElementById('pageBadge');
+
+    if (currentConversation) {
+        header.style.display = 'flex';
+        title.innerHTML = `<span class="status-indicator"></span>${currentConversation.customerName}`;
+        subtitle.textContent = `Customer ID: ${currentConversation.customerPsid}`;
+        badge.textContent = currentConversation.pageName;
+    }
+}
+
+// Send reply
+async function sendReply() {
+    const input = document.getElementById('replyInput');
+    const messageText = input.value.trim();
+
+    if (!messageText || !currentConversation) return;
+
+    const sendBtn = document.getElementById('sendBtn');
+    sendBtn.disabled = true;
+    sendBtn.textContent = 'Sending...';
+
+    try {
+        const result = await renderAPI.sendMessage(
+            currentConversation.pageId,
+            currentConversation.customerPsid,
+            messageText
+        );
+
+        if (result.success) {
+            input.value = '';
+            showToast('Message sent successfully', 'success');
+
+            // Reload messages after short delay
+            setTimeout(() => loadMessages(), 500);
+        } else {
+            showToast('Failed to send message: ' + (result.error || 'Unknown error'), 'error');
+        }
+    } catch (error) {
+        showToast('Error sending message', 'error');
+        console.error(error);
+    } finally {
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Send';
+    }
+}
+
+// Refresh current chat
+async function refreshCurrentChat() {
+    if (currentConversation) {
+        await loadMessages();
+        showToast('Messages refreshed', 'success');
+    }
+}
+
+// Enable reply area
+function enableReplyArea() {
+    document.getElementById('replyInput').disabled = false;
+    document.getElementById('sendBtn').disabled = false;
+}
+
+// Auto-refresh every 30 seconds
+function startAutoRefresh() {
+    autoRefreshInterval = setInterval(() => {
+        loadConversations();
+        if (currentConversation) {
+            loadMessages();
+        }
+    }, 30000);
+}
+
+// Format time (relative)
+function formatTime(timestamp) {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diff = now - date;
+
+    if (diff < 60000) return 'Just now';
+    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+    if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+    if (diff < 604800000) return `${Math.floor(diff / 86400000)}d ago`;
+
+    return date.toLocaleDateString();
+}
+
+// Format message time
+function formatMessageTime(timestamp) {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+}
+
+// Format date for divider
+function formatDate(timestamp) {
+    const date = new Date(timestamp);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (date.toDateString() === today.toDateString()) return 'Today';
+    if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+// Escape HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Escape quotes for onclick attributes
+function escapeQuotes(text) {
+    return text.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+
+// Show toast notification
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
