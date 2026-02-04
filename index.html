@@ -46,14 +46,68 @@
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
+
+    /* Messenger Hub floating button */
+    .messenger-btn {
+      position: fixed;
+      bottom: 100px;
+      right: 30px;
+      background: linear-gradient(135deg, rgba(0,132,255,0.9), rgba(102,126,234,0.9));
+      color: white;
+      padding: 16px 28px;
+      border-radius: 50px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 15px;
+      box-shadow: 0 8px 25px rgba(0,132,255,0.4);
+      transition: all 0.3s;
+      border: 3px solid rgba(255,255,255,0.3);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      backdrop-filter: blur(10px);
+    }
+    .messenger-btn:hover {
+      transform: translateY(-5px) scale(1.05);
+      box-shadow: 0 12px 35px rgba(0,132,255,0.6);
+      background: linear-gradient(135deg, #0084ff, #667eea);
+    }
+    .messenger-btn .icon {
+      font-size: 20px;
+      animation: bounce 2s infinite;
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+    .messenger-btn .label {
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .messenger-btn .badge {
+      background: #ff3e3e;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+      margin-left: 5px;
+      animation: pulse 2s infinite;
+    }
+
     @media (max-width: 768px) {
-      .experiments-btn {
+      .experiments-btn, .messenger-btn {
         bottom: 20px;
         right: 20px;
         padding: 12px 20px;
         font-size: 13px;
       }
-      .experiments-btn .icon {
+      .messenger-btn {
+        bottom: 80px;
+      }
+      .experiments-btn .icon, .messenger-btn .icon {
         font-size: 18px;
       }
     }
@@ -210,6 +264,13 @@
       Created by Fari Akthar - 207 | Kapruka Holdings PLC
     </div>
   </div>
+
+  <!-- Floating Messenger Hub Button -->
+  <a href="messenger-hub.html" class="messenger-btn">
+    <span class="icon">💬</span>
+    <span class="label">Messenger Hub</span>
+    <span class="badge">NEW</span>
+  </a>
 
   <!-- Floating Experiments Button (Password Protected) -->
   <a href="experiments-dashboard.html" class="experiments-btn">
