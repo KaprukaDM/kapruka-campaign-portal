@@ -1,17 +1,58 @@
-// Messenger Hub Main JavaScript
+// Messenger Hub - Password Protected with Page Filtering
+
+// Password Configuration
+const MESSENGER_PASSWORD = 'kapruka2026'; // Change this to your desired password
 
 let conversations = [];
 let currentConversation = null;
 let currentMessages = [];
-let currentFilter = 'all';
+let currentPageFilter = 'all';
 let autoRefreshInterval = null;
+let pageStats = {};
 
-// Initialize on page load
+// Check password on page load
 document.addEventListener('DOMContentLoaded', () => {
+    checkAuth();
+});
+
+function checkAuth() {
+    const isAuthenticated = sessionStorage.getItem('messengerAuth');
+    if (isAuthenticated === 'true') {
+        showMainApp();
+    }
+}
+
+function checkPassword() {
+    const input = document.getElementById('passwordInput');
+    const password = input.value;
+
+    if (password === MESSENGER_PASSWORD) {
+        sessionStorage.setItem('messengerAuth', 'true');
+        showMainApp();
+    } else {
+        document.getElementById('passwordError').classList.add('show');
+        input.value = '';
+        input.focus();
+        setTimeout(() => {
+            document.getElementById('passwordError').classList.remove('show');
+        }, 3000);
+    }
+}
+
+function logout() {
+    sessionStorage.removeItem('messengerAuth');
+    location.reload();
+}
+
+function showMainApp() {
+    document.getElementById('passwordScreen').classList.add('hidden');
+    document.getElementById('mainApp').classList.add('visible');
+
+    // Initialize app
     loadConversations();
     setupEventListeners();
     startAutoRefresh();
-});
+}
 
 // Setup event listeners
 function setupEventListeners() {
@@ -35,6 +76,8 @@ async function loadConversations() {
         }
 
         conversations = result.data || [];
+        calculatePageStats();
+        renderPageFilters();
         renderConversations();
     } catch (error) {
         showToast('Failed to load conversations', 'error');
@@ -42,16 +85,51 @@ async function loadConversations() {
     }
 }
 
-// Filter conversations
-function filterConversations(filter) {
-    currentFilter = filter;
-
-    // Update active tab
-    document.querySelectorAll('.filter-tab').forEach(tab => {
-        tab.classList.remove('active');
+// Calculate statistics by page
+function calculatePageStats() {
+    pageStats = {};
+    conversations.forEach(conv => {
+        const pageKey = conv.page_id || 'unknown';
+        if (!pageStats[pageKey]) {
+            pageStats[pageKey] = {
+                name: conv.page_name || 'Unknown Page',
+                count: 0
+            };
+        }
+        pageStats[pageKey].count++;
     });
-    event.target.classList.add('active');
+}
 
+// Render page filter buttons
+function renderPageFilters() {
+    const container = document.getElementById('pageFilters');
+    const totalCount = conversations.length;
+
+    let html = `
+        <div class="page-filter ${currentPageFilter === 'all' ? 'active' : ''}" onclick="filterByPage('all')">
+            📘 All Pages
+            <span class="count">${totalCount}</span>
+        </div>
+    `;
+
+    Object.keys(pageStats).forEach(pageId => {
+        const page = pageStats[pageId];
+        html += `
+            <div class="page-filter ${currentPageFilter === pageId ? 'active' : ''}" 
+                 onclick="filterByPage('${pageId}')">
+                📄 ${page.name}
+                <span class="count">${page.count}</span>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+}
+
+// Filter conversations by page
+function filterByPage(pageId) {
+    currentPageFilter = pageId;
+    renderPageFilters();
     renderConversations();
 }
 
@@ -60,15 +138,15 @@ function renderConversations() {
     const list = document.getElementById('conversationList');
 
     let filteredConversations = conversations;
-    if (currentFilter !== 'all') {
-        filteredConversations = conversations.filter(c => c.platform === currentFilter);
+    if (currentPageFilter !== 'all') {
+        filteredConversations = conversations.filter(c => c.page_id === currentPageFilter);
     }
 
     if (filteredConversations.length === 0) {
         list.innerHTML = `
             <li class="loading">
                 <div class="empty-state">
-                    <p>No conversations yet</p>
+                    <p>No conversations for this page</p>
                 </div>
             </li>
         `;
@@ -77,24 +155,26 @@ function renderConversations() {
 
     list.innerHTML = filteredConversations.map(conv => `
         <li class="conversation-item ${currentConversation && currentConversation.id === conv.conversation_id ? 'active' : ''}" 
-            onclick="selectConversation('${conv.conversation_id}', '${conv.page_name || 'Facebook Page'}', '${conv.page_id}', '${conv.customer_psid}')">
+            onclick="selectConversation('${conv.conversation_id}', '${escapeQuotes(conv.page_name || 'Facebook Page')}', '${conv.page_id}', '${conv.customer_psid}', '${escapeQuotes(conv.customer_name || 'Unknown Customer')}')">
             <div class="conversation-header">
-                <div class="conversation-page">📘 ${conv.page_name || 'Facebook Page'}</div>
+                <div class="conversation-page">${conv.page_name || 'Facebook Page'}</div>
                 <div class="conversation-time">${formatTime(conv.last_message_time)}</div>
             </div>
-            <div class="conversation-id">Customer: ${conv.customer_psid.substring(0, 20)}...</div>
+            <div class="conversation-name">${conv.customer_name || 'Unknown Customer'}</div>
+            <div class="conversation-id">ID: ${conv.customer_psid.substring(0, 20)}...</div>
             <div class="conversation-preview">Click to view messages</div>
         </li>
     `).join('');
 }
 
 // Select and load a conversation
-async function selectConversation(conversationId, pageName, pageId, customerPsid) {
+async function selectConversation(conversationId, pageName, pageId, customerPsid, customerName) {
     currentConversation = {
         id: conversationId,
         pageName: pageName,
         pageId: pageId,
-        customerPsid: customerPsid
+        customerPsid: customerPsid,
+        customerName: customerName
     };
 
     await loadMessages();
@@ -174,11 +254,13 @@ function updateChatHeader() {
     const header = document.getElementById('chatHeader');
     const title = document.getElementById('chatTitle');
     const subtitle = document.getElementById('chatSubtitle');
+    const badge = document.getElementById('pageBadge');
 
     if (currentConversation) {
         header.style.display = 'flex';
-        title.innerHTML = `<span class="status-indicator"></span>${currentConversation.pageName}`;
+        title.innerHTML = `<span class="status-indicator"></span>${currentConversation.customerName}`;
         subtitle.textContent = `Customer ID: ${currentConversation.customerPsid}`;
+        badge.textContent = currentConversation.pageName;
     }
 }
 
@@ -280,6 +362,11 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+// Escape quotes for onclick attributes
+function escapeQuotes(text) {
+    return text.replace(/'/g, "\\'").replace(/"/g, '&quot;');
 }
 
 // Show toast notification
