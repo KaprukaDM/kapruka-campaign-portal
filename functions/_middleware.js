@@ -41,13 +41,9 @@ function isValidUser(authHeader, env) {
     const decoded = atob(encoded);
     const [username, password] = decoded.split(':');
     
-    // Define users - add/remove usernames here
+    // Test with only ONE user
     const users = {
-      'manager': env.MANAGER_PASS,
-      'developer': env.DEVELOPER_PASS,
-      'intern1': env.INTERN1_PASS,
-      'intern2': env.INTERN2_PASS,
-      'intern3': env.INTERN3_PASS
+      'intern1': env.INTERN1_PASS
     };
     
     return users[username] && users[username] === password;
