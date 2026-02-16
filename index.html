@@ -97,8 +97,147 @@
       animation: pulse 2s infinite;
     }
 
+    /* Ads Manager floating button */
+    .ads-manager-btn {
+      position: fixed;
+      bottom: 170px;
+      right: 30px;
+      background: linear-gradient(135deg, rgba(220,38,127,0.9), rgba(156,39,176,0.9));
+      color: white;
+      padding: 16px 28px;
+      border-radius: 50px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 15px;
+      box-shadow: 0 8px 25px rgba(220,38,127,0.4);
+      transition: all 0.3s;
+      border: 3px solid rgba(255,255,255,0.3);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      backdrop-filter: blur(10px);
+      cursor: pointer;
+    }
+    .ads-manager-btn:hover {
+      transform: translateY(-5px) scale(1.05);
+      box-shadow: 0 12px 35px rgba(220,38,127,0.6);
+      background: linear-gradient(135deg, #dc267f, #9c27b0);
+    }
+    .ads-manager-btn .icon {
+      font-size: 20px;
+      animation: rotate 3s linear infinite;
+    }
+    @keyframes rotate {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .ads-manager-btn .label {
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Password Modal */
+    .password-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(10px);
+      z-index: 10000;
+      justify-content: center;
+      align-items: center;
+    }
+    .password-modal.active {
+      display: flex;
+    }
+    .password-box {
+      background: linear-gradient(135deg, #1a0b2e 0%, #2d1b4e 100%);
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(220,38,127,0.4);
+      border: 2px solid rgba(220,38,127,0.3);
+      text-align: center;
+      max-width: 400px;
+      width: 90%;
+    }
+    .password-box h2 {
+      color: #dc267f;
+      margin-bottom: 10px;
+      font-size: 24px;
+    }
+    .password-box p {
+      color: #ccc;
+      margin-bottom: 25px;
+      font-size: 14px;
+    }
+    .password-input {
+      width: 100%;
+      padding: 15px;
+      border: 2px solid rgba(220,38,127,0.3);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.05);
+      color: white;
+      font-size: 16px;
+      margin-bottom: 20px;
+      outline: none;
+      transition: all 0.3s;
+    }
+    .password-input:focus {
+      border-color: #dc267f;
+      box-shadow: 0 0 20px rgba(220,38,127,0.3);
+    }
+    .password-buttons {
+      display: flex;
+      gap: 10px;
+    }
+    .password-submit, .password-cancel {
+      flex: 1;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .password-submit {
+      background: linear-gradient(135deg, #dc267f, #9c27b0);
+      color: white;
+    }
+    .password-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(220,38,127,0.5);
+    }
+    .password-cancel {
+      background: rgba(255,255,255,0.1);
+      color: white;
+    }
+    .password-cancel:hover {
+      background: rgba(255,255,255,0.2);
+    }
+    .password-error {
+      color: #ff3e3e;
+      font-size: 13px;
+      margin-top: 10px;
+      display: none;
+    }
+    .password-error.active {
+      display: block;
+      animation: shake 0.5s;
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-10px); }
+      75% { transform: translateX(10px); }
+    }
+
     @media (max-width: 768px) {
-      .experiments-btn, .messenger-btn {
+      .experiments-btn, .messenger-btn, .ads-manager-btn {
         bottom: 20px;
         right: 20px;
         padding: 12px 20px;
@@ -107,8 +246,14 @@
       .messenger-btn {
         bottom: 80px;
       }
-      .experiments-btn .icon, .messenger-btn .icon {
+      .ads-manager-btn {
+        bottom: 140px;
+      }
+      .experiments-btn .icon, .messenger-btn .icon, .ads-manager-btn .icon {
         font-size: 18px;
+      }
+      .password-box {
+        padding: 30px 20px;
       }
     }
   </style>
@@ -265,6 +410,12 @@
     </div>
   </div>
 
+  <!-- Floating Ads Manager Button (Password Protected) -->
+  <div class="ads-manager-btn" onclick="openPasswordModal()">
+    <span class="icon">🎯</span>
+    <span class="label">Ads Manager</span>
+  </div>
+
   <!-- Floating Messenger Hub Button -->
   <a href="messenger-hub.html" class="messenger-btn">
     <span class="icon">💬</span>
@@ -277,5 +428,74 @@
     <span class="icon">🧪</span>
     <span class="label">Experiments</span>
   </a>
+
+  <!-- Password Modal -->
+  <div class="password-modal" id="passwordModal">
+    <div class="password-box">
+      <h2>🔒 Ads Manager Access</h2>
+      <p>Enter password to continue</p>
+      <input 
+        type="password" 
+        class="password-input" 
+        id="passwordInput" 
+        placeholder="Enter password..."
+        onkeypress="handleEnterKey(event)"
+      >
+      <div class="password-buttons">
+        <button class="password-cancel" onclick="closePasswordModal()">Cancel</button>
+        <button class="password-submit" onclick="checkPassword()">Access</button>
+      </div>
+      <div class="password-error" id="passwordError">
+        ❌ Incorrect password. Please try again.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const CORRECT_PASSWORD = 'Fari';
+    const ADS_MANAGER_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfGSObGAIJz46oQd0xN3oISjS46SEkFtL0_ZGkIfh6ansvqPQ/viewform';
+
+    function openPasswordModal() {
+      document.getElementById('passwordModal').classList.add('active');
+      document.getElementById('passwordInput').focus();
+      document.getElementById('passwordError').classList.remove('active');
+      document.getElementById('passwordInput').value = '';
+    }
+
+    function closePasswordModal() {
+      document.getElementById('passwordModal').classList.remove('active');
+      document.getElementById('passwordInput').value = '';
+      document.getElementById('passwordError').classList.remove('active');
+    }
+
+    function checkPassword() {
+      const input = document.getElementById('passwordInput').value;
+      const errorDiv = document.getElementById('passwordError');
+
+      if (input === CORRECT_PASSWORD) {
+        // Correct password - redirect to Google Form
+        window.open(ADS_MANAGER_URL, '_blank');
+        closePasswordModal();
+      } else {
+        // Incorrect password - show error
+        errorDiv.classList.add('active');
+        document.getElementById('passwordInput').value = '';
+        document.getElementById('passwordInput').focus();
+      }
+    }
+
+    function handleEnterKey(event) {
+      if (event.key === 'Enter') {
+        checkPassword();
+      }
+    }
+
+    // Close modal when clicking outside
+    document.getElementById('passwordModal').addEventListener('click', function(event) {
+      if (event.target === this) {
+        closePasswordModal();
+      }
+    });
+  </script>
 </body>
 </html>
