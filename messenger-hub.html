@@ -807,7 +807,6 @@
             background: #34c759;
         }
 
-        /* Image Modal */
         .image-modal {
             display: none;
             position: fixed;
@@ -843,12 +842,10 @@
             opacity: 0.7;
         }
 
-        /* Hidden file input */
         #imageInput {
             display: none;
         }
 
-        /* Scrollbar styling */
         ::-webkit-scrollbar {
             width: 8px;
             height: 8px;
@@ -867,17 +864,14 @@
             background: #86868b;
         }
 
-        /* Responsive */
         @media (max-width: 768px) {
             .sidebar {
                 width: 100%;
                 max-width: 380px;
             }
-
             .container {
                 flex-direction: column;
             }
-
             .message-bubble {
                 max-width: 85%;
             }
@@ -885,7 +879,6 @@
     </style>
 </head>
 <body>
-    <!-- Password Screen -->
     <div class="password-screen" id="passwordScreen">
         <div class="password-box">
             <h2>🔒 Messenger Hub</h2>
@@ -900,7 +893,6 @@
         </div>
     </div>
 
-    <!-- Main App -->
     <div class="main-app" id="mainApp">
         <div class="header">
             <h1>💬 Messenger Hub</h1>
@@ -911,20 +903,15 @@
         </div>
 
         <div class="container">
-            <!-- Sidebar -->
             <div class="sidebar">
                 <div class="sidebar-header">
                     <h2>Conversations</h2>
-                    
-                    <!-- Platform Filters -->
                     <div class="platform-filters" id="platformFilters">
                         <div class="platform-filter active" onclick="filterByPlatform('all')">
                             🌐 All Platforms
                             <span class="count">0</span>
                         </div>
                     </div>
-
-                    <!-- Page Filters -->
                     <div class="page-filters" id="pageFilters">
                         <div class="page-filter active" onclick="filterByPage('all')">
                             📘 All Pages
@@ -940,7 +927,6 @@
                 </ul>
             </div>
 
-            <!-- Chat Area -->
             <div class="chat-area">
                 <div class="chat-header" id="chatHeader" style="display: none;">
                     <div class="chat-header-info">
@@ -962,13 +948,11 @@
                 </div>
                 
                 <div class="reply-area">
-                    <!-- Window Warning -->
                     <div class="window-warning" id="windowWarning">
                         <span class="warning-icon">⚠️</span>
                         <span>This conversation is outside the 24-hour window</span>
                     </div>
 
-                    <!-- Image Preview -->
                     <div class="image-preview" id="imagePreview">
                         <div class="preview-container">
                             <img src="" alt="Preview" class="preview-image" id="previewImage">
@@ -980,46 +964,613 @@
                         </div>
                     </div>
 
-                    <!-- Reply Input -->
                     <div class="reply-input-wrapper">
-                        <input type="file" 
-                               id="imageInput" 
-                               accept="image/*">
-                        
-                        <button class="image-upload-btn" 
-                                id="imageUploadBtn"
-                                onclick="triggerImageUpload()" 
-                                disabled
-                                title="Upload image">
-                            📷
-                        </button>
-
-                        <input type="text" 
-                               class="reply-input" 
-                               id="replyInput" 
-                               placeholder="Type your message..." 
-                               disabled>
-                        
-                        <button class="send-btn" 
-                                id="sendBtn" 
-                                onclick="sendReply()" 
-                                disabled>
-                            Send
-                        </button>
+                        <input type="file" id="imageInput" accept="image/*">
+                        <button class="image-upload-btn" id="imageUploadBtn" onclick="triggerImageUpload()" disabled title="Upload image">📷</button>
+                        <input type="text" class="reply-input" id="replyInput" placeholder="Type your message..." disabled>
+                        <button class="send-btn" id="sendBtn" onclick="sendReply()" disabled>Send</button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Image Modal -->
     <div class="image-modal" id="imageModal" onclick="closeImageModal()">
         <span class="close-modal">&times;</span>
         <img src="" alt="Full size image" class="modal-content" id="modalImage">
     </div>
 
-    <!-- Load External Scripts -->
-    <script src="supabase.js"></script>
-    <script src="js"></script>
+    <script>
+        // ============================================
+        // API CONFIGURATION
+        // ============================================
+        const API_BASE_URL = 'https://chathubfactory.onrender.com';
+
+        // ============================================
+        // API HANDLERS
+        // ============================================
+        const messengerSupabase = {
+            API_BASE_URL: API_BASE_URL,
+
+            async getConversations() {
+                try {
+                    const response = await fetch(`${this.API_BASE_URL}/api/conversations`, {
+                        method: 'GET',
+                        headers: {'Content-Type': 'application/json'}
+                    });
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    const data = await response.json();
+                    return {success: data.success || false, data: data.conversations || [], error: data.error || null};
+                } catch (error) {
+                    console.error('Error fetching conversations:', error);
+                    return {success: false, data: [], error: error.message};
+                }
+            },
+
+            async getMessages(conversationId) {
+                try {
+                    const response = await fetch(`${this.API_BASE_URL}/api/conversation/${conversationId}`, {
+                        method: 'GET',
+                        headers: {'Content-Type': 'application/json'}
+                    });
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    const data = await response.json();
+                    return {success: data.success || false, data: data.messages || [], error: data.error || null};
+                } catch (error) {
+                    console.error('Error fetching messages:', error);
+                    return {success: false, data: [], error: error.message};
+                }
+            },
+
+            async fetchCustomerName(conversationId, customerPsid) {
+                try {
+                    const response = await fetch(`${this.API_BASE_URL}/api/customer-name/${customerPsid}`, {
+                        method: 'GET',
+                        headers: {'Content-Type': 'application/json'}
+                    });
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    const data = await response.json();
+                    return {success: data.success || false, name: data.name || null, error: data.error || null};
+                } catch (error) {
+                    console.error('Error fetching customer name:', error);
+                    return {success: false, name: null, error: error.message};
+                }
+            },
+
+            async getUnrepliedCounts() {
+                try {
+                    const response = await fetch(`${this.API_BASE_URL}/api/unreplied-counts`, {
+                        method: 'GET',
+                        headers: {'Content-Type': 'application/json'}
+                    });
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    const data = await response.json();
+                    return {success: data.success || false, counts: data.counts || {}, error: data.error || null};
+                } catch (error) {
+                    console.error('Error fetching unreplied counts:', error);
+                    return {success: false, counts: {}, error: error.message};
+                }
+            },
+
+            checkConversationWindow(lastMessageTime) {
+                const now = new Date();
+                const lastMessage = new Date(lastMessageTime);
+                const hoursPassed = (now - lastMessage) / (1000 * 60 * 60);
+                const daysPassed = hoursPassed / 24;
+
+                if (hoursPassed <= 24) {
+                    return {status: 'open', color: 'green', canReply: true, message: 'You can reply freely', hoursRemaining: Math.floor(24 - hoursPassed), requiresTag: false};
+                } else if (daysPassed <= 7) {
+                    return {status: 'extended', color: 'orange', canReply: true, message: 'Extended customer service window', daysRemaining: Math.floor(7 - daysPassed), requiresTag: true};
+                } else {
+                    return {status: 'closed', color: 'red', canReply: false, message: 'Conversation window expired', daysExpired: Math.floor(daysPassed - 7), requiresTag: false};
+                }
+            }
+        };
+
+        const renderAPI = {
+            API_BASE_URL: API_BASE_URL,
+
+            async sendMessage(pageId, recipientId, messageText, useHumanAgentTag = false) {
+                try {
+                    const response = await fetch(`${this.API_BASE_URL}/api/send`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({page_id: pageId, recipient_id: recipientId, message_text: messageText, use_human_agent_tag: useHumanAgentTag})
+                    });
+                    const data = await response.json();
+                    if (!response.ok) return {success: false, error: data.error || `HTTP ${response.status}`, data: null};
+                    return {success: data.success || true, data: data.data || null, error: null};
+                } catch (error) {
+                    console.error('Error sending message:', error);
+                    return {success: false, error: error.message, data: null};
+                }
+            },
+
+            async sendImageMessage(pageId, recipientId, imageFile, useHumanAgentTag = false) {
+                try {
+                    const formData = new FormData();
+                    formData.append('page_id', pageId);
+                    formData.append('recipient_id', recipientId);
+                    formData.append('image', imageFile);
+                    formData.append('use_human_agent_tag', useHumanAgentTag);
+                    const response = await fetch(`${this.API_BASE_URL}/api/send-image`, {method: 'POST', body: formData});
+                    const data = await response.json();
+                    if (!response.ok) return {success: false, error: data.error || `HTTP ${response.status}`, data: null};
+                    return {success: data.success || true, data: data.data || null, error: null};
+                } catch (error) {
+                    console.error('Error sending image:', error);
+                    return {success: false, error: error.message, data: null};
+                }
+            }
+        };
+
+        // ============================================
+        // APP STATE
+        // ============================================
+        const MESSENGER_PASSWORD = 'kapruka2026';
+        let conversations = [];
+        let currentConversation = null;
+        let currentMessages = [];
+        let currentPageFilter = 'all';
+        let currentPlatformFilter = 'all';
+        let autoRefreshInterval = null;
+        let pageStats = {};
+        let platformStats = {};
+        let unrepliedCounts = {};
+        let selectedImageFile = null;
+
+        document.addEventListener('DOMContentLoaded', () => checkAuth());
+
+        function checkAuth() {
+            const isAuthenticated = sessionStorage.getItem('messengerAuth');
+            if (isAuthenticated === 'true') showMainApp();
+        }
+
+        function checkPassword() {
+            const input = document.getElementById('passwordInput');
+            const password = input.value;
+            if (password === MESSENGER_PASSWORD) {
+                sessionStorage.setItem('messengerAuth', 'true');
+                showMainApp();
+            } else {
+                document.getElementById('passwordError').classList.add('show');
+                input.value = '';
+                input.focus();
+                setTimeout(() => document.getElementById('passwordError').classList.remove('show'), 3000);
+            }
+        }
+
+        function logout() {
+            sessionStorage.removeItem('messengerAuth');
+            location.reload();
+        }
+
+        function showMainApp() {
+            document.getElementById('passwordScreen').classList.add('hidden');
+            document.getElementById('mainApp').classList.add('visible');
+            loadConversations();
+            setupEventListeners();
+            startAutoRefresh();
+        }
+
+        function setupEventListeners() {
+            const replyInput = document.getElementById('replyInput');
+            replyInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendReply();
+                }
+            });
+            const imageInput = document.getElementById('imageInput');
+            if (imageInput) imageInput.addEventListener('change', handleImageSelect);
+        }
+
+        async function loadConversations() {
+            try {
+                const result = await messengerSupabase.getConversations();
+                if (result.error) {
+                    showToast('Error loading conversations: ' + result.error, 'error');
+                    return;
+                }
+                conversations = result.data || [];
+                await loadUnrepliedCounts();
+                calculatePageStats();
+                calculatePlatformStats();
+                renderPlatformFilters();
+                renderPageFilters();
+                renderConversations();
+            } catch (error) {
+                showToast('Failed to load conversations', 'error');
+                console.error(error);
+            }
+        }
+
+        async function loadUnrepliedCounts() {
+            try {
+                const result = await messengerSupabase.getUnrepliedCounts();
+                if (result.success) unrepliedCounts = result.counts || {};
+            } catch (error) {
+                console.error('Error loading unreplied counts:', error);
+            }
+        }
+
+        function calculatePageStats() {
+            pageStats = {};
+            conversations.forEach(conv => {
+                const pageKey = conv.page_id || 'unknown';
+                if (!pageStats[pageKey]) {
+                    pageStats[pageKey] = {name: conv.page_name || 'Unknown Page', count: 0, unreplied: 0};
+                }
+                pageStats[pageKey].count++;
+                const unrepliedKey = `${conv.page_id}_${conv.customer_psid}`;
+                if (unrepliedCounts[unrepliedKey]) pageStats[pageKey].unreplied += unrepliedCounts[unrepliedKey];
+            });
+        }
+
+        function calculatePlatformStats() {
+            platformStats = {};
+            conversations.forEach(conv => {
+                const platform = conv.platform || 'facebook';
+                if (!platformStats[platform]) {
+                    platformStats[platform] = {name: getPlatformName(platform), icon: getPlatformIcon(platform), count: 0, unreplied: 0};
+                }
+                platformStats[platform].count++;
+                const unrepliedKey = `${conv.page_id}_${conv.customer_psid}`;
+                if (unrepliedCounts[unrepliedKey]) platformStats[platform].unreplied += unrepliedCounts[unrepliedKey];
+            });
+        }
+
+        function getPlatformName(platform) {
+            const names = {'facebook': 'Facebook', 'instagram': 'Instagram', 'whatsapp': 'WhatsApp', 'messenger': 'Messenger'};
+            return names[platform] || platform.charAt(0).toUpperCase() + platform.slice(1);
+        }
+
+        function getPlatformIcon(platform) {
+            const icons = {'facebook': '📘', 'instagram': '📷', 'whatsapp': '💬', 'messenger': '💬'};
+            return icons[platform] || '💬';
+        }
+
+        function renderPlatformFilters() {
+            const container = document.getElementById('platformFilters');
+            if (!container) return;
+            const totalCount = conversations.length;
+            let totalUnreplied = Object.values(unrepliedCounts).reduce((sum, count) => sum + count, 0);
+            let html = `<div class="platform-filter ${currentPlatformFilter === 'all' ? 'active' : ''}" onclick="filterByPlatform('all')">🌐 All Platforms<span class="count">${totalCount}</span>${totalUnreplied > 0 ? `<span class="unreplied-badge">${totalUnreplied}</span>` : ''}</div>`;
+            Object.keys(platformStats).forEach(platform => {
+                const stat = platformStats[platform];
+                html += `<div class="platform-filter ${currentPlatformFilter === platform ? 'active' : ''}" onclick="filterByPlatform('${platform}')">${stat.icon} ${stat.name}<span class="count">${stat.count}</span>${stat.unreplied > 0 ? `<span class="unreplied-badge">${stat.unreplied}</span>` : ''}</div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function filterByPlatform(platform) {
+            currentPlatformFilter = platform;
+            currentPageFilter = 'all';
+            renderPlatformFilters();
+            renderPageFilters();
+            renderConversations();
+        }
+
+        function renderPageFilters() {
+            const container = document.getElementById('pageFilters');
+            let platformFilteredConvs = conversations;
+            if (currentPlatformFilter !== 'all') {
+                platformFilteredConvs = conversations.filter(c => (c.platform || 'facebook') === currentPlatformFilter);
+            }
+            const totalCount = platformFilteredConvs.length;
+            let filteredPageStats = {};
+            platformFilteredConvs.forEach(conv => {
+                const pageKey = conv.page_id || 'unknown';
+                if (!filteredPageStats[pageKey]) {
+                    filteredPageStats[pageKey] = {name: conv.page_name || 'Unknown Page', count: 0, unreplied: 0};
+                }
+                filteredPageStats[pageKey].count++;
+                const unrepliedKey = `${conv.page_id}_${conv.customer_psid}`;
+                if (unrepliedCounts[unrepliedKey]) filteredPageStats[pageKey].unreplied += unrepliedCounts[unrepliedKey];
+            });
+            let html = `<div class="page-filter ${currentPageFilter === 'all' ? 'active' : ''}" onclick="filterByPage('all')">📘 All Pages<span class="count">${totalCount}</span></div>`;
+            Object.keys(filteredPageStats).forEach(pageId => {
+                const page = filteredPageStats[pageId];
+                html += `<div class="page-filter ${currentPageFilter === pageId ? 'active' : ''}" onclick="filterByPage('${pageId}')">📄 ${page.name}<span class="count">${page.count}</span>${page.unreplied > 0 ? `<span class="unreplied-badge">${page.unreplied}</span>` : ''}</div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function filterByPage(pageId) {
+            currentPageFilter = pageId;
+            renderPageFilters();
+            renderConversations();
+        }
+
+        function renderConversations() {
+            const list = document.getElementById('conversationList');
+            let filteredConversations = conversations;
+            if (currentPlatformFilter !== 'all') {
+                filteredConversations = filteredConversations.filter(c => (c.platform || 'facebook') === currentPlatformFilter);
+            }
+            if (currentPageFilter !== 'all') {
+                filteredConversations = filteredConversations.filter(c => c.page_id === currentPageFilter);
+            }
+            if (filteredConversations.length === 0) {
+                list.innerHTML = `<li class="loading"><div class="empty-state"><p>No conversations for this filter</p></div></li>`;
+                return;
+            }
+            list.innerHTML = filteredConversations.map(conv => {
+                const windowStatus = messengerSupabase.checkConversationWindow(conv.last_message_time);
+                const unrepliedKey = `${conv.page_id}_${conv.customer_psid}`;
+                const unrepliedCount = unrepliedCounts[unrepliedKey] || 0;
+                const platform = conv.platform || 'facebook';
+                const platformIcon = getPlatformIcon(platform);
+                const customerName = conv.customer_name || `User #${conv.customer_psid.substring(0, 8)}`;
+                return `<li class="conversation-item ${currentConversation && currentConversation.id === conv.conversation_id ? 'active' : ''}" data-conversation-id="${conv.conversation_id}" data-page-name="${escapeQuotes(conv.page_name || 'Facebook Page')}" data-page-id="${conv.page_id}" data-customer-psid="${conv.customer_psid}" data-customer-name="${escapeQuotes(customerName)}" data-platform="${platform}" data-last-message-time="${conv.last_message_time}"><div class="conversation-header"><div class="conversation-page">${platformIcon} ${conv.page_name || 'Facebook Page'}</div><div class="conversation-time">${formatTime(conv.last_message_time)}</div></div><div class="conversation-name-row"><div class="conversation-name">${customerName}</div>${unrepliedCount > 0 ? `<span class="unreplied-badge-small">${unrepliedCount}</span>` : ''}</div><div class="conversation-id">ID: ${conv.customer_psid.substring(0, 20)}...</div><div class="conversation-footer"><span class="window-status window-${windowStatus.color}">${windowStatus.status === 'open' ? '🟢' : windowStatus.status === 'extended' ? '🟠' : '🔴'} ${windowStatus.message.split('(')[0].trim()}</span></div></li>`;
+            }).join('');
+            document.querySelectorAll('.conversation-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    selectConversation(this.getAttribute('data-conversation-id'), this.getAttribute('data-page-name'), this.getAttribute('data-page-id'), this.getAttribute('data-customer-psid'), this.getAttribute('data-customer-name'), this.getAttribute('data-platform'), this.getAttribute('data-last-message-time'));
+                });
+            });
+        }
+
+        async function selectConversation(conversationId, pageName, pageId, customerPsid, customerName, platform, lastMessageTime) {
+            currentConversation = {id: conversationId, pageName: pageName, pageId: pageId, customerPsid: customerPsid, customerName: customerName, platform: platform || 'facebook', lastMessageTime: lastMessageTime};
+            if (customerName.startsWith('User #')) fetchAndUpdateCustomerName(customerPsid);
+            await loadMessages();
+            updateChatHeader();
+            updateReplyAreaBasedOnWindow();
+            document.querySelectorAll('.conversation-item').forEach(item => item.classList.remove('active'));
+            const selectedItem = document.querySelector(`[data-conversation-id="${conversationId}"]`);
+            if (selectedItem) selectedItem.classList.add('active');
+        }
+
+        async function fetchAndUpdateCustomerName(customerPsid) {
+            try {
+                const result = await messengerSupabase.fetchCustomerName(null, customerPsid);
+                if (result.success && result.name) {
+                    if (currentConversation && currentConversation.customerPsid === customerPsid) {
+                        currentConversation.customerName = result.name;
+                        updateChatHeader();
+                    }
+                    const conv = conversations.find(c => c.customer_psid === customerPsid);
+                    if (conv) {
+                        conv.customer_name = result.name;
+                        renderConversations();
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching customer name:', error);
+            }
+        }
+
+        function updateReplyAreaBasedOnWindow() {
+            if (!currentConversation) return;
+            const windowStatus = messengerSupabase.checkConversationWindow(currentConversation.lastMessageTime);
+            const replyInput = document.getElementById('replyInput');
+            const sendBtn = document.getElementById('sendBtn');
+            const imageBtn = document.getElementById('imageUploadBtn');
+            const windowWarning = document.getElementById('windowWarning');
+            if (windowStatus.canReply) {
+                replyInput.disabled = false;
+                sendBtn.disabled = false;
+                if (imageBtn) imageBtn.disabled = false;
+                if (windowStatus.status === 'extended' && windowWarning) {
+                    windowWarning.style.display = 'flex';
+                    windowWarning.innerHTML = `<span class="warning-icon">⚠️</span><span>${windowStatus.message}</span>`;
+                } else if (windowWarning) {
+                    windowWarning.style.display = 'none';
+                }
+            } else {
+                replyInput.disabled = true;
+                sendBtn.disabled = true;
+                if (imageBtn) imageBtn.disabled = true;
+                replyInput.placeholder = 'Conversation window expired...';
+                if (windowWarning) {
+                    windowWarning.style.display = 'flex';
+                    windowWarning.innerHTML = `<span class="warning-icon">🔴</span><span>This conversation expired ${windowStatus.daysExpired} days ago. You cannot send messages.</span>`;
+                }
+            }
+        }
+
+        async function loadMessages() {
+            if (!currentConversation) return;
+            try {
+                const result = await messengerSupabase.getMessages(currentConversation.id);
+                if (result.error) {
+                    showToast('Error loading messages: ' + result.error, 'error');
+                    return;
+                }
+                currentMessages = result.data || [];
+                renderMessages();
+            } catch (error) {
+                showToast('Failed to load messages', 'error');
+                console.error(error);
+            }
+        }
+
+        function renderMessages() {
+            const container = document.getElementById('messagesContainer');
+            if (currentMessages.length === 0) {
+                container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📭</div><h3>No messages yet</h3><p>Start the conversation by sending a message</p></div>`;
+                return;
+            }
+            let html = '';
+            let lastDate = '';
+            currentMessages.forEach(msg => {
+                const msgDate = new Date(msg.created_at).toLocaleDateString();
+                if (msgDate !== lastDate) {
+                    html += `<div class="message-date-divider">${formatDate(msg.created_at)}</div>`;
+                    lastDate = msgDate;
+                }
+                const messageType = msg.message_type || 'text';
+                const isImage = messageType === 'image' || msg.image_url;
+                html += `<div class="message ${msg.sender_type}"><div class="message-bubble">${isImage ? `<img src="${msg.image_url}" alt="Sent image" class="message-image" onclick="openImageModal('${msg.image_url}')">` : escapeHtml(msg.message_text)}</div><div class="message-time">${formatMessageTime(msg.created_at)}</div></div>`;
+            });
+            container.innerHTML = html;
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function openImageModal(imageUrl) {
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalImage');
+            if (modal && modalImg) {
+                modal.style.display = 'flex';
+                modalImg.src = imageUrl;
+            }
+        }
+
+        function closeImageModal() {
+            const modal = document.getElementById('imageModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function updateChatHeader() {
+            const header = document.getElementById('chatHeader');
+            const title = document.getElementById('chatTitle');
+            const subtitle = document.getElementById('chatSubtitle');
+            const badge = document.getElementById('pageBadge');
+            if (currentConversation) {
+                header.style.display = 'flex';
+                const windowStatus = messengerSupabase.checkConversationWindow(currentConversation.lastMessageTime);
+                const statusIcon = windowStatus.status === 'open' ? '🟢' : windowStatus.status === 'extended' ? '🟠' : '🔴';
+                title.innerHTML = `${statusIcon} ${currentConversation.customerName}`;
+                subtitle.textContent = `Customer ID: ${currentConversation.customerPsid}`;
+                badge.textContent = `${getPlatformIcon(currentConversation.platform)} ${currentConversation.pageName}`;
+            }
+        }
+
+        function handleImageSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            if (!file.type.startsWith('image/')) {
+                showToast('Please select an image file', 'error');
+                return;
+            }
+            if (file.size > 5 * 1024 * 1024) {
+                showToast('Image size must be less than 5MB', 'error');
+                return;
+            }
+            selectedImageFile = file;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                showImagePreview(e.target.result);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function showImagePreview(imageSrc) {
+            const preview = document.getElementById('imagePreview');
+            const previewImg = document.getElementById('previewImage');
+            if (preview && previewImg) {
+                previewImg.src = imageSrc;
+                preview.style.display = 'flex';
+            }
+        }
+
+        function cancelImageUpload() {
+            selectedImageFile = null;
+            const preview = document.getElementById('imagePreview');
+            const imageInput = document.getElementById('imageInput');
+            if (preview) preview.style.display = 'none';
+            if (imageInput) imageInput.value = '';
+        }
+
+        function triggerImageUpload() {
+            const imageInput = document.getElementById('imageInput');
+            if (imageInput) imageInput.click();
+        }
+
+        async function sendReply() {
+            const input = document.getElementById('replyInput');
+            const messageText = input.value.trim();
+            if (!messageText && !selectedImageFile) return;
+            if (!currentConversation) return;
+            const sendBtn = document.getElementById('sendBtn');
+            sendBtn.disabled = true;
+            sendBtn.textContent = 'Sending...';
+            try {
+                const windowStatus = messengerSupabase.checkConversationWindow(currentConversation.lastMessageTime);
+                const useHumanAgentTag = windowStatus.requiresTag;
+                let result;
+                if (selectedImageFile) {
+                    result = await renderAPI.sendImageMessage(currentConversation.pageId, currentConversation.customerPsid, selectedImageFile, useHumanAgentTag);
+                    if (result.success) cancelImageUpload();
+                }
+                if (messageText && (!selectedImageFile || result.success)) {
+                    result = await renderAPI.sendMessage(currentConversation.pageId, currentConversation.customerPsid, messageText, useHumanAgentTag);
+                    if (result.success) input.value = '';
+                }
+                if (result.success) {
+                    showToast('Message sent successfully', 'success');
+                    setTimeout(() => loadMessages(), 500);
+                } else {
+                    showToast('Failed to send message: ' + (result.error || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                showToast('Error sending message', 'error');
+                console.error(error);
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Send';
+            }
+        }
+
+        async function refreshCurrentChat() {
+            if (currentConversation) {
+                await loadMessages();
+                showToast('Messages refreshed', 'success');
+            }
+        }
+
+        function startAutoRefresh() {
+            autoRefreshInterval = setInterval(() => {
+                loadConversations();
+                if (currentConversation) loadMessages();
+            }, 30000);
+        }
+
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diff = now - date;
+            if (diff < 60000) return 'Just now';
+            if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+            if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+            if (diff < 604800000) return `${Math.floor(diff / 86400000)}d ago`;
+            return date.toLocaleDateString();
+        }
+
+        function formatMessageTime(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function formatDate(timestamp) {
+            const date = new Date(timestamp);
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            if (date.toDateString() === today.toDateString()) return 'Today';
+            if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function escapeQuotes(text) {
+            return text.replace(/'/g, "\\\\'").replace(/"/g, '&quot;');
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+    </script>
 </body>
 </html>
