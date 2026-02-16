@@ -550,9 +550,11 @@
 
         .message-image {
             max-width: 100%;
+            max-height: 300px;
             border-radius: 12px;
             cursor: pointer;
             transition: opacity 0.2s ease;
+            display: block;
         }
 
         .message-image:hover {
@@ -651,7 +653,7 @@
         .reply-input-wrapper {
             display: flex;
             gap: 12px;
-            align-items: center;
+            align-items: flex-end;
         }
 
         .reply-input {
@@ -664,6 +666,11 @@
             transition: all 0.2s ease;
             font-family: inherit;
             background: white;
+            resize: none;
+            min-height: 44px;
+            max-height: 120px;
+            overflow-y: auto;
+            line-height: 1.4;
         }
 
         .reply-input:focus {
@@ -689,6 +696,7 @@
             align-items: center;
             justify-content: center;
             transition: all 0.2s ease;
+            flex-shrink: 0;
         }
 
         .image-upload-btn:hover {
@@ -712,6 +720,8 @@
             font-weight: 600;
             transition: all 0.2s ease;
             font-family: inherit;
+            height: 44px;
+            flex-shrink: 0;
         }
 
         .send-btn:hover {
@@ -967,7 +977,7 @@
                     <div class="reply-input-wrapper">
                         <input type="file" id="imageInput" accept="image/*">
                         <button class="image-upload-btn" id="imageUploadBtn" onclick="triggerImageUpload()" disabled title="Upload image">📷</button>
-                        <input type="text" class="reply-input" id="replyInput" placeholder="Type your message..." disabled>
+                        <textarea class="reply-input" id="replyInput" placeholder="Type your message..." disabled rows="1"></textarea>
                         <button class="send-btn" id="sendBtn" onclick="sendReply()" disabled>Send</button>
                     </div>
                 </div>
@@ -1162,6 +1172,13 @@
                     sendReply();
                 }
             });
+            
+            // Auto-expand textarea
+            replyInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+            });
+            
             const imageInput = document.getElementById('imageInput');
             if (imageInput) imageInput.addEventListener('change', handleImageSelect);
         }
@@ -1180,9 +1197,46 @@
                 renderPlatformFilters();
                 renderPageFilters();
                 renderConversations();
+                
+                // NEW: Fetch missing names in background
+                fetchAllUnknownNames();
+                
             } catch (error) {
                 showToast('Failed to load conversations', 'error');
                 console.error(error);
+            }
+        }
+
+        // NEW FUNCTION: Auto-fetch customer names
+        async function fetchAllUnknownNames() {
+            const unknownConvs = conversations.filter(c => 
+                !c.customer_name || c.customer_name === 'Unknown' || c.customer_name.startsWith('User #')
+            );
+            
+            if (unknownConvs.length === 0) return;
+            
+            console.log(`🔍 Fetching names for ${unknownConvs.length} unknown customers...`);
+            
+            for (const conv of unknownConvs) {
+                try {
+                    const result = await messengerSupabase.fetchCustomerName(null, conv.customer_psid);
+                    if (result.success && result.name) {
+                        conv.customer_name = result.name;
+                        conv.customer_name_fetched = true;
+                        console.log(`✅ Fetched: ${conv.customer_psid} = ${result.name}`);
+                    }
+                    // Small delay to avoid rate limiting
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                } catch (error) {
+                    console.error(`❌ Failed to fetch name for ${conv.customer_psid}:`, error);
+                }
+            }
+            
+            // Re-render conversations with updated names
+            console.log('✨ Names fetched, updating display...');
+            renderConversations();
+            if (currentConversation) {
+                updateChatHeader();
             }
         }
 
@@ -1200,11 +1254,13 @@
             conversations.forEach(conv => {
                 const pageKey = conv.page_id || 'unknown';
                 if (!pageStats[pageKey]) {
-                    pageStats[pageKey] = {name: conv.page_name || 'Unknown Page', count: 0, unreplied: 0};
+                    pageStats[pageKey] = {name: conv.page_name || 'Unknown Page', count: 0, unrepliedConversations: 0};
                 }
                 pageStats[pageKey].count++;
                 const unrepliedKey = `${conv.page_id}_${conv.customer_psid}`;
-                if (unrepliedCounts[unrepliedKey]) pageStats[pageKey].unreplied += unrepliedCounts[unrepliedKey];
+                if (unrepliedCounts[unrepliedKey] && unrepliedCounts[unrepliedKey] > 0) {
+                    pageStats[pageKey].unrepliedConversations++;
+                }
             });
         }
 
@@ -1213,11 +1269,13 @@
             conversations.forEach(conv => {
                 const platform = conv.platform || 'facebook';
                 if (!platformStats[platform]) {
-                    platformStats[platform] = {name: getPlatformName(platform), icon: getPlatformIcon(platform), count: 0, unreplied: 0};
+                    platformStats[platform] = {name: getPlatformName(platform), icon: getPlatformIcon(platform), count: 0, unrepliedConversations: 0};
                 }
                 platformStats[platform].count++;
                 const unrepliedKey = `${conv.page_id}_${conv.customer_psid}`;
-                if (unrepliedCounts[unrepliedKey]) platformStats[platform].unreplied += unrepliedCounts[unrepliedKey];
+                if (unrepliedCounts[unrepliedKey] && unrepliedCounts[unrepliedKey] > 0) {
+                    platformStats[platform].unrepliedConversations++;
+                }
             });
         }
 
@@ -1235,11 +1293,21 @@
             const container = document.getElementById('platformFilters');
             if (!container) return;
             const totalCount = conversations.length;
-            let totalUnreplied = Object.values(unrepliedCounts).reduce((sum, count) => sum + count, 0);
-            let html = `<div class="platform-filter ${currentPlatformFilter === 'all' ? 'active' : ''}" onclick="filterByPlatform('all')">🌐 All Platforms<span class="count">${totalCount}</span>${totalUnreplied > 0 ? `<span class="unreplied-badge">${totalUnreplied}</span>` : ''}</div>`;
+            
+            // Count unreplied CONVERSATIONS not messages
+            let totalUnrepliedConvs = 0;
+            const counted = new Set();
+            Object.keys(unrepliedCounts).forEach(key => {
+                if (unrepliedCounts[key] > 0 && !counted.has(key)) {
+                    totalUnrepliedConvs++;
+                    counted.add(key);
+                }
+            });
+            
+            let html = `<div class="platform-filter ${currentPlatformFilter === 'all' ? 'active' : ''}" onclick="filterByPlatform('all')">🌐 All Platforms<span class="count">${totalCount}</span>${totalUnrepliedConvs > 0 ? `<span class="unreplied-badge">${totalUnrepliedConvs}</span>` : ''}</div>`;
             Object.keys(platformStats).forEach(platform => {
                 const stat = platformStats[platform];
-                html += `<div class="platform-filter ${currentPlatformFilter === platform ? 'active' : ''}" onclick="filterByPlatform('${platform}')">${stat.icon} ${stat.name}<span class="count">${stat.count}</span>${stat.unreplied > 0 ? `<span class="unreplied-badge">${stat.unreplied}</span>` : ''}</div>`;
+                html += `<div class="platform-filter ${currentPlatformFilter === platform ? 'active' : ''}" onclick="filterByPlatform('${platform}')">${stat.icon} ${stat.name}<span class="count">${stat.count}</span>${stat.unrepliedConversations > 0 ? `<span class="unreplied-badge">${stat.unrepliedConversations}</span>` : ''}</div>`;
             });
             container.innerHTML = html;
         }
@@ -1263,16 +1331,18 @@
             platformFilteredConvs.forEach(conv => {
                 const pageKey = conv.page_id || 'unknown';
                 if (!filteredPageStats[pageKey]) {
-                    filteredPageStats[pageKey] = {name: conv.page_name || 'Unknown Page', count: 0, unreplied: 0};
+                    filteredPageStats[pageKey] = {name: conv.page_name || 'Unknown Page', count: 0, unrepliedConversations: 0};
                 }
                 filteredPageStats[pageKey].count++;
                 const unrepliedKey = `${conv.page_id}_${conv.customer_psid}`;
-                if (unrepliedCounts[unrepliedKey]) filteredPageStats[pageKey].unreplied += unrepliedCounts[unrepliedKey];
+                if (unrepliedCounts[unrepliedKey] && unrepliedCounts[unrepliedKey] > 0) {
+                    filteredPageStats[pageKey].unrepliedConversations++;
+                }
             });
             let html = `<div class="page-filter ${currentPageFilter === 'all' ? 'active' : ''}" onclick="filterByPage('all')">📘 All Pages<span class="count">${totalCount}</span></div>`;
             Object.keys(filteredPageStats).forEach(pageId => {
                 const page = filteredPageStats[pageId];
-                html += `<div class="page-filter ${currentPageFilter === pageId ? 'active' : ''}" onclick="filterByPage('${pageId}')">📄 ${page.name}<span class="count">${page.count}</span>${page.unreplied > 0 ? `<span class="unreplied-badge">${page.unreplied}</span>` : ''}</div>`;
+                html += `<div class="page-filter ${currentPageFilter === pageId ? 'active' : ''}" onclick="filterByPage('${pageId}')">📄 ${page.name}<span class="count">${page.count}</span>${page.unrepliedConversations > 0 ? `<span class="unreplied-badge">${page.unrepliedConversations}</span>` : ''}</div>`;
             });
             container.innerHTML = html;
         }
@@ -1497,7 +1567,10 @@
                 }
                 if (messageText && (!selectedImageFile || result.success)) {
                     result = await renderAPI.sendMessage(currentConversation.pageId, currentConversation.customerPsid, messageText, useHumanAgentTag);
-                    if (result.success) input.value = '';
+                    if (result.success) {
+                        input.value = '';
+                        input.style.height = 'auto';
+                    }
                 }
                 if (result.success) {
                     showToast('Message sent successfully', 'success');
