@@ -1032,21 +1032,6 @@
                 }
             },
 
-            async fetchCustomerName(conversationId, customerPsid) {
-                try {
-                    const response = await fetch(`${this.API_BASE_URL}/api/customer-name/${customerPsid}`, {
-                        method: 'GET',
-                        headers: {'Content-Type': 'application/json'}
-                    });
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                    const data = await response.json();
-                    return {success: data.success || false, name: data.name || null, error: data.error || null};
-                } catch (error) {
-                    console.error('Error fetching customer name:', error);
-                    return {success: false, name: null, error: error.message};
-                }
-            },
-
             async getUnrepliedCounts() {
                 try {
                     const response = await fetch(`${this.API_BASE_URL}/api/unreplied-counts`, {
@@ -1197,46 +1182,9 @@
                 renderPlatformFilters();
                 renderPageFilters();
                 renderConversations();
-                
-                // NEW: Fetch missing names in background
-                fetchAllUnknownNames();
-                
             } catch (error) {
                 showToast('Failed to load conversations', 'error');
                 console.error(error);
-            }
-        }
-
-        // NEW FUNCTION: Auto-fetch customer names
-        async function fetchAllUnknownNames() {
-            const unknownConvs = conversations.filter(c => 
-                !c.customer_name || c.customer_name === 'Unknown' || c.customer_name.startsWith('User #')
-            );
-            
-            if (unknownConvs.length === 0) return;
-            
-            console.log(`🔍 Fetching names for ${unknownConvs.length} unknown customers...`);
-            
-            for (const conv of unknownConvs) {
-                try {
-                    const result = await messengerSupabase.fetchCustomerName(null, conv.customer_psid);
-                    if (result.success && result.name) {
-                        conv.customer_name = result.name;
-                        conv.customer_name_fetched = true;
-                        console.log(`✅ Fetched: ${conv.customer_psid} = ${result.name}`);
-                    }
-                    // Small delay to avoid rate limiting
-                    await new Promise(resolve => setTimeout(resolve, 300));
-                } catch (error) {
-                    console.error(`❌ Failed to fetch name for ${conv.customer_psid}:`, error);
-                }
-            }
-            
-            // Re-render conversations with updated names
-            console.log('✨ Names fetched, updating display...');
-            renderConversations();
-            if (currentConversation) {
-                updateChatHeader();
             }
         }
 
@@ -1372,8 +1320,16 @@
                 const unrepliedCount = unrepliedCounts[unrepliedKey] || 0;
                 const platform = conv.platform || 'facebook';
                 const platformIcon = getPlatformIcon(platform);
-                const customerName = conv.customer_name || `User #${conv.customer_psid.substring(0, 8)}`;
-                return `<li class="conversation-item ${currentConversation && currentConversation.id === conv.conversation_id ? 'active' : ''}" data-conversation-id="${conv.conversation_id}" data-page-name="${escapeQuotes(conv.page_name || 'Facebook Page')}" data-page-id="${conv.page_id}" data-customer-psid="${conv.customer_psid}" data-customer-name="${escapeQuotes(customerName)}" data-platform="${platform}" data-last-message-time="${conv.last_message_time}"><div class="conversation-header"><div class="conversation-page">${platformIcon} ${conv.page_name || 'Facebook Page'}</div><div class="conversation-time">${formatTime(conv.last_message_time)}</div></div><div class="conversation-name-row"><div class="conversation-name">${customerName}</div>${unrepliedCount > 0 ? `<span class="unreplied-badge-small">${unrepliedCount}</span>` : ''}</div><div class="conversation-id">ID: ${conv.customer_psid.substring(0, 20)}...</div><div class="conversation-footer"><span class="window-status window-${windowStatus.color}">${windowStatus.status === 'open' ? '🟢' : windowStatus.status === 'extended' ? '🟠' : '🔴'} ${windowStatus.message.split('(')[0].trim()}</span></div></li>`;
+                
+                // ✅ UPDATED: Better display name logic
+                let displayName;
+                if (conv.customer_name && conv.customer_name !== 'Unknown' && !conv.customer_name.startsWith('User #') && !conv.customer_name.startsWith('Customer ')) {
+                    displayName = conv.customer_name;
+                } else {
+                    displayName = `Customer ${conv.customer_psid.substring(0, 8)}...`;
+                }
+                
+                return `<li class="conversation-item ${currentConversation && currentConversation.id === conv.conversation_id ? 'active' : ''}" data-conversation-id="${conv.conversation_id}" data-page-name="${escapeQuotes(conv.page_name || 'Facebook Page')}" data-page-id="${conv.page_id}" data-customer-psid="${conv.customer_psid}" data-customer-name="${escapeQuotes(displayName)}" data-platform="${platform}" data-last-message-time="${conv.last_message_time}"><div class="conversation-header"><div class="conversation-page">${platformIcon} ${conv.page_name || 'Facebook Page'}</div><div class="conversation-time">${formatTime(conv.last_message_time)}</div></div><div class="conversation-name-row"><div class="conversation-name">${displayName}</div>${unrepliedCount > 0 ? `<span class="unreplied-badge-small">${unrepliedCount}</span>` : ''}</div><div class="conversation-id">ID: ${conv.customer_psid.substring(0, 20)}...</div><div class="conversation-footer"><span class="window-status window-${windowStatus.color}">${windowStatus.status === 'open' ? '🟢' : windowStatus.status === 'extended' ? '🟠' : '🔴'} ${windowStatus.message.split('(')[0].trim()}</span></div></li>`;
             }).join('');
             document.querySelectorAll('.conversation-item').forEach(item => {
                 item.addEventListener('click', function() {
@@ -1384,32 +1340,12 @@
 
         async function selectConversation(conversationId, pageName, pageId, customerPsid, customerName, platform, lastMessageTime) {
             currentConversation = {id: conversationId, pageName: pageName, pageId: pageId, customerPsid: customerPsid, customerName: customerName, platform: platform || 'facebook', lastMessageTime: lastMessageTime};
-            if (customerName.startsWith('User #')) fetchAndUpdateCustomerName(customerPsid);
             await loadMessages();
             updateChatHeader();
             updateReplyAreaBasedOnWindow();
             document.querySelectorAll('.conversation-item').forEach(item => item.classList.remove('active'));
             const selectedItem = document.querySelector(`[data-conversation-id="${conversationId}"]`);
             if (selectedItem) selectedItem.classList.add('active');
-        }
-
-        async function fetchAndUpdateCustomerName(customerPsid) {
-            try {
-                const result = await messengerSupabase.fetchCustomerName(null, customerPsid);
-                if (result.success && result.name) {
-                    if (currentConversation && currentConversation.customerPsid === customerPsid) {
-                        currentConversation.customerName = result.name;
-                        updateChatHeader();
-                    }
-                    const conv = conversations.find(c => c.customer_psid === customerPsid);
-                    if (conv) {
-                        conv.customer_name = result.name;
-                        renderConversations();
-                    }
-                }
-            } catch (error) {
-                console.error('Error fetching customer name:', error);
-            }
         }
 
         function updateReplyAreaBasedOnWindow() {
@@ -1560,6 +1496,13 @@
             try {
                 const windowStatus = messengerSupabase.checkConversationWindow(currentConversation.lastMessageTime);
                 const useHumanAgentTag = windowStatus.requiresTag;
+                
+                console.log('Sending message with:');
+                console.log('  Page ID:', currentConversation.pageId);
+                console.log('  Customer PSID:', currentConversation.customerPsid);
+                console.log('  Message:', messageText);
+                console.log('  Use Human Agent Tag:', useHumanAgentTag);
+                
                 let result;
                 if (selectedImageFile) {
                     result = await renderAPI.sendImageMessage(currentConversation.pageId, currentConversation.customerPsid, selectedImageFile, useHumanAgentTag);
@@ -1595,10 +1538,12 @@
         }
 
         function startAutoRefresh() {
+            // Auto-refresh every 30 seconds
             autoRefreshInterval = setInterval(() => {
+                console.log('🔄 Auto-refreshing conversations and messages...');
                 loadConversations();
                 if (currentConversation) loadMessages();
-            }, 30000);
+            }, 30000);  // 30000ms = 30 seconds
         }
 
         function formatTime(timestamp) {
