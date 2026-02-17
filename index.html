@@ -138,6 +138,48 @@
       letter-spacing: 0.5px;
     }
 
+    /* COD Confirmation floating button */
+    .cod-confirmation-btn {
+      position: fixed;
+      bottom: 240px;
+      right: 30px;
+      background: linear-gradient(135deg, rgba(16,185,129,0.9), rgba(5,150,105,0.9));
+      color: white;
+      padding: 16px 28px;
+      border-radius: 50px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 15px;
+      box-shadow: 0 8px 25px rgba(16,185,129,0.4);
+      transition: all 0.3s;
+      border: 3px solid rgba(255,255,255,0.3);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      backdrop-filter: blur(10px);
+      cursor: pointer;
+    }
+    .cod-confirmation-btn:hover {
+      transform: translateY(-5px) scale(1.05);
+      box-shadow: 0 12px 35px rgba(16,185,129,0.6);
+      background: linear-gradient(135deg, #10b981, #059669);
+    }
+    .cod-confirmation-btn .icon {
+      font-size: 20px;
+      animation: wiggle 2.5s ease-in-out infinite;
+    }
+    @keyframes wiggle {
+      0%, 100% { transform: rotate(0deg); }
+      25% { transform: rotate(-10deg); }
+      75% { transform: rotate(10deg); }
+    }
+    .cod-confirmation-btn .label {
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
     /* Password Modal */
     .password-modal {
       display: none;
@@ -237,7 +279,7 @@
     }
 
     @media (max-width: 768px) {
-      .experiments-btn, .messenger-btn, .ads-manager-btn {
+      .experiments-btn, .messenger-btn, .ads-manager-btn, .cod-confirmation-btn {
         bottom: 20px;
         right: 20px;
         padding: 12px 20px;
@@ -249,7 +291,10 @@
       .ads-manager-btn {
         bottom: 140px;
       }
-      .experiments-btn .icon, .messenger-btn .icon, .ads-manager-btn .icon {
+      .cod-confirmation-btn {
+        bottom: 200px;
+      }
+      .experiments-btn .icon, .messenger-btn .icon, .ads-manager-btn .icon, .cod-confirmation-btn .icon {
         font-size: 18px;
       }
       .password-box {
@@ -410,8 +455,14 @@
     </div>
   </div>
 
+  <!-- Floating COD Confirmation Button (Password Protected) -->
+  <div class="cod-confirmation-btn" onclick="openPasswordModal('cod')">
+    <span class="icon">✅</span>
+    <span class="label">COD Confirmation</span>
+  </div>
+
   <!-- Floating Ads Manager Button (Password Protected) -->
-  <div class="ads-manager-btn" onclick="openPasswordModal()">
+  <div class="ads-manager-btn" onclick="openPasswordModal('ads')">
     <span class="icon">🎯</span>
     <span class="label">Ads Manager</span>
   </div>
@@ -432,8 +483,8 @@
   <!-- Password Modal -->
   <div class="password-modal" id="passwordModal">
     <div class="password-box">
-      <h2>🔒 Ads Manager Access</h2>
-      <p>Enter password to continue</p>
+      <h2 id="modalTitle">🔒 Access Required</h2>
+      <p id="modalSubtitle">Enter password to continue</p>
       <input 
         type="password" 
         class="password-input" 
@@ -452,10 +503,31 @@
   </div>
 
   <script>
-    const CORRECT_PASSWORD = 'Fari';
-    const ADS_MANAGER_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfGSObGAIJz46oQd0xN3oISjS46SEkFtL0_ZGkIfh6ansvqPQ/viewform';
+    const PASSWORDS = {
+      ads: 'Fari',
+      cod: 'Chamudhi'
+    };
 
-    function openPasswordModal() {
+    const URLS = {
+      ads: 'https://docs.google.com/forms/d/e/1FAIpQLSfGSObGAIJz46oQd0xN3oISjS46SEkFtL0_ZGkIfh6ansvqPQ/viewform',
+      cod: 'https://script.google.com/macros/s/AKfycbwA7rio-Gs2woBvLWKmq9KR_z1SLLV1O5d9apeShpfD4r8JdpaEI9g2pjBmyl1vK4DRDQ/exec'
+    };
+
+    let currentSection = '';
+
+    function openPasswordModal(section) {
+      currentSection = section;
+      const modalTitle = document.getElementById('modalTitle');
+      const modalSubtitle = document.getElementById('modalSubtitle');
+
+      if (section === 'ads') {
+        modalTitle.textContent = '🔒 Ads Manager Access';
+        modalSubtitle.textContent = 'Enter password to continue';
+      } else if (section === 'cod') {
+        modalTitle.textContent = '🔒 COD Confirmation Access';
+        modalSubtitle.textContent = 'Enter password to continue';
+      }
+
       document.getElementById('passwordModal').classList.add('active');
       document.getElementById('passwordInput').focus();
       document.getElementById('passwordError').classList.remove('active');
@@ -466,15 +538,16 @@
       document.getElementById('passwordModal').classList.remove('active');
       document.getElementById('passwordInput').value = '';
       document.getElementById('passwordError').classList.remove('active');
+      currentSection = '';
     }
 
     function checkPassword() {
       const input = document.getElementById('passwordInput').value;
       const errorDiv = document.getElementById('passwordError');
 
-      if (input === CORRECT_PASSWORD) {
-        // Correct password - redirect to Google Form
-        window.open(ADS_MANAGER_URL, '_blank');
+      if (input === PASSWORDS[currentSection]) {
+        // Correct password - redirect to appropriate URL
+        window.open(URLS[currentSection], '_blank');
         closePasswordModal();
       } else {
         // Incorrect password - show error
