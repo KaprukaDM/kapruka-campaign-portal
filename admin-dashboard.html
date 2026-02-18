@@ -2992,6 +2992,13 @@
         </div>
       ` : '';
 
+      const holdInfo = slotData.hold_reason
+        ? `<div style="background:#FFF8E1;padding:15px;border-radius:8px;margin-bottom:20px;border-left:4px solid #F57F00">
+            <strong style="color:#F57F00">⏸ Hold Reason</strong>
+            <p style="margin-top:8px">${slotData.hold_reason}</p>
+          </div>`
+        : '';
+
       const statusOptions = ['Received', 'Working', 'Submitted for Review', 'Approved', 'Rejected by Head', 'Hold'].map(status => 
         `<option value="${status}" ${slotData.studio_status === status ? 'selected' : ''}>${status}</option>`
       ).join('');
@@ -3046,7 +3053,7 @@
           </div>
         </div>
 
-        ${rejectionInfo}
+        ${rejectionInfo}${holdInfo}
 
         <form id="updateStatusForm">
           <div class="form-group">
@@ -3081,7 +3088,7 @@
           </div>
           <div class="form-group" id="holdReasonGroup" style="display:none;">
             <label>Reason for Hold *</label>
-            <textarea id="holdReason" rows="3" placeholder="Explain why this content is on hold..."></textarea>
+            <textarea id="holdReason" rows="3" placeholder="Explain why this content is on hold...">${slotData.hold_reason || ''}</textarea>
           </div>
           <button type="submit" class="btn btn-primary" style="width:100%;">Update Status</button>
         </form>
