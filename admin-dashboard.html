@@ -459,9 +459,10 @@
 
     .modal-content {
       background: white;
-      padding: 35px;
+      padding: 40px;
       border-radius: var(--border-radius-lg);
-      max-width: 800px;
+      width: 90vw;
+      max-width: 1100px;
       max-height: 90vh;
       overflow-y: auto;
       position: relative;
@@ -3205,48 +3206,50 @@
         <button class="close-modal" onclick="closeModal()">×</button>
         <h3>➕ Add Extra Content</h3>
         <form id="extraContentForm">
-          <div class="form-group">
-            <label>Date *</label>
-            <input type="date" id="extraDate" required>
-          </div>
-          <div class="form-group">
-            <label>Department *</label>
-            <select id="extraDepartment" required>
-              <option value="">Select Department</option>
-              <option value="Kapruka Product">Kapruka Product</option>
-              <option value="Partner Central">Partner Central</option>
-              <option value="Global Shop">Global Shop</option>
-              <option value="Corporate Marketing">Corporate Marketing</option>
-              <option value="Top Management Request">Top Management Request</option>
-              <option value="Other Departments">Other Departments</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Page *</label>
-            <select id="extraPage" required>
-              ${pageOptions}
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Format *</label>
-            <select id="extraFormat" required>
-              <option value="">Select Format</option>
-              <option value="Video">Video</option>
-              <option value="Image">Image</option>
-              <option value="Cover Photo">Cover Photo</option>
-              <option value="Carousel">Carousel</option>
-              <option value="Album">Album</option>
-            </select>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+            <div class="form-group">
+              <label>Date *</label>
+              <input type="date" id="extraDate" required>
+            </div>
+            <div class="form-group">
+              <label>Department *</label>
+              <select id="extraDepartment" required>
+                <option value="">Select Department</option>
+                <option value="Kapruka Product">Kapruka Product</option>
+                <option value="Partner Central">Partner Central</option>
+                <option value="Global Shop">Global Shop</option>
+                <option value="Corporate Marketing">Corporate Marketing</option>
+                <option value="Top Management Request">Top Management Request</option>
+                <option value="Other Departments">Other Departments</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Page *</label>
+              <select id="extraPage" required>
+                ${pageOptions}
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Format *</label>
+              <select id="extraFormat" required>
+                <option value="">Select Format</option>
+                <option value="Video">Video</option>
+                <option value="Image">Image</option>
+                <option value="Cover Photo">Cover Photo</option>
+                <option value="Carousel">Carousel</option>
+                <option value="Album">Album</option>
+              </select>
+            </div>
           </div>
           <div class="form-group">
             <label>Content Details *</label>
-            <textarea id="extraDetails" required rows="3" placeholder="Describe the content..."></textarea>
+            <textarea id="extraDetails" required rows="4" placeholder="Describe the content..."></textarea>
           </div>
           <div class="form-group">
             <label>Reference Links</label>
             <textarea id="extraLinks" rows="2" placeholder="https://..."></textarea>
           </div>
-          <button type="submit" class="btn btn-success" style="width:100%;">Add Content</button>
+          <button type="submit" class="btn btn-success" style="width:100%;margin-top:10px;">Add Content</button>
         </form>
       `;
 
