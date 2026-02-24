@@ -2739,7 +2739,7 @@
                        'July', 'August', 'September', 'October', 'November', 'December'];
         const selector = document.getElementById('monthSelector');
         if (selector) {
-          const years = [currentStudioYear - 1, currentStudioYear, currentStudioYear + 1];
+          const years = [currentStudioYear];
           selector.innerHTML = years.map(year => 
             months.map((m, i) => `<option value="${m} ${year}" ${currentStudioMonth === i + 1 && year === currentStudioYear ? 'selected' : ''}>${m} ${year}</option>`).join('')
           ).join('');
