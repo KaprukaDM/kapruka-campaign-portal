@@ -1344,9 +1344,9 @@
           <div class="studio-calendar-wrapper">
             <div class="calendar-container">
               <div class="month-nav">
-                <button onclick="changeStudioMonth(-1)" title="Previous month" aria-label="Previous month">◀ Previous</button>
-                <h3 id="studioMonthTitle">January 2026</h3>
-                <button onclick="changeStudioMonth(1)" title="Next month" aria-label="Next month">Next ▶</button>
+                <select id="monthSelector" onchange="changeStudioMonthSelect()" style="padding:10px 20px; border-radius:10px; border:2px solid var(--primary-purple); font-weight:600; min-width:220px;">
+                  <!-- Options populated by JS -->
+                </select>
               </div>
 
               <!-- Filters -->
@@ -2737,8 +2737,13 @@
         
         const months = ['January', 'February', 'March', 'April', 'May', 'June', 
                        'July', 'August', 'September', 'October', 'November', 'December'];
-        document.getElementById('studioMonthTitle').textContent = 
-          `${months[currentStudioMonth - 1]} ${currentStudioYear}`;
+        const selector = document.getElementById('monthSelector');
+        if (selector) {
+          const years = [currentStudioYear - 1, currentStudioYear, currentStudioYear + 1];
+          selector.innerHTML = years.map(year => 
+            months.map((m, i) => `<option value="${m} ${year}" ${currentStudioMonth === i + 1 && year === currentStudioYear ? 'selected' : ''}>${m} ${year}</option>`).join('')
+          ).join('');
+        }
 
         await generateEmptySlotsForMonth(currentStudioYear, currentStudioMonth);
 
@@ -3197,6 +3202,16 @@
       loadStudioCalendar();
     }
 
+    function changeStudioMonthSelect() {
+      const select = document.getElementById('monthSelector');
+      if (!select) return;
+      const [month, year] = select.value.split(' ');
+      const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      currentStudioMonth = months.indexOf(month) + 1;
+      currentStudioYear = parseInt(year, 10);
+      loadStudioCalendar();
+    }
+
     function openAddExtraContentModal(prefillDate = null) {
       const pageOptions = Object.values(PAGE_SCHEDULE).map(config => `
         <option value="${config.page}">${config.page}</option>
@@ -3622,4 +3637,3 @@
   </script>
 </body>
 </html>
-
