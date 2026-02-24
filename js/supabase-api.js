@@ -936,26 +936,39 @@ async function deleteDepartment(row) {
 // ═══════════════════════════════════════════════════════════════
 
 const CATEGORIES = [
-  'Cakes',
-  'Flowers',
-  'Chocolates',
-  'Clothing',
-  'Electronics',
-  'Fashion',
-  'Food & Restaurants',
-  'Fruits',
-  'Soft Toys & Kids Toys',
-  'Grocery & Hampers',
-  'Greeting Cards & Party Supplies',
-  'Sports and Bicycles',
-  'Mother and Baby',
-  'Jewellery and Watches',
-  'Cosmetics & Perfumes',
-  'Customized Gifts',
-  'Health and Wellness',
-  'Home & Lifestyle',
-  'Combo and Gift Sets',
-  'Books & Stationery'
+  // Weight 5 - Highest priority (Cakes & Flowers ~2x per week guaranteed)
+  'Cakes', 'Cakes', 'Cakes', 'Cakes', 'Cakes',
+  'Flowers', 'Flowers', 'Flowers', 'Flowers', 'Flowers',
+  // Weight 3 - Medium-high priority
+  'Chocolates', 'Chocolates', 'Chocolates',
+  'Clothing', 'Clothing', 'Clothing',
+  'Electronics', 'Electronics', 'Electronics',
+  'Food & Restaurants', 'Food & Restaurants', 'Food & Restaurants',
+  'Fruit & Fruit Baskets', 'Fruit & Fruit Baskets', 'Fruit & Fruit Baskets',
+  // Weight 2 - Medium priority
+  'Combo Gift Packs', 'Combo Gift Packs',
+  'Combo and Gift Sets', 'Combo and Gift Sets',
+  'Grocery Items', 'Grocery Items',
+  'Greeting Cards & Party', 'Greeting Cards & Party',
+  'Hampers', 'Hampers',
+  'Jewelry & Watches', 'Jewelry & Watches',
+  'Personalized Gifts', 'Personalized Gifts',
+  'Perfumes & Fragrances', 'Perfumes & Fragrances',
+  'Hand Bags & Fashion & Shoes', 'Hand Bags & Fashion & Shoes',
+  'Cosmetics', 'Cosmetics',
+  'Health and Wellness', 'Health and Wellness',
+  'Soft Toys & Kids Toys', 'Soft Toys & Kids Toys',
+  'Mother & Baby', 'Mother & Baby',
+  'Home & Lifestyle', 'Home & Lifestyle',
+  'Veg & Veg Baskets', 'Veg & Veg Baskets',
+  // Weight 1 - Low priority
+  'School Supplies',
+  'Books',
+  'Sports & Bicycles',
+  'Religious Items',
+  'Automobile',
+  'Petcare',
+  'Gift Vouchers & Tickets'
 ];
 
 async function getCalendarData(month, year) {
