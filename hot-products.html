@@ -381,7 +381,7 @@
   <script src="js/supabase-api.js"></script>
   <script>
     // Use shared CATEGORIES from supabase-api.js as the source of truth
-    const PRODUCT_CATEGORIES = Array.isArray(CATEGORIES) ? CATEGORIES : [];
+    const PRODUCT_CATEGORIES = Array.isArray(CATEGORIES) ? [...new Set(CATEGORIES)] : [];
 
     let selectedCategory = null;
     let currentProducts = [];
