@@ -7,305 +7,92 @@
   <link rel="stylesheet" href="css/styles.css">
   <link rel="icon" type="image/png" href="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw">
   <style>
-    /* Experiments floating button */
     .experiments-btn {
-      position: fixed;
-      bottom: 30px;
-      right: 30px;
+      position: fixed; bottom: 30px; right: 30px;
       background: linear-gradient(135deg, rgba(255,215,0,0.9), rgba(255,165,0,0.9));
-      color: #1a0b2e;
-      padding: 16px 28px;
-      border-radius: 50px;
-      text-decoration: none;
-      font-weight: 700;
-      font-size: 15px;
-      box-shadow: 0 8px 25px rgba(255,215,0,0.4);
-      transition: all 0.3s;
-      border: 3px solid rgba(255,255,255,0.3);
-      z-index: 1000;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      backdrop-filter: blur(10px);
+      color: #1a0b2e; padding: 16px 28px; border-radius: 50px;
+      text-decoration: none; font-weight: 700; font-size: 15px;
+      box-shadow: 0 8px 25px rgba(255,215,0,0.4); transition: all 0.3s;
+      border: 3px solid rgba(255,255,255,0.3); z-index: 1000;
+      display: flex; align-items: center; gap: 10px; backdrop-filter: blur(10px);
     }
-    .experiments-btn:hover {
-      transform: translateY(-5px) scale(1.05);
-      box-shadow: 0 12px 35px rgba(255,215,0,0.6);
-      background: linear-gradient(135deg, #FFD700, #FFA500);
-    }
-    .experiments-btn .icon {
-      font-size: 20px;
-      animation: pulse 2s infinite;
-    }
-    @keyframes pulse {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.1); }
-    }
-    .experiments-btn .label {
-      font-size: 14px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
+    .experiments-btn:hover { transform: translateY(-5px) scale(1.05); box-shadow: 0 12px 35px rgba(255,215,0,0.6); background: linear-gradient(135deg, #FFD700, #FFA500); }
+    .experiments-btn .icon { font-size: 20px; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+    .experiments-btn .label { font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
 
-    /* Messenger Hub floating button */
     .messenger-btn {
-      position: fixed;
-      bottom: 100px;
-      right: 30px;
+      position: fixed; bottom: 100px; right: 30px;
       background: linear-gradient(135deg, rgba(0,132,255,0.9), rgba(102,126,234,0.9));
-      color: white;
-      padding: 16px 28px;
-      border-radius: 50px;
-      text-decoration: none;
-      font-weight: 700;
-      font-size: 15px;
-      box-shadow: 0 8px 25px rgba(0,132,255,0.4);
-      transition: all 0.3s;
-      border: 3px solid rgba(255,255,255,0.3);
-      z-index: 1000;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      backdrop-filter: blur(10px);
+      color: white; padding: 16px 28px; border-radius: 50px;
+      text-decoration: none; font-weight: 700; font-size: 15px;
+      box-shadow: 0 8px 25px rgba(0,132,255,0.4); transition: all 0.3s;
+      border: 3px solid rgba(255,255,255,0.3); z-index: 1000;
+      display: flex; align-items: center; gap: 10px; backdrop-filter: blur(10px);
     }
-    .messenger-btn:hover {
-      transform: translateY(-5px) scale(1.05);
-      box-shadow: 0 12px 35px rgba(0,132,255,0.6);
-      background: linear-gradient(135deg, #0084ff, #667eea);
-    }
-    .messenger-btn .icon {
-      font-size: 20px;
-      animation: bounce 2s infinite;
-    }
-    @keyframes bounce {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-5px); }
-    }
-    .messenger-btn .label {
-      font-size: 14px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    .messenger-btn .badge {
-      background: #ff3e3e;
-      color: white;
-      padding: 4px 8px;
-      border-radius: 12px;
-      font-size: 11px;
-      font-weight: 700;
-      margin-left: 5px;
-      animation: pulse 2s infinite;
-    }
+    .messenger-btn:hover { transform: translateY(-5px) scale(1.05); box-shadow: 0 12px 35px rgba(0,132,255,0.6); }
+    .messenger-btn .icon { font-size: 20px; animation: bounce 2s infinite; }
+    @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+    .messenger-btn .label { font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .messenger-btn .badge { background: #ff3e3e; color: white; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; margin-left: 5px; animation: pulse 2s infinite; }
 
-    /* Ads Manager floating button */
     .ads-manager-btn {
-      position: fixed;
-      bottom: 170px;
-      right: 30px;
+      position: fixed; bottom: 170px; right: 30px;
       background: linear-gradient(135deg, rgba(220,38,127,0.9), rgba(156,39,176,0.9));
-      color: white;
-      padding: 16px 28px;
-      border-radius: 50px;
-      text-decoration: none;
-      font-weight: 700;
-      font-size: 15px;
-      box-shadow: 0 8px 25px rgba(220,38,127,0.4);
-      transition: all 0.3s;
-      border: 3px solid rgba(255,255,255,0.3);
-      z-index: 1000;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      backdrop-filter: blur(10px);
-      cursor: pointer;
+      color: white; padding: 16px 28px; border-radius: 50px;
+      text-decoration: none; font-weight: 700; font-size: 15px;
+      box-shadow: 0 8px 25px rgba(220,38,127,0.4); transition: all 0.3s;
+      border: 3px solid rgba(255,255,255,0.3); z-index: 1000;
+      display: flex; align-items: center; gap: 10px; backdrop-filter: blur(10px); cursor: pointer;
     }
-    .ads-manager-btn:hover {
-      transform: translateY(-5px) scale(1.05);
-      box-shadow: 0 12px 35px rgba(220,38,127,0.6);
-      background: linear-gradient(135deg, #dc267f, #9c27b0);
-    }
-    .ads-manager-btn .icon {
-      font-size: 20px;
-      animation: rotate 3s linear infinite;
-    }
-    @keyframes rotate {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    .ads-manager-btn .label {
-      font-size: 14px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
+    .ads-manager-btn:hover { transform: translateY(-5px) scale(1.05); box-shadow: 0 12px 35px rgba(220,38,127,0.6); }
+    .ads-manager-btn .icon { font-size: 20px; animation: rotate 3s linear infinite; }
+    @keyframes rotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .ads-manager-btn .label { font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
 
-    /* COD Confirmation floating button */
     .cod-confirmation-btn {
-      position: fixed;
-      bottom: 240px;
-      right: 30px;
+      position: fixed; bottom: 240px; right: 30px;
       background: linear-gradient(135deg, rgba(16,185,129,0.9), rgba(5,150,105,0.9));
-      color: white;
-      padding: 16px 28px;
-      border-radius: 50px;
-      text-decoration: none;
-      font-weight: 700;
-      font-size: 15px;
-      box-shadow: 0 8px 25px rgba(16,185,129,0.4);
-      transition: all 0.3s;
-      border: 3px solid rgba(255,255,255,0.3);
-      z-index: 1000;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      backdrop-filter: blur(10px);
-      cursor: pointer;
+      color: white; padding: 16px 28px; border-radius: 50px;
+      text-decoration: none; font-weight: 700; font-size: 15px;
+      box-shadow: 0 8px 25px rgba(16,185,129,0.4); transition: all 0.3s;
+      border: 3px solid rgba(255,255,255,0.3); z-index: 1000;
+      display: flex; align-items: center; gap: 10px; backdrop-filter: blur(10px); cursor: pointer;
     }
-    .cod-confirmation-btn:hover {
-      transform: translateY(-5px) scale(1.05);
-      box-shadow: 0 12px 35px rgba(16,185,129,0.6);
-      background: linear-gradient(135deg, #10b981, #059669);
-    }
-    .cod-confirmation-btn .icon {
-      font-size: 20px;
-      animation: wiggle 2.5s ease-in-out infinite;
-    }
-    @keyframes wiggle {
-      0%, 100% { transform: rotate(0deg); }
-      25% { transform: rotate(-10deg); }
-      75% { transform: rotate(10deg); }
-    }
-    .cod-confirmation-btn .label {
-      font-size: 14px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
+    .cod-confirmation-btn:hover { transform: translateY(-5px) scale(1.05); box-shadow: 0 12px 35px rgba(16,185,129,0.6); }
+    .cod-confirmation-btn .icon { font-size: 20px; animation: wiggle 2.5s ease-in-out infinite; }
+    @keyframes wiggle { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(-10deg); } 75% { transform: rotate(10deg); } }
+    .cod-confirmation-btn .label { font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
 
-    /* Password Modal */
-    .password-modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.8);
-      backdrop-filter: blur(10px);
-      z-index: 10000;
-      justify-content: center;
-      align-items: center;
-    }
-    .password-modal.active {
-      display: flex;
-    }
-    .password-box {
-      background: linear-gradient(135deg, #1a0b2e 0%, #2d1b4e 100%);
-      padding: 40px;
-      border-radius: 20px;
-      box-shadow: 0 20px 60px rgba(220,38,127,0.4);
-      border: 2px solid rgba(220,38,127,0.3);
-      text-align: center;
-      max-width: 400px;
-      width: 90%;
-    }
-    .password-box h2 {
-      color: #dc267f;
-      margin-bottom: 10px;
-      font-size: 24px;
-    }
-    .password-box p {
-      color: #ccc;
-      margin-bottom: 25px;
-      font-size: 14px;
-    }
-    .password-input {
-      width: 100%;
-      padding: 15px;
-      border: 2px solid rgba(220,38,127,0.3);
-      border-radius: 10px;
-      background: rgba(255,255,255,0.05);
-      color: white;
-      font-size: 16px;
-      margin-bottom: 20px;
-      outline: none;
-      transition: all 0.3s;
-    }
-    .password-input:focus {
-      border-color: #dc267f;
-      box-shadow: 0 0 20px rgba(220,38,127,0.3);
-    }
-    .password-buttons {
-      display: flex;
-      gap: 10px;
-    }
-    .password-submit, .password-cancel {
-      flex: 1;
-      padding: 12px 24px;
-      border: none;
-      border-radius: 10px;
-      font-weight: 700;
-      font-size: 14px;
-      cursor: pointer;
-      transition: all 0.3s;
-    }
-    .password-submit {
-      background: linear-gradient(135deg, #dc267f, #9c27b0);
-      color: white;
-    }
-    .password-submit:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 20px rgba(220,38,127,0.5);
-    }
-    .password-cancel {
-      background: rgba(255,255,255,0.1);
-      color: white;
-    }
-    .password-cancel:hover {
-      background: rgba(255,255,255,0.2);
-    }
-    .password-error {
-      color: #ff3e3e;
-      font-size: 13px;
-      margin-top: 10px;
-      display: none;
-    }
-    .password-error.active {
-      display: block;
-      animation: shake 0.5s;
-    }
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      25% { transform: translateX(-10px); }
-      75% { transform: translateX(10px); }
-    }
+    .password-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); z-index: 10000; justify-content: center; align-items: center; }
+    .password-modal.active { display: flex; }
+    .password-box { background: linear-gradient(135deg, #1a0b2e 0%, #2d1b4e 100%); padding: 40px; border-radius: 20px; box-shadow: 0 20px 60px rgba(220,38,127,0.4); border: 2px solid rgba(220,38,127,0.3); text-align: center; max-width: 400px; width: 90%; }
+    .password-box h2 { color: #dc267f; margin-bottom: 10px; font-size: 24px; }
+    .password-box p { color: #ccc; margin-bottom: 25px; font-size: 14px; }
+    .password-input { width: 100%; padding: 15px; border: 2px solid rgba(220,38,127,0.3); border-radius: 10px; background: rgba(255,255,255,0.05); color: white; font-size: 16px; margin-bottom: 20px; outline: none; transition: all 0.3s; }
+    .password-input:focus { border-color: #dc267f; box-shadow: 0 0 20px rgba(220,38,127,0.3); }
+    .password-buttons { display: flex; gap: 10px; }
+    .password-submit, .password-cancel { flex: 1; padding: 12px 24px; border: none; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; transition: all 0.3s; }
+    .password-submit { background: linear-gradient(135deg, #dc267f, #9c27b0); color: white; }
+    .password-submit:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(220,38,127,0.5); }
+    .password-cancel { background: rgba(255,255,255,0.1); color: white; }
+    .password-cancel:hover { background: rgba(255,255,255,0.2); }
+    .password-error { color: #ff3e3e; font-size: 13px; margin-top: 10px; display: none; }
+    .password-error.active { display: block; animation: shake 0.5s; }
+    @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
 
     @media (max-width: 768px) {
-      .experiments-btn, .messenger-btn, .ads-manager-btn, .cod-confirmation-btn {
-        bottom: 20px;
-        right: 20px;
-        padding: 12px 20px;
-        font-size: 13px;
-      }
-      .messenger-btn {
-        bottom: 80px;
-      }
-      .ads-manager-btn {
-        bottom: 140px;
-      }
-      .cod-confirmation-btn {
-        bottom: 200px;
-      }
-      .experiments-btn .icon, .messenger-btn .icon, .ads-manager-btn .icon, .cod-confirmation-btn .icon {
-        font-size: 18px;
-      }
-      .password-box {
-        padding: 30px 20px;
-      }
+      .experiments-btn, .messenger-btn, .ads-manager-btn, .cod-confirmation-btn { bottom: 20px; right: 20px; padding: 12px 20px; font-size: 13px; }
+      .messenger-btn { bottom: 80px; }
+      .ads-manager-btn { bottom: 140px; }
+      .cod-confirmation-btn { bottom: 200px; }
+      .experiments-btn .icon, .messenger-btn .icon, .ads-manager-btn .icon, .cod-confirmation-btn .icon { font-size: 18px; }
+      .password-box { padding: 30px 20px; }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <!-- Header Section -->
     <div class="header">
       <div class="kapruka-logo">
         <img src="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw" alt="Kapruka Logo">
@@ -314,167 +101,107 @@
       <p class="subtitle">Kapruka Holdings PLC</p>
     </div>
 
-    <!-- Option Cards -->
     <div class="options-grid">
       <!-- Campaign Booking Card -->
       <a href="campaign-booking.html" class="option-card">
         <div class="option-title">📋 Book Campaign Slot</div>
-        <div class="option-desc">
-         This is exclusively for departmental heads. (Special Request)
-        </div>
+        <div class="option-desc">This is exclusively for departmental heads. (Special Request)</div>
         <div class="option-features">
-          <div class="feature-item">
-            <div class="feature-icon">✓</div>
-            <span>View available slots by department</span>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon">✓</div>
-            <span>Real-time booking confirmation</span>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon">✓</div>
-            <span>Track campaign status</span>
-          </div>
+          <div class="feature-item"><div class="feature-icon">✓</div><span>View available slots by department</span></div>
+          <div class="feature-item"><div class="feature-icon">✓</div><span>Real-time booking confirmation</span></div>
+          <div class="feature-item"><div class="feature-icon">✓</div><span>Track campaign status</span></div>
         </div>
       </a>
 
       <!-- Product Suggestion Card -->
       <a href="product-suggestion.html" class="option-card">
         <div class="option-title">💡 Social Media Direct Order (Factory Pages)</div>
-        <div class="option-desc">
-          Submit product suggestions for Facebook lead form campaigns with weekly submission tracking.
-        </div>
+        <div class="option-desc">Submit product suggestions for Facebook lead form campaigns with weekly submission tracking.</div>
         <div class="option-features">
-          <div class="feature-item">
-            <div class="feature-icon">✓</div>
-            <span>Submit product recommendations</span>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon">✓</div>
-            <span>Track approval status</span>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon">✓</div>
-            <span>View weekly targets and progress</span>
-          </div>
+          <div class="feature-item"><div class="feature-icon">✓</div><span>Submit product recommendations</span></div>
+          <div class="feature-item"><div class="feature-icon">✓</div><span>Track approval status</span></div>
+          <div class="feature-item"><div class="feature-icon">✓</div><span>View weekly targets and progress</span></div>
         </div>
       </a>
 
       <!-- Content Calendar Card -->
       <a href="content-calendar.html" class="option-card">
         <div class="option-title">📅 Content Calendar (Kapruka Official Page)</div>
-        <div class="option-desc">
-          Plan and schedule social media content across platforms with collaborative team management.
-        </div>
+        <div class="option-desc">Plan and schedule social media content across platforms with collaborative team management.</div>
         <div class="option-features">
-          <div class="feature-item">
-            <div class="feature-icon">✓</div>
-            <span>Schedule posts for multiple platforms</span>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon">✓</div>
-            <span>Track post status and approvals</span>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon">✓</div>
-            <span>Weekly and monthly content overview</span>
-          </div>
+          <div class="feature-item"><div class="feature-icon">✓</div><span>Schedule posts for multiple platforms</span></div>
+          <div class="feature-item"><div class="feature-icon">✓</div><span>Track post status and approvals</span></div>
+          <div class="feature-item"><div class="feature-icon">✓</div><span>Weekly and monthly content overview</span></div>
         </div>
       </a>
 
       <!-- Hot Products Card -->
       <a href="hot-products.html" class="option-card">
         <div class="option-title">🔥 Hot Products</div>
-        <div class="option-desc">
-          Browse and manage hot product suggestions by category with real-time listing status tracking.
-        </div>
+        <div class="option-desc">Browse and manage hot product suggestions by category with real-time listing status tracking.</div>
         <div class="option-features">
-          <div class="feature-item">
-            <div class="feature-icon">✓</div>
-            <span>Browse products by 20 categories</span>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon">✓</div>
-            <span>Mark products as listed on Kapruka</span>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon">✓</div>
-            <span>Track listing status and links</span>
-          </div>
+          <div class="feature-item"><div class="feature-icon">✓</div><span>Browse products by 20 categories</span></div>
+          <div class="feature-item"><div class="feature-icon">✓</div><span>Mark products as listed on Kapruka</span></div>
+          <div class="feature-item"><div class="feature-icon">✓</div><span>Track listing status and links</span></div>
         </div>
       </a>
 
       <!-- Product Performance Card -->
       <a href="product-performance.html" class="option-card">
         <div class="option-title">📊 Product Performance</div>
-        <div class="option-desc">
-          Search and analyze Meta Ads campaign performance by product, campaign, or keyword with detailed metrics.
-        </div>
+        <div class="option-desc">Search and analyze Meta Ads campaign performance by product, campaign, or keyword with detailed metrics.</div>
         <div class="option-features">
-          <div class="feature-item">
-            <div class="feature-icon">✓</div>
-            <span>Search by product code or keyword</span>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon">✓</div>
-            <span>View aggregated performance metrics</span>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon">✓</div>
-            <span>Track ROI and ad effectiveness</span>
-          </div>
+          <div class="feature-item"><div class="feature-icon">✓</div><span>Search by product code or keyword</span></div>
+          <div class="feature-item"><div class="feature-icon">✓</div><span>View aggregated performance metrics</span></div>
+          <div class="feature-item"><div class="feature-icon">✓</div><span>Track ROI and ad effectiveness</span></div>
         </div>
       </a>
 
       <!-- Performance Forecast Card -->
       <a href="performance-forecast.html" class="option-card">
         <div class="option-title">🚀 Performance Forecast</div>
-        <div class="option-desc">
-          Estimate campaign performance based on objective and budget with AI-powered predictive analytics.
-        </div>
+        <div class="option-desc">Estimate campaign performance based on objective and budget with AI-powered predictive analytics.</div>
         <div class="option-features">
-          <div class="feature-item">
-            <div class="feature-icon">✓</div>
-            <span>Select campaign objective</span>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon">✓</div>
-            <span>Define your advertising budget</span>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon">✓</div>
-            <span>Get detailed performance estimates</span>
-          </div>
+          <div class="feature-item"><div class="feature-icon">✓</div><span>Select campaign objective</span></div>
+          <div class="feature-item"><div class="feature-icon">✓</div><span>Define your advertising budget</span></div>
+          <div class="feature-item"><div class="feature-icon">✓</div><span>Get detailed performance estimates</span></div>
+        </div>
+      </a>
+
+      <!-- Homepage Slot Manager Card -->
+      <a href="homepage-booking-portal.html" class="option-card">
+        <div class="option-title">🏠 Homepage Slot Manager</div>
+        <div class="option-desc">Manage PC vs Ecommerce product mix on the homepage. Book and track slots with a 60/40 ratio target.</div>
+        <div class="option-features">
+          <div class="feature-item"><div class="feature-icon">✓</div><span>Book PC slots across 3 homepage sections</span></div>
+          <div class="feature-item"><div class="feature-icon">✓</div><span>Live EC/PC ratio dashboard</span></div>
+          <div class="feature-item"><div class="feature-icon">✓</div><span>Auto-locks at 60/40 target ratio</span></div>
         </div>
       </a>
     </div>
 
-    <!-- Footer -->
     <div class="footer">
       Created by Fari Akthar - 207 | Kapruka Holdings PLC
     </div>
   </div>
 
-  <!-- Floating COD Confirmation Button (Password Protected) -->
+  <!-- Floating Buttons -->
   <div class="cod-confirmation-btn" onclick="openPasswordModal('cod')">
     <span class="icon">✅</span>
     <span class="label">COD Confirmation</span>
   </div>
 
-  <!-- Floating Ads Manager Button (Password Protected) -->
   <div class="ads-manager-btn" onclick="openPasswordModal('ads')">
     <span class="icon">🎯</span>
     <span class="label">Ads Manager</span>
   </div>
 
-  <!-- Floating Messenger Hub Button -->
   <a href="messenger-hub.html" class="messenger-btn">
     <span class="icon">💬</span>
     <span class="label">Messenger Hub</span>
     <span class="badge">NEW</span>
   </a>
 
-  <!-- Floating Experiments Button (Password Protected) -->
   <a href="experiments-dashboard.html" class="experiments-btn">
     <span class="icon">🧪</span>
     <span class="label">Experiments</span>
@@ -485,49 +212,27 @@
     <div class="password-box">
       <h2 id="modalTitle">🔒 Access Required</h2>
       <p id="modalSubtitle">Enter password to continue</p>
-      <input 
-        type="password" 
-        class="password-input" 
-        id="passwordInput" 
-        placeholder="Enter password..."
-        onkeypress="handleEnterKey(event)"
-      >
+      <input type="password" class="password-input" id="passwordInput" placeholder="Enter password..." onkeypress="handleEnterKey(event)">
       <div class="password-buttons">
         <button class="password-cancel" onclick="closePasswordModal()">Cancel</button>
         <button class="password-submit" onclick="checkPassword()">Access</button>
       </div>
-      <div class="password-error" id="passwordError">
-        ❌ Incorrect password. Please try again.
-      </div>
+      <div class="password-error" id="passwordError">❌ Incorrect password. Please try again.</div>
     </div>
   </div>
 
   <script>
-    const PASSWORDS = {
-      ads: 'Fari',
-      cod: 'Chamudhi'
-    };
-
+    const PASSWORDS = { ads: 'Fari', cod: 'Chamudhi' };
     const URLS = {
       ads: 'https://docs.google.com/forms/d/e/1FAIpQLSfGSObGAIJz46oQd0xN3oISjS46SEkFtL0_ZGkIfh6ansvqPQ/viewform',
       cod: 'https://script.google.com/macros/s/AKfycbwA7rio-Gs2woBvLWKmq9KR_z1SLLV1O5d9apeShpfD4r8JdpaEI9g2pjBmyl1vK4DRDQ/exec'
     };
-
     let currentSection = '';
 
     function openPasswordModal(section) {
       currentSection = section;
-      const modalTitle = document.getElementById('modalTitle');
-      const modalSubtitle = document.getElementById('modalSubtitle');
-
-      if (section === 'ads') {
-        modalTitle.textContent = '🔒 Ads Manager Access';
-        modalSubtitle.textContent = 'Enter password to continue';
-      } else if (section === 'cod') {
-        modalTitle.textContent = '🔒 COD Confirmation Access';
-        modalSubtitle.textContent = 'Enter password to continue';
-      }
-
+      document.getElementById('modalTitle').textContent = section === 'ads' ? '🔒 Ads Manager Access' : '🔒 COD Confirmation Access';
+      document.getElementById('modalSubtitle').textContent = 'Enter password to continue';
       document.getElementById('passwordModal').classList.add('active');
       document.getElementById('passwordInput').focus();
       document.getElementById('passwordError').classList.remove('active');
@@ -543,31 +248,22 @@
 
     function checkPassword() {
       const input = document.getElementById('passwordInput').value;
-      const errorDiv = document.getElementById('passwordError');
-
       if (input === PASSWORDS[currentSection]) {
-        // Correct password - redirect to appropriate URL
         window.open(URLS[currentSection], '_blank');
         closePasswordModal();
       } else {
-        // Incorrect password - show error
-        errorDiv.classList.add('active');
+        document.getElementById('passwordError').classList.add('active');
         document.getElementById('passwordInput').value = '';
         document.getElementById('passwordInput').focus();
       }
     }
 
     function handleEnterKey(event) {
-      if (event.key === 'Enter') {
-        checkPassword();
-      }
+      if (event.key === 'Enter') checkPassword();
     }
 
-    // Close modal when clicking outside
     document.getElementById('passwordModal').addEventListener('click', function(event) {
-      if (event.target === this) {
-        closePasswordModal();
-      }
+      if (event.target === this) closePasswordModal();
     });
   </script>
 </body>
