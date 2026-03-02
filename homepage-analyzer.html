@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Homepage Analyzer — Kapruka</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f4f6f9; color: #333; padding: 30px; }
+    h1 { font-size: 22px; margin-bottom: 6px; }
+    .subtitle { color: #888; font-size: 13px; margin-bottom: 30px; }
+
+    .card { background: #fff; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+
+    .btn { background: #1a73e8; color: #fff; border: none; padding: 12px 28px; border-radius: 8px; font-size: 15px; cursor: pointer; }
+    .btn:hover { background: #1558b0; }
+    .btn:disabled { background: #aaa; cursor: not-allowed; }
+
+    .status-badge { display: inline-block; padding: 6px 16px; border-radius: 20px; font-weight: 600; font-size: 14px; margin-top: 12px; }
+    .ON_TARGET { background: #e6f4ea; color: #1e7e34; }
+    .TOO_MUCH_ECOMMERCE { background: #fff3cd; color: #856404; }
+    .TOO_MUCH_PC { background: #fde8e8; color: #c0392b; }
+
+    .metrics { display: flex; gap: 16px; margin-top: 20px; flex-wrap: wrap; }
+    .metric-box { flex: 1; min-width: 140px; background: #f8f9fa; border-radius: 10px; padding: 18px; text-align: center; }
+    .metric-box .val { font-size: 32px; font-weight: 700; }
+    .metric-box .lbl { font-size: 12px; color: #888; margin-top: 4px; }
+    .ec .val { color: #1a73e8; }
+    .pc .val { color: #e8710a; }
+    .total .val { color: #333; }
+
+    .bar-wrap { margin-top: 24px; }
+    .bar-label { font-size: 13px; color: #555; margin-bottom: 6px; }
+    .bar-track { background: #e9ecef; border-radius: 99px; height: 22px; overflow: hidden; display: flex; }
+    .bar-ec { background: #1a73e8; height: 100%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; font-weight: 600; transition: width 0.6s ease; }
+    .bar-pc { background: #e8710a; height: 100%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; font-weight: 600; transition: width 0.6s ease; }
+    .target-line-wrap { position: relative; margin-top: 4px; }
+    .target-hint { font-size: 11px; color: #aaa; text-align: right; }
+
+    .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; margin-top: 16px; }
+    .product-item { background: #f8f9fa; border-radius: 8px; padding: 10px 14px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
+    .product-item a { color: #1a73e8; text-decoration: none; font-size: 11px; word-break: break-all; }
+    .tag { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+    .tag-ec { background: #e8f0fe; color: #1a73e8; }
+    .tag-pc { background: #fce8d5; color: #e8710a; }
+
+    .scanned-at { font-size: 12px; color: #aaa; margin-top: 8px; }
+    #error-msg { color: #c0392b; margin-top: 12px; font-size: 14px; display: none; }
+    .spinner { display: none; margin-left: 10px; font-size: 13px; color: #888; }
+  </style>
+</head>
+<body>
+
+  <h1>🏠 Homepage Product Mix Analyzer</h1>
+  <p class="subtitle">Scans kapruka.com homepage and checks Ecommerce vs PC ratio. Target: 60% EC / 40% PC</p>
+
+  <div class="card">
+    <button class="btn" id="scanBtn" onclick="runScan()">🔍 Scan Homepage Now</button>
+    <span class="spinner" id="spinner">⏳ Scanning...</span>
+    <div id="error-msg"></div>
+  </div>
+
+  <div class="card" id="results" style="display:none;">
+    <h2 style="font-size:17px; margin-bottom:4px;">Analysis Results</h2>
+    <div id="scanned-at" class="scanned-at"></div>
+    <div id="status-badge" class="status-badge"></div>
+
+    <div class="metrics">
+      <div class="metric-box total"><div class="val" id="m-total">—</div><div class="lbl">Total Products</div></div>
+      <div class="metric-box ec"><div class="val" id="m-ec">—</div><div class="lbl">Ecommerce</div></div>
+      <div class="metric-box pc"><div class="val" id="m-pc">—</div><div class="lbl">PC</div></div>
+    </div>
+
+    <div class="bar-wrap" style="margin-top:20px;">
+      <div class="bar-label">Product Mix</div>
+      <div class="bar-track">
+        <div class="bar-ec" id="bar-ec">—</div>
+        <div class="bar-pc" id="bar-pc">—</div>
+      </div>
+      <div class="target-hint">Target: ████░░░░░░ 60% EC &nbsp;|&nbsp; 40% PC</div>
+    </div>
+  </div>
+
+  <div class="card" id="product-list" style="display:none;">
+    <h2 style="font-size:17px; margin-bottom:14px;">Product Breakdown</h2>
+    <div id="ec-section">
+      <h3 style="font-size:14px; color:#1a73e8; margin-bottom:8px;">🔵 Ecommerce Products (<span id="ec-count"></span>)</h3>
+      <div class="product-grid" id="ec-grid"></div>
+    </div>
+    <div id="pc-section" style="margin-top:20px;">
+      <h3 style="font-size:14px; color:#e8710a; margin-bottom:8px;">🟠 PC Products (<span id="pc-count"></span>)</h3>
+      <div class="product-grid" id="pc-grid"></div>
+    </div>
+  </div>
+
+<script>
+  const APPS_SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE';
+
+  function runScan() {
+    const btn = document.getElementById('scanBtn');
+    const spinner = document.getElementById('spinner');
+    const errMsg = document.getElementById('error-msg');
+
+    btn.disabled = true;
+    spinner.style.display = 'inline';
+    errMsg.style.display = 'none';
+    document.getElementById('results').style.display = 'none';
+    document.getElementById('product-list').style.display = 'none';
+
+    // Open kapruka.com in a hidden iframe, wait for it to load, then extract links
+    const iframe = document.createElement('iframe');
+    iframe.src = 'https://www.kapruka.com';
+    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1280px;height:900px;';
+    document.body.appendChild(iframe);
+
+    iframe.onload = function() {
+      setTimeout(() => { // wait extra 3s for JS to render products
+        try {
+          const links = [...iframe.contentDocument.querySelectorAll('a[href*="/buyonline/"]')]
+            .map(a => a.href)
+            .filter((v, i, arr) => arr.indexOf(v) === i);
+
+          document.body.removeChild(iframe);
+
+          if (links.length === 0) {
+            showError('No products found. The page may have blocked iframe loading.');
+            return;
+          }
+
+          const urlParam = encodeURIComponent(links.join(','));
+          fetch(`${APPS_SCRIPT_URL}?urls=${urlParam}`)
+            .then(r => r.json())
+            .then(data => renderResults(data))
+            .catch(err => showError('API call failed: ' + err.message));
+
+        } catch(e) {
+          document.body.removeChild(iframe);
+          showError('Could not read iframe (CORS). Use the manual paste method instead.');
+          btn.disabled = false;
+          spinner.style.display = 'none';
+        }
+      }, 3000);
+    };
+  }
+
+  function renderResults(data) {
+    document.getElementById('scanBtn').disabled = false;
+    document.getElementById('spinner').style.display = 'none';
+
+    document.getElementById('scanned-at').textContent = 'Scanned at: ' + new Date(data.scannedAt).toLocaleString('en-GB', {timeZone:'Asia/Colombo'});
+    document.getElementById('m-total').textContent = data.total;
+    document.getElementById('m-ec').textContent = data.ecommerce.count + ' (' + data.ecommerce.pct + '%)';
+    document.getElementById('m-pc').textContent = data.pc.count + ' (' + data.pc.pct + '%)';
+
+    const badge = document.getElementById('status-badge');
+    const labels = { ON_TARGET: '✅ On Target', TOO_MUCH_ECOMMERCE: '⚠️ Too Much Ecommerce', TOO_MUCH_PC: '⚠️ Too Much PC' };
+    badge.textContent = labels[data.status];
+    badge.className = 'status-badge ' + data.status;
+
+    document.getElementById('bar-ec').style.width = data.ecommerce.pct + '%';
+    document.getElementById('bar-ec').textContent = data.ecommerce.pct + '%';
+    document.getElementById('bar-pc').style.width = data.pc.pct + '%';
+    document.getElementById('bar-pc').textContent = data.pc.pct + '%';
+
+    document.getElementById('results').style.display = 'block';
+
+    // Product breakdown
+    const ecGrid = document.getElementById('ec-grid');
+    const pcGrid = document.getElementById('pc-grid');
+    ecGrid.innerHTML = '';
+    pcGrid.innerHTML = '';
+
+    data.products.forEach(p => {
+      const div = document.createElement('div');
+      div.className = 'product-item';
+      div.innerHTML = `<a href="${p.url}" target="_blank">${p.code}</a><span class="tag tag-${p.type === 'PC' ? 'pc' : 'ec'}">${p.type}</span>`;
+      (p.type === 'PC' ? pcGrid : ecGrid).appendChild(div);
+    });
+
+    document.getElementById('ec-count').textContent = data.ecommerce.count;
+    document.getElementById('pc-count').textContent = data.pc.count;
+    document.getElementById('product-list').style.display = 'block';
+  }
+
+  function showError(msg) {
+    document.getElementById('scanBtn').disabled = false;
+    document.getElementById('spinner').style.display = 'none';
+    const errMsg = document.getElementById('error-msg');
+    errMsg.textContent = '❌ ' + msg;
+    errMsg.style.display = 'block';
+  }
+</script>
+
+</body>
+</html>
