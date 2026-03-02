@@ -37,41 +37,38 @@
       border-bottom: 1px solid var(--border);
       background: var(--surface);
     }
-    .topbar-logo {
-      width: 36px; height: 36px;
-      border-radius: 8px;
-      overflow: hidden;
-    }
+    .topbar-logo { width: 36px; height: 36px; border-radius: 8px; overflow: hidden; }
     .topbar-logo img { width: 100%; height: 100%; object-fit: cover; }
-    .topbar-title {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 22px;
-      letter-spacing: 2px;
-      color: var(--accent);
-    }
-    .topbar-sub {
-      font-size: 12px;
-      color: var(--muted);
-      margin-left: 4px;
-    }
-    .topbar-right {
-      margin-left: auto;
+    .topbar-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 2px; color: var(--accent); }
+    .topbar-sub { font-size: 12px; color: var(--muted); margin-left: 4px; }
+    .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); }
+    .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    /* ── TABS ── */
+    .tabs {
       display: flex;
-      align-items: center;
-      gap: 10px;
+      gap: 0;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+    }
+    .tab {
+      padding: 14px 24px;
       font-size: 13px;
+      font-weight: 600;
       color: var(--muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+      letter-spacing: 0.5px;
     }
-    .live-dot {
-      width: 7px; height: 7px;
-      border-radius: 50%;
-      background: var(--green);
-      animation: pulse 2s infinite;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.3; }
-    }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    /* ── TAB PANELS ── */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
 
     /* ── DASHBOARD ── */
     .dashboard {
@@ -79,350 +76,135 @@
       border-bottom: 1px solid var(--border);
       background: var(--surface);
     }
-    .dashboard-label {
-      font-size: 11px;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 20px;
-    }
-    .metrics-row {
-      display: flex;
-      gap: 16px;
-      flex-wrap: wrap;
-      margin-bottom: 24px;
-    }
-    .metric {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 18px 24px;
-      min-width: 130px;
-      flex: 1;
-    }
-    .metric-val {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 38px;
-      line-height: 1;
-      margin-bottom: 4px;
-    }
+    .dashboard-label { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-bottom: 20px; }
+    .metrics-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+    .metric { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 18px 24px; min-width: 130px; flex: 1; }
+    .metric-val { font-family: 'Bebas Neue', sans-serif; font-size: 38px; line-height: 1; margin-bottom: 4px; }
     .metric-val.ec { color: var(--ec); }
     .metric-val.pc { color: var(--pc); }
     .metric-val.total { color: var(--text); }
     .metric-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
-
-    /* ratio bar */
     .ratio-wrap { margin-bottom: 8px; }
-    .ratio-header {
-      display: flex;
-      justify-content: space-between;
-      font-size: 12px;
-      color: var(--muted);
-      margin-bottom: 8px;
-    }
-    .ratio-bar {
-      height: 28px;
-      border-radius: 8px;
-      overflow: hidden;
-      background: var(--surface2);
-      display: flex;
-      border: 1px solid var(--border);
-    }
-    .ratio-ec {
-      background: var(--ec);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      font-weight: 700;
-      color: white;
-      transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
-      white-space: nowrap;
-      overflow: hidden;
-    }
-    .ratio-pc {
-      background: var(--pc);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      font-weight: 700;
-      color: #1a1200;
-      transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
-      white-space: nowrap;
-      overflow: hidden;
-    }
-    .target-marker {
-      position: relative;
-    }
-    .ratio-hint {
-      font-size: 11px;
-      color: var(--muted);
-      margin-top: 6px;
-      display: flex;
-      justify-content: space-between;
-    }
-
-    .status-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-    }
+    .ratio-header { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+    .ratio-bar { height: 28px; border-radius: 8px; overflow: hidden; background: var(--surface2); display: flex; border: 1px solid var(--border); }
+    .ratio-ec { background: var(--ec); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: white; transition: width 0.5s cubic-bezier(0.4,0,0.2,1); white-space: nowrap; overflow: hidden; }
+    .ratio-pc { background: var(--pc); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #1a1200; transition: width 0.5s cubic-bezier(0.4,0,0.2,1); white-space: nowrap; overflow: hidden; }
+    .ratio-hint { font-size: 11px; color: var(--muted); margin-top: 6px; display: flex; justify-content: space-between; }
+    .status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; letter-spacing: 0.5px; }
     .status-pill.ok { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
     .status-pill.warn { background: rgba(245,158,11,0.15); color: var(--pc); border: 1px solid rgba(245,158,11,0.3); }
     .status-pill.locked { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
 
     /* ── HOMEPAGE GRID ── */
-    .grid-area {
-      padding: 28px 32px;
-    }
-    .section-block {
-      margin-bottom: 36px;
-    }
-    .section-header {
-      display: flex;
-      align-items: baseline;
-      gap: 12px;
-      margin-bottom: 16px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid var(--border);
-    }
-    .section-title {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 20px;
-      letter-spacing: 2px;
-      color: var(--text);
-    }
-    .section-count {
-      font-size: 12px;
-      color: var(--muted);
-      font-family: 'DM Mono', monospace;
-    }
-    .slot-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 8px;
-      margin-bottom: 8px;
-    }
-    /* slot card */
-    .slot {
-      aspect-ratio: 3/4;
-      border-radius: 10px;
-      border: 1.5px solid var(--border);
-      background: var(--surface2);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.2s;
-      position: relative;
-      overflow: hidden;
-      padding: 8px;
-      text-align: center;
-    }
-    .slot:hover:not(.slot-pc):not(.slot-locked) {
-      border-color: var(--accent);
-      transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(245,197,24,0.15);
-    }
-    .slot.slot-ec {
-      background: rgba(59,130,246,0.08);
-      border-color: rgba(59,130,246,0.25);
-      cursor: default;
-    }
-    .slot.slot-pc {
-      background: rgba(245,158,11,0.1);
-      border-color: rgba(245,158,11,0.4);
-      cursor: default;
-    }
-    .slot.slot-empty {
-      background: var(--surface2);
-      border-style: dashed;
-    }
-    .slot.slot-locked {
-      cursor: not-allowed;
-      opacity: 0.5;
-    }
-    .slot-num {
-      font-family: 'DM Mono', monospace;
-      font-size: 9px;
-      color: var(--muted);
-      position: absolute;
-      top: 6px;
-      left: 7px;
-    }
+    .grid-area { padding: 28px 32px; }
+    .section-block { margin-bottom: 36px; }
+    .section-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+    .section-title { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 2px; color: var(--text); }
+    .section-count { font-size: 12px; color: var(--muted); font-family: 'DM Mono', monospace; }
+    .slot-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 8px; }
+    .slot { aspect-ratio: 3/4; border-radius: 10px; border: 1.5px solid var(--border); background: var(--surface2); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; padding: 8px; text-align: center; }
+    .slot:hover:not(.slot-pc):not(.slot-locked) { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(245,197,24,0.15); }
+    .slot.slot-ec { background: rgba(59,130,246,0.08); border-color: rgba(59,130,246,0.25); cursor: default; }
+    .slot.slot-pc { background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.4); cursor: pointer; }
+    .slot.slot-empty { background: var(--surface2); border-style: dashed; }
+    .slot.slot-locked { cursor: not-allowed; opacity: 0.5; }
+    .slot-num { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--muted); position: absolute; top: 6px; left: 7px; }
     .slot-icon { font-size: 22px; margin-bottom: 6px; }
-    .slot-type-label {
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-    }
+    .slot-type-label { font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
     .slot-type-label.ec { color: var(--ec); }
     .slot-type-label.pc { color: var(--pc); }
     .slot-type-label.empty { color: var(--muted); }
-    .slot-code {
-      font-family: 'DM Mono', monospace;
-      font-size: 8px;
-      color: var(--muted);
-      margin-top: 4px;
-      word-break: break-all;
-      line-height: 1.3;
+    .slot-code { font-family: 'DM Mono', monospace; font-size: 8px; color: var(--muted); margin-top: 4px; word-break: break-all; line-height: 1.3; }
+
+    /* ── ANALYZER TAB ── */
+    .analyzer-area { padding: 28px 32px; }
+    .analyzer-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-bottom: 20px; }
+    .analyzer-card h2 { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 2px; color: var(--accent); margin-bottom: 16px; }
+    .bookmarklet-box {
+      background: rgba(59,130,246,0.06);
+      border: 1.5px dashed rgba(59,130,246,0.35);
+      border-radius: 12px;
+      padding: 24px;
     }
-    .delete-btn {
-      position: absolute;
-      top: 4px;
-      right: 4px;
-      width: 18px; height: 18px;
-      border-radius: 50%;
-      background: rgba(239,68,68,0.8);
-      border: none;
-      color: white;
-      font-size: 10px;
-      cursor: pointer;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      line-height: 1;
-      transition: background 0.2s;
+    .bookmarklet-box p { font-size: 13px; color: #9090a8; margin-bottom: 12px; line-height: 1.7; }
+    .bookmarklet-box ol { font-size: 13px; color: #9090a8; padding-left: 20px; line-height: 2.2; }
+    .bookmarklet-box ol li strong { color: var(--text); }
+    .drag-btn {
+      background: var(--ec);
+      color: #fff;
+      padding: 11px 22px;
+      border-radius: 9px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 16px;
+      letter-spacing: 1.5px;
+      text-decoration: none;
+      display: inline-block;
+      cursor: grab;
+      margin: 12px 0 6px;
+      transition: all 0.2s;
+      box-shadow: 0 4px 16px rgba(59,130,246,0.3);
     }
-    .slot.slot-pc:hover .delete-btn { display: flex; }
-    .delete-btn:hover { background: var(--red); }
+    .drag-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(59,130,246,0.4); }
+    .drag-hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+    /* Analyzer results */
+    .scan-results { display: none; }
+    .scan-results.show { display: block; }
+    .scan-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+    .scan-time { font-size: 12px; color: var(--muted); font-family: 'DM Mono', monospace; }
+    .scan-status { display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; }
+    .scan-status.ON_TARGET { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
+    .scan-status.TOO_MUCH_ECOMMERCE { background: rgba(245,158,11,0.15); color: var(--pc); border: 1px solid rgba(245,158,11,0.3); }
+    .scan-status.TOO_MUCH_PC { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+
+    .scan-metrics { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+    .scan-metric { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; flex: 1; min-width: 110px; }
+    .scan-metric .val { font-family: 'Bebas Neue', sans-serif; font-size: 34px; line-height: 1; margin-bottom: 3px; }
+    .scan-metric .val.ec { color: var(--ec); }
+    .scan-metric .val.pc { color: var(--pc); }
+    .scan-metric .val.total { color: var(--text); }
+    .scan-metric .lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+
+    .scan-bar-wrap { margin-bottom: 8px; }
+    .scan-bar-label { font-size: 12px; color: var(--muted); margin-bottom: 8px; letter-spacing: 1px; text-transform: uppercase; font-size: 11px; }
+    .scan-bar { height: 26px; border-radius: 8px; overflow: hidden; background: var(--surface2); display: flex; border: 1px solid var(--border); }
+    .scan-bar-ec { background: var(--ec); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: white; transition: width 0.6s ease; white-space: nowrap; overflow: hidden; }
+    .scan-bar-pc { background: var(--pc); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #1a1200; transition: width 0.6s ease; white-space: nowrap; overflow: hidden; }
+    .scan-bar-hint { font-size: 11px; color: var(--muted); margin-top: 6px; text-align: right; }
+
+    .product-breakdown { margin-top: 24px; }
+    .breakdown-section { margin-bottom: 20px; }
+    .breakdown-title { font-size: 13px; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+    .breakdown-title span { font-size: 11px; font-family: 'DM Mono', monospace; padding: 2px 8px; border-radius: 6px; background: var(--surface2); color: var(--muted); }
+    .product-grid-scan { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+    .product-item-scan { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; transition: border-color 0.2s; }
+    .product-item-scan:hover { border-color: rgba(255,255,255,0.15); }
+    .product-item-scan a { color: var(--ec); text-decoration: none; font-family: 'DM Mono', monospace; font-size: 11px; word-break: break-all; }
+    .product-item-scan a:hover { text-decoration: underline; }
+    .tag-scan { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 6px; white-space: nowrap; }
+    .tag-ec { background: rgba(59,130,246,0.15); color: var(--ec); }
+    .tag-pc { background: rgba(245,158,11,0.15); color: var(--pc); }
 
     /* ── MODAL ── */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.8);
-      backdrop-filter: blur(4px);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-    }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 1000; }
     .modal-overlay.open { display: flex; }
-    .modal-box {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 36px;
-      width: 420px;
-      max-width: 95vw;
-      position: relative;
-    }
-    .modal-title {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 26px;
-      letter-spacing: 2px;
-      color: var(--accent);
-      margin-bottom: 6px;
-    }
-    .modal-sub {
-      font-size: 13px;
-      color: var(--muted);
-      margin-bottom: 24px;
-    }
-    .modal-close {
-      position: absolute;
-      top: 16px; right: 20px;
-      background: none;
-      border: none;
-      color: var(--muted);
-      font-size: 22px;
-      cursor: pointer;
-    }
+    .modal-box { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 36px; width: 420px; max-width: 95vw; position: relative; }
+    .modal-title { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 2px; color: var(--accent); margin-bottom: 6px; }
+    .modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+    .modal-close { position: absolute; top: 16px; right: 20px; background: none; border: none; color: var(--muted); font-size: 22px; cursor: pointer; }
     .modal-close:hover { color: var(--text); }
-    .field-label {
-      font-size: 11px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 8px;
-      display: block;
-    }
-    .field-input {
-      width: 100%;
-      padding: 13px 16px;
-      background: var(--surface2);
-      border: 1.5px solid var(--border);
-      border-radius: 10px;
-      color: var(--text);
-      font-family: 'DM Mono', monospace;
-      font-size: 14px;
-      transition: border-color 0.2s;
-      margin-bottom: 20px;
-    }
-    .field-input:focus {
-      outline: none;
-      border-color: var(--accent);
-    }
-    .modal-info {
-      background: var(--surface2);
-      border-radius: 10px;
-      padding: 14px;
-      font-size: 12px;
-      color: var(--muted);
-      margin-bottom: 20px;
-    }
+    .field-label { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; display: block; }
+    .field-input { width: 100%; padding: 13px 16px; background: var(--surface2); border: 1.5px solid var(--border); border-radius: 10px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 14px; transition: border-color 0.2s; margin-bottom: 20px; }
+    .field-input:focus { outline: none; border-color: var(--accent); }
+    .modal-info { background: var(--surface2); border-radius: 10px; padding: 14px; font-size: 12px; color: var(--muted); margin-bottom: 20px; }
     .modal-info span { color: var(--text); font-weight: 600; }
-    .btn-book {
-      width: 100%;
-      padding: 14px;
-      background: var(--accent);
-      color: #0a0a0f;
-      border: none;
-      border-radius: 10px;
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 18px;
-      letter-spacing: 2px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
+    .btn-book { width: 100%; padding: 14px; background: var(--accent); color: #0a0a0f; border: none; border-radius: 10px; font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 2px; cursor: pointer; transition: all 0.2s; }
     .btn-book:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(245,197,24,0.3); }
     .btn-book:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-
-    .modal-detail-code {
-      font-family: 'DM Mono', monospace;
-      font-size: 16px;
-      font-weight: 500;
-      background: rgba(245,158,11,0.12);
-      border: 1px solid rgba(245,158,11,0.3);
-      color: var(--pc);
-      padding: 14px 18px;
-      border-radius: 10px;
-      margin: 16px 0;
-      word-break: break-all;
-      letter-spacing: 0.5px;
-    }
-    .detail-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 12px;
-      color: var(--muted);
-      padding: 8px 0;
-      border-bottom: 1px solid var(--border);
-    }
+    .modal-detail-code { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 500; background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.3); color: var(--pc); padding: 14px 18px; border-radius: 10px; margin: 16px 0; word-break: break-all; letter-spacing: 0.5px; }
+    .detail-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); padding: 8px 0; border-bottom: 1px solid var(--border); }
     .detail-row span { color: var(--text); font-weight: 500; }
-    .btn-delete {
-      width: 100%;
-      padding: 12px;
-      margin-top: 20px;
-      background: rgba(239,68,68,0.1);
-      border: 1px solid rgba(239,68,68,0.3);
-      color: var(--red);
-      border-radius: 10px;
-      font-family: 'DM Sans', sans-serif;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
+    .btn-delete { width: 100%; padding: 12px; margin-top: 20px; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: var(--red); border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
     .btn-delete:hover { background: rgba(239,68,68,0.2); }
   </style>
 </head>
@@ -434,7 +216,7 @@
     <img src="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw" alt="Kapruka"/>
   </div>
   <div>
-    <div class="topbar-title">Homepage Slot Manager</div>
+    <div class="topbar-title">Homepage Manager</div>
     <div class="topbar-sub">PC Admin Portal</div>
   </div>
   <div class="topbar-right">
@@ -444,45 +226,106 @@
   </div>
 </div>
 
-<!-- DASHBOARD -->
-<div class="dashboard">
-  <div class="dashboard-label">Product Mix Dashboard</div>
-  <div class="metrics-row">
-    <div class="metric">
-      <div class="metric-val total" id="m-total">42</div>
-      <div class="metric-label">Total Slots</div>
-    </div>
-    <div class="metric">
-      <div class="metric-val ec" id="m-ec">42</div>
-      <div class="metric-label">Ecommerce</div>
-    </div>
-    <div class="metric">
-      <div class="metric-val pc" id="m-pc">0</div>
-      <div class="metric-label">PC Booked</div>
-    </div>
-    <div class="metric" style="flex:2;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-        <div class="metric-label">Mix Status</div>
-        <div id="status-pill" class="status-pill ok">● 100% EC — No PC yet</div>
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('slot-manager')">🗂 Slot Manager</div>
+  <div class="tab" onclick="switchTab('analyzer')">📊 Homepage Analyzer</div>
+</div>
+
+<!-- ══════════════ SLOT MANAGER TAB ══════════════ -->
+<div class="tab-panel active" id="tab-slot-manager">
+  <!-- DASHBOARD -->
+  <div class="dashboard">
+    <div class="dashboard-label">Product Mix Dashboard</div>
+    <div class="metrics-row">
+      <div class="metric">
+        <div class="metric-val total" id="m-total">42</div>
+        <div class="metric-label">Total Slots</div>
       </div>
-      <div class="ratio-wrap">
-        <div class="ratio-bar">
-          <div class="ratio-ec" id="bar-ec" style="width:100%">100%</div>
-          <div class="ratio-pc" id="bar-pc" style="width:0%"></div>
+      <div class="metric">
+        <div class="metric-val ec" id="m-ec">42</div>
+        <div class="metric-label">Ecommerce</div>
+      </div>
+      <div class="metric">
+        <div class="metric-val pc" id="m-pc">0</div>
+        <div class="metric-label">PC Booked</div>
+      </div>
+      <div class="metric" style="flex:2;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div class="metric-label">Mix Status</div>
+          <div id="status-pill" class="status-pill ok">● 100% EC — No PC yet</div>
         </div>
-        <div class="ratio-hint">
-          <span id="ratio-ec-label" style="color:var(--ec);">EC: 100%</span>
-          <span style="color:var(--muted);">🎯 Target: 60% EC / 40% PC</span>
-          <span id="ratio-pc-label" style="color:var(--pc);">PC: 0%</span>
+        <div class="ratio-wrap">
+          <div class="ratio-bar">
+            <div class="ratio-ec" id="bar-ec" style="width:100%">100%</div>
+            <div class="ratio-pc" id="bar-pc" style="width:0%"></div>
+          </div>
+          <div class="ratio-hint">
+            <span id="ratio-ec-label" style="color:var(--ec);">EC: 100%</span>
+            <span style="color:var(--muted);">🎯 Target: 60% EC / 40% PC</span>
+            <span id="ratio-pc-label" style="color:var(--pc);">PC: 0%</span>
+          </div>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- HOMEPAGE GRID -->
+  <div class="grid-area">
+    <div id="sections-container"></div>
+  </div>
 </div>
 
-<!-- HOMEPAGE GRID -->
-<div class="grid-area">
-  <div id="sections-container"></div>
+<!-- ══════════════ ANALYZER TAB ══════════════ -->
+<div class="tab-panel" id="tab-analyzer">
+  <div class="analyzer-area">
+
+    <!-- HOW TO SCAN -->
+    <div class="analyzer-card">
+      <h2>📡 Live Homepage Scanner</h2>
+      <div class="bookmarklet-box">
+        <p>Since <strong>kapruka.com</strong> blocks iframes, use the bookmarklet below to scan the live homepage instantly:</p>
+        <ol>
+          <li>Drag the button below to your <strong>browser bookmarks bar</strong></li>
+          <li>Navigate to <strong>kapruka.com</strong></li>
+          <li>Click the bookmark — it runs instantly</li>
+          <li>You'll be redirected back here with results</li>
+        </ol>
+        <br/>
+        <a class="drag-btn" id="bookmarklet-link" title="Drag me to your bookmarks bar">📊 Kapruka Analyzer</a>
+        <p class="drag-hint">👆 Drag the button to your bookmarks bar</p>
+      </div>
+    </div>
+
+    <!-- SCAN RESULTS -->
+    <div class="analyzer-card scan-results" id="scan-results">
+      <div class="scan-header">
+        <div>
+          <h2 style="margin-bottom:4px;">📋 Scan Results</h2>
+          <div class="scan-time" id="scan-time"></div>
+        </div>
+        <div id="scan-status-badge" class="scan-status"></div>
+      </div>
+
+      <div class="scan-metrics">
+        <div class="scan-metric"><div class="val total" id="s-total">—</div><div class="lbl">Total Products</div></div>
+        <div class="scan-metric"><div class="val ec" id="s-ec">—</div><div class="lbl">Ecommerce</div></div>
+        <div class="scan-metric"><div class="val pc" id="s-pc">—</div><div class="lbl">PC Products</div></div>
+      </div>
+
+      <div class="scan-bar-wrap">
+        <div class="scan-bar-label">Product Mix</div>
+        <div class="scan-bar">
+          <div class="scan-bar-ec" id="sbar-ec"></div>
+          <div class="scan-bar-pc" id="sbar-pc"></div>
+        </div>
+        <div class="scan-bar-hint">🎯 Target: 60% Ecommerce &nbsp;|&nbsp; 40% PC</div>
+      </div>
+
+      <div class="product-breakdown" id="product-breakdown"></div>
+    </div>
+
+  </div>
 </div>
 
 <!-- BOOKING MODAL -->
@@ -511,21 +354,38 @@
 </div>
 
 <script>
-  // ── STATE ──
+  // ─────────────────────────────────────────────────────────
+  //  CONFIG
+  // ─────────────────────────────────────────────────────────
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwkYSadbhw_X1ujneqVy06SX4cK6PztcXf3mKXplQ7sYn9aQjzpYBIbe1VmpunbRQ2RMQ/exec';
+
+  // ─────────────────────────────────────────────────────────
+  //  TABS
+  // ─────────────────────────────────────────────────────────
+  function switchTab(id) {
+    document.querySelectorAll('.tab').forEach((t, i) => {
+      const ids = ['slot-manager', 'analyzer'];
+      t.classList.toggle('active', ids[i] === id);
+    });
+    document.querySelectorAll('.tab-panel').forEach(p => {
+      p.classList.toggle('active', p.id === 'tab-' + id);
+    });
+  }
+
+  // ─────────────────────────────────────────────────────────
+  //  SLOT MANAGER STATE
+  // ─────────────────────────────────────────────────────────
   const SECTIONS = [
     { id: 'featured',  label: 'Featured Products', rows: 2, cols: 7 },
     { id: 'new',       label: 'New Additions',     rows: 2, cols: 7 },
     { id: 'bestsell',  label: 'Best Sellers',      rows: 2, cols: 7 },
   ];
 
-  // bookings: { slotKey: { code, section, row, col } }
   let bookings = JSON.parse(localStorage.getItem('kap_hp_bookings') || '{}');
+  let pendingSlot = null;
 
-  let pendingSlot = null; // { key, section, row, col }
-
-  // ── COMPUTE METRICS ──
   function getMetrics() {
-    const total = SECTIONS.reduce((s, sec) => s + sec.rows * sec.cols, 0); // 42
+    const total = SECTIONS.reduce((s, sec) => s + sec.rows * sec.cols, 0);
     const pc = Object.keys(bookings).length;
     const ec = total - pc;
     const pcPct = Math.round(pc / total * 100);
@@ -534,25 +394,20 @@
   }
 
   function isLocked() {
-    const { pcPct } = getMetrics();
-    return pcPct >= 40;
+    return getMetrics().pcPct >= 40;
   }
 
-  // ── RENDER DASHBOARD ──
   function updateDashboard() {
     const { total, pc, ec, pcPct, ecPct } = getMetrics();
     document.getElementById('m-total').textContent = total;
     document.getElementById('m-ec').textContent = ec;
     document.getElementById('m-pc').textContent = pc;
-
     document.getElementById('bar-ec').style.width = ecPct + '%';
     document.getElementById('bar-ec').textContent = ecPct > 8 ? ecPct + '%' : '';
     document.getElementById('bar-pc').style.width = pcPct + '%';
     document.getElementById('bar-pc').textContent = pcPct > 5 ? pcPct + '%' : '';
-
     document.getElementById('ratio-ec-label').textContent = 'EC: ' + ecPct + '%';
     document.getElementById('ratio-pc-label').textContent = 'PC: ' + pcPct + '%';
-
     const pill = document.getElementById('status-pill');
     if (pcPct >= 40) {
       pill.className = 'status-pill locked';
@@ -566,17 +421,13 @@
     }
   }
 
-  // ── RENDER GRID ──
   function renderAll() {
     const container = document.getElementById('sections-container');
     container.innerHTML = '';
-
     const locked = isLocked();
-
     SECTIONS.forEach(sec => {
       const block = document.createElement('div');
       block.className = 'section-block';
-
       const pcInSection = Object.values(bookings).filter(b => b.section === sec.id).length;
       block.innerHTML = `
         <div class="section-header">
@@ -584,21 +435,15 @@
           <div class="section-count">${sec.rows * sec.cols} slots · ${pcInSection} PC booked</div>
         </div>
       `;
-
       for (let row = 0; row < sec.rows; row++) {
         const rowDiv = document.createElement('div');
         rowDiv.className = 'slot-grid';
-
         for (let col = 0; col < sec.cols; col++) {
           const key = `${sec.id}_r${row}_c${col}`;
           const booking = bookings[key];
           const slot = document.createElement('div');
-          slot.setAttribute('data-key', key);
-
           if (booking) {
-            // PC booked slot — clickable to view details
             slot.className = 'slot slot-pc';
-            slot.style.cursor = 'pointer';
             slot.innerHTML = `
               <div class="slot-num">${row * sec.cols + col + 1}</div>
               <div class="slot-icon">🟠</div>
@@ -607,7 +452,6 @@
             `;
             slot.onclick = () => openDetailModal(key, booking, sec.label, row + 1, col + 1);
           } else if (locked) {
-            // quota full — show as EC, no interaction, no cursor change
             slot.className = 'slot slot-ec';
             slot.style.cursor = 'default';
             slot.innerHTML = `
@@ -616,7 +460,6 @@
               <div class="slot-type-label ec">EC</div>
             `;
           } else {
-            // available — click to book PC
             slot.className = 'slot slot-empty';
             slot.title = 'Click to book as PC';
             slot.innerHTML = `
@@ -626,20 +469,18 @@
             `;
             slot.onclick = () => openModal(key, sec.label, row + 1, col + 1);
           }
-
           rowDiv.appendChild(slot);
         }
-
         block.appendChild(rowDiv);
       }
-
       container.appendChild(block);
     });
-
     updateDashboard();
   }
 
-  // ── DETAIL MODAL (view PC booking) ──
+  // ─────────────────────────────────────────────────────────
+  //  DETAIL MODAL
+  // ─────────────────────────────────────────────────────────
   let detailKey = null;
 
   function openDetailModal(key, booking, sectionLabel, row, col) {
@@ -670,7 +511,9 @@
     if (e.target === document.getElementById('detail-modal')) closeDetailModal();
   });
 
-  // ── BOOKING MODAL ──
+  // ─────────────────────────────────────────────────────────
+  //  BOOKING MODAL
+  // ─────────────────────────────────────────────────────────
   function openModal(key, sectionLabel, row, col) {
     if (isLocked()) return;
     pendingSlot = { key, sectionLabel, row, col };
@@ -700,7 +543,6 @@
       return;
     }
     if (!pendingSlot) return;
-
     bookings[pendingSlot.key] = {
       code,
       section: pendingSlot.key.split('_r')[0],
@@ -708,7 +550,6 @@
       col: pendingSlot.col,
       bookedAt: new Date().toISOString()
     };
-
     saveAndRender();
     closeModal();
   }
@@ -718,7 +559,12 @@
     renderAll();
   }
 
-  // keyboard close
+  function resetAll() {
+    if (!confirm('Remove all PC bookings and reset to 100% EC?')) return;
+    bookings = {};
+    saveAndRender();
+  }
+
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') { closeModal(); closeDetailModal(); }
     if (e.key === 'Enter' && document.getElementById('modal').classList.contains('open')) confirmBooking();
@@ -727,13 +573,117 @@
     if (e.target === document.getElementById('modal')) closeModal();
   });
 
-  function resetAll() {
-    if (!confirm('Remove all PC bookings and reset to 100% EC?')) return;
-    bookings = {};
-    saveAndRender();
+  // ─────────────────────────────────────────────────────────
+  //  ANALYZER — BOOKMARKLET
+  // ─────────────────────────────────────────────────────────
+  const portalUrl = window.location.href.split('?')[0];
+
+  const bookmarkletCode = `javascript:(function(){
+    var codes=[...document.querySelectorAll('a[href*="/buyonline/"]')]
+      .map(a=>a.href.split('/').pop())
+      .filter((v,i,arr)=>arr.indexOf(v)===i);
+    if(codes.length===0){alert('No products found. Make sure you are on kapruka.com homepage.');return;}
+    var apiUrl='${APPS_SCRIPT_URL}?codes='+encodeURIComponent(codes.join(','))+'&redirect='+encodeURIComponent('${portalUrl}');
+    window.location.href=apiUrl;
+  })();`;
+
+  document.getElementById('bookmarklet-link').href = bookmarkletCode;
+
+  // ─────────────────────────────────────────────────────────
+  //  ANALYZER — RENDER RESULTS (from URL params after redirect)
+  // ─────────────────────────────────────────────────────────
+  const params = new URLSearchParams(window.location.search);
+
+  if (params.get('scannedAt')) {
+    // Switch to analyzer tab automatically
+    switchTab('analyzer');
+
+    try {
+      const codes = decodeURIComponent(params.get('codes') || '').split(',').filter(Boolean);
+      const products = codes.map(c => ({
+        code: c,
+        url: 'https://www.kapruka.com/buyonline/-/kid/' + c,
+        type: c.startsWith('ef_pc_') ? 'PC' : 'Ecommerce'
+      }));
+      const data = {
+        scannedAt: params.get('scannedAt'),
+        total: parseInt(params.get('total')),
+        ecommerce: { count: parseInt(params.get('ec')), pct: parseFloat(params.get('ecPct')) },
+        pc: { count: parseInt(params.get('pc')), pct: parseFloat(params.get('pcPct')) },
+        status: params.get('status'),
+        products
+      };
+      renderScanResults(data);
+    } catch(err) {
+      console.error('Failed to parse scan results', err);
+    }
   }
 
-  // init
+  function renderScanResults(data) {
+    // Time
+    document.getElementById('scan-time').textContent =
+      'Scanned at: ' + new Date(data.scannedAt).toLocaleString('en-GB', { timeZone: 'Asia/Colombo' });
+
+    // Metrics
+    document.getElementById('s-total').textContent = data.total;
+    document.getElementById('s-ec').textContent = data.ecommerce.count + ' (' + data.ecommerce.pct + '%)';
+    document.getElementById('s-pc').textContent = data.pc.count + ' (' + data.pc.pct + '%)';
+
+    // Status badge
+    const badge = document.getElementById('scan-status-badge');
+    const labels = {
+      ON_TARGET: '✅ On Target (60:40)',
+      TOO_MUCH_ECOMMERCE: '⚠️ Too Much Ecommerce',
+      TOO_MUCH_PC: '⚠️ Too Much PC'
+    };
+    badge.textContent = labels[data.status] || data.status;
+    badge.className = 'scan-status ' + data.status;
+
+    // Bar
+    const ep = data.ecommerce.pct, pp = data.pc.pct;
+    const ecBar = document.getElementById('sbar-ec');
+    const pcBar = document.getElementById('sbar-pc');
+    ecBar.style.width = ep + '%';
+    ecBar.textContent = ep > 8 ? ep + '%' : '';
+    pcBar.style.width = pp + '%';
+    pcBar.textContent = pp > 5 ? pp + '%' : '';
+
+    // Product breakdown
+    const ec = data.products.filter(p => p.type === 'Ecommerce');
+    const pc = data.products.filter(p => p.type === 'PC');
+    const bd = document.getElementById('product-breakdown');
+    bd.innerHTML = `
+      <div class="breakdown-section">
+        <div class="breakdown-title" style="color:var(--ec);">🔵 Ecommerce Products <span>${ec.length}</span></div>
+        <div class="product-grid-scan" id="ec-grid-scan"></div>
+      </div>
+      <div class="breakdown-section" style="margin-top:20px;">
+        <div class="breakdown-title" style="color:var(--pc);">🟠 PC Products <span>${pc.length}</span></div>
+        <div class="product-grid-scan" id="pc-grid-scan"></div>
+      </div>
+    `;
+
+    ec.forEach(p => addProductItem('ec-grid-scan', p));
+    pc.forEach(p => addProductItem('pc-grid-scan', p));
+
+    document.getElementById('scan-results').classList.add('show');
+  }
+
+  function addProductItem(gridId, p) {
+    const grid = document.getElementById(gridId);
+    if (!grid) return;
+    const div = document.createElement('div');
+    div.className = 'product-item-scan';
+    div.innerHTML = `
+      <a href="${p.url}" target="_blank">${p.code}</a>
+      <span class="tag-scan ${p.type === 'PC' ? 'tag-pc' : 'tag-ec'}">${p.type}</span>
+    `;
+    grid.appendChild(div);
+  }
+
+  // ─────────────────────────────────────────────────────────
+  //  INIT
+  // ─────────────────────────────────────────────────────────
   renderAll();
 </script>
 </body>
