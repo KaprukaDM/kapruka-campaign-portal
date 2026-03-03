@@ -1,1287 +1,441 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Homepage Slot Manager — Kapruka</title>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet"/>
-  <style>
-    :root {
-      --bg: #fafaf8;
-      --surface: #ffffff;
-      --surface2: #f4f3ef;
-      --surface3: #ede9e0;
-      --border: #e5e1d8;
-      --border2: #d4cfc3;
-      --kap-red: #e8192c;
-      --kap-red-dark: #c0111f;
-      --kap-red-light: rgba(232,25,44,0.08);
-      --kap-red-mid: rgba(232,25,44,0.15);
-      --ec: #1a6ef5;
-      --ec-light: rgba(26,110,245,0.08);
-      --pc: #e8192c;
-      --pc-light: rgba(232,25,44,0.08);
-      --text: #1a1814;
-      --text2: #4a4640;
-      --muted: #9a9590;
-      --green: #16a34a;
-      --green-light: rgba(22,163,74,0.1);
-      --amber: #d97706;
-      --amber-light: rgba(217,119,6,0.1);
-      --shadow-sm: 0 1px 3px rgba(26,24,20,0.06), 0 1px 2px rgba(26,24,20,0.04);
-      --shadow-md: 0 4px 12px rgba(26,24,20,0.08), 0 2px 4px rgba(26,24,20,0.04);
-      --shadow-lg: 0 16px 40px rgba(26,24,20,0.12), 0 4px 12px rgba(26,24,20,0.06);
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Nunito', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-    }
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Homepage Slot Manager — Kapruka</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:'Plus Jakarta Sans',sans-serif;
+  background:#0f1117;
+  color:#e8e8f0;
+  display:flex;
+  flex-direction:column;
+  height:100vh;
+}
+:root{
+  --red:#e8192c;
+  --red-dim:rgba(232,25,44,0.12);
+  --red-mid:rgba(232,25,44,0.25);
+  --blue:#3b7ff5;
+  --blue-dim:rgba(59,127,245,0.1);
+  --green:#22c55e;
+  --amber:#f59e0b;
+  --bg:#0f1117;
+  --panel:#171921;
+  --card:#1e2130;
+  --border:rgba(255,255,255,0.07);
+  --border2:rgba(255,255,255,0.12);
+  --txt:#e8e8f0;
+  --txt2:#9499b0;
+  --txt3:#5a5f75;
+  --mono:'Fira Code',monospace;
+}
 
-    /* ── TOP BAR ── */
-    .topbar {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      padding: 0 32px;
-      height: 64px;
-      background: var(--surface);
-      border-bottom: 2px solid var(--kap-red);
-      box-shadow: var(--shadow-sm);
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-    .topbar-logo {
-      width: 38px;
-      height: 38px;
-      border-radius: 8px;
-      overflow: hidden;
-      border: 2px solid var(--border);
-      flex-shrink: 0;
-    }
-    .topbar-logo img { width: 100%; height: 100%; object-fit: cover; }
-    .topbar-brand {
-      display: flex;
-      flex-direction: column;
-      gap: 1px;
-    }
-    .topbar-title {
-      font-family: 'Syne', sans-serif;
-      font-size: 16px;
-      font-weight: 800;
-      color: var(--kap-red);
-      letter-spacing: 0.5px;
-      line-height: 1;
-    }
-    .topbar-sub {
-      font-size: 11px;
-      color: var(--muted);
-      font-family: 'JetBrains Mono', monospace;
-      letter-spacing: 0.5px;
-    }
-    .topbar-divider {
-      width: 1px;
-      height: 32px;
-      background: var(--border);
-    }
-    .topbar-module {
-      font-family: 'Syne', sans-serif;
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--text2);
-      letter-spacing: 0.3px;
-    }
-    .topbar-right {
-      margin-left: auto;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .live-badge {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 5px 12px;
-      background: var(--green-light);
-      border: 1px solid rgba(22,163,74,0.2);
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 700;
-      color: var(--green);
-      letter-spacing: 0.5px;
-    }
-    .live-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--green);
-      animation: pulse 2s infinite;
-    }
-    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.8); } }
-    .btn-reset {
-      padding: 8px 16px;
-      background: var(--surface);
-      border: 1.5px solid var(--border2);
-      color: var(--text2);
-      border-radius: 8px;
-      font-family: 'Nunito', sans-serif;
-      font-size: 12px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.2s;
-      letter-spacing: 0.3px;
-    }
-    .btn-reset:hover {
-      border-color: var(--kap-red);
-      color: var(--kap-red);
-      background: var(--kap-red-light);
-    }
+/* TOPBAR */
+.topbar{
+  flex-shrink:0;height:52px;
+  background:var(--panel);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 20px;gap:12px;
+}
+.logo-wrap{width:30px;height:30px;border-radius:6px;overflow:hidden;flex-shrink:0;border:1px solid var(--border2)}
+.logo-wrap img{width:100%;height:100%;object-fit:cover}
+.brand-name{font-size:14px;font-weight:800;color:var(--red);letter-spacing:1.5px;text-transform:uppercase}
+.brand-sep{width:1px;height:20px;background:var(--border2)}
+.brand-module{font-size:13px;font-weight:600;color:var(--txt2)}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.live-pill{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);font-size:11px;font-weight:700;color:var(--green);font-family:var(--mono);letter-spacing:0.5px}
+.live-dot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+.btn-reset{padding:5px 12px;border-radius:6px;font-size:11px;font-weight:700;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;transition:all .15s;background:transparent;border:1px solid var(--border2);color:var(--txt2)}
+.btn-reset:hover{border-color:var(--red);color:var(--red);background:var(--red-dim)}
 
-    /* ── TABS ── */
-    .tabs {
-      display: flex;
-      gap: 0;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      padding: 0 32px;
-    }
-    .tab {
-      padding: 14px 22px;
-      font-size: 13px;
-      font-weight: 700;
-      font-family: 'Syne', sans-serif;
-      color: var(--muted);
-      cursor: pointer;
-      border-bottom: 2.5px solid transparent;
-      transition: all 0.2s;
-      letter-spacing: 0.5px;
-      display: flex;
-      align-items: center;
-      gap: 7px;
-    }
-    .tab:hover { color: var(--text); }
-    .tab.active { color: var(--kap-red); border-bottom-color: var(--kap-red); }
-    .tab-panel { display: none; }
-    .tab-panel.active { display: block; }
+/* TABS */
+.tabs{flex-shrink:0;display:flex;background:var(--panel);border-bottom:1px solid var(--border);padding:0 20px}
+.tab{padding:10px 18px;font-size:11px;font-weight:800;color:var(--txt3);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;display:flex;align-items:center;gap:6px;letter-spacing:1px;text-transform:uppercase}
+.tab:hover{color:var(--txt2)}
+.tab.active{color:var(--red);border-bottom-color:var(--red)}
+.tab-panel{display:none;flex:1;overflow:hidden;flex-direction:column;min-height:0}
+.tab-panel.active{display:flex}
 
-    /* ── DASHBOARD ── */
-    .dashboard {
-      padding: 24px 32px;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-    }
-    .dashboard-label {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 10px;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 16px;
-    }
-    .metrics-row {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-    .metric {
-      background: var(--surface2);
-      border: 1.5px solid var(--border);
-      border-radius: 12px;
-      padding: 16px 20px;
-      min-width: 110px;
-      flex: 1;
-      transition: border-color 0.2s;
-    }
-    .metric:hover { border-color: var(--border2); }
-    .metric-val {
-      font-family: 'Syne', sans-serif;
-      font-size: 36px;
-      font-weight: 800;
-      line-height: 1;
-      margin-bottom: 4px;
-    }
-    .metric-val.ec { color: var(--ec); }
-    .metric-val.pc { color: var(--kap-red); }
-    .metric-val.total { color: var(--text); }
-    .metric-label {
-      font-size: 11px;
-      color: var(--muted);
-      font-family: 'JetBrains Mono', monospace;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-    .mix-card {
-      flex: 3;
-      min-width: 280px;
-      background: var(--surface2);
-      border: 1.5px solid var(--border);
-      border-radius: 12px;
-      padding: 16px 20px;
-    }
-    .mix-card-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-    .mix-card-label {
-      font-size: 11px;
-      color: var(--muted);
-      font-family: 'JetBrains Mono', monospace;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-    .status-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 5px 12px;
-      border-radius: 20px;
-      font-size: 11px;
-      font-weight: 700;
-      font-family: 'JetBrains Mono', monospace;
-      letter-spacing: 0.3px;
-    }
-    .status-pill.ok { background: var(--green-light); color: var(--green); border: 1px solid rgba(22,163,74,0.2); }
-    .status-pill.warn { background: var(--amber-light); color: var(--amber); border: 1px solid rgba(217,119,6,0.2); }
-    .status-pill.locked { background: var(--kap-red-light); color: var(--kap-red); border: 1px solid var(--kap-red-mid); }
-    .ratio-bar {
-      height: 24px;
-      border-radius: 8px;
-      overflow: hidden;
-      background: var(--surface3);
-      display: flex;
-      border: 1px solid var(--border);
-      margin-bottom: 8px;
-    }
-    .ratio-ec {
-      background: var(--ec);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 11px;
-      font-weight: 700;
-      font-family: 'JetBrains Mono', monospace;
-      color: white;
-      transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
-      white-space: nowrap;
-      overflow: hidden;
-    }
-    .ratio-pc {
-      background: var(--kap-red);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 11px;
-      font-weight: 700;
-      font-family: 'JetBrains Mono', monospace;
-      color: white;
-      transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
-      white-space: nowrap;
-      overflow: hidden;
-    }
-    .ratio-hint {
-      display: flex;
-      justify-content: space-between;
-      font-size: 11px;
-      color: var(--muted);
-      font-family: 'JetBrains Mono', monospace;
-    }
+/* DASH STRIP */
+.dash-strip{flex-shrink:0;background:var(--panel);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;gap:10px}
+.dash-metric{display:flex;flex-direction:column;gap:1px;padding:8px 14px;background:var(--card);border:1px solid var(--border);border-radius:8px;min-width:72px}
+.dash-val{font-size:20px;font-weight:800;line-height:1;font-family:var(--mono)}
+.dash-val.total{color:var(--txt)}
+.dash-val.ec{color:var(--blue)}
+.dash-val.pc{color:var(--red)}
+.dash-lbl{font-size:9px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:1.5px;margin-top:2px}
+.dash-div{width:1px;height:38px;background:var(--border);flex-shrink:0}
+.mix-wrap{flex:1;min-width:0}
+.mix-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.mix-lbl{font-size:9px;font-weight:700;color:var(--txt3);font-family:var(--mono);letter-spacing:1px;text-transform:uppercase}
+.chip{font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;font-family:var(--mono)}
+.chip-ok{background:rgba(34,197,94,0.1);color:var(--green);border:1px solid rgba(34,197,94,0.2)}
+.chip-warn{background:rgba(245,158,11,0.1);color:var(--amber);border:1px solid rgba(245,158,11,0.2)}
+.chip-lock{background:var(--red-dim);color:var(--red);border:1px solid var(--red-mid)}
+.mix-bar{height:16px;border-radius:4px;overflow:hidden;background:rgba(255,255,255,0.04);display:flex;border:1px solid var(--border)}
+.bar-ec{background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:white;font-family:var(--mono);transition:width .45s cubic-bezier(.4,0,.2,1);white-space:nowrap;overflow:hidden}
+.bar-pc{background:var(--red);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:white;font-family:var(--mono);transition:width .45s cubic-bezier(.4,0,.2,1);white-space:nowrap;overflow:hidden}
+.mix-hint{display:flex;justify-content:space-between;font-size:9px;color:var(--txt3);margin-top:3px;font-family:var(--mono)}
 
-    /* ── GRID AREA ── */
-    .grid-area { padding: 28px 32px; }
-    .section-block { margin-bottom: 32px; }
-    .section-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 14px;
-      padding-bottom: 10px;
-      border-bottom: 2px solid var(--border);
-    }
-    .section-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--kap-red);
-      flex-shrink: 0;
-    }
-    .section-title {
-      font-family: 'Syne', sans-serif;
-      font-size: 16px;
-      font-weight: 800;
-      color: var(--text);
-      letter-spacing: 0.3px;
-    }
-    .section-count {
-      font-size: 11px;
-      color: var(--muted);
-      font-family: 'JetBrains Mono', monospace;
-      margin-left: auto;
-    }
-    .section-pc-count {
-      padding: 3px 10px;
-      border-radius: 6px;
-      font-size: 11px;
-      font-weight: 700;
-      font-family: 'JetBrains Mono', monospace;
-      background: var(--kap-red-light);
-      color: var(--kap-red);
-      border: 1px solid var(--kap-red-mid);
-    }
+/* GRID SCROLL */
+.grid-scroll{flex:1;overflow-y:auto;padding:14px 20px;min-height:0}
+.grid-scroll::-webkit-scrollbar{width:3px}
+.grid-scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.section-block{margin-bottom:16px}
+.sec-header{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.sec-bar{width:3px;height:14px;background:var(--red);border-radius:2px;flex-shrink:0}
+.sec-title{font-size:11px;font-weight:800;color:var(--txt);letter-spacing:0.8px;text-transform:uppercase}
+.sec-badge{font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;font-family:var(--mono);background:var(--red-dim);color:var(--red);border:1px solid var(--red-mid)}
+.sec-count{font-size:9px;color:var(--txt3);font-family:var(--mono);margin-left:auto}
+.slot-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px}
+.slot{aspect-ratio:1/1.1;border-radius:6px;border:1px solid var(--border);background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .13s;position:relative;overflow:hidden;padding:4px 3px;text-align:center}
+.slot:hover:not(.s-ec):not(.s-locked){border-color:var(--red);background:var(--red-dim);transform:translateY(-1px)}
+.slot.s-ec{background:var(--blue-dim);border-color:rgba(59,127,245,0.18);cursor:default}
+.slot.s-pc{background:var(--red-dim);border-color:var(--red);border-width:1.5px}
+.slot.s-pc:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(232,25,44,0.2)}
+.slot.s-empty{background:var(--card);border-style:dashed;border-color:rgba(255,255,255,0.06)}
+.slot.s-empty:hover{background:var(--red-dim)}
+.slot-n{position:absolute;top:3px;left:4px;font-family:var(--mono);font-size:6px;color:var(--txt3)}
+.slot-ico{font-size:12px;margin-bottom:2px;line-height:1}
+.slot-tag{font-size:7px;font-weight:800;text-transform:uppercase;letter-spacing:1px;font-family:var(--mono)}
+.slot-tag.ec{color:var(--blue)}
+.slot-tag.pc{color:var(--red)}
+.slot-tag.em{color:var(--txt3)}
+.slot-code{font-family:var(--mono);font-size:5.5px;color:var(--txt2);margin-top:2px;word-break:break-all;line-height:1.3;max-width:100%}
 
-    .slot-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 8px;
-      margin-bottom: 8px;
-    }
-    .slot {
-      aspect-ratio: 3/4;
-      border-radius: 10px;
-      border: 1.5px solid var(--border);
-      background: var(--surface);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.18s;
-      position: relative;
-      overflow: hidden;
-      padding: 8px 6px;
-      text-align: center;
-      box-shadow: var(--shadow-sm);
-    }
-    .slot:hover:not(.slot-pc):not(.slot-locked):not(.slot-ec-locked) {
-      border-color: var(--kap-red);
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(232,25,44,0.12);
-    }
-    .slot.slot-ec-locked {
-      background: var(--ec-light);
-      border-color: rgba(26,110,245,0.2);
-      cursor: default;
-    }
-    .slot.slot-pc {
-      background: var(--kap-red-light);
-      border-color: var(--kap-red);
-      border-width: 2px;
-    }
-    .slot.slot-pc:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(232,25,44,0.15);
-    }
-    .slot.slot-empty {
-      background: var(--surface);
-      border-style: dashed;
-      border-color: var(--border2);
-    }
-    .slot.slot-empty:hover {
-      background: var(--kap-red-light);
-    }
-    .slot-num {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 8px;
-      color: var(--muted);
-      position: absolute;
-      top: 5px;
-      left: 6px;
-    }
-    .slot-icon { font-size: 18px; margin-bottom: 5px; line-height: 1; }
-    .slot-type-label {
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      font-family: 'JetBrains Mono', monospace;
-    }
-    .slot-type-label.ec { color: var(--ec); }
-    .slot-type-label.pc { color: var(--kap-red); }
-    .slot-type-label.empty { color: var(--muted); }
-    .slot-code {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 7px;
-      color: var(--text2);
-      margin-top: 4px;
-      word-break: break-all;
-      line-height: 1.4;
-      max-width: 100%;
-    }
+/* ANALYZER */
+.analyzer-scroll{flex:1;overflow-y:auto;padding:14px 20px;min-height:0}
+.analyzer-scroll::-webkit-scrollbar{width:3px}
+.analyzer-scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.a-card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:12px}
+.a-title{font-size:13px;font-weight:800;color:var(--txt);margin-bottom:3px}
+.a-sub{font-size:11px;color:var(--txt3);margin-bottom:14px}
+.steps{display:flex;flex-direction:column;gap:0}
+.step{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.step:last-child{border-bottom:none}
+.step-n{width:18px;height:18px;border-radius:50%;background:var(--red);color:white;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.step-t{font-size:11px;color:var(--txt2);line-height:1.6}
+.step-t strong{color:var(--txt);font-weight:700}
+.drag-btn{display:inline-flex;align-items:center;gap:7px;background:var(--red);color:white;padding:9px 18px;border-radius:7px;font-size:12px;font-weight:700;text-decoration:none;cursor:grab;margin-top:12px;transition:all .15s;box-shadow:0 4px 14px rgba(232,25,44,0.3);letter-spacing:0.3px}
+.drag-btn:hover{background:#c5111e;transform:translateY(-1px)}
+.drag-hint{font-size:9px;color:var(--txt3);margin-top:5px;font-family:var(--mono)}
+.scan-results{display:none}
+.scan-results.show{display:block}
+.scan-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;flex-wrap:wrap;gap:6px}
+.scan-time{font-size:9px;color:var(--txt3);font-family:var(--mono);margin-top:2px}
+.scan-badge{font-size:10px;font-weight:700;padding:4px 10px;border-radius:5px;font-family:var(--mono)}
+.ON_TARGET{background:rgba(34,197,94,0.1);color:var(--green);border:1px solid rgba(34,197,94,0.2)}
+.TOO_MUCH_ECOMMERCE{background:rgba(245,158,11,0.1);color:var(--amber);border:1px solid rgba(245,158,11,0.2)}
+.TOO_MUCH_PC{background:var(--red-dim);color:var(--red);border:1px solid var(--red-mid)}
+.scan-mets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.scan-met{flex:1;min-width:80px;background:var(--card);border:1px solid var(--border);border-radius:7px;padding:10px 12px}
+.scan-met .v{font-size:22px;font-weight:800;line-height:1;font-family:var(--mono);margin-bottom:2px}
+.scan-met .v.ec{color:var(--blue)}
+.scan-met .v.pc{color:var(--red)}
+.scan-met .v.tot{color:var(--txt)}
+.scan-met .l{font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:1px;font-family:var(--mono)}
+.s-bar-lbl{font-size:9px;color:var(--txt3);letter-spacing:2px;text-transform:uppercase;font-family:var(--mono);margin-bottom:5px}
+.s-bar{height:16px;border-radius:4px;overflow:hidden;background:rgba(255,255,255,0.04);display:flex;border:1px solid var(--border)}
+.s-bar-ec{background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:white;font-family:var(--mono);transition:width .5s ease;white-space:nowrap;overflow:hidden}
+.s-bar-pc{background:var(--red);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:white;font-family:var(--mono);transition:width .5s ease;white-space:nowrap;overflow:hidden}
+.s-bar-hint{font-size:9px;color:var(--txt3);margin-top:3px;text-align:right;font-family:var(--mono)}
+.pbd-title{font-size:11px;font-weight:800;color:var(--txt);margin:12px 0 6px;display:flex;align-items:center;gap:6px}
+.pbd-count{font-size:9px;font-family:var(--mono);padding:1px 6px;border-radius:3px;background:var(--card);color:var(--txt3);border:1px solid var(--border)}
+.prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:4px}
+.prod-item{background:var(--card);border:1px solid var(--border);border-radius:5px;padding:7px 9px;font-size:11px;display:flex;justify-content:space-between;align-items:center;gap:5px;transition:border-color .15s}
+.prod-item:hover{border-color:var(--border2)}
+.prod-item a{color:var(--blue);text-decoration:none;font-family:var(--mono);font-size:9px;word-break:break-all}
+.prod-item a:hover{text-decoration:underline}
+.tag{font-size:8px;font-weight:700;padding:2px 6px;border-radius:3px;font-family:var(--mono);white-space:nowrap}
+.tag-ec{background:var(--blue-dim);color:var(--blue)}
+.tag-pc{background:var(--red-dim);color:var(--red)}
 
-    /* ── ANALYZER ── */
-    .analyzer-area { padding: 28px 32px; }
-    .analyzer-card {
-      background: var(--surface);
-      border: 1.5px solid var(--border);
-      border-radius: 16px;
-      padding: 28px;
-      margin-bottom: 20px;
-      box-shadow: var(--shadow-sm);
-    }
-    .analyzer-card h2 {
-      font-family: 'Syne', sans-serif;
-      font-size: 18px;
-      font-weight: 800;
-      color: var(--text);
-      margin-bottom: 6px;
-      letter-spacing: 0.3px;
-    }
-    .analyzer-card .card-sub {
-      font-size: 13px;
-      color: var(--muted);
-      margin-bottom: 20px;
-    }
-    .bookmarklet-steps {
-      background: var(--surface2);
-      border: 1.5px solid var(--border);
-      border-radius: 12px;
-      padding: 20px 24px;
-    }
-    .step-row {
-      display: flex;
-      align-items: flex-start;
-      gap: 14px;
-      padding: 10px 0;
-      border-bottom: 1px solid var(--border);
-    }
-    .step-row:last-child { border-bottom: none; }
-    .step-num {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      background: var(--kap-red);
-      color: white;
-      font-family: 'Syne', sans-serif;
-      font-size: 12px;
-      font-weight: 800;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      margin-top: 1px;
-    }
-    .step-text {
-      font-size: 13px;
-      color: var(--text2);
-      line-height: 1.6;
-    }
-    .step-text strong { color: var(--text); font-weight: 700; }
-    .drag-btn {
-      background: var(--kap-red);
-      color: white;
-      padding: 12px 24px;
-      border-radius: 10px;
-      font-family: 'Syne', sans-serif;
-      font-size: 15px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      cursor: grab;
-      margin-top: 16px;
-      transition: all 0.2s;
-      box-shadow: 0 4px 14px rgba(232,25,44,0.25);
-    }
-    .drag-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(232,25,44,0.35);
-      background: var(--kap-red-dark);
-    }
-    .drag-hint {
-      font-size: 11px;
-      color: var(--muted);
-      margin-top: 8px;
-      font-family: 'JetBrains Mono', monospace;
-    }
-
-    /* Scan results */
-    .scan-results { display: none; }
-    .scan-results.show { display: block; }
-    .scan-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-    .scan-time {
-      font-size: 11px;
-      color: var(--muted);
-      font-family: 'JetBrains Mono', monospace;
-      margin-top: 3px;
-    }
-    .scan-status {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 7px 16px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 700;
-      font-family: 'JetBrains Mono', monospace;
-    }
-    .scan-status.ON_TARGET { background: var(--green-light); color: var(--green); border: 1px solid rgba(22,163,74,0.2); }
-    .scan-status.TOO_MUCH_ECOMMERCE { background: var(--amber-light); color: var(--amber); border: 1px solid rgba(217,119,6,0.2); }
-    .scan-status.TOO_MUCH_PC { background: var(--kap-red-light); color: var(--kap-red); border: 1px solid var(--kap-red-mid); }
-    .scan-metrics {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-bottom: 20px;
-    }
-    .scan-metric {
-      background: var(--surface2);
-      border: 1.5px solid var(--border);
-      border-radius: 10px;
-      padding: 14px 18px;
-      flex: 1;
-      min-width: 100px;
-    }
-    .scan-metric .val {
-      font-family: 'Syne', sans-serif;
-      font-size: 30px;
-      font-weight: 800;
-      line-height: 1;
-      margin-bottom: 3px;
-    }
-    .scan-metric .val.ec { color: var(--ec); }
-    .scan-metric .val.pc { color: var(--kap-red); }
-    .scan-metric .val.total { color: var(--text); }
-    .scan-metric .lbl {
-      font-size: 10px;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      font-family: 'JetBrains Mono', monospace;
-    }
-    .scan-bar-wrap { margin-bottom: 10px; }
-    .scan-bar-label {
-      font-size: 10px;
-      color: var(--muted);
-      margin-bottom: 8px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      font-family: 'JetBrains Mono', monospace;
-    }
-    .scan-bar {
-      height: 24px;
-      border-radius: 8px;
-      overflow: hidden;
-      background: var(--surface3);
-      display: flex;
-      border: 1px solid var(--border);
-    }
-    .scan-bar-ec {
-      background: var(--ec);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 11px;
-      font-weight: 700;
-      font-family: 'JetBrains Mono', monospace;
-      color: white;
-      transition: width 0.6s ease;
-      white-space: nowrap;
-      overflow: hidden;
-    }
-    .scan-bar-pc {
-      background: var(--kap-red);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 11px;
-      font-weight: 700;
-      font-family: 'JetBrains Mono', monospace;
-      color: white;
-      transition: width 0.6s ease;
-      white-space: nowrap;
-      overflow: hidden;
-    }
-    .scan-bar-hint {
-      font-size: 11px;
-      color: var(--muted);
-      margin-top: 6px;
-      text-align: right;
-      font-family: 'JetBrains Mono', monospace;
-    }
-    .product-breakdown { margin-top: 24px; }
-    .breakdown-section { margin-bottom: 20px; }
-    .breakdown-title {
-      font-family: 'Syne', sans-serif;
-      font-size: 14px;
-      font-weight: 700;
-      margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .breakdown-count {
-      font-size: 11px;
-      font-family: 'JetBrains Mono', monospace;
-      padding: 2px 8px;
-      border-radius: 6px;
-      background: var(--surface2);
-      color: var(--muted);
-      border: 1px solid var(--border);
-    }
-    .product-grid-scan { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px; }
-    .product-item-scan {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 9px 12px;
-      font-size: 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-      transition: border-color 0.2s;
-    }
-    .product-item-scan:hover { border-color: var(--border2); }
-    .product-item-scan a {
-      color: var(--ec);
-      text-decoration: none;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      word-break: break-all;
-    }
-    .product-item-scan a:hover { text-decoration: underline; }
-    .tag-scan {
-      font-size: 10px;
-      font-weight: 700;
-      padding: 2px 8px;
-      border-radius: 6px;
-      white-space: nowrap;
-      font-family: 'JetBrains Mono', monospace;
-    }
-    .tag-ec { background: var(--ec-light); color: var(--ec); }
-    .tag-pc { background: var(--kap-red-light); color: var(--kap-red); }
-
-    /* ── MODAL ── */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(26,24,20,0.5);
-      backdrop-filter: blur(6px);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-    }
-    .modal-overlay.open { display: flex; }
-    .modal-box {
-      background: var(--surface);
-      border: 1.5px solid var(--border);
-      border-radius: 20px;
-      padding: 36px;
-      width: 440px;
-      max-width: 95vw;
-      position: relative;
-      box-shadow: var(--shadow-lg);
-      animation: modalIn 0.2s cubic-bezier(0.4,0,0.2,1);
-    }
-    @keyframes modalIn {
-      from { opacity: 0; transform: translateY(12px) scale(0.97); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
-    }
-    .modal-stripe {
-      height: 4px;
-      background: var(--kap-red);
-      border-radius: 4px 4px 0 0;
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-    }
-    .modal-title {
-      font-family: 'Syne', sans-serif;
-      font-size: 22px;
-      font-weight: 800;
-      color: var(--text);
-      margin-bottom: 4px;
-      letter-spacing: 0.3px;
-    }
-    .modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
-    .modal-close {
-      position: absolute;
-      top: 16px;
-      right: 16px;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      color: var(--muted);
-      font-size: 16px;
-      cursor: pointer;
-      width: 30px;
-      height: 30px;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.2s;
-    }
-    .modal-close:hover { color: var(--text); border-color: var(--border2); }
-    .modal-info {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 12px 16px;
-      font-size: 12px;
-      color: var(--text2);
-      margin-bottom: 20px;
-      line-height: 1.7;
-    }
-    .modal-info strong { color: var(--kap-red); }
-    .field-label {
-      font-size: 10px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 8px;
-      display: block;
-      font-family: 'JetBrains Mono', monospace;
-    }
-    .field-input {
-      width: 100%;
-      padding: 13px 16px;
-      background: var(--surface2);
-      border: 1.5px solid var(--border);
-      border-radius: 10px;
-      color: var(--text);
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 14px;
-      transition: border-color 0.2s;
-      margin-bottom: 20px;
-    }
-    .field-input:focus { outline: none; border-color: var(--kap-red); background: var(--surface); }
-    .btn-book {
-      width: 100%;
-      padding: 14px;
-      background: var(--kap-red);
-      color: white;
-      border: none;
-      border-radius: 10px;
-      font-family: 'Syne', sans-serif;
-      font-size: 16px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .btn-book:hover {
-      background: var(--kap-red-dark);
-      transform: translateY(-1px);
-      box-shadow: 0 6px 20px rgba(232,25,44,0.25);
-    }
-    .btn-book:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
-    .modal-detail-code {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 15px;
-      font-weight: 600;
-      background: var(--kap-red-light);
-      border: 1.5px solid var(--kap-red-mid);
-      color: var(--kap-red);
-      padding: 14px 18px;
-      border-radius: 10px;
-      margin: 14px 0;
-      word-break: break-all;
-    }
-    .detail-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 12px;
-      color: var(--muted);
-      padding: 8px 0;
-      border-bottom: 1px solid var(--border);
-      font-family: 'JetBrains Mono', monospace;
-    }
-    .detail-row:last-child { border-bottom: none; }
-    .detail-row span { color: var(--text); font-weight: 600; }
-    .btn-delete {
-      width: 100%;
-      padding: 12px;
-      margin-top: 16px;
-      background: transparent;
-      border: 1.5px solid var(--border2);
-      color: var(--text2);
-      border-radius: 10px;
-      font-family: 'Nunito', sans-serif;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .btn-delete:hover {
-      border-color: var(--kap-red);
-      color: var(--kap-red);
-      background: var(--kap-red-light);
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-      .topbar { padding: 0 16px; }
-      .tabs { padding: 0 16px; }
-      .dashboard { padding: 20px 16px; }
-      .grid-area { padding: 20px 16px; }
-      .slot-grid { grid-template-columns: repeat(4, 1fr); }
-      .analyzer-area { padding: 20px 16px; }
-    }
-  </style>
+/* MODALS */
+.overlay{position:fixed;inset:0;background:rgba(10,12,18,0.85);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:999}
+.overlay.open{display:flex}
+.modal{background:var(--panel);border:1px solid var(--border2);border-radius:12px;padding:24px;width:380px;max-width:94vw;position:relative;box-shadow:0 24px 60px rgba(0,0,0,0.6);animation:mIn .18s cubic-bezier(.4,0,.2,1)}
+@keyframes mIn{from{opacity:0;transform:translateY(8px) scale(.97)}to{opacity:1;transform:none}}
+.modal::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--red);border-radius:12px 12px 0 0}
+.modal-x{position:absolute;top:12px;right:12px;background:var(--card);border:1px solid var(--border);color:var(--txt3);font-size:12px;width:24px;height:24px;border-radius:5px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s}
+.modal-x:hover{color:var(--txt);border-color:var(--border2)}
+.modal-title{font-size:16px;font-weight:800;color:var(--txt);margin-bottom:3px}
+.modal-sub{font-size:11px;color:var(--txt3);margin-bottom:14px}
+.modal-info{background:var(--card);border:1px solid var(--border);border-radius:7px;padding:9px 12px;font-size:11px;color:var(--txt2);margin-bottom:14px;line-height:1.7}
+.modal-info strong{color:var(--red)}
+.field-lbl{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--txt3);margin-bottom:5px;display:block;font-family:var(--mono)}
+.field-inp{width:100%;padding:10px 12px;background:var(--card);border:1.5px solid var(--border);border-radius:7px;color:var(--txt);font-family:var(--mono);font-size:12px;transition:border-color .15s;margin-bottom:14px}
+.field-inp:focus{outline:none;border-color:var(--red);background:rgba(232,25,44,0.04)}
+.btn-book{width:100%;padding:11px;background:var(--red);color:white;border:none;border-radius:7px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:800;cursor:pointer;transition:all .15s;letter-spacing:0.3px}
+.btn-book:hover{background:#c5111e;transform:translateY(-1px);box-shadow:0 6px 18px rgba(232,25,44,0.3)}
+.detail-code{font-family:var(--mono);font-size:12px;font-weight:600;background:var(--red-dim);border:1px solid var(--red-mid);color:var(--red);padding:10px 14px;border-radius:7px;margin:10px 0;word-break:break-all}
+.d-row{display:flex;justify-content:space-between;font-size:10px;color:var(--txt3);padding:6px 0;border-bottom:1px solid var(--border);font-family:var(--mono)}
+.d-row:last-child{border-bottom:none}
+.d-row span{color:var(--txt);font-weight:600}
+.btn-del{width:100%;padding:9px;margin-top:12px;background:transparent;border:1px solid var(--border2);color:var(--txt3);border-radius:7px;font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s}
+.btn-del:hover{border-color:var(--red);color:var(--red);background:var(--red-dim)}
+</style>
 </head>
 <body>
 
-<!-- TOP BAR -->
 <div class="topbar">
-  <div class="topbar-logo">
-    <img src="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw" alt="Kapruka"/>
-  </div>
-  <div class="topbar-brand">
-    <div class="topbar-title">KAPRUKA</div>
-    <div class="topbar-sub">admin.portal</div>
-  </div>
-  <div class="topbar-divider"></div>
-  <div class="topbar-module">Homepage Manager</div>
+  <div class="logo-wrap"><img src="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw" alt="K"/></div>
+  <div class="brand-name">Kapruka</div>
+  <div class="brand-sep"></div>
+  <div class="brand-module">Homepage Manager</div>
   <div class="topbar-right">
-    <div class="live-badge"><div class="live-dot"></div>LIVE</div>
-    <button class="btn-reset" onclick="resetAll()">↺ Reset All</button>
+    <div class="live-pill"><div class="live-dot"></div>LIVE</div>
+    <button class="btn-reset" onclick="resetAll()">↺ Reset</button>
   </div>
 </div>
 
-<!-- TABS -->
 <div class="tabs">
-  <div class="tab active" onclick="switchTab('slot-manager')">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+  <div class="tab active" onclick="switchTab('slots')">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
     Slot Manager
   </div>
   <div class="tab" onclick="switchTab('analyzer')">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
     Homepage Analyzer
   </div>
 </div>
 
-<!-- ══════════════ SLOT MANAGER TAB ══════════════ -->
-<div class="tab-panel active" id="tab-slot-manager">
-
-  <!-- DASHBOARD -->
-  <div class="dashboard">
-    <div class="dashboard-label">// product mix dashboard</div>
-    <div class="metrics-row">
-      <div class="metric">
-        <div class="metric-val total" id="m-total">42</div>
-        <div class="metric-label">Total Slots</div>
+<!-- SLOT MANAGER -->
+<div class="tab-panel active" id="tab-slots">
+  <div class="dash-strip">
+    <div class="dash-metric"><div class="dash-val total" id="m-total">42</div><div class="dash-lbl">Total</div></div>
+    <div class="dash-metric"><div class="dash-val ec" id="m-ec">42</div><div class="dash-lbl">Ecom</div></div>
+    <div class="dash-metric"><div class="dash-val pc" id="m-pc">0</div><div class="dash-lbl">PC</div></div>
+    <div class="dash-div"></div>
+    <div class="mix-wrap">
+      <div class="mix-top">
+        <div class="mix-lbl">Product Mix</div>
+        <div id="status-chip" class="chip chip-ok">● EC 100%</div>
       </div>
-      <div class="metric">
-        <div class="metric-val ec" id="m-ec">42</div>
-        <div class="metric-label">Ecommerce</div>
+      <div class="mix-bar">
+        <div class="bar-ec" id="bar-ec" style="width:100%">100%</div>
+        <div class="bar-pc" id="bar-pc" style="width:0%"></div>
       </div>
-      <div class="metric">
-        <div class="metric-val pc" id="m-pc">0</div>
-        <div class="metric-label">PC Booked</div>
-      </div>
-      <div class="mix-card">
-        <div class="mix-card-top">
-          <div class="mix-card-label">// mix status</div>
-          <div id="status-pill" class="status-pill ok">● 100% EC</div>
-        </div>
-        <div class="ratio-bar">
-          <div class="ratio-ec" id="bar-ec" style="width:100%">100%</div>
-          <div class="ratio-pc" id="bar-pc" style="width:0%"></div>
-        </div>
-        <div class="ratio-hint">
-          <span id="ratio-ec-label" style="color:var(--ec)">EC: 100%</span>
-          <span>🎯 Target: 60 EC / 40 PC</span>
-          <span id="ratio-pc-label" style="color:var(--kap-red)">PC: 0%</span>
-        </div>
+      <div class="mix-hint">
+        <span id="lbl-ec" style="color:var(--blue)">EC: 100%</span>
+        <span>🎯 Target: 60% EC · 40% PC</span>
+        <span id="lbl-pc" style="color:var(--red)">PC: 0%</span>
       </div>
     </div>
   </div>
-
-  <!-- HOMEPAGE GRID -->
-  <div class="grid-area">
-    <div id="sections-container"></div>
-  </div>
+  <div class="grid-scroll"><div id="sections-container"></div></div>
 </div>
 
-<!-- ══════════════ ANALYZER TAB ══════════════ -->
+<!-- ANALYZER -->
 <div class="tab-panel" id="tab-analyzer">
-  <div class="analyzer-area">
-
-    <div class="analyzer-card">
-      <h2>Live Homepage Scanner</h2>
-      <div class="card-sub">Use the bookmarklet to scan kapruka.com instantly and view the product mix.</div>
-      <div class="bookmarklet-steps">
-        <div class="step-row">
-          <div class="step-num">1</div>
-          <div class="step-text">Drag the button below to your <strong>browser bookmarks bar</strong></div>
-        </div>
-        <div class="step-row">
-          <div class="step-num">2</div>
-          <div class="step-text">Navigate to <strong>kapruka.com</strong></div>
-        </div>
-        <div class="step-row">
-          <div class="step-num">3</div>
-          <div class="step-text">Click the bookmark — it runs instantly on the page</div>
-        </div>
-        <div class="step-row">
-          <div class="step-num">4</div>
-          <div class="step-text">You'll be redirected back here with full scan results</div>
-        </div>
-        <a class="drag-btn" id="bookmarklet-link" title="Drag me to your bookmarks bar">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-          Kapruka Analyzer
-        </a>
-        <div class="drag-hint">👆 Drag the button above to your bookmarks bar</div>
+  <div class="analyzer-scroll">
+    <div class="a-card">
+      <div class="a-title">📡 Live Homepage Scanner</div>
+      <div class="a-sub">Use the bookmarklet to scan kapruka.com and check product mix instantly.</div>
+      <div class="steps">
+        <div class="step"><div class="step-n">1</div><div class="step-t">Drag the button below to your <strong>browser bookmarks bar</strong></div></div>
+        <div class="step"><div class="step-n">2</div><div class="step-t">Go to <strong>kapruka.com</strong></div></div>
+        <div class="step"><div class="step-n">3</div><div class="step-t">Click the bookmark — scans instantly</div></div>
+        <div class="step"><div class="step-n">4</div><div class="step-t">Redirected back here with full results</div></div>
       </div>
+      <a class="drag-btn" id="bookmarklet-link">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Kapruka Analyzer
+      </a>
+      <div class="drag-hint">👆 Drag to bookmarks bar</div>
     </div>
-
-    <!-- SCAN RESULTS -->
-    <div class="analyzer-card scan-results" id="scan-results">
-      <div class="scan-header">
-        <div>
-          <h2>Scan Results</h2>
-          <div class="scan-time" id="scan-time"></div>
-        </div>
-        <div id="scan-status-badge" class="scan-status"></div>
+    <div class="a-card scan-results" id="scan-results">
+      <div class="scan-head">
+        <div><div class="a-title" style="margin-bottom:2px">Scan Results</div><div class="scan-time" id="scan-time"></div></div>
+        <div id="scan-badge" class="scan-badge"></div>
       </div>
-      <div class="scan-metrics">
-        <div class="scan-metric"><div class="val total" id="s-total">—</div><div class="lbl">Total</div></div>
-        <div class="scan-metric"><div class="val ec" id="s-ec">—</div><div class="lbl">Ecommerce</div></div>
-        <div class="scan-metric"><div class="val pc" id="s-pc">—</div><div class="lbl">PC Products</div></div>
+      <div class="scan-mets">
+        <div class="scan-met"><div class="v tot" id="s-total">—</div><div class="l">Total</div></div>
+        <div class="scan-met"><div class="v ec" id="s-ec">—</div><div class="l">Ecommerce</div></div>
+        <div class="scan-met"><div class="v pc" id="s-pc">—</div><div class="l">PC</div></div>
       </div>
-      <div class="scan-bar-wrap">
-        <div class="scan-bar-label">// product mix</div>
-        <div class="scan-bar">
-          <div class="scan-bar-ec" id="sbar-ec"></div>
-          <div class="scan-bar-pc" id="sbar-pc"></div>
-        </div>
-        <div class="scan-bar-hint">🎯 Target: 60% Ecommerce · 40% PC</div>
-      </div>
-      <div class="product-breakdown" id="product-breakdown"></div>
+      <div class="s-bar-lbl">// product mix</div>
+      <div class="s-bar"><div class="s-bar-ec" id="sbar-ec"></div><div class="s-bar-pc" id="sbar-pc"></div></div>
+      <div class="s-bar-hint">🎯 60% Ecommerce · 40% PC</div>
+      <div id="product-breakdown"></div>
     </div>
-
   </div>
 </div>
 
 <!-- BOOKING MODAL -->
-<div class="modal-overlay" id="modal">
-  <div class="modal-box">
-    <div class="modal-stripe"></div>
-    <button class="modal-close" onclick="closeModal()">✕</button>
+<div class="overlay" id="modal">
+  <div class="modal">
+    <button class="modal-x" onclick="closeModal()">✕</button>
     <div class="modal-title">Book PC Slot</div>
-    <div class="modal-sub" id="modal-sub">Section · Row · Position</div>
+    <div class="modal-sub" id="modal-sub"></div>
     <div class="modal-info" id="modal-info"></div>
-    <label class="field-label">Product Code</label>
-    <input class="field-input" id="modal-code" placeholder="e.g. ef_pc_12345" autocomplete="off"/>
+    <label class="field-lbl">Product Code</label>
+    <input class="field-inp" id="modal-code" placeholder="e.g. ef_pc_12345" autocomplete="off"/>
     <button class="btn-book" onclick="confirmBooking()">Confirm Booking</button>
   </div>
 </div>
 
 <!-- DETAIL MODAL -->
-<div class="modal-overlay" id="detail-modal">
-  <div class="modal-box">
-    <div class="modal-stripe"></div>
-    <button class="modal-close" onclick="closeDetailModal()">✕</button>
+<div class="overlay" id="detail-modal">
+  <div class="modal">
+    <button class="modal-x" onclick="closeDetail()">✕</button>
     <div class="modal-title">PC Booking</div>
-    <div class="modal-sub" id="detail-sub"></div>
-    <div class="modal-detail-code" id="detail-code"></div>
-    <div id="detail-rows"></div>
-    <button class="btn-delete" id="detail-delete-btn">🗑 Remove This Booking</button>
+    <div class="modal-sub" id="d-sub"></div>
+    <div class="detail-code" id="d-code"></div>
+    <div id="d-rows"></div>
+    <button class="btn-del" id="d-del-btn">🗑 Remove Booking</button>
   </div>
 </div>
 
 <script>
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwkYSadbhw_X1ujneqVy06SX4cK6PztcXf3mKXplQ7sYn9aQjzpYBIbe1VmpunbRQ2RMQ/exec';
+const APPS_SCRIPT_URL='https://script.google.com/macros/s/AKfycbwkYSadbhw_X1ujneqVy06SX4cK6PztcXf3mKXplQ7sYn9aQjzpYBIbe1VmpunbRQ2RMQ/exec';
+const SECTIONS=[
+  {id:'featured',label:'Featured Products',rows:2,cols:7},
+  {id:'new',label:'New Additions',rows:2,cols:7},
+  {id:'bestsell',label:'Best Sellers',rows:2,cols:7},
+];
+let bookings=JSON.parse(localStorage.getItem('kap_hp_bookings')||'{}');
+let pendingSlot=null,detailKey=null;
 
-  const SECTIONS = [
-    { id: 'featured',  label: 'Featured Products', rows: 2, cols: 7 },
-    { id: 'new',       label: 'New Additions',     rows: 2, cols: 7 },
-    { id: 'bestsell',  label: 'Best Sellers',      rows: 2, cols: 7 },
-  ];
-
-  let bookings = JSON.parse(localStorage.getItem('kap_hp_bookings') || '{}');
-  let pendingSlot = null;
-
-  function switchTab(id) {
-    document.querySelectorAll('.tab').forEach((t, i) => {
-      const ids = ['slot-manager', 'analyzer'];
-      t.classList.toggle('active', ids[i] === id);
-    });
-    document.querySelectorAll('.tab-panel').forEach(p => {
-      p.classList.toggle('active', p.id === 'tab-' + id);
-    });
-  }
-
-  function getMetrics() {
-    const total = SECTIONS.reduce((s, sec) => s + sec.rows * sec.cols, 0);
-    const pc = Object.keys(bookings).length;
-    const ec = total - pc;
-    const pcPct = Math.round(pc / total * 100);
-    const ecPct = 100 - pcPct;
-    return { total, pc, ec, pcPct, ecPct };
-  }
-
-  function isLocked() { return getMetrics().pcPct >= 40; }
-
-  function updateDashboard() {
-    const { total, pc, ec, pcPct, ecPct } = getMetrics();
-    document.getElementById('m-total').textContent = total;
-    document.getElementById('m-ec').textContent = ec;
-    document.getElementById('m-pc').textContent = pc;
-    document.getElementById('bar-ec').style.width = ecPct + '%';
-    document.getElementById('bar-ec').textContent = ecPct > 8 ? ecPct + '%' : '';
-    document.getElementById('bar-pc').style.width = pcPct + '%';
-    document.getElementById('bar-pc').textContent = pcPct > 5 ? pcPct + '%' : '';
-    document.getElementById('ratio-ec-label').textContent = 'EC: ' + ecPct + '%';
-    document.getElementById('ratio-pc-label').textContent = 'PC: ' + pcPct + '%';
-    const pill = document.getElementById('status-pill');
-    if (pcPct >= 40) {
-      pill.className = 'status-pill locked';
-      pill.textContent = '🔒 60/40 Achieved';
-    } else if (pcPct >= 30) {
-      pill.className = 'status-pill warn';
-      pill.textContent = '⚠ ' + pcPct + '% PC — Near Limit';
-    } else {
-      pill.className = 'status-pill ok';
-      pill.textContent = '● EC: ' + ecPct + '% · PC: ' + pcPct + '%';
-    }
-  }
-
-  function renderAll() {
-    const container = document.getElementById('sections-container');
-    container.innerHTML = '';
-    const locked = isLocked();
-    SECTIONS.forEach(sec => {
-      const block = document.createElement('div');
-      block.className = 'section-block';
-      const pcInSection = Object.values(bookings).filter(b => b.section === sec.id).length;
-      block.innerHTML = `
-        <div class="section-header">
-          <div class="section-dot"></div>
-          <div class="section-title">${sec.label}</div>
-          ${pcInSection > 0 ? `<div class="section-pc-count">${pcInSection} PC</div>` : ''}
-          <div class="section-count">${sec.rows * sec.cols} slots</div>
-        </div>
-      `;
-      for (let row = 0; row < sec.rows; row++) {
-        const rowDiv = document.createElement('div');
-        rowDiv.className = 'slot-grid';
-        for (let col = 0; col < sec.cols; col++) {
-          const key = `${sec.id}_r${row}_c${col}`;
-          const booking = bookings[key];
-          const slot = document.createElement('div');
-          const slotNum = row * sec.cols + col + 1;
-          if (booking) {
-            slot.className = 'slot slot-pc';
-            slot.innerHTML = `
-              <div class="slot-num">${slotNum}</div>
-              <div class="slot-icon">🟥</div>
-              <div class="slot-type-label pc">PC</div>
-              <div class="slot-code">${booking.code}</div>
-            `;
-            slot.onclick = () => openDetailModal(key, booking, sec.label, row + 1, col + 1);
-          } else if (locked) {
-            slot.className = 'slot slot-ec-locked';
-            slot.innerHTML = `
-              <div class="slot-num">${slotNum}</div>
-              <div class="slot-icon">🔵</div>
-              <div class="slot-type-label ec">EC</div>
-            `;
-          } else {
-            slot.className = 'slot slot-empty';
-            slot.title = 'Click to book as PC';
-            slot.innerHTML = `
-              <div class="slot-num">${slotNum}</div>
-              <div class="slot-icon" style="font-size:16px;opacity:0.25;color:var(--muted)">＋</div>
-              <div class="slot-type-label empty">EC</div>
-            `;
-            slot.onclick = () => openModal(key, sec.label, row + 1, col + 1);
-          }
-          rowDiv.appendChild(slot);
+function switchTab(id){
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['slots','analyzer'][i]===id));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.id==='tab-'+id));
+}
+function getM(){
+  const total=SECTIONS.reduce((s,sec)=>s+sec.rows*sec.cols,0);
+  const pc=Object.keys(bookings).length,ec=total-pc;
+  const pcP=Math.round(pc/total*100),ecP=100-pcP;
+  return{total,pc,ec,pcP,ecP};
+}
+function isLocked(){return getM().pcP>=40}
+function updateDash(){
+  const{total,pc,ec,pcP,ecP}=getM();
+  document.getElementById('m-total').textContent=total;
+  document.getElementById('m-ec').textContent=ec;
+  document.getElementById('m-pc').textContent=pc;
+  const be=document.getElementById('bar-ec'),bp=document.getElementById('bar-pc');
+  be.style.width=ecP+'%';be.textContent=ecP>10?ecP+'%':'';
+  bp.style.width=pcP+'%';bp.textContent=pcP>6?pcP+'%':'';
+  document.getElementById('lbl-ec').textContent='EC: '+ecP+'%';
+  document.getElementById('lbl-pc').textContent='PC: '+pcP+'%';
+  const chip=document.getElementById('status-chip');
+  if(pcP>=40){chip.className='chip chip-lock';chip.textContent='🔒 60/40 Locked';}
+  else if(pcP>=30){chip.className='chip chip-warn';chip.textContent='⚠ '+pcP+'% PC';}
+  else{chip.className='chip chip-ok';chip.textContent='● EC '+ecP+'%';}
+}
+function renderAll(){
+  const c=document.getElementById('sections-container');
+  c.innerHTML='';
+  const locked=isLocked();
+  SECTIONS.forEach(sec=>{
+    const block=document.createElement('div');
+    block.className='section-block';
+    const pcInSec=Object.values(bookings).filter(b=>b.section===sec.id).length;
+    block.innerHTML=`<div class="sec-header"><div class="sec-bar"></div><div class="sec-title">${sec.label}</div>${pcInSec>0?`<div class="sec-badge">${pcInSec} PC</div>`:''}<div class="sec-count">${sec.rows*sec.cols} slots</div></div>`;
+    for(let row=0;row<sec.rows;row++){
+      const rDiv=document.createElement('div');
+      rDiv.className='slot-grid';rDiv.style.marginBottom='4px';
+      for(let col=0;col<sec.cols;col++){
+        const key=`${sec.id}_r${row}_c${col}`,bk=bookings[key];
+        const sl=document.createElement('div');
+        const n=row*sec.cols+col+1;
+        if(bk){
+          sl.className='slot s-pc';
+          sl.innerHTML=`<div class="slot-n">${n}</div><div class="slot-ico">🟥</div><div class="slot-tag pc">PC</div><div class="slot-code">${bk.code}</div>`;
+          sl.onclick=()=>openDetail(key,bk,sec.label,row+1,col+1);
+        }else if(locked){
+          sl.className='slot s-ec';
+          sl.innerHTML=`<div class="slot-n">${n}</div><div class="slot-ico">🔵</div><div class="slot-tag ec">EC</div>`;
+        }else{
+          sl.className='slot s-empty';sl.title='Click to book as PC';
+          sl.innerHTML=`<div class="slot-n">${n}</div><div class="slot-ico" style="opacity:.2;font-size:10px">＋</div><div class="slot-tag em">EC</div>`;
+          sl.onclick=()=>openModal(key,sec.label,row+1,col+1);
         }
-        block.appendChild(rowDiv);
+        rDiv.appendChild(sl);
       }
-      container.appendChild(block);
-    });
-    updateDashboard();
-  }
-
-  let detailKey = null;
-
-  function openDetailModal(key, booking, sectionLabel, row, col) {
-    detailKey = key;
-    document.getElementById('detail-sub').textContent = `${sectionLabel} · Row ${row} · Position ${col}`;
-    document.getElementById('detail-code').textContent = '📦 ' + booking.code;
-    document.getElementById('detail-rows').innerHTML = `
-      <div class="detail-row">Section <span>${sectionLabel}</span></div>
-      <div class="detail-row">Row <span>${row}</span></div>
-      <div class="detail-row">Position <span>${col}</span></div>
-      <div class="detail-row">Booked at <span>${booking.bookedAt ? new Date(booking.bookedAt).toLocaleString() : 'N/A'}</span></div>
-    `;
-    document.getElementById('detail-delete-btn').onclick = () => {
-      if (!confirm('Remove this PC booking?')) return;
-      delete bookings[detailKey];
-      saveAndRender();
-      closeDetailModal();
-    };
-    document.getElementById('detail-modal').classList.add('open');
-  }
-
-  function closeDetailModal() {
-    document.getElementById('detail-modal').classList.remove('open');
-    detailKey = null;
-  }
-
-  document.getElementById('detail-modal').addEventListener('click', e => {
-    if (e.target === document.getElementById('detail-modal')) closeDetailModal();
-  });
-
-  function openModal(key, sectionLabel, row, col) {
-    if (isLocked()) return;
-    pendingSlot = { key, sectionLabel, row, col };
-    document.getElementById('modal-sub').textContent = `${sectionLabel} · Row ${row} · Position ${col}`;
-    document.getElementById('modal-info').innerHTML = `
-      Booking slot as <strong>PC (Product Catalogue)</strong>.<br>
-      Currently <strong>${getMetrics().pc}</strong> of 42 slots are PC (<strong>${getMetrics().pcPct}%</strong>). Max: <strong>40%</strong> (17 slots).
-    `;
-    document.getElementById('modal-code').value = '';
-    document.getElementById('modal').classList.add('open');
-    setTimeout(() => document.getElementById('modal-code').focus(), 100);
-  }
-
-  function closeModal() {
-    document.getElementById('modal').classList.remove('open');
-    pendingSlot = null;
-  }
-
-  function confirmBooking() {
-    const code = document.getElementById('modal-code').value.trim();
-    if (!code) {
-      const input = document.getElementById('modal-code');
-      input.focus();
-      input.style.borderColor = 'var(--kap-red)';
-      setTimeout(() => input.style.borderColor = '', 1200);
-      return;
+      block.appendChild(rDiv);
     }
-    if (!pendingSlot) return;
-    bookings[pendingSlot.key] = {
-      code,
-      section: pendingSlot.key.split('_r')[0],
-      row: pendingSlot.row,
-      col: pendingSlot.col,
-      bookedAt: new Date().toISOString()
-    };
-    saveAndRender();
-    closeModal();
-  }
-
-  function saveAndRender() {
-    localStorage.setItem('kap_hp_bookings', JSON.stringify(bookings));
-    renderAll();
-  }
-
-  function resetAll() {
-    if (!confirm('Remove all PC bookings and reset to 100% EC?')) return;
-    bookings = {};
-    saveAndRender();
-  }
-
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { closeModal(); closeDetailModal(); }
-    if (e.key === 'Enter' && document.getElementById('modal').classList.contains('open')) confirmBooking();
+    c.appendChild(block);
   });
-  document.getElementById('modal').addEventListener('click', e => {
-    if (e.target === document.getElementById('modal')) closeModal();
-  });
+  updateDash();
+}
+function openDetail(key,bk,secLabel,row,col){
+  detailKey=key;
+  document.getElementById('d-sub').textContent=`${secLabel} · Row ${row} · Col ${col}`;
+  document.getElementById('d-code').textContent='📦 '+bk.code;
+  document.getElementById('d-rows').innerHTML=`<div class="d-row">Section<span>${secLabel}</span></div><div class="d-row">Row<span>${row}</span></div><div class="d-row">Position<span>${col}</span></div><div class="d-row">Booked<span>${bk.bookedAt?new Date(bk.bookedAt).toLocaleString():'N/A'}</span></div>`;
+  document.getElementById('d-del-btn').onclick=()=>{if(!confirm('Remove?'))return;delete bookings[detailKey];saveAndRender();closeDetail();};
+  document.getElementById('detail-modal').classList.add('open');
+}
+function closeDetail(){document.getElementById('detail-modal').classList.remove('open');detailKey=null;}
+document.getElementById('detail-modal').addEventListener('click',e=>{if(e.target===document.getElementById('detail-modal'))closeDetail();});
+function openModal(key,secLabel,row,col){
+  if(isLocked())return;
+  pendingSlot={key,secLabel,row,col};
+  document.getElementById('modal-sub').textContent=`${secLabel} · Row ${row} · Col ${col}`;
+  const{pc,pcP}=getM();
+  document.getElementById('modal-info').innerHTML=`Booking as <strong>PC (Product Catalogue)</strong>.<br>Currently <strong>${pc}</strong> of 42 are PC (<strong>${pcP}%</strong>). Max: <strong>40%</strong> (17 slots).`;
+  document.getElementById('modal-code').value='';
+  document.getElementById('modal').classList.add('open');
+  setTimeout(()=>document.getElementById('modal-code').focus(),80);
+}
+function closeModal(){document.getElementById('modal').classList.remove('open');pendingSlot=null;}
+function confirmBooking(){
+  const code=document.getElementById('modal-code').value.trim();
+  if(!code){const inp=document.getElementById('modal-code');inp.style.borderColor='var(--red)';inp.focus();setTimeout(()=>inp.style.borderColor='',1200);return;}
+  if(!pendingSlot)return;
+  bookings[pendingSlot.key]={code,section:pendingSlot.key.split('_r')[0],row:pendingSlot.row,col:pendingSlot.col,bookedAt:new Date().toISOString()};
+  saveAndRender();closeModal();
+}
+function saveAndRender(){localStorage.setItem('kap_hp_bookings',JSON.stringify(bookings));renderAll();}
+function resetAll(){if(!confirm('Reset all PC bookings?'))return;bookings={};saveAndRender();}
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){closeModal();closeDetail();}
+  if(e.key==='Enter'&&document.getElementById('modal').classList.contains('open'))confirmBooking();
+});
+document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeModal();});
 
-  // ANALYZER BOOKMARKLET
-  const portalUrl = window.location.href.split('?')[0];
-  const bookmarkletCode = `javascript:(function(){
-    var codes=[...document.querySelectorAll('a[href*="/buyonline/"]')]
-      .map(a=>a.href.split('/').pop())
-      .filter((v,i,arr)=>arr.indexOf(v)===i);
-    if(codes.length===0){alert('No products found. Make sure you are on kapruka.com homepage.');return;}
-    var apiUrl='${APPS_SCRIPT_URL}?codes='+encodeURIComponent(codes.join(','))+'&redirect='+encodeURIComponent('${portalUrl}');
-    window.location.href=apiUrl;
-  })();`;
-  document.getElementById('bookmarklet-link').href = bookmarkletCode;
+const portalUrl=window.location.href.split('?')[0];
+const bml=`javascript:(function(){var codes=[...document.querySelectorAll('a[href*="/buyonline/"]')].map(a=>a.href.split('/').pop()).filter((v,i,arr)=>arr.indexOf(v)===i);if(codes.length===0){alert('No products found.');return;}window.location.href='${APPS_SCRIPT_URL}?codes='+encodeURIComponent(codes.join(','))+'&redirect='+encodeURIComponent('${portalUrl}');})();`;
+document.getElementById('bookmarklet-link').href=bml;
 
-  // SCAN RESULTS
-  const params = new URLSearchParams(window.location.search);
-  if (params.get('scannedAt')) {
-    switchTab('analyzer');
-    try {
-      const codes = decodeURIComponent(params.get('codes') || '').split(',').filter(Boolean);
-      const products = codes.map(c => ({
-        code: c,
-        url: 'https://www.kapruka.com/buyonline/-/kid/' + c,
-        type: c.startsWith('ef_pc_') ? 'PC' : 'Ecommerce'
-      }));
-      const data = {
-        scannedAt: params.get('scannedAt'),
-        total: parseInt(params.get('total')),
-        ecommerce: { count: parseInt(params.get('ec')), pct: parseFloat(params.get('ecPct')) },
-        pc: { count: parseInt(params.get('pc')), pct: parseFloat(params.get('pcPct')) },
-        status: params.get('status'),
-        products
-      };
-      renderScanResults(data);
-    } catch(err) { console.error('Failed to parse scan results', err); }
-  }
-
-  function renderScanResults(data) {
-    document.getElementById('scan-time').textContent =
-      'Scanned at ' + new Date(data.scannedAt).toLocaleString('en-GB', { timeZone: 'Asia/Colombo' });
-    document.getElementById('s-total').textContent = data.total;
-    document.getElementById('s-ec').textContent = data.ecommerce.count + ' (' + data.ecommerce.pct + '%)';
-    document.getElementById('s-pc').textContent = data.pc.count + ' (' + data.pc.pct + '%)';
-    const badge = document.getElementById('scan-status-badge');
-    const labels = { ON_TARGET: '✅ On Target', TOO_MUCH_ECOMMERCE: '⚠️ Too Much EC', TOO_MUCH_PC: '⚠️ Too Much PC' };
-    badge.textContent = labels[data.status] || data.status;
-    badge.className = 'scan-status ' + data.status;
-    const ep = data.ecommerce.pct, pp = data.pc.pct;
-    const ecBar = document.getElementById('sbar-ec');
-    const pcBar = document.getElementById('sbar-pc');
-    ecBar.style.width = ep + '%';
-    ecBar.textContent = ep > 8 ? ep + '%' : '';
-    pcBar.style.width = pp + '%';
-    pcBar.textContent = pp > 5 ? pp + '%' : '';
-    const ec = data.products.filter(p => p.type === 'Ecommerce');
-    const pc = data.products.filter(p => p.type === 'PC');
-    const bd = document.getElementById('product-breakdown');
-    bd.innerHTML = `
-      <div class="breakdown-section">
-        <div class="breakdown-title" style="color:var(--ec)">🔵 Ecommerce Products <span class="breakdown-count">${ec.length}</span></div>
-        <div class="product-grid-scan" id="ec-grid-scan"></div>
-      </div>
-      <div class="breakdown-section" style="margin-top:20px">
-        <div class="breakdown-title" style="color:var(--kap-red)">🟥 PC Products <span class="breakdown-count">${pc.length}</span></div>
-        <div class="product-grid-scan" id="pc-grid-scan"></div>
-      </div>
-    `;
-    ec.forEach(p => addProductItem('ec-grid-scan', p));
-    pc.forEach(p => addProductItem('pc-grid-scan', p));
-    document.getElementById('scan-results').classList.add('show');
-  }
-
-  function addProductItem(gridId, p) {
-    const grid = document.getElementById(gridId);
-    if (!grid) return;
-    const div = document.createElement('div');
-    div.className = 'product-item-scan';
-    div.innerHTML = `
-      <a href="${p.url}" target="_blank">${p.code}</a>
-      <span class="tag-scan ${p.type === 'PC' ? 'tag-pc' : 'tag-ec'}">${p.type}</span>
-    `;
-    grid.appendChild(div);
-  }
-
-  renderAll();
+const params=new URLSearchParams(window.location.search);
+if(params.get('scannedAt')){
+  switchTab('analyzer');
+  try{
+    const codes=decodeURIComponent(params.get('codes')||'').split(',').filter(Boolean);
+    const products=codes.map(c=>({code:c,url:'https://www.kapruka.com/buyonline/-/kid/'+c,type:c.startsWith('ef_pc_')?'PC':'Ecommerce'}));
+    renderScan({scannedAt:params.get('scannedAt'),total:parseInt(params.get('total')),ecommerce:{count:parseInt(params.get('ec')),pct:parseFloat(params.get('ecPct'))},pc:{count:parseInt(params.get('pc')),pct:parseFloat(params.get('pcPct'))},status:params.get('status'),products});
+  }catch(e){console.error(e);}
+}
+function renderScan(data){
+  document.getElementById('scan-time').textContent='Scanned '+new Date(data.scannedAt).toLocaleString('en-GB',{timeZone:'Asia/Colombo'});
+  document.getElementById('s-total').textContent=data.total;
+  document.getElementById('s-ec').textContent=data.ecommerce.count+' ('+data.ecommerce.pct+'%)';
+  document.getElementById('s-pc').textContent=data.pc.count+' ('+data.pc.pct+'%)';
+  const badge=document.getElementById('scan-badge');
+  badge.textContent={ON_TARGET:'✅ On Target',TOO_MUCH_ECOMMERCE:'⚠️ Too Much EC',TOO_MUCH_PC:'⚠️ Too Much PC'}[data.status]||data.status;
+  badge.className='scan-badge '+data.status;
+  const ep=data.ecommerce.pct,pp=data.pc.pct;
+  const se=document.getElementById('sbar-ec'),sp=document.getElementById('sbar-pc');
+  se.style.width=ep+'%';se.textContent=ep>8?ep+'%':'';
+  sp.style.width=pp+'%';sp.textContent=pp>5?pp+'%':'';
+  const ec=data.products.filter(p=>p.type==='Ecommerce'),pc=data.products.filter(p=>p.type==='PC');
+  document.getElementById('product-breakdown').innerHTML=`<div class="pbd-title" style="color:var(--blue)">🔵 Ecommerce <span class="pbd-count">${ec.length}</span></div><div class="prod-grid" id="ec-pgrid"></div><div class="pbd-title" style="color:var(--red);margin-top:12px">🟥 PC Products <span class="pbd-count">${pc.length}</span></div><div class="prod-grid" id="pc-pgrid"></div>`;
+  ec.forEach(p=>addProd('ec-pgrid',p));pc.forEach(p=>addProd('pc-pgrid',p));
+  document.getElementById('scan-results').classList.add('show');
+}
+function addProd(gid,p){
+  const g=document.getElementById(gid);if(!g)return;
+  const d=document.createElement('div');d.className='prod-item';
+  d.innerHTML=`<a href="${p.url}" target="_blank">${p.code}</a><span class="tag ${p.type==='PC'?'tag-pc':'tag-ec'}">${p.type}</span>`;
+  g.appendChild(d);
+}
+renderAll();
 </script>
 </body>
 </html>
