@@ -4,25 +4,37 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Homepage Slot Manager — Kapruka</title>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet"/>
   <style>
     :root {
-      --bg: #0a0a0f;
-      --surface: #12121a;
-      --surface2: #1a1a26;
-      --border: rgba(255,255,255,0.07);
-      --accent: #f5c518;
-      --accent2: #e8710a;
-      --ec: #3b82f6;
-      --pc: #f59e0b;
-      --text: #f0f0f5;
-      --muted: #6b6b80;
-      --green: #22c55e;
-      --red: #ef4444;
+      --bg: #fafaf8;
+      --surface: #ffffff;
+      --surface2: #f4f3ef;
+      --surface3: #ede9e0;
+      --border: #e5e1d8;
+      --border2: #d4cfc3;
+      --kap-red: #e8192c;
+      --kap-red-dark: #c0111f;
+      --kap-red-light: rgba(232,25,44,0.08);
+      --kap-red-mid: rgba(232,25,44,0.15);
+      --ec: #1a6ef5;
+      --ec-light: rgba(26,110,245,0.08);
+      --pc: #e8192c;
+      --pc-light: rgba(232,25,44,0.08);
+      --text: #1a1814;
+      --text2: #4a4640;
+      --muted: #9a9590;
+      --green: #16a34a;
+      --green-light: rgba(22,163,74,0.1);
+      --amber: #d97706;
+      --amber-light: rgba(217,119,6,0.1);
+      --shadow-sm: 0 1px 3px rgba(26,24,20,0.06), 0 1px 2px rgba(26,24,20,0.04);
+      --shadow-md: 0 4px 12px rgba(26,24,20,0.08), 0 2px 4px rgba(26,24,20,0.04);
+      --shadow-lg: 0 16px 40px rgba(26,24,20,0.12), 0 4px 12px rgba(26,24,20,0.06);
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: 'DM Sans', sans-serif;
+      font-family: 'Nunito', sans-serif;
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
@@ -33,17 +45,100 @@
       display: flex;
       align-items: center;
       gap: 16px;
-      padding: 18px 32px;
-      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      height: 64px;
       background: var(--surface);
+      border-bottom: 2px solid var(--kap-red);
+      box-shadow: var(--shadow-sm);
+      position: sticky;
+      top: 0;
+      z-index: 100;
     }
-    .topbar-logo { width: 36px; height: 36px; border-radius: 8px; overflow: hidden; }
+    .topbar-logo {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 2px solid var(--border);
+      flex-shrink: 0;
+    }
     .topbar-logo img { width: 100%; height: 100%; object-fit: cover; }
-    .topbar-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 2px; color: var(--accent); }
-    .topbar-sub { font-size: 12px; color: var(--muted); margin-left: 4px; }
-    .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); }
-    .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    .topbar-brand {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .topbar-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--kap-red);
+      letter-spacing: 0.5px;
+      line-height: 1;
+    }
+    .topbar-sub {
+      font-size: 11px;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 0.5px;
+    }
+    .topbar-divider {
+      width: 1px;
+      height: 32px;
+      background: var(--border);
+    }
+    .topbar-module {
+      font-family: 'Syne', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text2);
+      letter-spacing: 0.3px;
+    }
+    .topbar-right {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .live-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      background: var(--green-light);
+      border: 1px solid rgba(22,163,74,0.2);
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--green);
+      letter-spacing: 0.5px;
+    }
+    .live-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.8); } }
+    .btn-reset {
+      padding: 8px 16px;
+      background: var(--surface);
+      border: 1.5px solid var(--border2);
+      color: var(--text2);
+      border-radius: 8px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.3px;
+    }
+    .btn-reset:hover {
+      border-color: var(--kap-red);
+      color: var(--kap-red);
+      background: var(--kap-red-light);
+    }
 
     /* ── TABS ── */
     .tabs {
@@ -54,158 +149,689 @@
       padding: 0 32px;
     }
     .tab {
-      padding: 14px 24px;
+      padding: 14px 22px;
       font-size: 13px;
-      font-weight: 600;
+      font-weight: 700;
+      font-family: 'Syne', sans-serif;
       color: var(--muted);
       cursor: pointer;
-      border-bottom: 2px solid transparent;
+      border-bottom: 2.5px solid transparent;
       transition: all 0.2s;
       letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
     }
     .tab:hover { color: var(--text); }
-    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-
-    /* ── TAB PANELS ── */
+    .tab.active { color: var(--kap-red); border-bottom-color: var(--kap-red); }
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
 
     /* ── DASHBOARD ── */
     .dashboard {
-      padding: 28px 32px;
-      border-bottom: 1px solid var(--border);
+      padding: 24px 32px;
       background: var(--surface);
+      border-bottom: 1px solid var(--border);
     }
-    .dashboard-label { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-bottom: 20px; }
-    .metrics-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
-    .metric { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 18px 24px; min-width: 130px; flex: 1; }
-    .metric-val { font-family: 'Bebas Neue', sans-serif; font-size: 38px; line-height: 1; margin-bottom: 4px; }
-    .metric-val.ec { color: var(--ec); }
-    .metric-val.pc { color: var(--pc); }
-    .metric-val.total { color: var(--text); }
-    .metric-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
-    .ratio-wrap { margin-bottom: 8px; }
-    .ratio-header { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 8px; }
-    .ratio-bar { height: 28px; border-radius: 8px; overflow: hidden; background: var(--surface2); display: flex; border: 1px solid var(--border); }
-    .ratio-ec { background: var(--ec); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: white; transition: width 0.5s cubic-bezier(0.4,0,0.2,1); white-space: nowrap; overflow: hidden; }
-    .ratio-pc { background: var(--pc); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #1a1200; transition: width 0.5s cubic-bezier(0.4,0,0.2,1); white-space: nowrap; overflow: hidden; }
-    .ratio-hint { font-size: 11px; color: var(--muted); margin-top: 6px; display: flex; justify-content: space-between; }
-    .status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; letter-spacing: 0.5px; }
-    .status-pill.ok { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
-    .status-pill.warn { background: rgba(245,158,11,0.15); color: var(--pc); border: 1px solid rgba(245,158,11,0.3); }
-    .status-pill.locked { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
-
-    /* ── HOMEPAGE GRID ── */
-    .grid-area { padding: 28px 32px; }
-    .section-block { margin-bottom: 36px; }
-    .section-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
-    .section-title { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 2px; color: var(--text); }
-    .section-count { font-size: 12px; color: var(--muted); font-family: 'DM Mono', monospace; }
-    .slot-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 8px; }
-    .slot { aspect-ratio: 3/4; border-radius: 10px; border: 1.5px solid var(--border); background: var(--surface2); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; padding: 8px; text-align: center; }
-    .slot:hover:not(.slot-pc):not(.slot-locked) { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(245,197,24,0.15); }
-    .slot.slot-ec { background: rgba(59,130,246,0.08); border-color: rgba(59,130,246,0.25); cursor: default; }
-    .slot.slot-pc { background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.4); cursor: pointer; }
-    .slot.slot-empty { background: var(--surface2); border-style: dashed; }
-    .slot.slot-locked { cursor: not-allowed; opacity: 0.5; }
-    .slot-num { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--muted); position: absolute; top: 6px; left: 7px; }
-    .slot-icon { font-size: 22px; margin-bottom: 6px; }
-    .slot-type-label { font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
-    .slot-type-label.ec { color: var(--ec); }
-    .slot-type-label.pc { color: var(--pc); }
-    .slot-type-label.empty { color: var(--muted); }
-    .slot-code { font-family: 'DM Mono', monospace; font-size: 8px; color: var(--muted); margin-top: 4px; word-break: break-all; line-height: 1.3; }
-
-    /* ── ANALYZER TAB ── */
-    .analyzer-area { padding: 28px 32px; }
-    .analyzer-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-bottom: 20px; }
-    .analyzer-card h2 { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 2px; color: var(--accent); margin-bottom: 16px; }
-    .bookmarklet-box {
-      background: rgba(59,130,246,0.06);
-      border: 1.5px dashed rgba(59,130,246,0.35);
+    .dashboard-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+    .metrics-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .metric {
+      background: var(--surface2);
+      border: 1.5px solid var(--border);
       border-radius: 12px;
-      padding: 24px;
+      padding: 16px 20px;
+      min-width: 110px;
+      flex: 1;
+      transition: border-color 0.2s;
     }
-    .bookmarklet-box p { font-size: 13px; color: #9090a8; margin-bottom: 12px; line-height: 1.7; }
-    .bookmarklet-box ol { font-size: 13px; color: #9090a8; padding-left: 20px; line-height: 2.2; }
-    .bookmarklet-box ol li strong { color: var(--text); }
-    .drag-btn {
+    .metric:hover { border-color: var(--border2); }
+    .metric-val {
+      font-family: 'Syne', sans-serif;
+      font-size: 36px;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .metric-val.ec { color: var(--ec); }
+    .metric-val.pc { color: var(--kap-red); }
+    .metric-val.total { color: var(--text); }
+    .metric-label {
+      font-size: 11px;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .mix-card {
+      flex: 3;
+      min-width: 280px;
+      background: var(--surface2);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 20px;
+    }
+    .mix-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .mix-card-label {
+      font-size: 11px;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 0.3px;
+    }
+    .status-pill.ok { background: var(--green-light); color: var(--green); border: 1px solid rgba(22,163,74,0.2); }
+    .status-pill.warn { background: var(--amber-light); color: var(--amber); border: 1px solid rgba(217,119,6,0.2); }
+    .status-pill.locked { background: var(--kap-red-light); color: var(--kap-red); border: 1px solid var(--kap-red-mid); }
+    .ratio-bar {
+      height: 24px;
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--surface3);
+      display: flex;
+      border: 1px solid var(--border);
+      margin-bottom: 8px;
+    }
+    .ratio-ec {
       background: var(--ec);
-      color: #fff;
-      padding: 11px 22px;
-      border-radius: 9px;
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 16px;
-      letter-spacing: 1.5px;
-      text-decoration: none;
-      display: inline-block;
-      cursor: grab;
-      margin: 12px 0 6px;
-      transition: all 0.2s;
-      box-shadow: 0 4px 16px rgba(59,130,246,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      color: white;
+      transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+      white-space: nowrap;
+      overflow: hidden;
     }
-    .drag-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(59,130,246,0.4); }
-    .drag-hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+    .ratio-pc {
+      background: var(--kap-red);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      color: white;
+      transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .ratio-hint {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
 
-    /* Analyzer results */
+    /* ── GRID AREA ── */
+    .grid-area { padding: 28px 32px; }
+    .section-block { margin-bottom: 32px; }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--border);
+    }
+    .section-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--kap-red);
+      flex-shrink: 0;
+    }
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: 0.3px;
+    }
+    .section-count {
+      font-size: 11px;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      margin-left: auto;
+    }
+    .section-pc-count {
+      padding: 3px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--kap-red-light);
+      color: var(--kap-red);
+      border: 1px solid var(--kap-red-mid);
+    }
+
+    .slot-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .slot {
+      aspect-ratio: 3/4;
+      border-radius: 10px;
+      border: 1.5px solid var(--border);
+      background: var(--surface);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.18s;
+      position: relative;
+      overflow: hidden;
+      padding: 8px 6px;
+      text-align: center;
+      box-shadow: var(--shadow-sm);
+    }
+    .slot:hover:not(.slot-pc):not(.slot-locked):not(.slot-ec-locked) {
+      border-color: var(--kap-red);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(232,25,44,0.12);
+    }
+    .slot.slot-ec-locked {
+      background: var(--ec-light);
+      border-color: rgba(26,110,245,0.2);
+      cursor: default;
+    }
+    .slot.slot-pc {
+      background: var(--kap-red-light);
+      border-color: var(--kap-red);
+      border-width: 2px;
+    }
+    .slot.slot-pc:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(232,25,44,0.15);
+    }
+    .slot.slot-empty {
+      background: var(--surface);
+      border-style: dashed;
+      border-color: var(--border2);
+    }
+    .slot.slot-empty:hover {
+      background: var(--kap-red-light);
+    }
+    .slot-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8px;
+      color: var(--muted);
+      position: absolute;
+      top: 5px;
+      left: 6px;
+    }
+    .slot-icon { font-size: 18px; margin-bottom: 5px; line-height: 1; }
+    .slot-type-label {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .slot-type-label.ec { color: var(--ec); }
+    .slot-type-label.pc { color: var(--kap-red); }
+    .slot-type-label.empty { color: var(--muted); }
+    .slot-code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 7px;
+      color: var(--text2);
+      margin-top: 4px;
+      word-break: break-all;
+      line-height: 1.4;
+      max-width: 100%;
+    }
+
+    /* ── ANALYZER ── */
+    .analyzer-area { padding: 28px 32px; }
+    .analyzer-card {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+    .analyzer-card h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 6px;
+      letter-spacing: 0.3px;
+    }
+    .analyzer-card .card-sub {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+    .bookmarklet-steps {
+      background: var(--surface2);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 24px;
+    }
+    .step-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .step-row:last-child { border-bottom: none; }
+    .step-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--kap-red);
+      color: white;
+      font-family: 'Syne', sans-serif;
+      font-size: 12px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .step-text {
+      font-size: 13px;
+      color: var(--text2);
+      line-height: 1.6;
+    }
+    .step-text strong { color: var(--text); font-weight: 700; }
+    .drag-btn {
+      background: var(--kap-red);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-family: 'Syne', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: grab;
+      margin-top: 16px;
+      transition: all 0.2s;
+      box-shadow: 0 4px 14px rgba(232,25,44,0.25);
+    }
+    .drag-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(232,25,44,0.35);
+      background: var(--kap-red-dark);
+    }
+    .drag-hint {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 8px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Scan results */
     .scan-results { display: none; }
     .scan-results.show { display: block; }
-    .scan-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
-    .scan-time { font-size: 12px; color: var(--muted); font-family: 'DM Mono', monospace; }
-    .scan-status { display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; }
-    .scan-status.ON_TARGET { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
-    .scan-status.TOO_MUCH_ECOMMERCE { background: rgba(245,158,11,0.15); color: var(--pc); border: 1px solid rgba(245,158,11,0.3); }
-    .scan-status.TOO_MUCH_PC { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
-
-    .scan-metrics { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
-    .scan-metric { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; flex: 1; min-width: 110px; }
-    .scan-metric .val { font-family: 'Bebas Neue', sans-serif; font-size: 34px; line-height: 1; margin-bottom: 3px; }
+    .scan-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .scan-time {
+      font-size: 11px;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      margin-top: 3px;
+    }
+    .scan-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .scan-status.ON_TARGET { background: var(--green-light); color: var(--green); border: 1px solid rgba(22,163,74,0.2); }
+    .scan-status.TOO_MUCH_ECOMMERCE { background: var(--amber-light); color: var(--amber); border: 1px solid rgba(217,119,6,0.2); }
+    .scan-status.TOO_MUCH_PC { background: var(--kap-red-light); color: var(--kap-red); border: 1px solid var(--kap-red-mid); }
+    .scan-metrics {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    .scan-metric {
+      background: var(--surface2);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 18px;
+      flex: 1;
+      min-width: 100px;
+    }
+    .scan-metric .val {
+      font-family: 'Syne', sans-serif;
+      font-size: 30px;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 3px;
+    }
     .scan-metric .val.ec { color: var(--ec); }
-    .scan-metric .val.pc { color: var(--pc); }
+    .scan-metric .val.pc { color: var(--kap-red); }
     .scan-metric .val.total { color: var(--text); }
-    .scan-metric .lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
-
-    .scan-bar-wrap { margin-bottom: 8px; }
-    .scan-bar-label { font-size: 12px; color: var(--muted); margin-bottom: 8px; letter-spacing: 1px; text-transform: uppercase; font-size: 11px; }
-    .scan-bar { height: 26px; border-radius: 8px; overflow: hidden; background: var(--surface2); display: flex; border: 1px solid var(--border); }
-    .scan-bar-ec { background: var(--ec); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: white; transition: width 0.6s ease; white-space: nowrap; overflow: hidden; }
-    .scan-bar-pc { background: var(--pc); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #1a1200; transition: width 0.6s ease; white-space: nowrap; overflow: hidden; }
-    .scan-bar-hint { font-size: 11px; color: var(--muted); margin-top: 6px; text-align: right; }
-
+    .scan-metric .lbl {
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .scan-bar-wrap { margin-bottom: 10px; }
+    .scan-bar-label {
+      font-size: 10px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .scan-bar {
+      height: 24px;
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--surface3);
+      display: flex;
+      border: 1px solid var(--border);
+    }
+    .scan-bar-ec {
+      background: var(--ec);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      color: white;
+      transition: width 0.6s ease;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .scan-bar-pc {
+      background: var(--kap-red);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      color: white;
+      transition: width 0.6s ease;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .scan-bar-hint {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 6px;
+      text-align: right;
+      font-family: 'JetBrains Mono', monospace;
+    }
     .product-breakdown { margin-top: 24px; }
     .breakdown-section { margin-bottom: 20px; }
-    .breakdown-title { font-size: 13px; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
-    .breakdown-title span { font-size: 11px; font-family: 'DM Mono', monospace; padding: 2px 8px; border-radius: 6px; background: var(--surface2); color: var(--muted); }
-    .product-grid-scan { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
-    .product-item-scan { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; transition: border-color 0.2s; }
-    .product-item-scan:hover { border-color: rgba(255,255,255,0.15); }
-    .product-item-scan a { color: var(--ec); text-decoration: none; font-family: 'DM Mono', monospace; font-size: 11px; word-break: break-all; }
+    .breakdown-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .breakdown-count {
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: var(--surface2);
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+    .product-grid-scan { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px; }
+    .product-item-scan {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      transition: border-color 0.2s;
+    }
+    .product-item-scan:hover { border-color: var(--border2); }
+    .product-item-scan a {
+      color: var(--ec);
+      text-decoration: none;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      word-break: break-all;
+    }
     .product-item-scan a:hover { text-decoration: underline; }
-    .tag-scan { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 6px; white-space: nowrap; }
-    .tag-ec { background: rgba(59,130,246,0.15); color: var(--ec); }
-    .tag-pc { background: rgba(245,158,11,0.15); color: var(--pc); }
+    .tag-scan {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+      white-space: nowrap;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .tag-ec { background: var(--ec-light); color: var(--ec); }
+    .tag-pc { background: var(--kap-red-light); color: var(--kap-red); }
 
     /* ── MODAL ── */
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 1000; }
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(26,24,20,0.5);
+      backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
     .modal-overlay.open { display: flex; }
-    .modal-box { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 36px; width: 420px; max-width: 95vw; position: relative; }
-    .modal-title { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 2px; color: var(--accent); margin-bottom: 6px; }
-    .modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
-    .modal-close { position: absolute; top: 16px; right: 20px; background: none; border: none; color: var(--muted); font-size: 22px; cursor: pointer; }
-    .modal-close:hover { color: var(--text); }
-    .field-label { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; display: block; }
-    .field-input { width: 100%; padding: 13px 16px; background: var(--surface2); border: 1.5px solid var(--border); border-radius: 10px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 14px; transition: border-color 0.2s; margin-bottom: 20px; }
-    .field-input:focus { outline: none; border-color: var(--accent); }
-    .modal-info { background: var(--surface2); border-radius: 10px; padding: 14px; font-size: 12px; color: var(--muted); margin-bottom: 20px; }
-    .modal-info span { color: var(--text); font-weight: 600; }
-    .btn-book { width: 100%; padding: 14px; background: var(--accent); color: #0a0a0f; border: none; border-radius: 10px; font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 2px; cursor: pointer; transition: all 0.2s; }
-    .btn-book:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(245,197,24,0.3); }
-    .btn-book:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-    .modal-detail-code { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 500; background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.3); color: var(--pc); padding: 14px 18px; border-radius: 10px; margin: 16px 0; word-break: break-all; letter-spacing: 0.5px; }
-    .detail-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); padding: 8px 0; border-bottom: 1px solid var(--border); }
-    .detail-row span { color: var(--text); font-weight: 500; }
-    .btn-delete { width: 100%; padding: 12px; margin-top: 20px; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: var(--red); border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-    .btn-delete:hover { background: rgba(239,68,68,0.2); }
+    .modal-box {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 20px;
+      padding: 36px;
+      width: 440px;
+      max-width: 95vw;
+      position: relative;
+      box-shadow: var(--shadow-lg);
+      animation: modalIn 0.2s cubic-bezier(0.4,0,0.2,1);
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: translateY(12px) scale(0.97); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .modal-stripe {
+      height: 4px;
+      background: var(--kap-red);
+      border-radius: 4px 4px 0 0;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+    }
+    .modal-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 4px;
+      letter-spacing: 0.3px;
+    }
+    .modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+    .modal-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 16px;
+      cursor: pointer;
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    .modal-close:hover { color: var(--text); border-color: var(--border2); }
+    .modal-info {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 12px;
+      color: var(--text2);
+      margin-bottom: 20px;
+      line-height: 1.7;
+    }
+    .modal-info strong { color: var(--kap-red); }
+    .field-label {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+      display: block;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .field-input {
+      width: 100%;
+      padding: 13px 16px;
+      background: var(--surface2);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      transition: border-color 0.2s;
+      margin-bottom: 20px;
+    }
+    .field-input:focus { outline: none; border-color: var(--kap-red); background: var(--surface); }
+    .btn-book {
+      width: 100%;
+      padding: 14px;
+      background: var(--kap-red);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-family: 'Syne', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-book:hover {
+      background: var(--kap-red-dark);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(232,25,44,0.25);
+    }
+    .btn-book:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+    .modal-detail-code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 15px;
+      font-weight: 600;
+      background: var(--kap-red-light);
+      border: 1.5px solid var(--kap-red-mid);
+      color: var(--kap-red);
+      padding: 14px 18px;
+      border-radius: 10px;
+      margin: 14px 0;
+      word-break: break-all;
+    }
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--muted);
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-row span { color: var(--text); font-weight: 600; }
+    .btn-delete {
+      width: 100%;
+      padding: 12px;
+      margin-top: 16px;
+      background: transparent;
+      border: 1.5px solid var(--border2);
+      color: var(--text2);
+      border-radius: 10px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-delete:hover {
+      border-color: var(--kap-red);
+      color: var(--kap-red);
+      background: var(--kap-red-light);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .topbar { padding: 0 16px; }
+      .tabs { padding: 0 16px; }
+      .dashboard { padding: 20px 16px; }
+      .grid-area { padding: 20px 16px; }
+      .slot-grid { grid-template-columns: repeat(4, 1fr); }
+      .analyzer-area { padding: 20px 16px; }
+    }
   </style>
 </head>
 <body>
@@ -215,28 +841,36 @@
   <div class="topbar-logo">
     <img src="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw" alt="Kapruka"/>
   </div>
-  <div>
-    <div class="topbar-title">Homepage Manager</div>
-    <div class="topbar-sub">PC Admin Portal</div>
+  <div class="topbar-brand">
+    <div class="topbar-title">KAPRUKA</div>
+    <div class="topbar-sub">admin.portal</div>
   </div>
+  <div class="topbar-divider"></div>
+  <div class="topbar-module">Homepage Manager</div>
   <div class="topbar-right">
-    <div class="live-dot"></div>
-    Live
-    <button onclick="resetAll()" style="margin-left:16px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#ef4444;padding:7px 16px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.2)'" onmouseout="this.style.background='rgba(239,68,68,0.1)'">↺ Reset All</button>
+    <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+    <button class="btn-reset" onclick="resetAll()">↺ Reset All</button>
   </div>
 </div>
 
 <!-- TABS -->
 <div class="tabs">
-  <div class="tab active" onclick="switchTab('slot-manager')">🗂 Slot Manager</div>
-  <div class="tab" onclick="switchTab('analyzer')">📊 Homepage Analyzer</div>
+  <div class="tab active" onclick="switchTab('slot-manager')">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    Slot Manager
+  </div>
+  <div class="tab" onclick="switchTab('analyzer')">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    Homepage Analyzer
+  </div>
 </div>
 
 <!-- ══════════════ SLOT MANAGER TAB ══════════════ -->
 <div class="tab-panel active" id="tab-slot-manager">
+
   <!-- DASHBOARD -->
   <div class="dashboard">
-    <div class="dashboard-label">Product Mix Dashboard</div>
+    <div class="dashboard-label">// product mix dashboard</div>
     <div class="metrics-row">
       <div class="metric">
         <div class="metric-val total" id="m-total">42</div>
@@ -250,21 +884,19 @@
         <div class="metric-val pc" id="m-pc">0</div>
         <div class="metric-label">PC Booked</div>
       </div>
-      <div class="metric" style="flex:2;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-          <div class="metric-label">Mix Status</div>
-          <div id="status-pill" class="status-pill ok">● 100% EC — No PC yet</div>
+      <div class="mix-card">
+        <div class="mix-card-top">
+          <div class="mix-card-label">// mix status</div>
+          <div id="status-pill" class="status-pill ok">● 100% EC</div>
         </div>
-        <div class="ratio-wrap">
-          <div class="ratio-bar">
-            <div class="ratio-ec" id="bar-ec" style="width:100%">100%</div>
-            <div class="ratio-pc" id="bar-pc" style="width:0%"></div>
-          </div>
-          <div class="ratio-hint">
-            <span id="ratio-ec-label" style="color:var(--ec);">EC: 100%</span>
-            <span style="color:var(--muted);">🎯 Target: 60% EC / 40% PC</span>
-            <span id="ratio-pc-label" style="color:var(--pc);">PC: 0%</span>
-          </div>
+        <div class="ratio-bar">
+          <div class="ratio-ec" id="bar-ec" style="width:100%">100%</div>
+          <div class="ratio-pc" id="bar-pc" style="width:0%"></div>
+        </div>
+        <div class="ratio-hint">
+          <span id="ratio-ec-label" style="color:var(--ec)">EC: 100%</span>
+          <span>🎯 Target: 60 EC / 40 PC</span>
+          <span id="ratio-pc-label" style="color:var(--kap-red)">PC: 0%</span>
         </div>
       </div>
     </div>
@@ -280,20 +912,31 @@
 <div class="tab-panel" id="tab-analyzer">
   <div class="analyzer-area">
 
-    <!-- HOW TO SCAN -->
     <div class="analyzer-card">
-      <h2>📡 Live Homepage Scanner</h2>
-      <div class="bookmarklet-box">
-        <p>Since <strong>kapruka.com</strong> blocks iframes, use the bookmarklet below to scan the live homepage instantly:</p>
-        <ol>
-          <li>Drag the button below to your <strong>browser bookmarks bar</strong></li>
-          <li>Navigate to <strong>kapruka.com</strong></li>
-          <li>Click the bookmark — it runs instantly</li>
-          <li>You'll be redirected back here with results</li>
-        </ol>
-        <br/>
-        <a class="drag-btn" id="bookmarklet-link" title="Drag me to your bookmarks bar">📊 Kapruka Analyzer</a>
-        <p class="drag-hint">👆 Drag the button to your bookmarks bar</p>
+      <h2>Live Homepage Scanner</h2>
+      <div class="card-sub">Use the bookmarklet to scan kapruka.com instantly and view the product mix.</div>
+      <div class="bookmarklet-steps">
+        <div class="step-row">
+          <div class="step-num">1</div>
+          <div class="step-text">Drag the button below to your <strong>browser bookmarks bar</strong></div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">2</div>
+          <div class="step-text">Navigate to <strong>kapruka.com</strong></div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">3</div>
+          <div class="step-text">Click the bookmark — it runs instantly on the page</div>
+        </div>
+        <div class="step-row">
+          <div class="step-num">4</div>
+          <div class="step-text">You'll be redirected back here with full scan results</div>
+        </div>
+        <a class="drag-btn" id="bookmarklet-link" title="Drag me to your bookmarks bar">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Kapruka Analyzer
+        </a>
+        <div class="drag-hint">👆 Drag the button above to your bookmarks bar</div>
       </div>
     </div>
 
@@ -301,27 +944,24 @@
     <div class="analyzer-card scan-results" id="scan-results">
       <div class="scan-header">
         <div>
-          <h2 style="margin-bottom:4px;">📋 Scan Results</h2>
+          <h2>Scan Results</h2>
           <div class="scan-time" id="scan-time"></div>
         </div>
         <div id="scan-status-badge" class="scan-status"></div>
       </div>
-
       <div class="scan-metrics">
-        <div class="scan-metric"><div class="val total" id="s-total">—</div><div class="lbl">Total Products</div></div>
+        <div class="scan-metric"><div class="val total" id="s-total">—</div><div class="lbl">Total</div></div>
         <div class="scan-metric"><div class="val ec" id="s-ec">—</div><div class="lbl">Ecommerce</div></div>
         <div class="scan-metric"><div class="val pc" id="s-pc">—</div><div class="lbl">PC Products</div></div>
       </div>
-
       <div class="scan-bar-wrap">
-        <div class="scan-bar-label">Product Mix</div>
+        <div class="scan-bar-label">// product mix</div>
         <div class="scan-bar">
           <div class="scan-bar-ec" id="sbar-ec"></div>
           <div class="scan-bar-pc" id="sbar-pc"></div>
         </div>
-        <div class="scan-bar-hint">🎯 Target: 60% Ecommerce &nbsp;|&nbsp; 40% PC</div>
+        <div class="scan-bar-hint">🎯 Target: 60% Ecommerce · 40% PC</div>
       </div>
-
       <div class="product-breakdown" id="product-breakdown"></div>
     </div>
 
@@ -331,20 +971,22 @@
 <!-- BOOKING MODAL -->
 <div class="modal-overlay" id="modal">
   <div class="modal-box">
-    <button class="modal-close" onclick="closeModal()">×</button>
+    <div class="modal-stripe"></div>
+    <button class="modal-close" onclick="closeModal()">✕</button>
     <div class="modal-title">Book PC Slot</div>
     <div class="modal-sub" id="modal-sub">Section · Row · Position</div>
     <div class="modal-info" id="modal-info"></div>
     <label class="field-label">Product Code</label>
     <input class="field-input" id="modal-code" placeholder="e.g. ef_pc_12345" autocomplete="off"/>
-    <button class="btn-book" onclick="confirmBooking()">Book This Slot</button>
+    <button class="btn-book" onclick="confirmBooking()">Confirm Booking</button>
   </div>
 </div>
 
 <!-- DETAIL MODAL -->
 <div class="modal-overlay" id="detail-modal">
   <div class="modal-box">
-    <button class="modal-close" onclick="closeDetailModal()">×</button>
+    <div class="modal-stripe"></div>
+    <button class="modal-close" onclick="closeDetailModal()">✕</button>
     <div class="modal-title">PC Booking</div>
     <div class="modal-sub" id="detail-sub"></div>
     <div class="modal-detail-code" id="detail-code"></div>
@@ -354,14 +996,17 @@
 </div>
 
 <script>
-  // ─────────────────────────────────────────────────────────
-  //  CONFIG
-  // ─────────────────────────────────────────────────────────
   const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwkYSadbhw_X1ujneqVy06SX4cK6PztcXf3mKXplQ7sYn9aQjzpYBIbe1VmpunbRQ2RMQ/exec';
 
-  // ─────────────────────────────────────────────────────────
-  //  TABS
-  // ─────────────────────────────────────────────────────────
+  const SECTIONS = [
+    { id: 'featured',  label: 'Featured Products', rows: 2, cols: 7 },
+    { id: 'new',       label: 'New Additions',     rows: 2, cols: 7 },
+    { id: 'bestsell',  label: 'Best Sellers',      rows: 2, cols: 7 },
+  ];
+
+  let bookings = JSON.parse(localStorage.getItem('kap_hp_bookings') || '{}');
+  let pendingSlot = null;
+
   function switchTab(id) {
     document.querySelectorAll('.tab').forEach((t, i) => {
       const ids = ['slot-manager', 'analyzer'];
@@ -372,18 +1017,6 @@
     });
   }
 
-  // ─────────────────────────────────────────────────────────
-  //  SLOT MANAGER STATE
-  // ─────────────────────────────────────────────────────────
-  const SECTIONS = [
-    { id: 'featured',  label: 'Featured Products', rows: 2, cols: 7 },
-    { id: 'new',       label: 'New Additions',     rows: 2, cols: 7 },
-    { id: 'bestsell',  label: 'Best Sellers',      rows: 2, cols: 7 },
-  ];
-
-  let bookings = JSON.parse(localStorage.getItem('kap_hp_bookings') || '{}');
-  let pendingSlot = null;
-
   function getMetrics() {
     const total = SECTIONS.reduce((s, sec) => s + sec.rows * sec.cols, 0);
     const pc = Object.keys(bookings).length;
@@ -393,9 +1026,7 @@
     return { total, pc, ec, pcPct, ecPct };
   }
 
-  function isLocked() {
-    return getMetrics().pcPct >= 40;
-  }
+  function isLocked() { return getMetrics().pcPct >= 40; }
 
   function updateDashboard() {
     const { total, pc, ec, pcPct, ecPct } = getMetrics();
@@ -411,10 +1042,10 @@
     const pill = document.getElementById('status-pill');
     if (pcPct >= 40) {
       pill.className = 'status-pill locked';
-      pill.textContent = '🔒 Target Reached — 60/40 Achieved';
+      pill.textContent = '🔒 60/40 Achieved';
     } else if (pcPct >= 30) {
       pill.className = 'status-pill warn';
-      pill.textContent = '⚠ Approaching Limit — ' + pcPct + '% PC';
+      pill.textContent = '⚠ ' + pcPct + '% PC — Near Limit';
     } else {
       pill.className = 'status-pill ok';
       pill.textContent = '● EC: ' + ecPct + '% · PC: ' + pcPct + '%';
@@ -431,8 +1062,10 @@
       const pcInSection = Object.values(bookings).filter(b => b.section === sec.id).length;
       block.innerHTML = `
         <div class="section-header">
+          <div class="section-dot"></div>
           <div class="section-title">${sec.label}</div>
-          <div class="section-count">${sec.rows * sec.cols} slots · ${pcInSection} PC booked</div>
+          ${pcInSection > 0 ? `<div class="section-pc-count">${pcInSection} PC</div>` : ''}
+          <div class="section-count">${sec.rows * sec.cols} slots</div>
         </div>
       `;
       for (let row = 0; row < sec.rows; row++) {
@@ -442,20 +1075,20 @@
           const key = `${sec.id}_r${row}_c${col}`;
           const booking = bookings[key];
           const slot = document.createElement('div');
+          const slotNum = row * sec.cols + col + 1;
           if (booking) {
             slot.className = 'slot slot-pc';
             slot.innerHTML = `
-              <div class="slot-num">${row * sec.cols + col + 1}</div>
-              <div class="slot-icon">🟠</div>
+              <div class="slot-num">${slotNum}</div>
+              <div class="slot-icon">🟥</div>
               <div class="slot-type-label pc">PC</div>
               <div class="slot-code">${booking.code}</div>
             `;
             slot.onclick = () => openDetailModal(key, booking, sec.label, row + 1, col + 1);
           } else if (locked) {
-            slot.className = 'slot slot-ec';
-            slot.style.cursor = 'default';
+            slot.className = 'slot slot-ec-locked';
             slot.innerHTML = `
-              <div class="slot-num">${row * sec.cols + col + 1}</div>
+              <div class="slot-num">${slotNum}</div>
               <div class="slot-icon">🔵</div>
               <div class="slot-type-label ec">EC</div>
             `;
@@ -463,8 +1096,8 @@
             slot.className = 'slot slot-empty';
             slot.title = 'Click to book as PC';
             slot.innerHTML = `
-              <div class="slot-num">${row * sec.cols + col + 1}</div>
-              <div class="slot-icon" style="font-size:18px;opacity:0.3">+</div>
+              <div class="slot-num">${slotNum}</div>
+              <div class="slot-icon" style="font-size:16px;opacity:0.25;color:var(--muted)">＋</div>
               <div class="slot-type-label empty">EC</div>
             `;
             slot.onclick = () => openModal(key, sec.label, row + 1, col + 1);
@@ -478,9 +1111,6 @@
     updateDashboard();
   }
 
-  // ─────────────────────────────────────────────────────────
-  //  DETAIL MODAL
-  // ─────────────────────────────────────────────────────────
   let detailKey = null;
 
   function openDetailModal(key, booking, sectionLabel, row, col) {
@@ -511,18 +1141,13 @@
     if (e.target === document.getElementById('detail-modal')) closeDetailModal();
   });
 
-  // ─────────────────────────────────────────────────────────
-  //  BOOKING MODAL
-  // ─────────────────────────────────────────────────────────
   function openModal(key, sectionLabel, row, col) {
     if (isLocked()) return;
     pendingSlot = { key, sectionLabel, row, col };
     document.getElementById('modal-sub').textContent = `${sectionLabel} · Row ${row} · Position ${col}`;
     document.getElementById('modal-info').innerHTML = `
-      Booking this slot as <span>PC (Product Catalogue)</span>.<br>
-      Currently <span>${getMetrics().pc}</span> of 42 slots are PC 
-      (<span>${getMetrics().pcPct}%</span>). 
-      Max allowed: <span>40%</span> (17 slots).
+      Booking slot as <strong>PC (Product Catalogue)</strong>.<br>
+      Currently <strong>${getMetrics().pc}</strong> of 42 slots are PC (<strong>${getMetrics().pcPct}%</strong>). Max: <strong>40%</strong> (17 slots).
     `;
     document.getElementById('modal-code').value = '';
     document.getElementById('modal').classList.add('open');
@@ -537,9 +1162,10 @@
   function confirmBooking() {
     const code = document.getElementById('modal-code').value.trim();
     if (!code) {
-      document.getElementById('modal-code').focus();
-      document.getElementById('modal-code').style.borderColor = 'var(--red)';
-      setTimeout(() => document.getElementById('modal-code').style.borderColor = '', 1000);
+      const input = document.getElementById('modal-code');
+      input.focus();
+      input.style.borderColor = 'var(--kap-red)';
+      setTimeout(() => input.style.borderColor = '', 1200);
       return;
     }
     if (!pendingSlot) return;
@@ -573,11 +1199,8 @@
     if (e.target === document.getElementById('modal')) closeModal();
   });
 
-  // ─────────────────────────────────────────────────────────
-  //  ANALYZER — BOOKMARKLET
-  // ─────────────────────────────────────────────────────────
+  // ANALYZER BOOKMARKLET
   const portalUrl = window.location.href.split('?')[0];
-
   const bookmarkletCode = `javascript:(function(){
     var codes=[...document.querySelectorAll('a[href*="/buyonline/"]')]
       .map(a=>a.href.split('/').pop())
@@ -586,18 +1209,12 @@
     var apiUrl='${APPS_SCRIPT_URL}?codes='+encodeURIComponent(codes.join(','))+'&redirect='+encodeURIComponent('${portalUrl}');
     window.location.href=apiUrl;
   })();`;
-
   document.getElementById('bookmarklet-link').href = bookmarkletCode;
 
-  // ─────────────────────────────────────────────────────────
-  //  ANALYZER — RENDER RESULTS (from URL params after redirect)
-  // ─────────────────────────────────────────────────────────
+  // SCAN RESULTS
   const params = new URLSearchParams(window.location.search);
-
   if (params.get('scannedAt')) {
-    // Switch to analyzer tab automatically
     switchTab('analyzer');
-
     try {
       const codes = decodeURIComponent(params.get('codes') || '').split(',').filter(Boolean);
       const products = codes.map(c => ({
@@ -614,32 +1231,19 @@
         products
       };
       renderScanResults(data);
-    } catch(err) {
-      console.error('Failed to parse scan results', err);
-    }
+    } catch(err) { console.error('Failed to parse scan results', err); }
   }
 
   function renderScanResults(data) {
-    // Time
     document.getElementById('scan-time').textContent =
-      'Scanned at: ' + new Date(data.scannedAt).toLocaleString('en-GB', { timeZone: 'Asia/Colombo' });
-
-    // Metrics
+      'Scanned at ' + new Date(data.scannedAt).toLocaleString('en-GB', { timeZone: 'Asia/Colombo' });
     document.getElementById('s-total').textContent = data.total;
     document.getElementById('s-ec').textContent = data.ecommerce.count + ' (' + data.ecommerce.pct + '%)';
     document.getElementById('s-pc').textContent = data.pc.count + ' (' + data.pc.pct + '%)';
-
-    // Status badge
     const badge = document.getElementById('scan-status-badge');
-    const labels = {
-      ON_TARGET: '✅ On Target (60:40)',
-      TOO_MUCH_ECOMMERCE: '⚠️ Too Much Ecommerce',
-      TOO_MUCH_PC: '⚠️ Too Much PC'
-    };
+    const labels = { ON_TARGET: '✅ On Target', TOO_MUCH_ECOMMERCE: '⚠️ Too Much EC', TOO_MUCH_PC: '⚠️ Too Much PC' };
     badge.textContent = labels[data.status] || data.status;
     badge.className = 'scan-status ' + data.status;
-
-    // Bar
     const ep = data.ecommerce.pct, pp = data.pc.pct;
     const ecBar = document.getElementById('sbar-ec');
     const pcBar = document.getElementById('sbar-pc');
@@ -647,25 +1251,21 @@
     ecBar.textContent = ep > 8 ? ep + '%' : '';
     pcBar.style.width = pp + '%';
     pcBar.textContent = pp > 5 ? pp + '%' : '';
-
-    // Product breakdown
     const ec = data.products.filter(p => p.type === 'Ecommerce');
     const pc = data.products.filter(p => p.type === 'PC');
     const bd = document.getElementById('product-breakdown');
     bd.innerHTML = `
       <div class="breakdown-section">
-        <div class="breakdown-title" style="color:var(--ec);">🔵 Ecommerce Products <span>${ec.length}</span></div>
+        <div class="breakdown-title" style="color:var(--ec)">🔵 Ecommerce Products <span class="breakdown-count">${ec.length}</span></div>
         <div class="product-grid-scan" id="ec-grid-scan"></div>
       </div>
-      <div class="breakdown-section" style="margin-top:20px;">
-        <div class="breakdown-title" style="color:var(--pc);">🟠 PC Products <span>${pc.length}</span></div>
+      <div class="breakdown-section" style="margin-top:20px">
+        <div class="breakdown-title" style="color:var(--kap-red)">🟥 PC Products <span class="breakdown-count">${pc.length}</span></div>
         <div class="product-grid-scan" id="pc-grid-scan"></div>
       </div>
     `;
-
     ec.forEach(p => addProductItem('ec-grid-scan', p));
     pc.forEach(p => addProductItem('pc-grid-scan', p));
-
     document.getElementById('scan-results').classList.add('show');
   }
 
@@ -681,9 +1281,6 @@
     grid.appendChild(div);
   }
 
-  // ─────────────────────────────────────────────────────────
-  //  INIT
-  // ─────────────────────────────────────────────────────────
   renderAll();
 </script>
 </body>
