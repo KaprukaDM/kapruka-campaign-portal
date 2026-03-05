@@ -399,6 +399,7 @@
     .badge-received { background: #E3F2FD; color: #1565C0; }
     .badge-review { background: #FFF3E0; color: #E65100; }
     .badge-hold { background: #FFE082; color: #F57F00; }
+    .badge-posted { background: #B39DDB; color: #311B92; }
     .status-hold { background: #FFE082; color: #F57F00; }
     .status-posted { background: #B39DDB; color: #311B92; }
 
@@ -3061,7 +3062,15 @@
             ${slotData.assigned_to ? `<div><strong style="color:#5e3a8e;">👤 Assigned To:</strong> <span style="background:#E3F2FD;padding:5px 12px;border-radius:20px;font-weight:600;">${slotData.assigned_to}</span></div>` : ''}
             <div>
               <strong style="color:#5e3a8e;">Current Status:</strong> 
-              <span class="badge ${slotData.head_approved ? 'badge-approved' : slotData.studio_status === 'Working' ? 'badge-working' : 'badge-received'}">${slotData.approval_status || slotData.studio_status}</span>
+              <span class="badge ${
+                slotData.head_approved ? 'badge-approved' :
+                slotData.studio_status === 'Working' ? 'badge-working' :
+                slotData.studio_status === 'Submitted for Review' ? 'badge-review' :
+                (slotData.studio_status === 'Hold' || slotData.studio_status === 'On Hold') ? 'badge-hold' :
+                slotData.studio_status === 'Posted' ? 'badge-posted' :
+                (slotData.approval_status === 'Rejected by Head' || slotData.studio_status === 'Rejected by Head') ? 'badge-rejected' :
+                'badge-received'
+              }">${slotData.approval_status || slotData.studio_status}</span>
             </div>
           </div>
         </div>
