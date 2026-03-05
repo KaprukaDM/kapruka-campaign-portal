@@ -400,6 +400,7 @@
     .badge-review { background: #FFF3E0; color: #E65100; }
     .badge-hold { background: #FFE082; color: #F57F00; }
     .status-hold { background: #FFE082; color: #F57F00; }
+    .status-posted { background: #B39DDB; color: #311B92; }
 
     /* Action Buttons */
     .action-btns {
@@ -1361,6 +1362,7 @@
                   <option value="approved">Approved by Head</option>
                   <option value="rejectedhead">Rejected by Head</option>
                   <option value="approveddm">Approved by DM</option>
+                  <option value="posted">Posted</option>
                   <option value="rejecteddm">Rejected by DM</option>
                 </select>
                 <label style="color:#5e3a8e;font-weight:600;margin-right:10px;margin-left:20px;">Filter by Person:</label>
@@ -2760,6 +2762,7 @@
             if (filterValue === 'rejectedhead') return item.approval_status === 'Rejected by Head'; // NEW
             if (filterValue === 'approveddm') return item.approval_status === 'Approved by DM'; // NEW
             if (filterValue === 'rejecteddm') return item.approval_status === 'Rejected by DM'; // NEW
+            if (filterValue === 'posted') return item.studio_status === 'Posted';
             return true;
           });
         }
@@ -2905,6 +2908,8 @@
                 statusBadge = '<span class="slot-status status-review">Review</span>';
               } else if (slotData.studio_status === 'Working') {
                 statusBadge = '<span class="slot-status status-working">Working</span>';
+              } else if (slotData.studio_status === 'Posted') {
+                statusBadge = '<span class="slot-status status-posted">Posted</span>';
               } else {
                 statusBadge = '<span class="slot-status status-received">Received</span>';
               }
@@ -2951,6 +2956,8 @@
               statusBadge = '<span class="slot-status status-review">Review</span>';
             } else if (item.studio_status === 'Working') {
               statusBadge = '<span class="slot-status status-working">Working</span>';
+            } else if (item.studio_status === 'Posted') {
+              statusBadge = '<span class="slot-status status-posted">Posted</span>';
             } else {
               statusBadge = '<span class="slot-status status-received">Received</span>';
             }
@@ -3005,7 +3012,7 @@
           </div>`
         : '';
 
-      const statusOptions = ['Received', 'Working', 'Submitted for Review', 'Approved', 'Rejected by Head', 'Hold'].map(status => 
+      const statusOptions = ['Received', 'Working', 'Submitted for Review', 'Approved', 'Rejected by Head', 'Hold', 'Posted'].map(status => 
         `<option value="${status}" ${slotData.studio_status === status ? 'selected' : ''}>${status}</option>`
       ).join('');
 
