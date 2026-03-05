@@ -2895,6 +2895,8 @@
                 statusBadge = '<span class="slot-status status-empty">Empty</span>';
               } else if (slotData.approval_status === 'Approved by DM') {
                 statusBadge = '<span class="slot-status status-approved">✓ DM Approved</span>';
+              } else if (slotData.studio_status === 'Posted') {
+                statusBadge = '<span class="slot-status status-posted">Posted</span>';
               } else if (slotData.approval_status === 'Rejected by DM') {
                 statusBadge = '<span class="slot-status" style="background:#EF5350;color:white;">✗ DM Rejected</span>';
               } else if (slotData.approval_status === 'Rejected by Head') {
@@ -2909,8 +2911,6 @@
                 statusBadge = '<span class="slot-status status-review">Review</span>';
               } else if (slotData.studio_status === 'Working') {
                 statusBadge = '<span class="slot-status status-working">Working</span>';
-              } else if (slotData.studio_status === 'Posted') {
-                statusBadge = '<span class="slot-status status-posted">Posted</span>';
               } else {
                 statusBadge = '<span class="slot-status status-received">Received</span>';
               }
@@ -2943,6 +2943,8 @@
             let statusBadge = '';
             if (item.approval_status === 'Approved by DM') {
               statusBadge = '<span class="slot-status status-approved">✓ DM Approved</span>';
+            } else if (item.studio_status === 'Posted') {
+              statusBadge = '<span class="slot-status status-posted">Posted</span>';
             } else if (item.approval_status === 'Rejected by DM') {
               statusBadge = '<span class="slot-status" style="background:#EF5350;color:white;">✗ DM Rejected</span>';
             } else if (item.approval_status === 'Rejected by Head') {
@@ -2957,8 +2959,6 @@
               statusBadge = '<span class="slot-status status-review">Review</span>';
             } else if (item.studio_status === 'Working') {
               statusBadge = '<span class="slot-status status-working">Working</span>';
-            } else if (item.studio_status === 'Posted') {
-              statusBadge = '<span class="slot-status status-posted">Posted</span>';
             } else {
               statusBadge = '<span class="slot-status status-received">Received</span>';
             }
