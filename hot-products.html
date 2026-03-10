@@ -15,23 +15,14 @@
       padding: 40px 20px;
     }
     .container { max-width: 1400px; margin: 0 auto; }
-    .header {
-      text-align: center;
-      margin-bottom: 40px;
-    }
+    .header { text-align: center; margin-bottom: 40px; }
     .kapruka-logo {
-      width: 100px;
-      height: 100px;
+      width: 100px; height: 100px;
       margin: 0 auto 20px;
-      border-radius: 50%;
-      overflow: hidden;
+      border-radius: 50%; overflow: hidden;
       box-shadow: 0 15px 50px rgba(0,0,0,0.5);
     }
-    .kapruka-logo img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
+    .kapruka-logo img { width: 100%; height: 100%; object-fit: cover; }
     h1 {
       font-family: 'Playfair Display', serif;
       font-size: 42px;
@@ -42,59 +33,38 @@
     }
     .subtitle {
       color: rgba(255,255,255,0.8);
-      font-size: 14px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
+      font-size: 14px; letter-spacing: 2px; text-transform: uppercase;
     }
     .back-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: rgba(255,255,255,0.1);
-      color: white;
-      padding: 12px 24px;
-      border-radius: 12px;
-      text-decoration: none;
-      font-weight: 600;
-      transition: all 0.3s;
-      margin-bottom: 30px;
-      border: 2px solid rgba(255,255,255,0.2);
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.1); color: white;
+      padding: 12px 24px; border-radius: 12px;
+      text-decoration: none; font-weight: 600; transition: all 0.3s;
+      margin-bottom: 30px; border: 2px solid rgba(255,255,255,0.2);
     }
     .back-btn:hover {
-      background: rgba(255,215,0,0.2);
-      border-color: #FFD700;
+      background: rgba(255,215,0,0.2); border-color: #FFD700;
       transform: translateX(-5px);
     }
     .card {
       background: rgba(255,255,255,0.98);
-      padding: 35px;
-      border-radius: 20px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-      margin-bottom: 30px;
+      padding: 35px; border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3); margin-bottom: 30px;
     }
     .card h2 {
       font-family: 'Playfair Display', serif;
-      color: #5e3a8e;
-      font-size: 28px;
-      margin-bottom: 20px;
+      color: #5e3a8e; font-size: 28px; margin-bottom: 20px;
     }
     .category-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 15px;
-      margin-bottom: 30px;
+      gap: 15px; margin-bottom: 10px;
     }
     .category-btn {
-      padding: 20px;
+      padding: 18px 14px;
       border: 3px solid #e0e0e0;
-      border-radius: 12px;
-      background: white;
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 15px;
-      color: #666;
-      text-align: center;
-      transition: all 0.3s;
+      border-radius: 12px; background: white;
+      cursor: pointer; text-align: center; transition: all 0.3s;
     }
     .category-btn:hover {
       border-color: #FFD700;
@@ -103,165 +73,130 @@
     }
     .category-btn.selected {
       background: linear-gradient(135deg, #5e3a8e, #3d2461);
-      color: white;
       border-color: #5e3a8e;
       box-shadow: 0 10px 30px rgba(94,58,142,0.4);
     }
+    .category-btn .cat-name {
+      font-size: 15px; font-weight: 700;
+      color: #333; margin-bottom: 12px;
+    }
+    .category-btn.selected .cat-name { color: #fff; }
+    .cat-badges {
+      display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;
+    }
+    .cat-badge {
+      padding: 4px 10px; border-radius: 20px;
+      font-size: 12px; font-weight: 700;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .cat-badge.suggested {
+      background: #f0e6ff; color: #5e3a8e;
+      border: 1px solid #c9a9f5;
+    }
+    .cat-badge.fulfilled {
+      background: #e6f9ed; color: #2e7d4f;
+      border: 1px solid #a0dbb8;
+    }
+    .category-btn.selected .cat-badge.suggested {
+      background: rgba(255,255,255,0.15); color: #FFD700;
+      border-color: rgba(255,215,0,0.4);
+    }
+    .category-btn.selected .cat-badge.fulfilled {
+      background: rgba(255,255,255,0.15); color: #90EE90;
+      border-color: rgba(144,238,144,0.4);
+    }
+    .cat-counts-loading {
+      display: inline-block; width: 30px; height: 10px;
+      background: linear-gradient(90deg, #e0e0e0 25%, #f5f5f5 50%, #e0e0e0 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.2s infinite;
+      border-radius: 4px;
+    }
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
     .stats-bar {
-      display: flex;
-      gap: 20px;
-      padding: 20px;
+      display: flex; gap: 20px; padding: 20px;
       background: linear-gradient(135deg, #5e3a8e, #3d2461);
-      border-radius: 12px;
-      margin-bottom: 25px;
-      color: white;
-      flex-wrap: wrap;
+      border-radius: 12px; margin-bottom: 25px; color: white; flex-wrap: wrap;
     }
-    .stat {
-      flex: 1;
-      min-width: 150px;
-    }
+    .stat { flex: 1; min-width: 150px; }
     .stat-label {
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      opacity: 0.8;
-      margin-bottom: 5px;
+      font-size: 12px; text-transform: uppercase;
+      letter-spacing: 1px; opacity: 0.8; margin-bottom: 5px;
     }
     .stat-value {
-      font-size: 28px;
-      font-weight: 700;
+      font-size: 28px; font-weight: 700;
       font-family: 'Playfair Display', serif;
     }
-    .dashboard-section {
-      display: none;
-    }
-    .dashboard-section.active {
-      display: block;
-    }
+    .dashboard-section { display: none; }
+    .dashboard-section.active { display: block; }
     .products-table {
-      width: 100%;
-      border-collapse: collapse;
-      background: white;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+      width: 100%; border-collapse: collapse;
+      background: white; border-radius: 12px;
+      overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.05);
     }
     .products-table th {
       background: linear-gradient(135deg, #5e3a8e, #3d2461);
-      color: white;
-      padding: 16px 12px;
-      text-align: left;
-      font-weight: 700;
-      font-size: 13px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+      color: white; padding: 16px 12px; text-align: left;
+      font-weight: 700; font-size: 13px;
+      text-transform: uppercase; letter-spacing: 0.5px;
     }
     .products-table td {
-      padding: 16px 12px;
-      border-bottom: 1px solid #f0f0f0;
-      font-size: 14px;
-      color: #333;
+      padding: 16px 12px; border-bottom: 1px solid #f0f0f0;
+      font-size: 14px; color: #333;
     }
-    .products-table tr:hover {
-      background: #f9f9f9;
-    }
-    .products-table tr:last-child td {
-      border-bottom: none;
-    }
+    .products-table tr:hover { background: #f9f9f9; }
+    .products-table tr:last-child td { border-bottom: none; }
     .product-link {
-      color: #5e3a8e;
-      text-decoration: none;
-      font-weight: 600;
-      transition: all 0.3s;
+      color: #5e3a8e; text-decoration: none;
+      font-weight: 600; transition: all 0.3s;
     }
-    .product-link:hover {
-      color: #FFD700;
-      text-decoration: underline;
-    }
-    .checkbox-cell {
-      text-align: center;
-    }
+    .product-link:hover { color: #FFD700; text-decoration: underline; }
+    .checkbox-cell { text-align: center; }
     input[type="checkbox"] {
-      width: 20px;
-      height: 20px;
-      cursor: pointer;
-      accent-color: #5e3a8e;
+      width: 20px; height: 20px;
+      cursor: pointer; accent-color: #5e3a8e;
     }
     input[type="text"] {
-      width: 100%;
-      padding: 8px 12px;
-      border: 2px solid #e8e8e8;
-      border-radius: 8px;
-      font-size: 13px;
-      font-family: 'Inter', sans-serif;
-      transition: all 0.3s;
+      width: 100%; padding: 8px 12px;
+      border: 2px solid #e8e8e8; border-radius: 8px;
+      font-size: 13px; font-family: 'Inter', sans-serif; transition: all 0.3s;
     }
     input[type="text"]:focus {
-      outline: none;
-      border-color: #FFD700;
+      outline: none; border-color: #FFD700;
       box-shadow: 0 0 0 3px rgba(255,215,0,0.1);
     }
-    input[type="text"]:disabled {
-      background: #f5f5f5;
-      cursor: not-allowed;
-    }
+    input[type="text"]:disabled { background: #f5f5f5; cursor: not-allowed; }
     .loading {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
       background: rgba(0,0,0,0.85);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
+      display: none; align-items: center; justify-content: center; z-index: 9999;
     }
     .spinner {
-      width: 60px;
-      height: 60px;
+      width: 60px; height: 60px;
       border: 5px solid rgba(255,215,0,0.3);
       border-top-color: #FFD700;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
+      border-radius: 50%; animation: spin 1s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
     .empty-state {
-      text-align: center;
-      padding: 80px 20px;
+      text-align: center; padding: 80px 20px;
       color: rgba(255,255,255,0.7);
     }
-    .empty-state .icon {
-      font-size: 80px;
-      margin-bottom: 20px;
-    }
+    .empty-state .icon { font-size: 80px; margin-bottom: 20px; }
     .empty-state h3 {
       font-family: 'Playfair Display', serif;
-      font-size: 28px;
-      color: white;
-      margin-bottom: 15px;
+      font-size: 28px; color: white; margin-bottom: 15px;
     }
-    .no-products {
-      text-align: center;
-      padding: 60px 20px;
-      color: #999;
-    }
-    .no-products .icon {
-      font-size: 64px;
-      margin-bottom: 20px;
-      opacity: 0.3;
-    }
+    .no-products { text-align: center; padding: 60px 20px; color: #999; }
+    .no-products .icon { font-size: 64px; margin-bottom: 20px; opacity: 0.3; }
     .save-status {
-      display: none;
-      position: fixed;
-      bottom: 30px;
-      right: 30px;
-      background: #4CAF50;
-      color: white;
-      padding: 15px 25px;
-      border-radius: 12px;
-      font-weight: 600;
+      display: none; position: fixed;
+      bottom: 30px; right: 30px;
+      background: #4CAF50; color: white;
+      padding: 15px 25px; border-radius: 12px; font-weight: 600;
       box-shadow: 0 8px 25px rgba(76,175,80,0.4);
       animation: slideIn 0.3s ease-out;
     }
@@ -270,28 +205,16 @@
       to { transform: translateY(0); opacity: 1; }
     }
     .sales-count {
-      color: #FFD700;
-      background: #5e3a8e;
-      padding: 4px 10px;
-      border-radius: 8px;
-      font-weight: 700;
-      font-size: 12px;
+      color: #FFD700; background: #5e3a8e;
+      padding: 4px 10px; border-radius: 8px;
+      font-weight: 700; font-size: 12px;
     }
     @media (max-width: 768px) {
       h1 { font-size: 28px; }
-      .category-grid {
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      }
-      .stats-bar {
-        flex-direction: column;
-      }
-      .products-table {
-        font-size: 11px;
-      }
-      .products-table th,
-      .products-table td {
-        padding: 10px 8px;
-      }
+      .category-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+      .stats-bar { flex-direction: column; }
+      .products-table { font-size: 11px; }
+      .products-table th, .products-table td { padding: 10px 8px; }
     }
   </style>
 </head>
@@ -300,9 +223,7 @@
   <div class="save-status" id="saveStatus">✓ Saved Successfully!</div>
 
   <div class="container">
-    <a href="index.html" class="back-btn">
-      ← Back to Home
-    </a>
+    <a href="index.html" class="back-btn">← Back to Home</a>
 
     <div class="header">
       <div class="kapruka-logo">
@@ -329,7 +250,6 @@
 
     <!-- Dashboard Section -->
     <div id="dashboardSection" class="dashboard-section">
-      <!-- Stats Bar -->
       <div class="stats-bar">
         <div class="stat">
           <div class="stat-label">Total Products</div>
@@ -345,7 +265,6 @@
         </div>
       </div>
 
-      <!-- Products Table -->
       <div class="card">
         <h2>📦 Product Suggestions</h2>
         <div style="overflow-x: auto;">
@@ -365,55 +284,39 @@
           </table>
         </div>
       </div>
-
-      <!-- No Products State -->
-      <div id="noProducts" class="card" style="display:none;">
-        <div class="no-products">
-          <div class="icon">📭</div>
-          <h3 style="color:#999;margin-bottom:10px;">No Products Yet</h3>
-          <p>No products have been added to this category yet.</p>
-        </div>
-      </div>
     </div>
   </div>
 
   <!-- Load shared API (includes CATEGORIES) -->
   <script src="js/supabase-api.js"></script>
   <script>
-    // Use shared CATEGORIES from supabase-api.js as the source of truth
     const PRODUCT_CATEGORIES = Array.isArray(CATEGORIES) ? [...new Set(CATEGORIES)] : [];
 
     let selectedCategory = null;
     let currentProducts = [];
+    let categoryCountMap = {}; // { CategoryName: { total: 0, listed: 0 } }
 
-    function showLoading() {
-      document.getElementById('loading').style.display = 'flex';
-    }
-
-    function hideLoading() {
-      document.getElementById('loading').style.display = 'none';
-    }
+    function showLoading() { document.getElementById('loading').style.display = 'flex'; }
+    function hideLoading() { document.getElementById('loading').style.display = 'none'; }
 
     function showSaveStatus() {
       const status = document.getElementById('saveStatus');
       status.style.display = 'block';
-      setTimeout(() => {
-        status.style.display = 'none';
-      }, 2000);
+      setTimeout(() => status.style.display = 'none', 2000);
     }
 
     function extractProductName(url) {
       try {
         const urlObj = new URL(url);
-        const pathname = urlObj.pathname;
-        const parts = pathname.split('/').filter(p => p);
-        const lastPart = parts[parts.length - 1];
-        return lastPart.replace(/-/g, ' ').replace(/\.html?$/i, '').substring(0, 50);
-      } catch {
-        return 'Product Link';
-      }
+        const parts = urlObj.pathname.split('/').filter(p => p);
+        return parts[parts.length - 1]
+          .replace(/-/g, ' ')
+          .replace(/\.html?$/i, '')
+          .substring(0, 50);
+      } catch { return 'Product Link'; }
     }
 
+    // Render skeleton buttons immediately, then fill counts async
     function displayCategories() {
       const grid = document.getElementById('categoryGrid');
       grid.innerHTML = '';
@@ -423,21 +326,66 @@
         return;
       }
 
+      // Render buttons with shimmer placeholders first
       PRODUCT_CATEGORIES.forEach(cat => {
         const btn = document.createElement('div');
         btn.className = 'category-btn';
-        btn.textContent = cat;
+        btn.id = `cat-btn-${CSS.escape(cat)}`;
+        btn.innerHTML = `
+          <div class="cat-name">${cat}</div>
+          <div class="cat-badges">
+            <span class="cat-badge suggested" id="badge-total-${CSS.escape(cat)}">
+              📦 <span class="cat-counts-loading"></span>
+            </span>
+            <span class="cat-badge fulfilled" id="badge-listed-${CSS.escape(cat)}">
+              ✅ <span class="cat-counts-loading"></span>
+            </span>
+          </div>
+        `;
         btn.onclick = () => selectCategory(cat);
         grid.appendChild(btn);
       });
+
+      // Load all category counts in parallel
+      loadAllCategoryCounts();
+    }
+
+    async function loadAllCategoryCounts() {
+      try {
+        // Fetch all products across all categories in parallel
+        const results = await Promise.all(
+          PRODUCT_CATEGORIES.map(cat =>
+            getHotProductsByCategory(cat)
+              .then(products => ({ cat, total: products.length, listed: products.filter(p => p.listed).length }))
+              .catch(() => ({ cat, total: 0, listed: 0 }))
+          )
+        );
+
+        results.forEach(({ cat, total, listed }) => {
+          categoryCountMap[cat] = { total, listed };
+          updateCategoryBadge(cat, total, listed);
+        });
+      } catch (err) {
+        console.error('Error loading category counts:', err);
+      }
+    }
+
+    function updateCategoryBadge(cat, total, listed) {
+      const escapedCat = CSS.escape(cat);
+      const totalBadge = document.getElementById(`badge-total-${escapedCat}`);
+      const listedBadge = document.getElementById(`badge-listed-${escapedCat}`);
+      if (totalBadge) totalBadge.innerHTML = `📦 ${total}`;
+      if (listedBadge) listedBadge.innerHTML = `✅ ${listed}`;
     }
 
     async function selectCategory(category) {
       selectedCategory = category;
 
       document.querySelectorAll('.category-btn').forEach(b => {
-        b.classList.toggle('selected', b.textContent === category);
+        b.classList.remove('selected');
       });
+      const btn = document.getElementById(`cat-btn-${CSS.escape(category)}`);
+      if (btn) btn.classList.add('selected');
 
       document.getElementById('emptyState').style.display = 'none';
 
@@ -455,13 +403,11 @@
 
     function displayProducts(products, category) {
       currentProducts = products;
-
       document.getElementById('dashboardSection').classList.add('active');
       document.getElementById('currentCategory').textContent = category;
 
       const totalCount = products.length;
       const listedCount = products.filter(p => p.listed).length;
-
       document.getElementById('totalProducts').textContent = totalCount;
       document.getElementById('listedProducts').textContent = listedCount;
 
@@ -474,26 +420,21 @@
 
       tbody.innerHTML = products.map(product => {
         const productName = extractProductName(product.product_link);
-
         return `
           <tr data-id="${product.id}">
             <td style="font-weight:600;color:#333;">${productName}</td>
-            <td>
-              <a href="${product.product_link}" target="_blank" class="product-link">View →</a>
-            </td>
-            <td>
-              <span class="sales-count">${product.sales_count || 0}</span>
-            </td>
+            <td><a href="${product.product_link}" target="_blank" class="product-link">View →</a></td>
+            <td><span class="sales-count">${product.sales_count || 0}</span></td>
             <td class="checkbox-cell">
-              <input type="checkbox" 
-                     ${product.listed ? 'checked' : ''} 
+              <input type="checkbox"
+                     ${product.listed ? 'checked' : ''}
                      onchange="updateListed(${product.id}, this.checked)"
                      id="listed-${product.id}">
             </td>
             <td>
-              <input type="text" 
-                     value="${product.kapruka_link || ''}" 
-                     placeholder="Enter Kapruka link..." 
+              <input type="text"
+                     value="${product.kapruka_link || ''}"
+                     placeholder="Enter Kapruka link..."
                      onblur="updateKaprukaLink(${product.id}, this.value)"
                      ${!product.listed ? 'disabled' : ''}
                      id="link-${product.id}">
@@ -515,10 +456,21 @@
           await updateHotProduct(productId, { kapruka_link: '' });
         }
 
-        const listedCount = currentProducts.filter(p =>
-          p.id === productId ? isListed : p.listed
-        ).length;
-        document.getElementById('listedProducts').textContent = listedCount;
+        // Update local state
+        const product = currentProducts.find(p => p.id === productId);
+        if (product) product.listed = isListed;
+
+        const newListedCount = currentProducts.filter(p => p.listed).length;
+        document.getElementById('listedProducts').textContent = newListedCount;
+
+        // 🆕 Refresh category badge counts live
+        if (selectedCategory) {
+          categoryCountMap[selectedCategory] = {
+            total: currentProducts.length,
+            listed: newListedCount
+          };
+          updateCategoryBadge(selectedCategory, currentProducts.length, newListedCount);
+        }
 
         showSaveStatus();
       } catch (error) {
