@@ -748,7 +748,7 @@ async function deleteAllBookings() {
   try {
     // Delete all rows — use a filter that matches everything
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/${TABLE}?id=neq.00000000-0000-0000-0000-000000000000`,
+      `${SUPABASE_URL}/rest/v1/${TABLE}?slot_key=neq.__none__`,
       { method: 'DELETE', headers: sbHeaders() }
     );
     if (!res.ok) throw new Error('HTTP ' + res.status);
