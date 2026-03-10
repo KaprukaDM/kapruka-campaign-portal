@@ -6,11 +6,6 @@
 <title>Homepage Slot Manager — Kapruka</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
-/* ═══════════════════════════════════════════════════════════════
-   KAPRUKA CAMPAIGN PORTAL - SHARED STYLES
-   Apple-inspired design, clean and minimal
-   ═══════════════════════════════════════════════════════════════ */
-
 *,*::before,*::after { margin:0; padding:0; box-sizing:border-box; }
 
 body {
@@ -20,10 +15,6 @@ body {
   padding: 40px 20px;
   -webkit-font-smoothing: antialiased;
 }
-
-/* ═══════════════════════════════════════════════════════════════
-   PAGE HEADER
-   ═══════════════════════════════════════════════════════════════ */
 
 .page-container { max-width: 1100px; margin: 0 auto; }
 
@@ -38,15 +29,10 @@ body {
   align-items: center;
 }
 
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
+.header-left { display: flex; align-items: center; gap: 20px; }
 
 .header-logo {
-  width: 50px;
-  height: 50px;
+  width: 50px; height: 50px;
   border-radius: 50%;
   overflow: hidden;
   box-shadow: 0 4px 15px rgba(94,58,142,0.25);
@@ -61,40 +47,72 @@ body {
   letter-spacing: -0.5px;
 }
 
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
+.header-right { display: flex; align-items: center; gap: 10px; }
 
 .live-pill {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  display: flex; align-items: center; gap: 6px;
   padding: 6px 14px;
-  background: #E8F5E9;
-  border: 1px solid #A5D6A7;
+  background: #E8F5E9; border: 1px solid #A5D6A7;
   border-radius: 20px;
-  font-size: 11px;
-  font-weight: 700;
-  color: #2E7D32;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
+  font-size: 11px; font-weight: 700; color: #2E7D32;
+  letter-spacing: 0.5px; text-transform: uppercase;
 }
 
 .live-dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
+  width: 6px; height: 6px; border-radius: 50%;
   background: #2E7D32;
   animation: blink 2s infinite;
 }
 
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
-/* ═══════════════════════════════════════════════════════════════
-   TABS
-   ═══════════════════════════════════════════════════════════════ */
+/* LOADING OVERLAY */
+.loading-bar {
+  position: fixed;
+  top: 0; left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #5e3a8e, #c9b8f0, #5e3a8e);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite;
+  z-index: 99999;
+  transition: width 0.3s ease;
+  display: none;
+}
 
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+.loading-bar.show { display: block; width: 100%; }
+
+/* SYNC STATUS */
+.sync-badge {
+  display: flex; align-items: center; gap: 5px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 11px; font-weight: 600;
+  border: 1px solid;
+  transition: all 0.3s;
+}
+
+.sync-badge.syncing { background: #FFF8E1; border-color: #FFE082; color: #F57F17; }
+.sync-badge.synced  { background: #E8F5E9; border-color: #A5D6A7; color: #2E7D32; }
+.sync-badge.error   { background: #FCE4EC; border-color: #EF9A9A; color: #c62828; }
+
+.sync-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: currentColor;
+}
+
+.sync-dot.spin {
+  animation: rotateDot 1s linear infinite;
+}
+
+@keyframes rotateDot {
+  0%   { transform: scale(1); opacity: 1; }
+  50%  { transform: scale(0.4); opacity: 0.4; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* TABS */
 .tabs-card {
   background: white;
   border-radius: 16px;
@@ -112,15 +130,12 @@ body {
 
 .tab {
   padding: 14px 18px;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 13px; font-weight: 600;
   color: #6e6e73;
   cursor: pointer;
   border-bottom: 2px solid transparent;
   transition: all .2s;
-  display: flex;
-  align-items: center;
-  gap: 7px;
+  display: flex; align-items: center; gap: 7px;
 }
 
 .tab:hover { color: #5e3a8e; }
@@ -129,89 +144,48 @@ body {
 .tab-panel { display: none; }
 .tab-panel.active { display: block; }
 
-/* ═══════════════════════════════════════════════════════════════
-   DASHBOARD STRIP
-   ═══════════════════════════════════════════════════════════════ */
-
+/* DASHBOARD STRIP */
 .dash-strip {
   padding: 20px 25px;
   background: #fafafa;
   border-bottom: 1px solid #f0f0f0;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
 }
 
 .dash-metric {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  display: flex; flex-direction: column; gap: 2px;
   padding: 12px 18px;
-  background: white;
-  border: 1px solid #e8e8ea;
-  border-radius: 12px;
-  min-width: 80px;
+  background: white; border: 1px solid #e8e8ea;
+  border-radius: 12px; min-width: 80px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
-.dash-val {
-  font-size: 26px;
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: -0.5px;
-}
-
+.dash-val { font-size: 26px; font-weight: 700; line-height: 1; letter-spacing: -0.5px; }
 .dash-val.total { color: #1d1d1f; }
-.dash-val.ec { color: #5e3a8e; }
-.dash-val.pc { color: #d32f2f; }
+.dash-val.ec    { color: #5e3a8e; }
+.dash-val.pc    { color: #d32f2f; }
 
 .dash-lbl {
-  font-size: 10px;
-  font-weight: 600;
-  color: #6e6e73;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  margin-top: 2px;
+  font-size: 10px; font-weight: 600;
+  color: #6e6e73; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 2px;
 }
 
 .dash-div { width: 1px; height: 44px; background: #e8e8ea; flex-shrink: 0; }
 
 .mix-wrap { flex: 1; min-width: 200px; }
 
-.mix-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 7px;
-}
+.mix-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px; }
 
-.mix-lbl {
-  font-size: 11px;
-  font-weight: 600;
-  color: #6e6e73;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
+.mix-lbl { font-size: 11px; font-weight: 600; color: #6e6e73; text-transform: uppercase; letter-spacing: 1px; }
 
-.chip {
-  font-size: 11px;
-  font-weight: 600;
-  padding: 4px 11px;
-  border-radius: 20px;
-}
-
-.chip-ok  { background: #E8F5E9; color: #2E7D32; border: 1px solid #A5D6A7; }
-.chip-warn{ background: #FFF8E1; color: #F57F17; border: 1px solid #FFE082; }
-.chip-lock{ background: #FCE4EC; color: #c62828; border: 1px solid #EF9A9A; }
+.chip { font-size: 11px; font-weight: 600; padding: 4px 11px; border-radius: 20px; }
+.chip-ok   { background: #E8F5E9; color: #2E7D32; border: 1px solid #A5D6A7; }
+.chip-warn { background: #FFF8E1; color: #F57F17; border: 1px solid #FFE082; }
+.chip-lock { background: #FCE4EC; color: #c62828; border: 1px solid #EF9A9A; }
 
 .mix-bar {
-  height: 18px;
-  border-radius: 6px;
-  overflow: hidden;
-  background: #f0f0f5;
-  display: flex;
-  border: 1px solid #e8e8ea;
+  height: 18px; border-radius: 6px; overflow: hidden;
+  background: #f0f0f5; display: flex; border: 1px solid #e8e8ea;
 }
 
 .bar-ec {
@@ -230,444 +204,189 @@ body {
   white-space: nowrap; overflow: hidden;
 }
 
-.mix-hint {
-  display: flex;
-  justify-content: space-between;
-  font-size: 10px;
-  color: #6e6e73;
-  margin-top: 4px;
-}
+.mix-hint { display: flex; justify-content: space-between; font-size: 10px; color: #6e6e73; margin-top: 4px; }
 
-/* ═══════════════════════════════════════════════════════════════
-   SECTIONS & SLOTS
-   ═══════════════════════════════════════════════════════════════ */
-
+/* SECTIONS & SLOTS */
 .grid-area { padding: 20px 25px; }
 
 .section-block { margin-bottom: 24px; }
 
-.sec-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
-}
+.sec-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 
-.sec-bar {
-  width: 4px; height: 16px;
-  background: #5e3a8e;
-  border-radius: 2px;
-  flex-shrink: 0;
-}
+.sec-bar { width: 4px; height: 16px; background: #5e3a8e; border-radius: 2px; flex-shrink: 0; }
 
-.sec-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: #1d1d1f;
-  letter-spacing: 0.3px;
-}
+.sec-title { font-size: 13px; font-weight: 700; color: #1d1d1f; letter-spacing: 0.3px; }
 
 .sec-badge {
-  font-size: 10px;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 4px;
-  background: #FCE4EC;
-  color: #c62828;
-  border: 1px solid #EF9A9A;
+  font-size: 10px; font-weight: 700;
+  padding: 2px 8px; border-radius: 4px;
+  background: #FCE4EC; color: #c62828; border: 1px solid #EF9A9A;
 }
 
-.sec-count {
-  font-size: 10px;
-  color: #6e6e73;
-  margin-left: auto;
-}
+.sec-count { font-size: 10px; color: #6e6e73; margin-left: auto; }
 
-.slot-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 5px;
-  margin-bottom: 5px;
-}
+.slot-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-bottom: 5px; }
 
 .slot {
   aspect-ratio: 1/1.1;
-  border-radius: 8px;
-  border: 1px solid #e8e8ea;
+  border-radius: 8px; border: 1px solid #e8e8ea;
   background: white;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all .15s;
-  position: relative;
-  overflow: hidden;
-  padding: 4px 3px;
-  text-align: center;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  cursor: pointer; transition: all .15s;
+  position: relative; overflow: hidden;
+  padding: 4px 3px; text-align: center;
   box-shadow: 0 1px 4px rgba(0,0,0,0.05);
 }
 
 .slot:hover:not(.s-ec):not(.s-locked) {
-  border-color: #5e3a8e;
-  background: #f3eeff;
+  border-color: #5e3a8e; background: #f3eeff;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(94,58,142,0.15);
 }
 
-.slot.s-ec {
-  background: #f5f0ff;
-  border-color: #c9b8f0;
-  cursor: default;
-}
-
-.slot.s-pc {
-  background: #FCE4EC;
-  border-color: #EF9A9A;
-  border-width: 1.5px;
-}
-
-.slot.s-pc:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(211,47,47,0.15);
-}
-
-.slot.s-empty {
-  background: white;
-  border-style: dashed;
-  border-color: #d2d2d7;
-}
-
+.slot.s-ec  { background: #f5f0ff; border-color: #c9b8f0; cursor: default; }
+.slot.s-pc  { background: #FCE4EC; border-color: #EF9A9A; border-width: 1.5px; }
+.slot.s-pc:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(211,47,47,0.15); }
+.slot.s-empty { background: white; border-style: dashed; border-color: #d2d2d7; }
 .slot.s-empty:hover { background: #f3eeff; border-color: #5e3a8e; }
 
-.slot-n {
-  position: absolute;
-  top: 3px; left: 4px;
-  font-size: 7px;
-  color: #aeaeb2;
-  font-weight: 500;
-}
-
+.slot-n { position: absolute; top: 3px; left: 4px; font-size: 7px; color: #aeaeb2; font-weight: 500; }
 .slot-ico { font-size: 13px; margin-bottom: 2px; line-height: 1; }
 
-.slot-tag {
-  font-size: 7px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-}
-
+.slot-tag { font-size: 7px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; }
 .slot-tag.ec { color: #5e3a8e; }
 .slot-tag.pc { color: #d32f2f; }
 .slot-tag.em { color: #aeaeb2; }
 
-.slot-code {
-  font-size: 5.5px;
-  color: #6e6e73;
-  margin-top: 2px;
-  word-break: break-all;
-  line-height: 1.3;
-  max-width: 100%;
-  padding: 0 2px;
+.slot-code { font-size: 5.5px; color: #6e6e73; margin-top: 2px; word-break: break-all; line-height: 1.3; max-width: 100%; padding: 0 2px; }
+
+/* SKELETON LOADING */
+.slot.s-skeleton {
+  background: #f5f5f7;
+  border-color: #e8e8ea;
+  cursor: default;
+  animation: skeletonPulse 1.5s ease-in-out infinite;
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   ANALYZER TAB
-   ═══════════════════════════════════════════════════════════════ */
+@keyframes skeletonPulse {
+  0%,100% { opacity: 1; }
+  50%      { opacity: 0.5; }
+}
 
+/* ANALYZER TAB */
 .analyzer-area { padding: 20px 25px; }
 
 .card {
-  background: white;
-  border: 1px solid #e8e8ea;
-  border-radius: 14px;
-  padding: 28px;
-  margin-bottom: 20px;
+  background: white; border: 1px solid #e8e8ea;
+  border-radius: 14px; padding: 28px; margin-bottom: 20px;
   box-shadow: 0 2px 12px rgba(0,0,0,0.06);
 }
 
-.card h2 {
-  color: #1d1d1f;
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-
-.card-sub {
-  font-size: 13px;
-  color: #6e6e73;
-  margin-bottom: 20px;
-}
+.card h2 { color: #1d1d1f; font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+.card-sub { font-size: 13px; color: #6e6e73; margin-bottom: 20px; }
 
 .steps { display: flex; flex-direction: column; gap: 0; }
 
-.step {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 10px 0;
-  border-bottom: 1px solid #f0f0f0;
-}
-
+.step { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
 .step:last-child { border-bottom: none; }
 
 .step-n {
-  width: 22px; height: 22px;
-  border-radius: 50%;
-  background: #5e3a8e;
-  color: white;
-  font-size: 10px;
-  font-weight: 700;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: #5e3a8e; color: white;
+  font-size: 10px; font-weight: 700;
   display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-  margin-top: 1px;
+  flex-shrink: 0; margin-top: 1px;
 }
 
-.step-t {
-  font-size: 13px;
-  color: #1d1d1f;
-  line-height: 1.6;
-}
-
+.step-t { font-size: 13px; color: #1d1d1f; line-height: 1.6; }
 .step-t strong { color: #5e3a8e; }
 
 .drag-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: #5e3a8e;
-  color: white;
-  padding: 11px 22px;
-  border-radius: 10px;
-  font-size: 13px;
-  font-weight: 600;
-  text-decoration: none;
-  cursor: grab;
-  margin-top: 16px;
+  display: inline-flex; align-items: center; gap: 8px;
+  background: #5e3a8e; color: white;
+  padding: 11px 22px; border-radius: 10px;
+  font-size: 13px; font-weight: 600;
+  text-decoration: none; cursor: grab; margin-top: 16px;
   transition: all .2s;
   box-shadow: 0 4px 15px rgba(94,58,142,0.3);
 }
 
 .drag-btn:hover { background: #4a2d70; transform: translateY(-1px); }
+.drag-hint { font-size: 11px; color: #aeaeb2; margin-top: 6px; }
 
-.drag-hint {
-  font-size: 11px;
-  color: #aeaeb2;
-  margin-top: 6px;
-}
-
-/* SCAN RESULTS */
 .scan-results { display: none; }
 .scan-results.show { display: block; }
 
-.scan-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
+.scan-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
 .scan-time { font-size: 11px; color: #6e6e73; margin-top: 3px; }
 
-.scan-badge {
-  font-size: 11px;
-  font-weight: 700;
-  padding: 5px 12px;
-  border-radius: 8px;
-}
-
-.ON_TARGET     { background: #E8F5E9; color: #2E7D32; border: 1px solid #A5D6A7; }
+.scan-badge { font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 8px; }
+.ON_TARGET          { background: #E8F5E9; color: #2E7D32; border: 1px solid #A5D6A7; }
 .TOO_MUCH_ECOMMERCE { background: #FFF8E1; color: #F57F17; border: 1px solid #FFE082; }
-.TOO_MUCH_PC   { background: #FCE4EC; color: #c62828; border: 1px solid #EF9A9A; }
+.TOO_MUCH_PC        { background: #FCE4EC; color: #c62828; border: 1px solid #EF9A9A; }
 
-.scan-mets {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 16px;
-}
+.scan-mets { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
 
-.scan-met {
-  flex: 1;
-  min-width: 90px;
-  background: #fafafa;
-  border: 1px solid #e8e8ea;
-  border-radius: 10px;
-  padding: 12px 14px;
-}
-
-.scan-met .v {
-  font-size: 24px;
-  font-weight: 700;
-  line-height: 1;
-  margin-bottom: 3px;
-  letter-spacing: -0.5px;
-}
-
-.scan-met .v.ec { color: #5e3a8e; }
-.scan-met .v.pc { color: #d32f2f; }
+.scan-met { flex: 1; min-width: 90px; background: #fafafa; border: 1px solid #e8e8ea; border-radius: 10px; padding: 12px 14px; }
+.scan-met .v { font-size: 24px; font-weight: 700; line-height: 1; margin-bottom: 3px; letter-spacing: -0.5px; }
+.scan-met .v.ec  { color: #5e3a8e; }
+.scan-met .v.pc  { color: #d32f2f; }
 .scan-met .v.tot { color: #1d1d1f; }
+.scan-met .l { font-size: 10px; color: #6e6e73; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
 
-.scan-met .l {
-  font-size: 10px;
-  color: #6e6e73;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  font-weight: 600;
-}
+.s-bar-lbl { font-size: 10px; color: #6e6e73; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600; margin-bottom: 6px; }
 
-.s-bar-lbl {
-  font-size: 10px;
-  color: #6e6e73;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  font-weight: 600;
-  margin-bottom: 6px;
-}
+.s-bar { height: 18px; border-radius: 6px; overflow: hidden; background: #f0f0f5; display: flex; border: 1px solid #e8e8ea; }
 
-.s-bar {
-  height: 18px;
-  border-radius: 6px;
-  overflow: hidden;
-  background: #f0f0f5;
-  display: flex;
-  border: 1px solid #e8e8ea;
-}
+.s-bar-ec { background: #5e3a8e; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: white; transition: width .5s ease; white-space: nowrap; overflow: hidden; }
+.s-bar-pc { background: #d32f2f; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: white; transition: width .5s ease; white-space: nowrap; overflow: hidden; }
+.s-bar-hint { font-size: 10px; color: #aeaeb2; margin-top: 4px; text-align: right; }
 
-.s-bar-ec {
-  background: #5e3a8e;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 10px; font-weight: 700; color: white;
-  transition: width .5s ease;
-  white-space: nowrap; overflow: hidden;
-}
+.pbd-title { font-size: 13px; font-weight: 700; color: #1d1d1f; margin: 16px 0 8px; display: flex; align-items: center; gap: 7px; }
+.pbd-count { font-size: 10px; padding: 2px 7px; border-radius: 4px; background: #f5f5f7; color: #6e6e73; border: 1px solid #e8e8ea; font-weight: 600; }
 
-.s-bar-pc {
-  background: #d32f2f;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 10px; font-weight: 700; color: white;
-  transition: width .5s ease;
-  white-space: nowrap; overflow: hidden;
-}
-
-.s-bar-hint {
-  font-size: 10px;
-  color: #aeaeb2;
-  margin-top: 4px;
-  text-align: right;
-}
-
-.pbd-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: #1d1d1f;
-  margin: 16px 0 8px;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-
-.pbd-count {
-  font-size: 10px;
-  padding: 2px 7px;
-  border-radius: 4px;
-  background: #f5f5f7;
-  color: #6e6e73;
-  border: 1px solid #e8e8ea;
-  font-weight: 600;
-}
-
-.prod-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-  gap: 5px;
-}
+.prod-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 5px; }
 
 .prod-item {
-  background: white;
-  border: 1px solid #e8e8ea;
-  border-radius: 8px;
-  padding: 8px 11px;
-  font-size: 12px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 6px;
+  background: white; border: 1px solid #e8e8ea;
+  border-radius: 8px; padding: 8px 11px;
+  font-size: 12px; display: flex; justify-content: space-between; align-items: center; gap: 6px;
   transition: border-color .15s;
   box-shadow: 0 1px 4px rgba(0,0,0,0.04);
 }
 
 .prod-item:hover { border-color: #5e3a8e; }
-
-.prod-item a {
-  color: #5e3a8e;
-  text-decoration: none;
-  font-size: 10px;
-  word-break: break-all;
-  font-weight: 500;
-}
-
+.prod-item a { color: #5e3a8e; text-decoration: none; font-size: 10px; word-break: break-all; font-weight: 500; }
 .prod-item a:hover { text-decoration: underline; }
 
-.tag {
-  font-size: 9px;
-  font-weight: 700;
-  padding: 2px 7px;
-  border-radius: 4px;
-  white-space: nowrap;
-}
-
+.tag { font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 4px; white-space: nowrap; }
 .tag-ec { background: #f3eeff; color: #5e3a8e; border: 1px solid #c9b8f0; }
 .tag-pc { background: #FCE4EC; color: #d32f2f; border: 1px solid #EF9A9A; }
 
-/* ═══════════════════════════════════════════════════════════════
-   RESET BUTTON
-   ═══════════════════════════════════════════════════════════════ */
-
+/* RESET BUTTON */
 .btn-reset {
-  padding: 8px 18px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 500;
-  font-family: inherit;
-  cursor: pointer;
-  transition: all .2s;
-  background: transparent;
-  border: 1px solid #d2d2d7;
-  color: #6e6e73;
+  padding: 8px 18px; border-radius: 8px;
+  font-size: 13px; font-weight: 500; font-family: inherit;
+  cursor: pointer; transition: all .2s;
+  background: transparent; border: 1px solid #d2d2d7; color: #6e6e73;
 }
 
-.btn-reset:hover {
-  border-color: #d32f2f;
-  color: #d32f2f;
-  background: #FCE4EC;
-}
+.btn-reset:hover { border-color: #d32f2f; color: #d32f2f; background: #FCE4EC; }
 
-/* ═══════════════════════════════════════════════════════════════
-   MODALS
-   ═══════════════════════════════════════════════════════════════ */
-
+/* MODALS */
 .overlay {
-  position: fixed;
-  inset: 0;
+  position: fixed; inset: 0;
   background: rgba(29,29,31,0.6);
   backdrop-filter: blur(6px);
-  display: none;
-  align-items: center;
-  justify-content: center;
+  display: none; align-items: center; justify-content: center;
   z-index: 9999;
 }
 
 .overlay.open { display: flex; }
 
 .modal {
-  background: white;
-  border-radius: 20px;
-  padding: 36px;
-  width: 400px;
-  max-width: 94vw;
+  background: white; border-radius: 20px;
+  padding: 36px; width: 400px; max-width: 94vw;
   position: relative;
   box-shadow: 0 24px 60px rgba(0,0,0,0.2);
   animation: mIn .18s cubic-bezier(.4,0,.2,1);
@@ -679,168 +398,81 @@ body {
 }
 
 .modal-x {
-  position: absolute;
-  top: 14px; right: 14px;
-  background: #f5f5f7;
-  border: 1px solid #e8e8ea;
-  color: #6e6e73;
-  font-size: 12px;
-  width: 26px; height: 26px;
-  border-radius: 6px;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer;
-  transition: all .15s;
+  position: absolute; top: 14px; right: 14px;
+  background: #f5f5f7; border: 1px solid #e8e8ea; color: #6e6e73;
+  font-size: 12px; width: 26px; height: 26px;
+  border-radius: 6px; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all .15s;
 }
 
 .modal-x:hover { color: #1d1d1f; background: #e8e8ea; }
 
 .modal-icon {
-  width: 52px; height: 52px;
-  background: #5e3a8e;
-  border-radius: 14px;
-  display: flex; align-items: center; justify-content: center;
-  margin: 0 0 16px;
-  font-size: 24px;
-  color: white;
+  width: 52px; height: 52px; background: #5e3a8e;
+  border-radius: 14px; display: flex; align-items: center; justify-content: center;
+  margin: 0 0 16px; font-size: 24px; color: white;
   box-shadow: 0 6px 18px rgba(94,58,142,0.3);
 }
 
-.modal-title {
-  font-size: 20px;
-  font-weight: 700;
-  color: #1d1d1f;
-  margin-bottom: 4px;
-  letter-spacing: -0.3px;
-}
-
-.modal-sub {
-  font-size: 13px;
-  color: #6e6e73;
-  margin-bottom: 18px;
-}
+.modal-title { font-size: 20px; font-weight: 700; color: #1d1d1f; margin-bottom: 4px; letter-spacing: -0.3px; }
+.modal-sub   { font-size: 13px; color: #6e6e73; margin-bottom: 18px; }
 
 .modal-info {
-  background: #f5f5f7;
-  border: 1px solid #e8e8ea;
-  border-radius: 10px;
-  padding: 12px 14px;
-  font-size: 13px;
-  color: #1d1d1f;
-  margin-bottom: 18px;
-  line-height: 1.7;
+  background: #f5f5f7; border: 1px solid #e8e8ea;
+  border-radius: 10px; padding: 12px 14px;
+  font-size: 13px; color: #1d1d1f; margin-bottom: 18px; line-height: 1.7;
 }
 
 .modal-info strong { color: #d32f2f; }
 
-label, .field-lbl {
-  display: block;
-  color: #1d1d1f;
-  font-weight: 500;
-  margin-bottom: 8px;
-  font-size: 13px;
-}
+label, .field-lbl { display: block; color: #1d1d1f; font-weight: 500; margin-bottom: 8px; font-size: 13px; }
 
 input, .field-inp {
-  width: 100%;
-  padding: 12px 16px;
-  border: 1px solid #d2d2d7;
-  border-radius: 10px;
-  font-size: 14px;
-  font-family: inherit;
-  transition: all .2s;
-  color: #1d1d1f;
-  background: white;
-  margin-bottom: 16px;
+  width: 100%; padding: 12px 16px;
+  border: 1px solid #d2d2d7; border-radius: 10px;
+  font-size: 14px; font-family: inherit; transition: all .2s;
+  color: #1d1d1f; background: white; margin-bottom: 16px;
 }
 
 input:focus, .field-inp:focus {
-  outline: none;
-  border-color: #5e3a8e;
+  outline: none; border-color: #5e3a8e;
   box-shadow: 0 0 0 3px rgba(94,58,142,0.1);
 }
 
 .btn-book {
-  width: 100%;
-  padding: 14px;
-  background: #5e3a8e;
-  color: white;
-  border: none;
-  border-radius: 10px;
-  font-family: inherit;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all .2s;
-  letter-spacing: 0.2px;
+  width: 100%; padding: 14px;
+  background: #5e3a8e; color: white;
+  border: none; border-radius: 10px;
+  font-family: inherit; font-size: 15px; font-weight: 600;
+  cursor: pointer; transition: all .2s; letter-spacing: 0.2px;
 }
 
-.btn-book:hover {
-  background: #4a2d70;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 15px rgba(94,58,142,0.3);
-}
+.btn-book:hover { background: #4a2d70; transform: translateY(-1px); box-shadow: 0 4px 15px rgba(94,58,142,0.3); }
+.btn-book:disabled { background: #aeaeb2; cursor: not-allowed; transform: none; box-shadow: none; }
 
-/* DETAIL MODAL */
 .detail-code {
   font-family: 'SFMono-Regular', 'Fira Code', monospace;
-  font-size: 13px;
-  font-weight: 600;
-  background: #f3eeff;
-  border: 1px solid #c9b8f0;
-  color: #5e3a8e;
-  padding: 12px 16px;
-  border-radius: 10px;
-  margin: 12px 0;
-  word-break: break-all;
+  font-size: 13px; font-weight: 600;
+  background: #f3eeff; border: 1px solid #c9b8f0;
+  color: #5e3a8e; padding: 12px 16px; border-radius: 10px;
+  margin: 12px 0; word-break: break-all;
 }
 
-.d-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 13px;
-  color: #6e6e73;
-  padding: 8px 0;
-  border-bottom: 1px solid #f0f0f0;
-}
-
+.d-row { display: flex; justify-content: space-between; font-size: 13px; color: #6e6e73; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
 .d-row:last-child { border-bottom: none; }
 .d-row span { color: #1d1d1f; font-weight: 600; }
 
 .btn-del {
-  width: 100%;
-  padding: 11px;
-  margin-top: 14px;
-  background: transparent;
-  border: 1px solid #d2d2d7;
-  color: #6e6e73;
-  border-radius: 10px;
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all .2s;
+  width: 100%; padding: 11px; margin-top: 14px;
+  background: transparent; border: 1px solid #d2d2d7; color: #6e6e73;
+  border-radius: 10px; font-family: inherit; font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: all .2s;
 }
 
-.btn-del:hover {
-  border-color: #d32f2f;
-  color: #d32f2f;
-  background: #FCE4EC;
-}
+.btn-del:hover { border-color: #d32f2f; color: #d32f2f; background: #FCE4EC; }
+.btn-del:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* ═══════════════════════════════════════════════════════════════
-   FOOTER
-   ═══════════════════════════════════════════════════════════════ */
-
-.footer {
-  text-align: center;
-  margin-top: 40px;
-  color: rgba(255,255,255,0.45);
-  font-size: 12px;
-}
-
-/* ═══════════════════════════════════════════════════════════════
-   RESPONSIVE
-   ═══════════════════════════════════════════════════════════════ */
+.footer { text-align: center; margin-top: 40px; color: rgba(255,255,255,0.45); font-size: 12px; }
 
 @media (max-width: 768px) {
   body { padding: 20px 12px; }
@@ -851,6 +483,9 @@ input:focus, .field-inp:focus {
 </style>
 </head>
 <body>
+
+<!-- TOP LOADING BAR -->
+<div class="loading-bar" id="loading-bar"></div>
 
 <div class="page-container">
 
@@ -863,6 +498,10 @@ input:focus, .field-inp:focus {
       <h1>Homepage Slot Manager</h1>
     </div>
     <div class="header-right">
+      <div class="sync-badge synced" id="sync-badge">
+        <div class="sync-dot" id="sync-dot"></div>
+        <span id="sync-text">Synced</span>
+      </div>
       <div class="live-pill"><div class="live-dot"></div>LIVE</div>
       <button class="btn-reset" onclick="resetAll()">↺ Reset</button>
     </div>
@@ -948,9 +587,9 @@ input:focus, .field-inp:focus {
       </div>
     </div>
 
-  </div><!-- /tabs-card -->
+  </div>
 
-  <div class="footer">© Kapruka Holdings PLC · Homepage Manager</div>
+  <div class="footer">© Kapruka Holdings PLC · Homepage Manager · Powered by Supabase</div>
 </div>
 
 <!-- BOOKING MODAL -->
@@ -963,7 +602,7 @@ input:focus, .field-inp:focus {
     <div class="modal-info" id="modal-info"></div>
     <label>Product Code</label>
     <input class="field-inp" id="modal-code" placeholder="e.g. ef_pc_12345" autocomplete="off"/>
-    <button class="btn-book" onclick="confirmBooking()">Confirm Booking</button>
+    <button class="btn-book" id="btn-confirm" onclick="confirmBooking()">Confirm Booking</button>
   </div>
 </div>
 
@@ -981,72 +620,229 @@ input:focus, .field-inp:focus {
 </div>
 
 <script>
-const APPS_SCRIPT_URL='https://script.google.com/macros/s/AKfycbwkYSadbhw_X1ujneqVy06SX4cK6PztcXf3mKXplQ7sYn9aQjzpYBIbe1VmpunbRQ2RMQ/exec';
-const SECTIONS=[
-  {id:'featured',label:'Featured Products',rows:2,cols:7},
-  {id:'new',label:'New Additions',rows:2,cols:7},
-  {id:'bestsell',label:'Best Sellers',rows:2,cols:7},
+// ─── SUPABASE CONFIG ──────────────────────────────────────────
+const SUPABASE_URL = 'https://ivllhheqqiseagmctfyp.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml2bGxoaGVxcWlzZWFnbWN0ZnlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1NzQzMzksImV4cCI6MjA4NDE1MDMzOX0.OnkYNACtdknKDY2KqLfiGN0ORXpKaW906fD0TtSJlIk';
+const TABLE = 'homepage_slot_bookings';
+
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwkYSadbhw_X1ujneqVy06SX4cK6PztcXf3mKXplQ7sYn9aQjzpYBIbe1VmpunbRQ2RMQ/exec';
+
+const SECTIONS = [
+  {id:'featured',  label:'Featured Products', rows:2, cols:7},
+  {id:'new',       label:'New Additions',      rows:2, cols:7},
+  {id:'bestsell',  label:'Best Sellers',       rows:2, cols:7},
 ];
-let bookings=JSON.parse(localStorage.getItem('kap_hp_bookings')||'{}');
-let pendingSlot=null,detailKey=null;
 
-function switchTab(id){
-  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['slots','analyzer'][i]===id));
-  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.id==='tab-'+id));
+// In-memory bookings map: slot_key → booking object
+let bookings = {};
+let pendingSlot = null;
+let detailKey   = null;
+
+// ─── SUPABASE HELPERS ─────────────────────────────────────────
+
+function sbHeaders() {
+  return {
+    'apikey': SUPABASE_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_KEY,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation'
+  };
 }
 
-function getM(){
-  const total=SECTIONS.reduce((s,sec)=>s+sec.rows*sec.cols,0);
-  const pc=Object.keys(bookings).length,ec=total-pc;
-  const pcP=Math.round(pc/total*100),ecP=100-pcP;
-  return{total,pc,ec,pcP,ecP};
+function setSync(state, text) {
+  const badge = document.getElementById('sync-badge');
+  const dot   = document.getElementById('sync-dot');
+  const label = document.getElementById('sync-text');
+  badge.className = 'sync-badge ' + state;
+  dot.className   = 'sync-dot' + (state === 'syncing' ? ' spin' : '');
+  label.textContent = text;
 }
 
-function isLocked(){return getM().pcP>=40}
-
-function updateDash(){
-  const{total,pc,ec,pcP,ecP}=getM();
-  document.getElementById('m-total').textContent=total;
-  document.getElementById('m-ec').textContent=ec;
-  document.getElementById('m-pc').textContent=pc;
-  const be=document.getElementById('bar-ec'),bp=document.getElementById('bar-pc');
-  be.style.width=ecP+'%';be.textContent=ecP>10?ecP+'%':'';
-  bp.style.width=pcP+'%';bp.textContent=pcP>6?pcP+'%':'';
-  document.getElementById('lbl-ec').textContent='EC: '+ecP+'%';
-  document.getElementById('lbl-pc').textContent='PC: '+pcP+'%';
-  const chip=document.getElementById('status-chip');
-  if(pcP>=40){chip.className='chip chip-lock';chip.textContent='🔒 60/40 Locked';}
-  else if(pcP>=30){chip.className='chip chip-warn';chip.textContent='⚠ '+pcP+'% PC';}
-  else{chip.className='chip chip-ok';chip.textContent='● EC '+ecP+'%';}
+function setLoading(on) {
+  document.getElementById('loading-bar').classList.toggle('show', on);
 }
 
-function renderAll(){
-  const c=document.getElementById('sections-container');
-  c.innerHTML='';
-  const locked=isLocked();
-  SECTIONS.forEach(sec=>{
-    const block=document.createElement('div');
-    block.className='section-block';
-    const pcInSec=Object.values(bookings).filter(b=>b.section===sec.id).length;
-    block.innerHTML=`<div class="sec-header"><div class="sec-bar"></div><div class="sec-title">${sec.label}</div>${pcInSec>0?`<div class="sec-badge">${pcInSec} PC</div>`:''}<div class="sec-count">${sec.rows*sec.cols} slots</div></div>`;
-    for(let row=0;row<sec.rows;row++){
-      const rDiv=document.createElement('div');
-      rDiv.className='slot-grid';rDiv.style.marginBottom='5px';
-      for(let col=0;col<sec.cols;col++){
-        const key=`${sec.id}_r${row}_c${col}`,bk=bookings[key];
-        const sl=document.createElement('div');
-        const n=row*sec.cols+col+1;
-        if(bk){
-          sl.className='slot s-pc';
-          sl.innerHTML=`<div class="slot-n">${n}</div><div class="slot-ico">🟥</div><div class="slot-tag pc">PC</div><div class="slot-code">${bk.code}</div>`;
-          sl.onclick=()=>openDetail(key,bk,sec.label,row+1,col+1);
-        }else if(locked){
-          sl.className='slot s-ec';
-          sl.innerHTML=`<div class="slot-n">${n}</div><div class="slot-ico">🟣</div><div class="slot-tag ec">EC</div>`;
-        }else{
-          sl.className='slot s-empty';sl.title='Click to book as PC';
-          sl.innerHTML=`<div class="slot-n">${n}</div><div class="slot-ico" style="opacity:.2;font-size:11px">＋</div><div class="slot-tag em">EC</div>`;
-          sl.onclick=()=>openModal(key,sec.label,row+1,col+1);
+// Load all bookings from Supabase
+async function loadBookings() {
+  setSync('syncing', 'Loading…');
+  setLoading(true);
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}?select=*`, {
+      headers: sbHeaders()
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const rows = await res.json();
+    bookings = {};
+    rows.forEach(r => {
+      bookings[r.slot_key] = {
+        code:      r.code,
+        section:   r.section,
+        row:       r.row_num,
+        col:       r.col_num,
+        bookedAt:  r.booked_at,
+        id:        r.id
+      };
+    });
+    setSync('synced', 'Synced');
+    renderAll();
+  } catch (e) {
+    console.error('Load error:', e);
+    setSync('error', 'Load failed');
+  } finally {
+    setLoading(false);
+  }
+}
+
+// Insert a new booking
+async function insertBooking(slot_key, code, section, row_num, col_num) {
+  setSync('syncing', 'Saving…');
+  setLoading(true);
+  const body = { slot_key, code, section, row_num, col_num };
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}`, {
+      method: 'POST',
+      headers: sbHeaders(),
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const rows = await res.json();
+    const row  = rows[0];
+    bookings[slot_key] = { code, section, row: row_num, col: col_num, bookedAt: row.booked_at, id: row.id };
+    setSync('synced', 'Saved ✓');
+    renderAll();
+  } catch (e) {
+    console.error('Insert error:', e);
+    setSync('error', 'Save failed');
+    alert('⚠️ Could not save booking. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+}
+
+// Delete a booking by slot_key
+async function deleteBooking(slot_key) {
+  setSync('syncing', 'Deleting…');
+  setLoading(true);
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/${TABLE}?slot_key=eq.${encodeURIComponent(slot_key)}`,
+      { method: 'DELETE', headers: sbHeaders() }
+    );
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    delete bookings[slot_key];
+    setSync('synced', 'Deleted ✓');
+    renderAll();
+  } catch (e) {
+    console.error('Delete error:', e);
+    setSync('error', 'Delete failed');
+    alert('⚠️ Could not remove booking. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+}
+
+// Delete ALL bookings
+async function deleteAllBookings() {
+  setSync('syncing', 'Resetting…');
+  setLoading(true);
+  try {
+    // Delete all rows — use a filter that matches everything
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/${TABLE}?id=neq.00000000-0000-0000-0000-000000000000`,
+      { method: 'DELETE', headers: sbHeaders() }
+    );
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    bookings = {};
+    setSync('synced', 'Reset ✓');
+    renderAll();
+  } catch (e) {
+    console.error('Reset error:', e);
+    setSync('error', 'Reset failed');
+    alert('⚠️ Could not reset bookings. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+}
+
+// ─── APP LOGIC ────────────────────────────────────────────────
+
+function switchTab(id) {
+  document.querySelectorAll('.tab').forEach((t,i) =>
+    t.classList.toggle('active', ['slots','analyzer'][i] === id));
+  document.querySelectorAll('.tab-panel').forEach(p =>
+    p.classList.toggle('active', p.id === 'tab-' + id));
+}
+
+function getM() {
+  const total = SECTIONS.reduce((s, sec) => s + sec.rows * sec.cols, 0);
+  const pc    = Object.keys(bookings).length;
+  const ec    = total - pc;
+  const pcP   = Math.round(pc / total * 100);
+  const ecP   = 100 - pcP;
+  return { total, pc, ec, pcP, ecP };
+}
+
+function isLocked() { return getM().pcP >= 40; }
+
+function updateDash() {
+  const { total, pc, ec, pcP, ecP } = getM();
+  document.getElementById('m-total').textContent = total;
+  document.getElementById('m-ec').textContent    = ec;
+  document.getElementById('m-pc').textContent    = pc;
+  const be = document.getElementById('bar-ec');
+  const bp = document.getElementById('bar-pc');
+  be.style.width  = ecP + '%';
+  be.textContent  = ecP > 10 ? ecP + '%' : '';
+  bp.style.width  = pcP + '%';
+  bp.textContent  = pcP > 6  ? pcP + '%' : '';
+  document.getElementById('lbl-ec').textContent = 'EC: ' + ecP + '%';
+  document.getElementById('lbl-pc').textContent = 'PC: ' + pcP + '%';
+  const chip = document.getElementById('status-chip');
+  if (pcP >= 40)      { chip.className = 'chip chip-lock'; chip.textContent = '🔒 60/40 Locked'; }
+  else if (pcP >= 30) { chip.className = 'chip chip-warn'; chip.textContent = '⚠ ' + pcP + '% PC'; }
+  else                { chip.className = 'chip chip-ok';   chip.textContent = '● EC ' + ecP + '%'; }
+}
+
+function renderAll() {
+  const c      = document.getElementById('sections-container');
+  c.innerHTML  = '';
+  const locked = isLocked();
+
+  SECTIONS.forEach(sec => {
+    const block = document.createElement('div');
+    block.className = 'section-block';
+    const pcInSec = Object.values(bookings).filter(b => b.section === sec.id).length;
+    block.innerHTML = `
+      <div class="sec-header">
+        <div class="sec-bar"></div>
+        <div class="sec-title">${sec.label}</div>
+        ${pcInSec > 0 ? `<div class="sec-badge">${pcInSec} PC</div>` : ''}
+        <div class="sec-count">${sec.rows * sec.cols} slots</div>
+      </div>`;
+
+    for (let row = 0; row < sec.rows; row++) {
+      const rDiv = document.createElement('div');
+      rDiv.className = 'slot-grid';
+      rDiv.style.marginBottom = '5px';
+
+      for (let col = 0; col < sec.cols; col++) {
+        const key = `${sec.id}_r${row}_c${col}`;
+        const bk  = bookings[key];
+        const sl  = document.createElement('div');
+        const n   = row * sec.cols + col + 1;
+
+        if (bk) {
+          sl.className = 'slot s-pc';
+          sl.innerHTML = `<div class="slot-n">${n}</div><div class="slot-ico">🟥</div><div class="slot-tag pc">PC</div><div class="slot-code">${bk.code}</div>`;
+          sl.onclick = () => openDetail(key, bk, sec.label, row + 1, col + 1);
+        } else if (locked) {
+          sl.className = 'slot s-ec';
+          sl.innerHTML = `<div class="slot-n">${n}</div><div class="slot-ico">🟣</div><div class="slot-tag ec">EC</div>`;
+        } else {
+          sl.className = 'slot s-empty';
+          sl.title     = 'Click to book as PC';
+          sl.innerHTML = `<div class="slot-n">${n}</div><div class="slot-ico" style="opacity:.2;font-size:11px">＋</div><div class="slot-tag em">EC</div>`;
+          sl.onclick   = () => openModal(key, sec.label, row + 1, col + 1);
         }
         rDiv.appendChild(sl);
       }
@@ -1057,95 +853,167 @@ function renderAll(){
   updateDash();
 }
 
-function openDetail(key,bk,secLabel,row,col){
-  detailKey=key;
-  document.getElementById('d-sub').textContent=`${secLabel} · Row ${row} · Col ${col}`;
-  document.getElementById('d-code').textContent='📦 '+bk.code;
-  document.getElementById('d-rows').innerHTML=`<div class="d-row">Section<span>${secLabel}</span></div><div class="d-row">Row<span>${row}</span></div><div class="d-row">Position<span>${col}</span></div><div class="d-row">Booked<span>${bk.bookedAt?new Date(bk.bookedAt).toLocaleString():'N/A'}</span></div>`;
-  document.getElementById('d-del-btn').onclick=()=>{if(!confirm('Remove?'))return;delete bookings[detailKey];saveAndRender();closeDetail();};
+// ─── MODALS ───────────────────────────────────────────────────
+
+function openDetail(key, bk, secLabel, row, col) {
+  detailKey = key;
+  document.getElementById('d-sub').textContent  = `${secLabel} · Row ${row} · Col ${col}`;
+  document.getElementById('d-code').textContent = '📦 ' + bk.code;
+  document.getElementById('d-rows').innerHTML   = `
+    <div class="d-row">Section<span>${secLabel}</span></div>
+    <div class="d-row">Row<span>${row}</span></div>
+    <div class="d-row">Position<span>${col}</span></div>
+    <div class="d-row">Booked<span>${bk.bookedAt ? new Date(bk.bookedAt).toLocaleString() : 'N/A'}</span></div>`;
+
+  const delBtn = document.getElementById('d-del-btn');
+  delBtn.disabled = false;
+  delBtn.onclick = async () => {
+    if (!confirm('Remove this booking?')) return;
+    delBtn.disabled = true;
+    delBtn.textContent = '⏳ Removing…';
+    await deleteBooking(detailKey);
+    closeDetail();
+  };
   document.getElementById('detail-modal').classList.add('open');
 }
 
-function closeDetail(){document.getElementById('detail-modal').classList.remove('open');detailKey=null;}
-document.getElementById('detail-modal').addEventListener('click',e=>{if(e.target===document.getElementById('detail-modal'))closeDetail();});
-
-function openModal(key,secLabel,row,col){
-  if(isLocked())return;
-  pendingSlot={key,secLabel,row,col};
-  document.getElementById('modal-sub').textContent=`${secLabel} · Row ${row} · Col ${col}`;
-  const{pc,pcP}=getM();
-  document.getElementById('modal-info').innerHTML=`Booking as <strong>PC (Product Catalogue)</strong>.<br>Currently <strong>${pc}</strong> of 42 are PC (<strong>${pcP}%</strong>). Max: <strong>40%</strong> (17 slots).`;
-  document.getElementById('modal-code').value='';
-  document.getElementById('modal').classList.add('open');
-  setTimeout(()=>document.getElementById('modal-code').focus(),80);
+function closeDetail() {
+  document.getElementById('detail-modal').classList.remove('open');
+  detailKey = null;
 }
 
-function closeModal(){document.getElementById('modal').classList.remove('open');pendingSlot=null;}
+document.getElementById('detail-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('detail-modal')) closeDetail();
+});
 
-function confirmBooking(){
-  const code=document.getElementById('modal-code').value.trim();
-  if(!code){
-    const inp=document.getElementById('modal-code');
-    inp.style.borderColor='#d32f2f';
-    inp.style.boxShadow='0 0 0 3px rgba(211,47,47,0.1)';
+function openModal(key, secLabel, row, col) {
+  if (isLocked()) return;
+  pendingSlot = { key, secLabel, row, col };
+  document.getElementById('modal-sub').textContent = `${secLabel} · Row ${row} · Col ${col}`;
+  const { pc, pcP } = getM();
+  document.getElementById('modal-info').innerHTML =
+    `Booking as <strong>PC (Product Catalogue)</strong>.<br>
+     Currently <strong>${pc}</strong> of 42 are PC (<strong>${pcP}%</strong>). Max: <strong>40%</strong> (17 slots).`;
+  document.getElementById('modal-code').value = '';
+  document.getElementById('btn-confirm').disabled = false;
+  document.getElementById('btn-confirm').textContent = 'Confirm Booking';
+  document.getElementById('modal').classList.add('open');
+  setTimeout(() => document.getElementById('modal-code').focus(), 80);
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  pendingSlot = null;
+}
+
+async function confirmBooking() {
+  const code = document.getElementById('modal-code').value.trim();
+  if (!code) {
+    const inp = document.getElementById('modal-code');
+    inp.style.borderColor = '#d32f2f';
+    inp.style.boxShadow   = '0 0 0 3px rgba(211,47,47,0.1)';
     inp.focus();
-    setTimeout(()=>{inp.style.borderColor='';inp.style.boxShadow='';},1500);
+    setTimeout(() => { inp.style.borderColor = ''; inp.style.boxShadow = ''; }, 1500);
     return;
   }
-  if(!pendingSlot)return;
-  bookings[pendingSlot.key]={code,section:pendingSlot.key.split('_r')[0],row:pendingSlot.row,col:pendingSlot.col,bookedAt:new Date().toISOString()};
-  saveAndRender();closeModal();
+  if (!pendingSlot) return;
+
+  const btn = document.getElementById('btn-confirm');
+  btn.disabled    = true;
+  btn.textContent = '⏳ Saving…';
+
+  await insertBooking(
+    pendingSlot.key,
+    code,
+    pendingSlot.key.split('_r')[0],
+    pendingSlot.row,
+    pendingSlot.col
+  );
+  closeModal();
 }
 
-function saveAndRender(){localStorage.setItem('kap_hp_bookings',JSON.stringify(bookings));renderAll();}
-function resetAll(){if(!confirm('Reset all PC bookings?'))return;bookings={};saveAndRender();}
+async function resetAll() {
+  if (!confirm('Reset ALL PC bookings? This cannot be undone.')) return;
+  await deleteAllBookings();
+}
 
-document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'){closeModal();closeDetail();}
-  if(e.key==='Enter'&&document.getElementById('modal').classList.contains('open'))confirmBooking();
+// ─── KEYBOARD SHORTCUTS ───────────────────────────────────────
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeModal(); closeDetail(); }
+  if (e.key === 'Enter' && document.getElementById('modal').classList.contains('open')) confirmBooking();
 });
-document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeModal();});
 
-const portalUrl=window.location.href.split('?')[0];
-const bml=`javascript:(function(){var codes=[...document.querySelectorAll('a[href*="/buyonline/"]')].map(a=>a.href.split('/').pop()).filter((v,i,arr)=>arr.indexOf(v)===i);if(codes.length===0){alert('No products found.');return;}window.location.href='${APPS_SCRIPT_URL}?codes='+encodeURIComponent(codes.join(','))+'&redirect='+encodeURIComponent('${portalUrl}');})();`;
-document.getElementById('bookmarklet-link').href=bml;
+document.getElementById('modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal')) closeModal();
+});
 
-const params=new URLSearchParams(window.location.search);
-if(params.get('scannedAt')){
+// ─── BOOKMARKLET ──────────────────────────────────────────────
+
+const portalUrl = window.location.href.split('?')[0];
+const bml = `javascript:(function(){var codes=[...document.querySelectorAll('a[href*="/buyonline/"]')].map(a=>a.href.split('/').pop()).filter((v,i,arr)=>arr.indexOf(v)===i);if(codes.length===0){alert('No products found.');return;}window.location.href='${APPS_SCRIPT_URL}?codes='+encodeURIComponent(codes.join(','))+'&redirect='+encodeURIComponent('${portalUrl}');})();`;
+document.getElementById('bookmarklet-link').href = bml;
+
+// ─── SCAN RESULTS FROM URL PARAMS ────────────────────────────
+
+const params = new URLSearchParams(window.location.search);
+if (params.get('scannedAt')) {
   switchTab('analyzer');
-  try{
-    const codes=decodeURIComponent(params.get('codes')||'').split(',').filter(Boolean);
-    const products=codes.map(c=>({code:c,url:'https://www.kapruka.com/buyonline/-/kid/'+c,type:c.startsWith('ef_pc_')?'PC':'Ecommerce'}));
-    renderScan({scannedAt:params.get('scannedAt'),total:parseInt(params.get('total')),ecommerce:{count:parseInt(params.get('ec')),pct:parseFloat(params.get('ecPct'))},pc:{count:parseInt(params.get('pc')),pct:parseFloat(params.get('pcPct'))},status:params.get('status'),products});
-  }catch(e){console.error(e);}
+  try {
+    const codes    = decodeURIComponent(params.get('codes') || '').split(',').filter(Boolean);
+    const products = codes.map(c => ({
+      code: c,
+      url:  'https://www.kapruka.com/buyonline/-/kid/' + c,
+      type: c.startsWith('ef_pc_') ? 'PC' : 'Ecommerce'
+    }));
+    renderScan({
+      scannedAt: params.get('scannedAt'),
+      total:     parseInt(params.get('total')),
+      ecommerce: { count: parseInt(params.get('ec')),   pct: parseFloat(params.get('ecPct')) },
+      pc:        { count: parseInt(params.get('pc')),   pct: parseFloat(params.get('pcPct')) },
+      status:    params.get('status'),
+      products
+    });
+  } catch(e) { console.error(e); }
 }
 
-function renderScan(data){
-  document.getElementById('scan-time').textContent='Scanned '+new Date(data.scannedAt).toLocaleString('en-GB',{timeZone:'Asia/Colombo'});
-  document.getElementById('s-total').textContent=data.total;
-  document.getElementById('s-ec').textContent=data.ecommerce.count+' ('+data.ecommerce.pct+'%)';
-  document.getElementById('s-pc').textContent=data.pc.count+' ('+data.pc.pct+'%)';
-  const badge=document.getElementById('scan-badge');
-  badge.textContent={ON_TARGET:'✅ On Target',TOO_MUCH_ECOMMERCE:'⚠️ Too Much EC',TOO_MUCH_PC:'⚠️ Too Much PC'}[data.status]||data.status;
-  badge.className='scan-badge '+data.status;
-  const ep=data.ecommerce.pct,pp=data.pc.pct;
-  const se=document.getElementById('sbar-ec'),sp=document.getElementById('sbar-pc');
-  se.style.width=ep+'%';se.textContent=ep>8?ep+'%':'';
-  sp.style.width=pp+'%';sp.textContent=pp>5?pp+'%':'';
-  const ec=data.products.filter(p=>p.type==='Ecommerce'),pc=data.products.filter(p=>p.type==='PC');
-  document.getElementById('product-breakdown').innerHTML=`<div class="pbd-title" style="color:#5e3a8e">🟣 Ecommerce <span class="pbd-count">${ec.length}</span></div><div class="prod-grid" id="ec-pgrid"></div><div class="pbd-title" style="color:#d32f2f;margin-top:12px">🟥 PC Products <span class="pbd-count">${pc.length}</span></div><div class="prod-grid" id="pc-pgrid"></div>`;
-  ec.forEach(p=>addProd('ec-pgrid',p));pc.forEach(p=>addProd('pc-pgrid',p));
+function renderScan(data) {
+  document.getElementById('scan-time').textContent   = 'Scanned ' + new Date(data.scannedAt).toLocaleString('en-GB', { timeZone: 'Asia/Colombo' });
+  document.getElementById('s-total').textContent     = data.total;
+  document.getElementById('s-ec').textContent        = data.ecommerce.count + ' (' + data.ecommerce.pct + '%)';
+  document.getElementById('s-pc').textContent        = data.pc.count + ' (' + data.pc.pct + '%)';
+  const badge = document.getElementById('scan-badge');
+  badge.textContent = { ON_TARGET:'✅ On Target', TOO_MUCH_ECOMMERCE:'⚠️ Too Much EC', TOO_MUCH_PC:'⚠️ Too Much PC' }[data.status] || data.status;
+  badge.className   = 'scan-badge ' + data.status;
+  const ep = data.ecommerce.pct, pp = data.pc.pct;
+  const se = document.getElementById('sbar-ec'), sp = document.getElementById('sbar-pc');
+  se.style.width = ep + '%'; se.textContent = ep > 8 ? ep + '%' : '';
+  sp.style.width = pp + '%'; sp.textContent = pp > 5 ? pp + '%' : '';
+  const ec = data.products.filter(p => p.type === 'Ecommerce');
+  const pc = data.products.filter(p => p.type === 'PC');
+  document.getElementById('product-breakdown').innerHTML =
+    `<div class="pbd-title" style="color:#5e3a8e">🟣 Ecommerce <span class="pbd-count">${ec.length}</span></div>
+     <div class="prod-grid" id="ec-pgrid"></div>
+     <div class="pbd-title" style="color:#d32f2f;margin-top:12px">🟥 PC Products <span class="pbd-count">${pc.length}</span></div>
+     <div class="prod-grid" id="pc-pgrid"></div>`;
+  ec.forEach(p => addProd('ec-pgrid', p));
+  pc.forEach(p => addProd('pc-pgrid', p));
   document.getElementById('scan-results').classList.add('show');
 }
 
-function addProd(gid,p){
-  const g=document.getElementById(gid);if(!g)return;
-  const d=document.createElement('div');d.className='prod-item';
-  d.innerHTML=`<a href="${p.url}" target="_blank">${p.code}</a><span class="tag ${p.type==='PC'?'tag-pc':'tag-ec'}">${p.type}</span>`;
+function addProd(gid, p) {
+  const g = document.getElementById(gid);
+  if (!g) return;
+  const d = document.createElement('div');
+  d.className = 'prod-item';
+  d.innerHTML = `<a href="${p.url}" target="_blank">${p.code}</a><span class="tag ${p.type==='PC'?'tag-pc':'tag-ec'}">${p.type}</span>`;
   g.appendChild(d);
 }
 
+// ─── INIT ─────────────────────────────────────────────────────
+// Render skeleton first, then load from Supabase
 renderAll();
+loadBookings();
 </script>
 </body>
 </html>
