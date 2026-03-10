@@ -117,7 +117,29 @@ body {
 .slot-img {
   width: 100%; height: 100%; object-fit: cover;
   position: absolute; inset: 0; border-radius: 7px;
-  opacity: 0.2; pointer-events: none;
+  opacity: 1; pointer-events: none; transition: opacity .2s;
+}
+
+/* SLOT CODE OVERLAY ON HOVER */
+.slot-overlay {
+  position: absolute; inset: 0;
+  background: rgba(211,47,47,0.88);
+  border-radius: 7px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  opacity: 0; transition: opacity .18s;
+  padding: 4px; pointer-events: none;
+}
+.slot.s-pc:hover .slot-overlay { opacity: 1; }
+.slot.s-pc:hover .slot-img     { opacity: 0.05; }
+.slot-overlay-code {
+  font-size: 6px; font-weight: 700;
+  color: white; word-break: break-all;
+  text-align: center; line-height: 1.4; padding: 0 3px;
+}
+.slot-overlay-hint {
+  font-size: 5.5px; color: rgba(255,255,255,0.7);
+  margin-top: 3px; text-transform: uppercase; letter-spacing: 0.8px;
 }
 
 /* MODAL PRODUCT PREVIEW */
@@ -583,11 +605,14 @@ function renderAll() {
           const imgHtml = imgUrl
             ? '<img class="slot-img" src="' + imgUrl + '" alt="" onerror="this.style.display=\'none\'"/>'
             : '';
-          sl.innerHTML = imgHtml +
+          const overlayHtml =
+            '<div class="slot-overlay">' +
+              '<div class="slot-overlay-code">' + bk.code + '</div>' +
+              '<div class="slot-overlay-hint">click to view</div>' +
+            '</div>';
+          sl.innerHTML = imgHtml + overlayHtml +
             '<div class="slot-n">' + n + '</div>' +
-            '<div class="slot-ico">&#128510;</div>' +
-            '<div class="slot-tag pc">PC</div>' +
-            '<div class="slot-code">' + bk.code + '</div>';
+            (imgUrl ? '' : '<div class="slot-ico">&#128510;</div><div class="slot-tag pc">PC</div><div class="slot-code">' + bk.code + '</div>');
           sl.onclick = () => openDetail(key, bk, sec.label, row + 1, col + 1);
         } else if (locked) {
           sl.className = 'slot s-ec';
