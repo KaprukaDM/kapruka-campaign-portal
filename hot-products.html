@@ -55,83 +55,103 @@
       font-family: 'Playfair Display', serif;
       color: #5e3a8e; font-size: 28px; margin-bottom: 20px;
     }
-    .category-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 15px; margin-bottom: 10px;
+
+    /* ── Overview Table ── */
+    .overview-table {
+      width: 100%; border-collapse: collapse;
+      border-radius: 12px; overflow: hidden;
     }
-    .category-btn {
-      padding: 18px 14px;
-      border: 3px solid #e0e0e0;
-      border-radius: 12px; background: white;
-      cursor: pointer; text-align: center; transition: all 0.3s;
-    }
-    .category-btn:hover {
-      border-color: #FFD700;
-      transform: translateY(-3px);
-      box-shadow: 0 8px 25px rgba(255,215,0,0.3);
-    }
-    .category-btn.selected {
+    .overview-table th {
       background: linear-gradient(135deg, #5e3a8e, #3d2461);
-      border-color: #5e3a8e;
-      box-shadow: 0 10px 30px rgba(94,58,142,0.4);
+      color: white; padding: 14px 16px; text-align: left;
+      font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;
     }
-    .category-btn .cat-name {
-      font-size: 15px; font-weight: 700;
-      color: #333; margin-bottom: 12px;
+    .overview-table th.center { text-align: center; }
+    .overview-table td {
+      padding: 13px 16px;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 14px; color: #333;
+      vertical-align: middle;
     }
-    .category-btn.selected .cat-name { color: #fff; }
-    .cat-badges {
-      display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;
+    .overview-table td.center { text-align: center; }
+    .overview-table tbody tr { transition: background 0.2s; cursor: pointer; }
+    .overview-table tbody tr:hover { background: #f5f0ff; }
+    .overview-table tbody tr.active-row { background: #ede4ff; }
+    .overview-table tbody tr:last-child td { border-bottom: none; }
+    .overview-table tfoot td {
+      padding: 13px 16px; font-weight: 700;
+      background: #f9f4ff; color: #5e3a8e;
+      font-size: 14px; border-top: 2px solid #e0d0ff;
     }
-    .cat-badge {
-      padding: 4px 10px; border-radius: 20px;
-      font-size: 12px; font-weight: 700;
-      display: inline-flex; align-items: center; gap: 4px;
+    .overview-table tfoot td.center { text-align: center; }
+
+    /* Badges */
+    .badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 12px; border-radius: 20px;
+      font-weight: 700; font-size: 13px;
     }
-    .cat-badge.suggested {
-      background: #f0e6ff; color: #5e3a8e;
-      border: 1px solid #c9a9f5;
+    .badge-suggested { background: #f0e6ff; color: #5e3a8e; border: 1px solid #c9a9f5; }
+    .badge-fulfilled  { background: #e6f9ed; color: #2e7d4f; border: 1px solid #a0dbb8; }
+    .badge-pending    { background: #fff4e0; color: #a05c00; border: 1px solid #f5c97a; }
+    .badge-zero       { background: #f5f5f5; color: #aaa;    border: 1px solid #ddd; }
+
+    /* Progress bar */
+    .progress-wrap {
+      width: 100%; background: #eee;
+      border-radius: 10px; height: 8px; overflow: hidden;
     }
-    .cat-badge.fulfilled {
-      background: #e6f9ed; color: #2e7d4f;
-      border: 1px solid #a0dbb8;
+    .progress-bar {
+      height: 8px; border-radius: 10px;
+      background: linear-gradient(90deg, #5e3a8e, #a07fd4);
+      transition: width 0.5s ease;
     }
-    .category-btn.selected .cat-badge.suggested {
-      background: rgba(255,255,255,0.15); color: #FFD700;
-      border-color: rgba(255,215,0,0.4);
+
+    /* View button */
+    .view-btn {
+      padding: 7px 16px; border-radius: 8px;
+      border: 2px solid #5e3a8e; background: white;
+      color: #5e3a8e; font-weight: 700; font-size: 13px;
+      cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif;
     }
-    .category-btn.selected .cat-badge.fulfilled {
-      background: rgba(255,255,255,0.15); color: #90EE90;
-      border-color: rgba(144,238,144,0.4);
+    .view-btn:hover, .view-btn.active {
+      background: #5e3a8e; color: white;
     }
-    .cat-counts-loading {
-      display: inline-block; width: 30px; height: 10px;
+
+    /* Shimmer skeleton */
+    .shimmer {
+      display: inline-block; width: 36px; height: 14px;
       background: linear-gradient(90deg, #e0e0e0 25%, #f5f5f5 50%, #e0e0e0 75%);
       background-size: 200% 100%;
       animation: shimmer 1.2s infinite;
-      border-radius: 4px;
+      border-radius: 4px; vertical-align: middle;
     }
     @keyframes shimmer {
-      0% { background-position: 200% 0; }
+      0%   { background-position: 200% 0; }
       100% { background-position: -200% 0; }
     }
+
+    /* Search */
+    .search-input {
+      padding: 10px 16px; border: 2px solid #e0e0e0;
+      border-radius: 10px; font-size: 14px;
+      font-family: 'Inter', sans-serif; width: 240px;
+      transition: border-color 0.2s;
+    }
+    .search-input:focus { outline: none; border-color: #a07fd4; }
+
+    /* Stats bar */
     .stats-bar {
-      display: flex; gap: 20px; padding: 20px;
+      display: flex; gap: 20px; padding: 22px;
       background: linear-gradient(135deg, #5e3a8e, #3d2461);
-      border-radius: 12px; margin-bottom: 25px; color: white; flex-wrap: wrap;
+      border-radius: 14px; margin-bottom: 25px; color: white; flex-wrap: wrap;
+      align-items: center;
     }
-    .stat { flex: 1; min-width: 150px; }
-    .stat-label {
-      font-size: 12px; text-transform: uppercase;
-      letter-spacing: 1px; opacity: 0.8; margin-bottom: 5px;
-    }
-    .stat-value {
-      font-size: 28px; font-weight: 700;
-      font-family: 'Playfair Display', serif;
-    }
-    .dashboard-section { display: none; }
-    .dashboard-section.active { display: block; }
+    .stat { flex: 1; min-width: 140px; }
+    .stat-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8; margin-bottom: 5px; }
+    .stat-value { font-size: 28px; font-weight: 700; font-family: 'Playfair Display', serif; }
+
+    /* Products table */
     .products-table {
       width: 100%; border-collapse: collapse;
       background: white; border-radius: 12px;
@@ -139,40 +159,41 @@
     }
     .products-table th {
       background: linear-gradient(135deg, #5e3a8e, #3d2461);
-      color: white; padding: 16px 12px; text-align: left;
+      color: white; padding: 14px 12px; text-align: left;
       font-weight: 700; font-size: 13px;
       text-transform: uppercase; letter-spacing: 0.5px;
     }
     .products-table td {
-      padding: 16px 12px; border-bottom: 1px solid #f0f0f0;
+      padding: 14px 12px; border-bottom: 1px solid #f0f0f0;
       font-size: 14px; color: #333;
     }
-    .products-table tr:hover { background: #f9f9f9; }
+    .products-table tr:hover { background: #fafafa; }
     .products-table tr:last-child td { border-bottom: none; }
     .product-link {
       color: #5e3a8e; text-decoration: none;
-      font-weight: 600; transition: all 0.3s;
+      font-weight: 600; transition: color 0.2s;
     }
-    .product-link:hover { color: #FFD700; text-decoration: underline; }
-    .checkbox-cell { text-align: center; }
-    input[type="checkbox"] {
-      width: 20px; height: 20px;
-      cursor: pointer; accent-color: #5e3a8e;
-    }
+    .product-link:hover { color: #a07fd4; text-decoration: underline; }
+    input[type="checkbox"] { width: 18px; height: 18px; accent-color: #5e3a8e; cursor: pointer; }
     input[type="text"] {
       width: 100%; padding: 8px 12px;
       border: 2px solid #e8e8e8; border-radius: 8px;
-      font-size: 13px; font-family: 'Inter', sans-serif; transition: all 0.3s;
+      font-size: 13px; font-family: 'Inter', sans-serif; transition: border-color 0.2s;
     }
-    input[type="text"]:focus {
-      outline: none; border-color: #FFD700;
-      box-shadow: 0 0 0 3px rgba(255,215,0,0.1);
-    }
+    input[type="text"]:focus { outline: none; border-color: #FFD700; }
     input[type="text"]:disabled { background: #f5f5f5; cursor: not-allowed; }
+    .sales-count {
+      color: #FFD700; background: #5e3a8e;
+      padding: 4px 10px; border-radius: 8px;
+      font-weight: 700; font-size: 12px;
+    }
+
+    /* Loading overlay */
     .loading {
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.85);
-      display: none; align-items: center; justify-content: center; z-index: 9999;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.8);
+      display: none; align-items: center;
+      justify-content: center; z-index: 9999;
     }
     .spinner {
       width: 60px; height: 60px;
@@ -181,318 +202,406 @@
       border-radius: 50%; animation: spin 1s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .empty-state {
-      text-align: center; padding: 80px 20px;
-      color: rgba(255,255,255,0.7);
-    }
-    .empty-state .icon { font-size: 80px; margin-bottom: 20px; }
-    .empty-state h3 {
-      font-family: 'Playfair Display', serif;
-      font-size: 28px; color: white; margin-bottom: 15px;
-    }
-    .no-products { text-align: center; padding: 60px 20px; color: #999; }
-    .no-products .icon { font-size: 64px; margin-bottom: 20px; opacity: 0.3; }
+
+    /* Save toast */
     .save-status {
       display: none; position: fixed;
       bottom: 30px; right: 30px;
       background: #4CAF50; color: white;
       padding: 15px 25px; border-radius: 12px; font-weight: 600;
       box-shadow: 0 8px 25px rgba(76,175,80,0.4);
-      animation: slideIn 0.3s ease-out;
+      animation: slideUp 0.3s ease-out; z-index: 9998;
     }
-    @keyframes slideIn {
-      from { transform: translateY(100px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
+    @keyframes slideUp {
+      from { transform: translateY(60px); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
     }
-    .sales-count {
-      color: #FFD700; background: #5e3a8e;
-      padding: 4px 10px; border-radius: 8px;
-      font-weight: 700; font-size: 12px;
+
+    /* Close btn */
+    .close-btn {
+      background: rgba(255,255,255,0.15);
+      border: 2px solid rgba(255,255,255,0.3);
+      color: white; padding: 10px 20px;
+      border-radius: 10px; cursor: pointer;
+      font-weight: 600; font-size: 14px;
+      font-family: 'Inter', sans-serif; transition: all 0.2s;
     }
+    .close-btn:hover { background: rgba(255,255,255,0.25); }
+
     @media (max-width: 768px) {
       h1 { font-size: 28px; }
-      .category-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+      .search-input { width: 100%; }
       .stats-bar { flex-direction: column; }
-      .products-table { font-size: 11px; }
-      .products-table th, .products-table td { padding: 10px 8px; }
+      .overview-table td, .overview-table th { padding: 10px 10px; font-size: 12px; }
+      .products-table td, .products-table th { padding: 10px 8px; font-size: 12px; }
     }
   </style>
 </head>
 <body>
-  <div class="loading" id="loading"><div class="spinner"></div></div>
-  <div class="save-status" id="saveStatus">✓ Saved Successfully!</div>
 
-  <div class="container">
-    <a href="index.html" class="back-btn">← Back to Home</a>
+<div class="loading" id="loading"><div class="spinner"></div></div>
+<div class="save-status" id="saveStatus">✓ Saved Successfully!</div>
 
-    <div class="header">
-      <div class="kapruka-logo">
-        <img src="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw" alt="Kapruka">
-      </div>
-      <h1>Hot Products</h1>
-      <p class="subtitle">Product Suggestions Dashboard</p>
+<div class="container">
+  <a href="index.html" class="back-btn">← Back to Home</a>
+
+  <div class="header">
+    <div class="kapruka-logo">
+      <img src="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw" alt="Kapruka">
+    </div>
+    <h1>Hot Products</h1>
+    <p class="subtitle">Product Suggestions Dashboard</p>
+  </div>
+
+  <!-- ── Overview Table Card ── -->
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
+      <h2 style="margin-bottom:0;">🔥 All Categories Overview</h2>
+      <input class="search-input" type="text" id="tableSearch"
+             placeholder="🔍 Search category..."
+             oninput="filterTable(this.value)">
     </div>
 
-    <!-- Category Selection -->
-    <div class="card" id="categoryCard">
-      <h2>🔥 Select Category</h2>
-      <div class="category-grid" id="categoryGrid">
-        <div style="text-align:center;padding:40px;color:#999;grid-column:1/-1;">Loading categories...</div>
+    <div style="overflow-x:auto;">
+      <table class="overview-table" id="overviewTable">
+        <thead>
+          <tr>
+            <th style="width:4%;">#</th>
+            <th style="width:30%;">Category</th>
+            <th class="center" style="width:14%;">📦 Suggested</th>
+            <th class="center" style="width:14%;">✅ Fulfilled</th>
+            <th class="center" style="width:14%;">⏳ Pending</th>
+            <th style="width:18%;">Progress</th>
+            <th class="center" style="width:6%;">View</th>
+          </tr>
+        </thead>
+        <tbody id="overviewBody">
+          <!-- JS renders rows -->
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="2">TOTAL</td>
+            <td class="center" id="footTotal"><span class="shimmer"></span></td>
+            <td class="center" id="footFulfilled"><span class="shimmer"></span></td>
+            <td class="center" id="footPending"><span class="shimmer"></span></td>
+            <td colspan="2"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Detail Panel ── -->
+  <div id="detailPanel" style="display:none;">
+    <div class="stats-bar">
+      <div class="stat">
+        <div class="stat-label">Total Products</div>
+        <div class="stat-value" id="totalProducts">0</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Fulfilled</div>
+        <div class="stat-value" id="listedProducts">0</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Category</div>
+        <div class="stat-value" id="currentCategory" style="font-size:20px;">—</div>
+      </div>
+      <div style="display:flex;align-items:center;margin-left:auto;">
+        <button class="close-btn" onclick="closeDetail()">✕ Close</button>
       </div>
     </div>
 
-    <!-- Empty State -->
-    <div id="emptyState" class="empty-state">
-      <div class="icon">🛍️</div>
-      <h3>Select a Category</h3>
-      <p>Choose a category above to view hot product suggestions</p>
-    </div>
-
-    <!-- Dashboard Section -->
-    <div id="dashboardSection" class="dashboard-section">
-      <div class="stats-bar">
-        <div class="stat">
-          <div class="stat-label">Total Products</div>
-          <div class="stat-value" id="totalProducts">0</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">Listed Products</div>
-          <div class="stat-value" id="listedProducts">0</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">Category</div>
-          <div class="stat-value" id="currentCategory" style="font-size:20px;">-</div>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2>📦 Product Suggestions</h2>
-        <div style="overflow-x: auto;">
-          <table class="products-table">
-            <thead>
-              <tr>
-                <th style="width:30%;">Product Name</th>
-                <th style="width:15%;">Link</th>
-                <th style="width:10%;">Sales</th>
-                <th style="width:10%;">Listed</th>
-                <th style="width:35%;">Kapruka Link</th>
-              </tr>
-            </thead>
-            <tbody id="productsTableBody">
-              <tr><td colspan="5" style="text-align:center;padding:40px;">No products</td></tr>
-            </tbody>
-          </table>
-        </div>
+    <div class="card">
+      <h2 id="detailTitle">📦 Products</h2>
+      <div style="overflow-x:auto;">
+        <table class="products-table">
+          <thead>
+            <tr>
+              <th style="width:30%;">Product Name</th>
+              <th style="width:12%;">Link</th>
+              <th style="width:10%;">Sales</th>
+              <th style="width:8%;text-align:center;">Listed</th>
+              <th style="width:40%;">Kapruka Link</th>
+            </tr>
+          </thead>
+          <tbody id="productsTableBody">
+            <tr><td colspan="5" style="text-align:center;padding:40px;">Select a category</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
 
-  <!-- Load shared API (includes CATEGORIES) -->
-  <script src="js/supabase-api.js"></script>
-  <script>
-    const PRODUCT_CATEGORIES = Array.isArray(CATEGORIES) ? [...new Set(CATEGORIES)] : [];
+</div><!-- /container -->
 
-    let selectedCategory = null;
-    let currentProducts = [];
-    let categoryCountMap = {}; // { CategoryName: { total: 0, listed: 0 } }
+<script src="js/supabase-api.js"></script>
+<script>
+  const PRODUCT_CATEGORIES = Array.isArray(CATEGORIES) ? [...new Set(CATEGORIES)] : [];
 
-    function showLoading() { document.getElementById('loading').style.display = 'flex'; }
-    function hideLoading() { document.getElementById('loading').style.display = 'none'; }
+  let selectedCategory = null;
+  let currentProducts  = [];
+  let categoryCountMap = {}; // { cat: { total, listed } }
+  let allRowsData      = []; // for search filtering
 
-    function showSaveStatus() {
-      const status = document.getElementById('saveStatus');
-      status.style.display = 'block';
-      setTimeout(() => status.style.display = 'none', 2000);
-    }
+  /* ── Utilities ── */
+  const showLoading = () => document.getElementById('loading').style.display = 'flex';
+  const hideLoading = () => document.getElementById('loading').style.display = 'none';
 
-    function extractProductName(url) {
-      try {
-        const urlObj = new URL(url);
-        const parts = urlObj.pathname.split('/').filter(p => p);
-        return parts[parts.length - 1]
-          .replace(/-/g, ' ')
-          .replace(/\.html?$/i, '')
-          .substring(0, 50);
-      } catch { return 'Product Link'; }
-    }
+  function showSaveStatus() {
+    const el = document.getElementById('saveStatus');
+    el.style.display = 'block';
+    setTimeout(() => el.style.display = 'none', 2000);
+  }
 
-    // Render skeleton buttons immediately, then fill counts async
-    function displayCategories() {
-      const grid = document.getElementById('categoryGrid');
-      grid.innerHTML = '';
+  function extractProductName(url) {
+    try {
+      const parts = new URL(url).pathname.split('/').filter(Boolean);
+      return parts[parts.length - 1]
+        .replace(/-/g, ' ')
+        .replace(/\.html?$/i, '')
+        .substring(0, 55);
+    } catch { return 'Product Link'; }
+  }
 
-      if (!PRODUCT_CATEGORIES.length) {
-        grid.innerHTML = '<div style="text-align:center;padding:40px;color:#999;grid-column:1/-1;">No categories configured</div>';
-        return;
-      }
+  /* ── Build skeleton rows immediately ── */
+  function buildSkeletonRows() {
+    const tbody = document.getElementById('overviewBody');
+    tbody.innerHTML = PRODUCT_CATEGORIES.map((cat, i) => `
+      <tr id="row-${i}">
+        <td style="color:#aaa;font-size:13px;">${i + 1}</td>
+        <td style="font-weight:600;">${cat}</td>
+        <td class="center"><span class="shimmer"></span></td>
+        <td class="center"><span class="shimmer"></span></td>
+        <td class="center"><span class="shimmer"></span></td>
+        <td><div class="progress-wrap"><div class="progress-bar" style="width:0%"></div></div></td>
+        <td class="center">
+          <button class="view-btn" id="viewbtn-${i}" onclick="selectCategory('${cat.replace(/'/g,"\\'")}', ${i})" disabled>
+            View
+          </button>
+        </td>
+      </tr>
+    `).join('');
+    allRowsData = PRODUCT_CATEGORIES.map((cat, i) => ({ cat, i }));
+  }
 
-      // Render buttons with shimmer placeholders first
-      PRODUCT_CATEGORIES.forEach(cat => {
-        const btn = document.createElement('div');
-        btn.className = 'category-btn';
-        btn.id = `cat-btn-${CSS.escape(cat)}`;
-        btn.innerHTML = `
-          <div class="cat-name">${cat}</div>
-          <div class="cat-badges">
-            <span class="cat-badge suggested" id="badge-total-${CSS.escape(cat)}">
-              📦 <span class="cat-counts-loading"></span>
-            </span>
-            <span class="cat-badge fulfilled" id="badge-listed-${CSS.escape(cat)}">
-              ✅ <span class="cat-counts-loading"></span>
-            </span>
+  /* ── Load all category counts in parallel ── */
+  async function loadAllCategoryCounts() {
+    const results = await Promise.all(
+      PRODUCT_CATEGORIES.map((cat, i) =>
+        getHotProductsByCategory(cat)
+          .then(products => ({
+            i, cat,
+            total:  products.length,
+            listed: products.filter(p => p.listed).length
+          }))
+          .catch(() => ({ i, cat, total: 0, listed: 0 }))
+      )
+    );
+
+    let grandTotal = 0, grandListed = 0;
+
+    results.forEach(({ i, cat, total, listed }) => {
+      categoryCountMap[cat] = { total, listed };
+      const pending = total - listed;
+      const pct     = total > 0 ? Math.round((listed / total) * 100) : 0;
+
+      grandTotal  += total;
+      grandListed += listed;
+
+      const row = document.getElementById(`row-${i}`);
+      if (!row) return;
+
+      row.cells[2].innerHTML = total > 0
+        ? `<span class="badge badge-suggested">📦 ${total}</span>`
+        : `<span class="badge badge-zero">📦 0</span>`;
+
+      row.cells[3].innerHTML = listed > 0
+        ? `<span class="badge badge-fulfilled">✅ ${listed}</span>`
+        : `<span class="badge badge-zero">✅ 0</span>`;
+
+      row.cells[4].innerHTML = pending > 0
+        ? `<span class="badge badge-pending">⏳ ${pending}</span>`
+        : `<span class="badge badge-zero">⏳ 0</span>`;
+
+      row.cells[5].innerHTML = `
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="progress-wrap" style="flex:1;">
+            <div class="progress-bar" style="width:${pct}%"></div>
           </div>
-        `;
-        btn.onclick = () => selectCategory(cat);
-        grid.appendChild(btn);
-      });
+          <span style="font-size:12px;color:#888;min-width:32px;">${pct}%</span>
+        </div>`;
 
-      // Load all category counts in parallel
-      loadAllCategoryCounts();
+      const btn = document.getElementById(`viewbtn-${i}`);
+      if (btn) btn.disabled = false;
+    });
+
+    const grandPending = grandTotal - grandListed;
+    document.getElementById('footTotal').innerHTML =
+      `<span class="badge badge-suggested">📦 ${grandTotal}</span>`;
+    document.getElementById('footFulfilled').innerHTML =
+      `<span class="badge badge-fulfilled">✅ ${grandListed}</span>`;
+    document.getElementById('footPending').innerHTML =
+      grandPending > 0
+        ? `<span class="badge badge-pending">⏳ ${grandPending}</span>`
+        : `<span class="badge badge-zero">⏳ 0</span>`;
+  }
+
+  /* ── Filter table by search ── */
+  function filterTable(query) {
+    const q = query.toLowerCase().trim();
+    document.querySelectorAll('#overviewBody tr').forEach(row => {
+      const catName = row.cells[1]?.textContent.toLowerCase() || '';
+      row.style.display = catName.includes(q) ? '' : 'none';
+    });
+  }
+
+  /* ── Select category → show detail ── */
+  async function selectCategory(category, rowIndex) {
+    selectedCategory = category;
+
+    // Highlight active row
+    document.querySelectorAll('#overviewBody tr').forEach(r => r.classList.remove('active-row'));
+    document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+    const activeRow = document.getElementById(`row-${rowIndex}`);
+    if (activeRow) activeRow.classList.add('active-row');
+    const activeBtn = document.getElementById(`viewbtn-${rowIndex}`);
+    if (activeBtn) activeBtn.classList.add('active');
+
+    showLoading();
+    try {
+      const products = await getHotProductsByCategory(category);
+      displayProducts(products, category);
+      document.getElementById('detailPanel').style.display = 'block';
+      document.getElementById('detailPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (err) {
+      alert('Error loading products: ' + err.message);
+    }
+    hideLoading();
+  }
+
+  /* ── Close detail panel ── */
+  function closeDetail() {
+    document.getElementById('detailPanel').style.display = 'none';
+    document.querySelectorAll('#overviewBody tr').forEach(r => r.classList.remove('active-row'));
+    document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+    selectedCategory = null;
+  }
+
+  /* ── Render products in detail table ── */
+  function displayProducts(products, category) {
+    currentProducts = products;
+    document.getElementById('currentCategory').textContent = category;
+    document.getElementById('detailTitle').textContent     = `📦 Products — ${category}`;
+
+    const total  = products.length;
+    const listed = products.filter(p => p.listed).length;
+    document.getElementById('totalProducts').textContent = total;
+    document.getElementById('listedProducts').textContent = listed;
+
+    const tbody = document.getElementById('productsTableBody');
+
+    if (total === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" style="text-align:center;padding:60px;color:#bbb;">
+            <div style="font-size:48px;margin-bottom:12px;">📭</div>
+            No products added to this category yet
+          </td>
+        </tr>`;
+      return;
     }
 
-    async function loadAllCategoryCounts() {
-      try {
-        // Fetch all products across all categories in parallel
-        const results = await Promise.all(
-          PRODUCT_CATEGORIES.map(cat =>
-            getHotProductsByCategory(cat)
-              .then(products => ({ cat, total: products.length, listed: products.filter(p => p.listed).length }))
-              .catch(() => ({ cat, total: 0, listed: 0 }))
-          )
-        );
+    tbody.innerHTML = products.map(p => `
+      <tr data-id="${p.id}">
+        <td style="font-weight:600;color:#333;">${extractProductName(p.product_link)}</td>
+        <td><a href="${p.product_link}" target="_blank" class="product-link">View →</a></td>
+        <td><span class="sales-count">${p.sales_count || 0}</span></td>
+        <td style="text-align:center;">
+          <input type="checkbox"
+                 ${p.listed ? 'checked' : ''}
+                 onchange="updateListed(${p.id}, this.checked)"
+                 id="listed-${p.id}">
+        </td>
+        <td>
+          <input type="text"
+                 value="${p.kapruka_link || ''}"
+                 placeholder="Enter Kapruka link..."
+                 onblur="updateKaprukaLink(${p.id}, this.value)"
+                 ${!p.listed ? 'disabled' : ''}
+                 id="link-${p.id}">
+        </td>
+      </tr>
+    `).join('');
+  }
 
-        results.forEach(({ cat, total, listed }) => {
-          categoryCountMap[cat] = { total, listed };
-          updateCategoryBadge(cat, total, listed);
-        });
-      } catch (err) {
-        console.error('Error loading category counts:', err);
+  /* ── Update listed status ── */
+  async function updateListed(productId, isListed) {
+    try {
+      await updateHotProduct(productId, { listed: isListed });
+
+      const linkInput = document.getElementById(`link-${productId}`);
+      linkInput.disabled = !isListed;
+      if (!isListed) {
+        linkInput.value = '';
+        await updateHotProduct(productId, { kapruka_link: '' });
       }
-    }
 
-    function updateCategoryBadge(cat, total, listed) {
-      const escapedCat = CSS.escape(cat);
-      const totalBadge = document.getElementById(`badge-total-${escapedCat}`);
-      const listedBadge = document.getElementById(`badge-listed-${escapedCat}`);
-      if (totalBadge) totalBadge.innerHTML = `📦 ${total}`;
-      if (listedBadge) listedBadge.innerHTML = `✅ ${listed}`;
-    }
+      const product = currentProducts.find(p => p.id === productId);
+      if (product) product.listed = isListed;
 
-    async function selectCategory(category) {
-      selectedCategory = category;
+      const newListed = currentProducts.filter(p => p.listed).length;
+      document.getElementById('listedProducts').textContent = newListed;
 
-      document.querySelectorAll('.category-btn').forEach(b => {
-        b.classList.remove('selected');
-      });
-      const btn = document.getElementById(`cat-btn-${CSS.escape(category)}`);
-      if (btn) btn.classList.add('selected');
-
-      document.getElementById('emptyState').style.display = 'none';
-
-      try {
-        showLoading();
-        const products = await getHotProductsByCategory(category);
-        displayProducts(products, category);
-        hideLoading();
-      } catch (error) {
-        hideLoading();
-        console.error('Error loading products:', error);
-        alert('Error loading products: ' + error.message);
-      }
-    }
-
-    function displayProducts(products, category) {
-      currentProducts = products;
-      document.getElementById('dashboardSection').classList.add('active');
-      document.getElementById('currentCategory').textContent = category;
-
-      const totalCount = products.length;
-      const listedCount = products.filter(p => p.listed).length;
-      document.getElementById('totalProducts').textContent = totalCount;
-      document.getElementById('listedProducts').textContent = listedCount;
-
-      const tbody = document.getElementById('productsTableBody');
-
-      if (totalCount === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:#999;">No products added to this category yet</td></tr>';
-        return;
-      }
-
-      tbody.innerHTML = products.map(product => {
-        const productName = extractProductName(product.product_link);
-        return `
-          <tr data-id="${product.id}">
-            <td style="font-weight:600;color:#333;">${productName}</td>
-            <td><a href="${product.product_link}" target="_blank" class="product-link">View →</a></td>
-            <td><span class="sales-count">${product.sales_count || 0}</span></td>
-            <td class="checkbox-cell">
-              <input type="checkbox"
-                     ${product.listed ? 'checked' : ''}
-                     onchange="updateListed(${product.id}, this.checked)"
-                     id="listed-${product.id}">
-            </td>
-            <td>
-              <input type="text"
-                     value="${product.kapruka_link || ''}"
-                     placeholder="Enter Kapruka link..."
-                     onblur="updateKaprukaLink(${product.id}, this.value)"
-                     ${!product.listed ? 'disabled' : ''}
-                     id="link-${product.id}">
-            </td>
-          </tr>
-        `;
-      }).join('');
-    }
-
-    async function updateListed(productId, isListed) {
-      try {
-        await updateHotProduct(productId, { listed: isListed });
-
-        const linkInput = document.getElementById(`link-${productId}`);
-        linkInput.disabled = !isListed;
-
-        if (!isListed) {
-          linkInput.value = '';
-          await updateHotProduct(productId, { kapruka_link: '' });
+      // Refresh overview row badge
+      if (selectedCategory) {
+        categoryCountMap[selectedCategory] = { total: currentProducts.length, listed: newListed };
+        const rowIndex = PRODUCT_CATEGORIES.indexOf(selectedCategory);
+        if (rowIndex !== -1) {
+          const pending = currentProducts.length - newListed;
+          const pct     = currentProducts.length > 0 ? Math.round((newListed / currentProducts.length) * 100) : 0;
+          const row     = document.getElementById(`row-${rowIndex}`);
+          if (row) {
+            row.cells[3].innerHTML = newListed > 0
+              ? `<span class="badge badge-fulfilled">✅ ${newListed}</span>`
+              : `<span class="badge badge-zero">✅ 0</span>`;
+            row.cells[4].innerHTML = pending > 0
+              ? `<span class="badge badge-pending">⏳ ${pending}</span>`
+              : `<span class="badge badge-zero">⏳ 0</span>`;
+            row.cells[5].innerHTML = `
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="progress-wrap" style="flex:1;">
+                  <div class="progress-bar" style="width:${pct}%"></div>
+                </div>
+                <span style="font-size:12px;color:#888;min-width:32px;">${pct}%</span>
+              </div>`;
+          }
         }
-
-        // Update local state
-        const product = currentProducts.find(p => p.id === productId);
-        if (product) product.listed = isListed;
-
-        const newListedCount = currentProducts.filter(p => p.listed).length;
-        document.getElementById('listedProducts').textContent = newListedCount;
-
-        // 🆕 Refresh category badge counts live
-        if (selectedCategory) {
-          categoryCountMap[selectedCategory] = {
-            total: currentProducts.length,
-            listed: newListedCount
-          };
-          updateCategoryBadge(selectedCategory, currentProducts.length, newListedCount);
-        }
-
-        showSaveStatus();
-      } catch (error) {
-        console.error('Error updating listed status:', error);
-        alert('Error saving: ' + error.message);
-        document.getElementById(`listed-${productId}`).checked = !isListed;
       }
-    }
 
-    async function updateKaprukaLink(productId, link) {
-      try {
-        await updateHotProduct(productId, { kapruka_link: link });
-        showSaveStatus();
-      } catch (error) {
-        console.error('Error updating Kapruka link:', error);
-        alert('Error saving link: ' + error.message);
-      }
+      showSaveStatus();
+    } catch (err) {
+      console.error(err);
+      alert('Error saving: ' + err.message);
+      document.getElementById(`listed-${productId}`).checked = !isListed;
     }
+  }
 
-    window.onload = () => {
-      displayCategories();
-    };
-  </script>
+  /* ── Update Kapruka link ── */
+  async function updateKaprukaLink(productId, link) {
+    try {
+      await updateHotProduct(productId, { kapruka_link: link });
+      showSaveStatus();
+    } catch (err) {
+      console.error(err);
+      alert('Error saving link: ' + err.message);
+    }
+  }
+
+  /* ── Init ── */
+  window.onload = () => {
+    buildSkeletonRows();
+    loadAllCategoryCounts();
+  };
+</script>
 </body>
 </html>
