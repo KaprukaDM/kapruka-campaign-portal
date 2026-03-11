@@ -44,6 +44,7 @@ function isValidUser(authHeader, env) {
     // Test with only ONE user
     const users = {
       'intern1': env.INTERN1_PASS
+      'Aloka': env.ALOKA_PASS
     };
     
     return users[username] && users[username] === password;
