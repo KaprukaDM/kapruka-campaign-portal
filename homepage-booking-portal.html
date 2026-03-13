@@ -31,8 +31,6 @@ body {
 }
 .live-dot { width: 6px; height: 6px; border-radius: 50%; background: #2E7D32; animation: blink 2s infinite; }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
-
-/* LOADING BAR */
 .loading-bar {
   position: fixed; top: 0; left: 0; height: 3px;
   background: linear-gradient(90deg, #5e3a8e, #c9b8f0, #5e3a8e);
@@ -41,8 +39,6 @@ body {
 }
 @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
 .loading-bar.show { display: block; width: 100%; }
-
-/* SYNC BADGE */
 .sync-badge {
   display: flex; align-items: center; gap: 5px; padding: 5px 12px;
   border-radius: 20px; font-size: 11px; font-weight: 600; border: 1px solid; transition: all 0.3s;
@@ -53,8 +49,6 @@ body {
 .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .sync-dot.spin { animation: rotateDot 1s linear infinite; }
 @keyframes rotateDot { 0%{transform:scale(1);opacity:1} 50%{transform:scale(0.4);opacity:0.4} 100%{transform:scale(1);opacity:1} }
-
-/* TABS */
 .tabs-card { background: white; border-radius: 16px; box-shadow: 0 8px 30px rgba(0,0,0,0.15); overflow: hidden; margin-bottom: 24px; }
 .tabs { display: flex; border-bottom: 1px solid #f0f0f0; padding: 0 25px; background: white; }
 .tab { padding: 14px 18px; font-size: 13px; font-weight: 600; color: #6e6e73; cursor: pointer; border-bottom: 2px solid transparent; transition: all .2s; display: flex; align-items: center; gap: 7px; }
@@ -62,8 +56,6 @@ body {
 .tab.active { color: #5e3a8e; border-bottom-color: #5e3a8e; }
 .tab-panel { display: none; }
 .tab-panel.active { display: block; }
-
-/* DASHBOARD */
 .dash-strip { padding: 20px 25px; background: #fafafa; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .dash-metric { display: flex; flex-direction: column; gap: 2px; padding: 12px 18px; background: white; border: 1px solid #e8e8ea; border-radius: 12px; min-width: 80px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
 .dash-val { font-size: 26px; font-weight: 700; line-height: 1; letter-spacing: -0.5px; }
@@ -83,8 +75,6 @@ body {
 .bar-ec { background: #5e3a8e; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: white; transition: width .45s cubic-bezier(.4,0,.2,1); white-space: nowrap; overflow: hidden; }
 .bar-pc { background: #d32f2f; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: white; transition: width .45s cubic-bezier(.4,0,.2,1); white-space: nowrap; overflow: hidden; }
 .mix-hint { display: flex; justify-content: space-between; font-size: 10px; color: #6e6e73; margin-top: 4px; }
-
-/* SLOTS */
 .grid-area { padding: 20px 25px; }
 .section-block { margin-bottom: 24px; }
 .sec-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
@@ -112,15 +102,11 @@ body {
 .slot-tag.pc { color: #d32f2f; }
 .slot-tag.em { color: #aeaeb2; }
 .slot-code { font-size: 5.5px; color: #6e6e73; margin-top: 2px; word-break: break-all; line-height: 1.3; max-width: 100%; padding: 0 2px; }
-
-/* SLOT BACKGROUND IMAGE */
 .slot-img {
   width: 100%; height: 100%; object-fit: cover;
   position: absolute; inset: 0; border-radius: 7px;
   opacity: 1; pointer-events: none; transition: opacity .2s;
 }
-
-/* SLOT CODE OVERLAY ON HOVER */
 .slot-overlay {
   position: absolute; inset: 0;
   background: rgba(211,47,47,0.88);
@@ -132,17 +118,8 @@ body {
 }
 .slot.s-pc:hover .slot-overlay { opacity: 1; }
 .slot.s-pc:hover .slot-img     { opacity: 0.05; }
-.slot-overlay-code {
-  font-size: 6px; font-weight: 700;
-  color: white; word-break: break-all;
-  text-align: center; line-height: 1.4; padding: 0 3px;
-}
-.slot-overlay-hint {
-  font-size: 5.5px; color: rgba(255,255,255,0.7);
-  margin-top: 3px; text-transform: uppercase; letter-spacing: 0.8px;
-}
-
-/* MODAL PRODUCT PREVIEW */
+.slot-overlay-code { font-size: 6px; font-weight: 700; color: white; word-break: break-all; text-align: center; line-height: 1.4; padding: 0 3px; }
+.slot-overlay-hint { font-size: 5.5px; color: rgba(255,255,255,0.7); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.8px; }
 .prod-preview {
   display: none; align-items: center; gap: 12px;
   background: #f5f0ff; border: 1px solid #c9b8f0;
@@ -153,8 +130,6 @@ body {
 .prod-preview-info { flex: 1; min-width: 0; }
 .prod-preview-code { font-size: 11px; font-weight: 700; color: #5e3a8e; word-break: break-all; line-height: 1.4; }
 .prod-preview-status { font-size: 10px; color: #6e6e73; margin-top: 2px; }
-
-/* DETAIL MODAL IMAGE */
 .detail-img-wrap {
   width: 100%; height: 130px; border-radius: 10px; overflow: hidden;
   margin-bottom: 12px; background: #f5f5f7; border: 1px solid #e8e8ea;
@@ -162,8 +137,6 @@ body {
 }
 .detail-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
 .detail-img-placeholder { font-size: 32px; opacity: 0.25; }
-
-/* ANALYZER */
 .analyzer-area { padding: 20px 25px; }
 .card { background: white; border: 1px solid #e8e8ea; border-radius: 14px; padding: 28px; margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
 .card h2 { color: #1d1d1f; font-size: 16px; font-weight: 600; margin-bottom: 4px; }
@@ -207,12 +180,8 @@ body {
 .tag { font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 4px; white-space: nowrap; }
 .tag-ec { background: #f3eeff; color: #5e3a8e; border: 1px solid #c9b8f0; }
 .tag-pc { background: #FCE4EC; color: #d32f2f; border: 1px solid #EF9A9A; }
-
-/* BUTTONS */
 .btn-reset { padding: 8px 18px; border-radius: 8px; font-size: 13px; font-weight: 500; font-family: inherit; cursor: pointer; transition: all .2s; background: transparent; border: 1px solid #d2d2d7; color: #6e6e73; }
 .btn-reset:hover { border-color: #d32f2f; color: #d32f2f; background: #FCE4EC; }
-
-/* MODALS */
 .overlay { position: fixed; inset: 0; background: rgba(29,29,31,0.6); backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; z-index: 9999; }
 .overlay.open { display: flex; }
 .modal { background: white; border-radius: 20px; padding: 36px; width: 400px; max-width: 94vw; position: relative; box-shadow: 0 24px 60px rgba(0,0,0,0.2); animation: mIn .18s cubic-bezier(.4,0,.2,1); }
@@ -237,9 +206,7 @@ input:focus { outline: none; border-color: #5e3a8e; box-shadow: 0 0 0 3px rgba(9
 .btn-del { width: 100%; padding: 11px; margin-top: 14px; background: transparent; border: 1px solid #d2d2d7; color: #6e6e73; border-radius: 10px; font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer; transition: all .2s; }
 .btn-del:hover { border-color: #d32f2f; color: #d32f2f; background: #FCE4EC; }
 .btn-del:disabled { opacity: 0.5; cursor: not-allowed; }
-
 .footer { text-align: center; margin-top: 40px; color: rgba(255,255,255,0.45); font-size: 12px; }
-
 @media (max-width: 768px) {
   body { padding: 20px 12px; }
   .page-header { flex-direction: column; gap: 14px; align-items: flex-start; }
@@ -386,7 +353,6 @@ const SUPABASE_URL = 'https://ivllhheqqiseagmctfyp.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml2bGxoaGVxcWlzZWFnbWN0ZnlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1NzQzMzksImV4cCI6MjA4NDE1MDMzOX0.OnkYNACtdknKDY2KqLfiGN0ORXpKaW906fD0TtSJlIk';
 const TABLE = 'homepage_slot_bookings';
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwkYSadbhw_X1ujneqVy06SX4cK6PztcXf3mKXplQ7sYn9aQjzpYBIbe1VmpunbRQ2RMQ/exec';
-const PROXY = 'https://corsproxy.io/?';
 const KAPRUKA_BASE = 'https://www.kapruka.com/buyonline/-/kid/';
 
 const SECTIONS = [
@@ -396,29 +362,48 @@ const SECTIONS = [
 ];
 
 let bookings    = {};
-let imageCache  = {};  // code -> imgUrl or null
+let imageCache  = {};
 let pendingSlot = null;
 let detailKey   = null;
 let codeTimer   = null;
 
-// ─── IMAGE FETCH ──────────────────────────────────────────────
+// ─── PROXY FALLBACK CHAIN ─────────────────────────────────────
+// If Kapruka blocks one proxy's IP range, the next is tried automatically.
+const PROXIES = [
+  url => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url),
+  url => 'https://corsproxy.io/?' + encodeURIComponent(url),
+  url => 'https://thingproxy.freeboard.io/fetch/' + url,
+  url => 'https://api.codetabs.com/v1/proxy?quest=' + url,
+];
 
 async function fetchProductImage(code) {
   if (code in imageCache) return imageCache[code];
-  try {
-    const url  = KAPRUKA_BASE + encodeURIComponent(code);
-    const res  = await fetch(PROXY + encodeURIComponent(url));
-    if (!res.ok) throw new Error('bad response');
-    const html = await res.text();
-    const match = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
-                || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
-    const imgUrl = match ? match[1] : null;
-    imageCache[code] = imgUrl;
-    return imgUrl;
-  } catch(e) {
-    imageCache[code] = null;
-    return null;
+  const pageUrl = KAPRUKA_BASE + encodeURIComponent(code);
+
+  for (const makeProxy of PROXIES) {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 8000);
+      const res = await fetch(makeProxy(pageUrl), { signal: controller.signal });
+      clearTimeout(timer);
+      if (!res.ok) continue;                          // 403/429 etc → try next proxy
+      const html = await res.text();
+      const match = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
+                  || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
+      if (match && match[1]) {
+        imageCache[code] = match[1];
+        return match[1];
+      }
+      // Valid response but no og:image tag — no point trying other proxies
+      break;
+    } catch(e) {
+      // Timeout or network error — try next proxy
+      continue;
+    }
   }
+
+  imageCache[code] = null;
+  return null;
 }
 
 // ─── SUPABASE ─────────────────────────────────────────────────
@@ -458,7 +443,6 @@ async function loadBookings() {
     });
     setSync('synced', 'Synced');
     renderAll();
-    // Preload images in background
     Object.values(bookings).forEach(b => fetchProductImage(b.code).then(() => renderAll()));
   } catch(e) {
     console.error('Load error:', e);
@@ -640,7 +624,6 @@ function onCodeInput(val) {
   const preview = document.getElementById('prod-preview');
   if (!code) { preview.classList.remove('show'); return; }
 
-  // Debounce 600ms
   codeTimer = setTimeout(async () => {
     document.getElementById('preview-code').textContent   = code;
     document.getElementById('preview-status').textContent = 'Fetching product...';
@@ -670,7 +653,6 @@ async function openDetail(key, bk, secLabel, row, col) {
     '<div class="d-row">Position<span>' + col + '</span></div>' +
     '<div class="d-row">Booked<span>' + (bk.bookedAt ? new Date(bk.bookedAt).toLocaleString() : 'N/A') + '</span></div>';
 
-  // Load image into detail modal
   const wrap = document.getElementById('d-img-wrap');
   wrap.innerHTML = '<div class="detail-img-placeholder">&#128230;</div>';
   const imgUrl = imageCache[bk.code] !== undefined
