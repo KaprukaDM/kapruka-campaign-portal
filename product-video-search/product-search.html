@@ -108,7 +108,7 @@ async function doSearch() {
   form.append('product_name', name);
 
   try {
-    const res = await fetch('https://product-video-search.onrender.com/search', { method: 'POST', body: form });
+    const res = await fetch('https://kapruka-campaign-portal.onrender.com/search', { method: 'POST', body: form });
     if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
     const data = await res.json();
     renderResults(data);
