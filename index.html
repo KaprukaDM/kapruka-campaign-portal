@@ -64,6 +64,7 @@
     @keyframes wiggle { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(-10deg); } 75% { transform: rotate(10deg); } }
     .cod-confirmation-btn .label { font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
 
+    /* ── Password Modal (shared) ── */
     .password-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); z-index: 10000; justify-content: center; align-items: center; }
     .password-modal.active { display: flex; }
     .password-box { background: linear-gradient(135deg, #1a0b2e 0%, #2d1b4e 100%); padding: 40px; border-radius: 20px; box-shadow: 0 20px 60px rgba(220,38,127,0.4); border: 2px solid rgba(220,38,127,0.3); text-align: center; max-width: 400px; width: 90%; }
@@ -80,6 +81,16 @@
     .password-error { color: #ff3e3e; font-size: 13px; margin-top: 10px; display: none; }
     .password-error.active { display: block; animation: shake 0.5s; }
     @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
+
+    /* ── Daraz card lock badge ── */
+    .lock-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(248,86,6,0.12); color: #f85606;
+      border: 1px solid rgba(248,86,6,0.3);
+      padding: 3px 10px; border-radius: 20px;
+      font-size: 11px; font-weight: 600;
+      margin-bottom: 12px;
+    }
 
     @media (max-width: 768px) {
       .experiments-btn, .messenger-btn, .ads-manager-btn, .cod-confirmation-btn { bottom: 20px; right: 20px; padding: 12px 20px; font-size: 13px; }
@@ -178,6 +189,19 @@
           <div class="feature-item"><div class="feature-icon">✓</div><span>Auto-locks at 60/40 target ratio</span></div>
         </div>
       </a>
+
+      <!-- Daraz Agent Card — password protected -->
+      <div class="option-card" onclick="openDarazModal()" style="cursor:pointer;">
+        <div class="lock-badge">🔒 Restricted Access</div>
+        <div class="option-title">🛒 Daraz Market Agent</div>
+        <div class="option-desc">AI-powered product & supplier intelligence for Daraz.lk. Scrapes trending products and top local suppliers daily.</div>
+        <div class="option-features">
+          <div class="feature-item"><div class="feature-icon">✓</div><span>Top trending products with AI analysis</span></div>
+          <div class="feature-item"><div class="feature-icon">✓</div><span>Find suppliers with contact numbers</span></div>
+          <div class="feature-item"><div class="feature-icon">✓</div><span>Local sellers · Rs. 3,000+ · 4★+ rating</span></div>
+        </div>
+      </div>
+
     </div>
 
     <div class="footer">
@@ -207,7 +231,7 @@
     <span class="label">Experiments</span>
   </a>
 
-  <!-- Password Modal -->
+  <!-- Shared Password Modal -->
   <div class="password-modal" id="passwordModal">
     <div class="password-box">
       <h2 id="modalTitle">🔒 Access Required</h2>
@@ -222,21 +246,37 @@
   </div>
 
   <script>
-    const PASSWORDS = { ads: 'Fari', cod: 'Chamudhi' };
-    const URLS = {
-      ads: 'https://docs.google.com/forms/d/e/1FAIpQLSfGSObGAIJz46oQd0xN3oISjS46SEkFtL0_ZGkIfh6ansvqPQ/viewform',
-      cod: 'https://script.google.com/macros/s/AKfycbwA7rio-Gs2woBvLWKmq9KR_z1SLLV1O5d9apeShpfD4r8JdpaEI9g2pjBmyl1vK4DRDQ/exec'
+    const PASSWORDS = {
+      ads:   'Fari',
+      cod:   'Chamudhi',
+      daraz: '8055'
     };
+
+    const URLS = {
+      ads:   'https://docs.google.com/forms/d/e/1FAIpQLSfGSObGAIJz46oQd0xN3oISjS46SEkFtL0_ZGkIfh6ansvqPQ/viewform',
+      cod:   'https://script.google.com/macros/s/AKfycbwA7rio-Gs2woBvLWKmq9KR_z1SLLV1O5d9apeShpfD4r8JdpaEI9g2pjBmyl1vK4DRDQ/exec',
+      daraz: 'https://daraz-agent.onrender.com'
+    };
+
     let currentSection = '';
 
     function openPasswordModal(section) {
       currentSection = section;
-      document.getElementById('modalTitle').textContent = section === 'ads' ? '🔒 Ads Manager Access' : '🔒 COD Confirmation Access';
+      const titles = {
+        ads:   '🎯 Ads Manager Access',
+        cod:   '✅ COD Confirmation Access',
+        daraz: '🛒 Daraz Market Agent'
+      };
+      document.getElementById('modalTitle').textContent = titles[section] || '🔒 Access Required';
       document.getElementById('modalSubtitle').textContent = 'Enter password to continue';
       document.getElementById('passwordModal').classList.add('active');
       document.getElementById('passwordInput').focus();
       document.getElementById('passwordError').classList.remove('active');
       document.getElementById('passwordInput').value = '';
+    }
+
+    function openDarazModal() {
+      openPasswordModal('daraz');
     }
 
     function closePasswordModal() {
