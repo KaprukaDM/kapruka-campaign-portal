@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: product-video-search
+    runtime: python
+    rootDir: product-video-search
+    buildCommand: pip install -r requirements.txt
+    startCommand: python server.py
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: SERPAPI_KEY
+        sync: false

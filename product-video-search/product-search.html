@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Product Video Search</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #f5f5f5; color: #1a1a1a; min-height: 100vh; }
+  .container { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+  h1 { font-size: 24px; font-weight: 600; margin-bottom: 8px; }
+  p.sub { color: #666; margin-bottom: 32px; font-size: 14px; }
+
+  .card { background: #fff; border-radius: 12px; padding: 28px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 24px; }
+
+  .upload-zone { border: 2px dashed #ddd; border-radius: 8px; padding: 32px; text-align: center; cursor: pointer; transition: border-color .2s; }
+  .upload-zone:hover, .upload-zone.drag { border-color: #6366f1; background: #f5f3ff; }
+  .upload-zone img { max-height: 200px; max-width: 100%; border-radius: 6px; margin-top: 12px; }
+  .upload-zone .placeholder { color: #999; font-size: 14px; }
+  .upload-zone .placeholder span { display: block; font-size: 32px; margin-bottom: 8px; }
+
+  input[type="text"] { width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; margin-top: 16px; outline: none; }
+  input[type="text"]:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+
+  button { width: 100%; margin-top: 16px; padding: 12px; background: #6366f1; color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 500; cursor: pointer; transition: background .2s; }
+  button:hover { background: #4f46e5; }
+  button:disabled { background: #a5b4fc; cursor: not-allowed; }
+
+  .attrs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+  .badge { font-size: 12px; padding: 4px 10px; border-radius: 99px; }
+  .badge.brand   { background: #e0e7ff; color: #3730a3; }
+  .badge.model   { background: #d1fae5; color: #065f46; }
+  .badge.cat     { background: #fef3c7; color: #92400e; }
+  .badge.feature { background: #f3f4f6; color: #374151; }
+
+  .platform-section { margin-bottom: 24px; }
+  .platform-label { font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #9ca3af; margin-bottom: 10px; }
+
+  .result-item { display: flex; gap: 14px; align-items: flex-start; padding: 12px; border-radius: 8px; margin-bottom: 8px; background: #fafafa; border: 1px solid #f0f0f0; text-decoration: none; color: inherit; transition: background .15s; }
+  .result-item:hover { background: #f0f4ff; border-color: #c7d2fe; }
+  .result-item .thumb { width: 80px; height: 54px; object-fit: cover; border-radius: 5px; flex-shrink: 0; background: #e5e7eb; }
+  .result-item .thumb-placeholder { width: 80px; height: 54px; border-radius: 5px; background: #e5e7eb; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+  .result-item .info .title { font-size: 14px; font-weight: 500; line-height: 1.4; margin-bottom: 4px; }
+  .result-item .info .snippet { font-size: 12px; color: #666; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+  .status { text-align: center; padding: 40px; color: #6366f1; font-size: 14px; }
+  .error { background: #fef2f2; color: #b91c1c; border-radius: 8px; padding: 16px; font-size: 14px; }
+
+  .platform-icons { TikTok:"🎵", Pinterest:"📌", Amazon:"📦", Alibaba:"🏪", Temu:"🛍" }
+
+  #file-input { display: none; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Product Video Search</h1>
+  <p class="sub">Upload a product image and name — we'll find videos across TikTok, Pinterest, Amazon, Alibaba & Temu.</p>
+
+  <div class="card">
+    <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
+      <div class="placeholder" id="placeholder">
+        <span>📷</span>
+        Click or drag & drop a product image
+      </div>
+      <img id="preview" style="display:none"/>
+    </div>
+    <input type="file" id="file-input" accept="image/*" onchange="handleFile(this.files[0])">
+    <input type="text" id="product-name" placeholder="Product name  e.g. Sony WH-1000XM5">
+    <button id="search-btn" onclick="doSearch()">🔍 Find Videos</button>
+  </div>
+
+  <div id="output"></div>
+</div>
+
+<script>
+const ICONS = { TikTok:"🎵", Pinterest:"📌", Amazon:"📦", Alibaba:"🏪", Temu:"🛍️" };
+let selectedFile = null;
+
+const zone = document.getElementById('upload-zone');
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('drag'));
+zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('drag'); handleFile(e.dataTransfer.files[0]); });
+
+function handleFile(file) {
+  if (!file) return;
+  selectedFile = file;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('preview').src = e.target.result;
+    document.getElementById('preview').style.display = 'block';
+    document.getElementById('placeholder').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function doSearch() {
+  const name = document.getElementById('product-name').value.trim();
+  if (!selectedFile) return alert('Please upload a product image.');
+  if (!name) return alert('Please enter a product name.');
+
+  const btn = document.getElementById('search-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Searching...';
+  document.getElementById('output').innerHTML = '<div class="status">Analyzing image and searching across platforms…</div>';
+
+  const form = new FormData();
+  form.append('image', selectedFile);
+  form.append('product_name', name);
+
+  try {
+    const res = await fetch('https://product-video-search.onrender.com/search', { method: 'POST', body: form });
+    if (!res.ok) throw new Error((await res.json()).detail || res.statusText);
+    const data = await res.json();
+    renderResults(data);
+  } catch (err) {
+    document.getElementById('output').innerHTML = `<div class="error">❌ ${err.message}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔍 Find Videos';
+  }
+}
+
+function renderResults(data) {
+  const a = data.attributes;
+  const badges = [
+    a.brand   ? `<span class="badge brand">${a.brand}</span>` : '',
+    a.model   ? `<span class="badge model">${a.model}</span>` : '',
+    a.category? `<span class="badge cat">${a.category}</span>` : '',
+    ...(a.key_features||[]).slice(0,3).map(f => `<span class="badge feature">${f}</span>`),
+  ].join('');
+
+  // group by platform
+  const grouped = {};
+  for (const r of data.results) {
+    (grouped[r.platform] = grouped[r.platform] || []).push(r);
+  }
+
+  const platformHTML = Object.entries(grouped).map(([platform, items]) => `
+    <div class="platform-section">
+      <div class="platform-label">${ICONS[platform]||'🔗'} ${platform}</div>
+      ${items.slice(0,5).map(r => `
+        <a class="result-item" href="${r.url}" target="_blank" rel="noopener">
+          ${r.thumbnail
+            ? `<img class="thumb" src="${r.thumbnail}" onerror="this.style.display='none'" loading="lazy">`
+            : `<div class="thumb-placeholder">${ICONS[platform]||'🔗'}</div>`}
+          <div class="info">
+            <div class="title">${r.title || r.url}</div>
+            ${r.snippet ? `<div class="snippet">${r.snippet}</div>` : ''}
+          </div>
+        </a>`).join('')}
+    </div>`).join('');
+
+  document.getElementById('output').innerHTML = `
+    <div class="card">
+      <div class="attrs">${badges}</div>
+      <div style="font-size:13px;color:#666;margin-bottom:20px;">${data.total_found} results found</div>
+      ${platformHTML || '<p style="color:#999;font-size:14px;">No results found. Try a different product name.</p>'}
+    </div>`;
+}
+</script>
+</body>
+</html>
