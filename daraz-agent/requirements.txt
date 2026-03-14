@@ -1,0 +1,9 @@
+beautifulsoup4==4.12.3
+lxml==5.1.0
+openai==1.30.0
+requests==2.31.0
+flask==3.0.3
+gunicorn==22.0.0
+
+# Optional — uncomment to also get PDF reports:
+# weasyprint

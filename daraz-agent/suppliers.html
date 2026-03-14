@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Supplier Agent — Daraz Portal</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="page-container">
+
+    <!-- Header -->
+    <div class="page-header">
+      <div class="header-left">
+        <span class="header-emoji">🏪</span>
+        <div>
+          <h1>Supplier Agent</h1>
+          <p>Find top Daraz.lk suppliers with contact details</p>
+        </div>
+      </div>
+      <a href="/" class="back-btn">← Back</a>
+    </div>
+
+    <!-- Status bar -->
+    <div class="status-bar" id="statusBar">
+      <div class="status-dot" id="statusDot"></div>
+      <span class="status-text" id="statusText">Starting...</span>
+    </div>
+
+    <!-- Report banner (shown when done) -->
+    <div class="report-banner" id="reportBanner">
+      <div class="report-banner-text">
+        <h3>✅ Supplier Report Ready!</h3>
+        <p id="reportBannerSub">Your supplier report has been generated.</p>
+      </div>
+      <a href="#" id="reportBannerLink" class="btn-open-report" target="_blank">Open Report →</a>
+    </div>
+
+    <!-- Live log -->
+    <div class="log-box" id="logBox"></div>
+
+    <!-- Mode selector card -->
+    <div class="card" id="configCard">
+      <h2>⚙️ Run Configuration</h2>
+
+      <!-- Mode toggle -->
+      <div class="form-group">
+        <label>Mode</label>
+        <div style="display:flex; gap:12px; margin-top:4px;">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:400; padding:12px 20px; border:2px solid #5e3a8e; border-radius:8px; flex:1; background:#f5f0ff;">
+            <input type="radio" name="mode" value="daily" id="modeDaily" checked style="width:auto;" onchange="toggleMode()">
+            <div>
+              <div style="font-weight:600; color:#1d1d1f; font-size:14px;">🔄 Daily Auto Mode</div>
+              <div style="color:#6e6e73; font-size:12px; margin-top:2px;">Rotates through all categories daily</div>
+            </div>
+          </label>
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:400; padding:12px 20px; border:2px solid #d2d2d7; border-radius:8px; flex:1;">
+            <input type="radio" name="mode" value="category" id="modeCategory" style="width:auto;" onchange="toggleMode()">
+            <div>
+              <div style="font-weight:600; color:#1d1d1f; font-size:14px;">🔍 Category Search</div>
+              <div style="color:#6e6e73; font-size:12px; margin-top:2px;">Search suppliers for a specific category</div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Category input (hidden until category mode) -->
+      <div class="form-group" id="categoryGroup" style="display:none;">
+        <label for="categoryInput">Product Category <span class="required">*</span></label>
+        <input type="text" id="categoryInput" placeholder="e.g. supplements, skincare, gaming, furniture…">
+        <div style="margin-top:6px; display:flex; flex-wrap:wrap; gap:6px;" id="quickCategories">
+          <span class="chip" style="cursor:pointer;" onclick="setCategory('electronics')">electronics</span>
+          <span class="chip" style="cursor:pointer;" onclick="setCategory('skincare')">skincare</span>
+          <span class="chip" style="cursor:pointer;" onclick="setCategory('gaming')">gaming</span>
+          <span class="chip" style="cursor:pointer;" onclick="setCategory('furniture')">furniture</span>
+          <span class="chip" style="cursor:pointer;" onclick="setCategory('supplements')">supplements</span>
+          <span class="chip" style="cursor:pointer;" onclick="setCategory('fashion')">fashion</span>
+          <span class="chip" style="cursor:pointer;" onclick="setCategory('fitness')">fitness</span>
+          <span class="chip" style="cursor:pointer;" onclick="setCategory('baby')">baby</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="topSuppliers">Number of suppliers to find</label>
+        <select id="topSuppliers">
+          <option value="3">Top 3</option>
+          <option value="5" selected>Top 5</option>
+          <option value="10">Top 10</option>
+          <option value="15">Top 15</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="dedupeGroup">
+        <label>
+          <input type="checkbox" id="resetHistory" style="width:auto; margin-right:8px;">
+          Reset seen suppliers history (re-show previously found suppliers)
+        </label>
+      </div>
+
+      <div class="chips" style="margin-bottom:20px;">
+        <span class="chip">Local sellers only</span>
+        <span class="chip">Rs. 3,000+ products</span>
+        <span class="chip">4★+ rating</span>
+        <span class="chip">Phone number lookup</span>
+      </div>
+
+      <button class="btn btn-primary" id="runBtn" onclick="runAgent()">
+        ▶ Run Supplier Agent
+      </button>
+    </div>
+
+    <!-- Past reports card -->
+    <div class="card">
+      <h2>📁 Past Reports</h2>
+      {% if supplier_reports %}
+        {% for r in supplier_reports %}
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid #f0f0f0;">
+          <div>
+            <div style="font-weight:500; color:#1d1d1f; font-size:14px;">{{ r.name }}</div>
+            <div style="color:#6e6e73; font-size:12px; margin-top:2px;">{{ r.mtime }}</div>
+          </div>
+          <a href="/supplier-report/{{ r.name }}" target="_blank" class="back-btn" style="font-size:13px; padding:7px 16px;">Open →</a>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p style="color:#6e6e73; font-size:14px;">No reports yet. Run the agent above to generate your first report.</p>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <!-- Loading overlay -->
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loadingText">Running Supplier Agent…</div>
+  </div>
+
+  <script>
+    let polling = false;
+
+    function toggleMode() {
+      const isCategory = document.getElementById('modeCategory').checked;
+      document.getElementById('categoryGroup').style.display = isCategory ? 'block' : 'none';
+      document.getElementById('dedupeGroup').style.display = isCategory ? 'none' : 'block';
+
+      // Update border styles on mode labels
+      document.querySelectorAll('input[name="mode"]').forEach(radio => {
+        const lbl = radio.parentElement;
+        lbl.style.border = radio.checked ? '2px solid #5e3a8e' : '2px solid #d2d2d7';
+        lbl.style.background = radio.checked ? '#f5f0ff' : '';
+      });
+    }
+
+    function setCategory(cat) {
+      document.getElementById('categoryInput').value = cat;
+    }
+
+    function runAgent() {
+      const btn = document.getElementById('runBtn');
+      const mode = document.querySelector('input[name="mode"]:checked').value;
+      const category = document.getElementById('categoryInput').value.trim();
+      const topSuppliers = document.getElementById('topSuppliers').value;
+      const resetHistory = document.getElementById('resetHistory').checked;
+
+      if (mode === 'category' && !category) {
+        document.getElementById('categoryInput').focus();
+        document.getElementById('categoryInput').style.borderColor = '#d32f2f';
+        document.getElementById('categoryInput').style.boxShadow = '0 0 0 3px rgba(211,47,47,0.1)';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = '⏳ Running…';
+
+      showStatus('running', mode === 'category' 
+        ? `Searching suppliers for "${category}"…` 
+        : 'Running daily auto-discovery…');
+      document.getElementById('logBox').classList.add('show');
+      document.getElementById('logBox').innerHTML = '';
+      document.getElementById('reportBanner').classList.remove('show');
+
+      fetch('/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'suppliers',
+          mode: mode,
+          category: category,
+          top_suppliers: parseInt(topSuppliers),
+          reset_history: resetHistory
+        })
+      })
+      .then(r => r.json())
+      .then(d => {
+        if (d.started) {
+          pollStatus();
+        } else {
+          showStatus('error', d.message || 'Could not start agent.');
+          btn.disabled = false;
+          btn.textContent = '▶ Run Supplier Agent';
+        }
+      })
+      .catch(e => {
+        showStatus('error', 'Network error: ' + e.message);
+        btn.disabled = false;
+        btn.textContent = '▶ Run Supplier Agent';
+      });
+    }
+
+    function pollStatus() {
+      if (polling) return;
+      polling = true;
+      (function tick() {
+        fetch('/status')
+          .then(r => r.json())
+          .then(d => {
+            if (d.log_lines && d.log_lines.length) {
+              const box = document.getElementById('logBox');
+              box.innerHTML = d.log_lines.map(l => {
+                let cls = 'log-line';
+                if (l.includes('[INFO]')) cls += ' info';
+                else if (l.includes('[WARNING]')) cls += ' warn';
+                else if (l.includes('[ERROR]')) cls += ' error';
+                else if (l.includes('DONE!') || l.includes('Report saved')) cls += ' done';
+                return `<div class="${cls}">${escHtml(l)}</div>`;
+              }).join('');
+              box.scrollTop = box.scrollHeight;
+            }
+
+            if (d.running) {
+              showStatus('running', d.status_msg || 'Running…');
+              document.getElementById('loadingText').textContent = d.status_msg || 'Running Supplier Agent…';
+              setTimeout(tick, 2000);
+            } else {
+              polling = false;
+              const btn = document.getElementById('runBtn');
+              btn.disabled = false;
+              btn.textContent = '▶ Run Supplier Agent';
+              document.getElementById('loading').classList.remove('show');
+
+              if (d.last_report) {
+                showStatus('done', 'Done! Report generated successfully.');
+                showReportBanner(d.last_report, d.last_run);
+              } else if (d.error) {
+                showStatus('error', 'Error: ' + d.error);
+              } else {
+                showStatus('done', 'Completed.');
+              }
+            }
+          })
+          .catch(() => { setTimeout(tick, 3000); });
+      })();
+    }
+
+    function showStatus(state, msg) {
+      const bar = document.getElementById('statusBar');
+      const dot = document.getElementById('statusDot');
+      const text = document.getElementById('statusText');
+      bar.classList.add('show');
+      dot.className = 'status-dot ' + state;
+      text.textContent = msg;
+    }
+
+    function showReportBanner(url, time) {
+      const banner = document.getElementById('reportBanner');
+      document.getElementById('reportBannerSub').textContent = 'Generated at ' + (time || '');
+      document.getElementById('reportBannerLink').href = url;
+      banner.classList.add('show');
+      banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function escHtml(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+  </script>
+</body>
+</html>
