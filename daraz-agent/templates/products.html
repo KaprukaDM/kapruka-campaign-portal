@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product Agent — Daraz Portal</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="page-container">
+
+    <!-- Header -->
+    <div class="page-header">
+      <div class="header-left">
+        <span class="header-emoji">📦</span>
+        <div>
+          <h1>Product Agent</h1>
+          <p>Discover top trending products on Daraz.lk</p>
+        </div>
+      </div>
+      <a href="/" class="back-btn">← Back</a>
+    </div>
+
+    <!-- Status bar -->
+    <div class="status-bar" id="statusBar">
+      <div class="status-dot" id="statusDot"></div>
+      <span class="status-text" id="statusText">Starting...</span>
+    </div>
+
+    <!-- Report banner (shown when done) -->
+    <div class="report-banner" id="reportBanner">
+      <div class="report-banner-text">
+        <h3>✅ Report Ready!</h3>
+        <p id="reportBannerSub">Your product report has been generated.</p>
+      </div>
+      <a href="#" id="reportBannerLink" class="btn-open-report" target="_blank">Open Report →</a>
+    </div>
+
+    <!-- Live log -->
+    <div class="log-box" id="logBox"></div>
+
+    <!-- Config card -->
+    <div class="card" id="configCard">
+      <h2>⚙️ Run Configuration</h2>
+
+      <div class="chips">
+        <span class="chip">Local sellers only</span>
+        <span class="chip">Rs. 3,000+ price filter</span>
+        <span class="chip">4★+ rating filter</span>
+        <span class="chip">Sorted by popularity</span>
+        <span class="chip">Top 20 products</span>
+      </div>
+
+      <div class="form-group">
+        <label for="topN">Number of products in report</label>
+        <select id="topN">
+          <option value="10">Top 10</option>
+          <option value="20" selected>Top 20</option>
+          <option value="30">Top 30</option>
+          <option value="50">Top 50</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="maxUrls">URLs to scrape per run</label>
+        <select id="maxUrls">
+          <option value="20">20 URLs (fast ~30s)</option>
+          <option value="50" selected>50 URLs (standard ~1 min)</option>
+          <option value="100">100 URLs (thorough ~2 min)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="minPrice">Minimum price (Rs.)</label>
+        <input type="number" id="minPrice" value="3000" min="0" step="500">
+      </div>
+
+      <div class="form-group">
+        <label>
+          <input type="checkbox" id="resetHistory" style="width:auto; margin-right:8px;">
+          Reset seen products history (re-show previously found items)
+        </label>
+      </div>
+
+      <button class="btn btn-primary" id="runBtn" onclick="runAgent()">
+        ▶ Run Product Agent
+      </button>
+    </div>
+
+    <!-- Past reports card -->
+    <div class="card">
+      <h2>📁 Past Reports</h2>
+      {% if product_reports %}
+        {% for r in product_reports %}
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid #f0f0f0;">
+          <div>
+            <div style="font-weight:500; color:#1d1d1f; font-size:14px;">{{ r.name }}</div>
+            <div style="color:#6e6e73; font-size:12px; margin-top:2px;">{{ r.mtime }}</div>
+          </div>
+          <a href="/report/{{ r.name }}" target="_blank" class="back-btn" style="font-size:13px; padding:7px 16px;">Open →</a>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p style="color:#6e6e73; font-size:14px;">No reports yet. Run the agent above to generate your first report.</p>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <!-- Loading overlay -->
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loadingText">Running Product Agent…</div>
+  </div>
+
+  <script>
+    let polling = false;
+
+    function runAgent() {
+      const btn = document.getElementById('runBtn');
+      const topN = document.getElementById('topN').value;
+      const maxUrls = document.getElementById('maxUrls').value;
+      const minPrice = document.getElementById('minPrice').value;
+      const resetHistory = document.getElementById('resetHistory').checked;
+
+      btn.disabled = true;
+      btn.textContent = '⏳ Running…';
+
+      showStatus('running', 'Starting product agent…');
+      document.getElementById('logBox').classList.add('show');
+      document.getElementById('logBox').innerHTML = '';
+      document.getElementById('reportBanner').classList.remove('show');
+
+      fetch('/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'products',
+          top_n: parseInt(topN),
+          max_urls: parseInt(maxUrls),
+          min_price: parseInt(minPrice),
+          reset_history: resetHistory
+        })
+      })
+      .then(r => r.json())
+      .then(d => {
+        if (d.started) {
+          pollStatus();
+        } else {
+          showStatus('error', d.message || 'Could not start agent.');
+          btn.disabled = false;
+          btn.textContent = '▶ Run Product Agent';
+        }
+      })
+      .catch(e => {
+        showStatus('error', 'Network error: ' + e.message);
+        btn.disabled = false;
+        btn.textContent = '▶ Run Product Agent';
+      });
+    }
+
+    function pollStatus() {
+      if (polling) return;
+      polling = true;
+      (function tick() {
+        fetch('/status')
+          .then(r => r.json())
+          .then(d => {
+            // Update log
+            if (d.log_lines && d.log_lines.length) {
+              const box = document.getElementById('logBox');
+              box.innerHTML = d.log_lines.map(l => {
+                let cls = 'log-line';
+                if (l.includes('[INFO]')) cls += ' info';
+                else if (l.includes('[WARNING]')) cls += ' warn';
+                else if (l.includes('[ERROR]')) cls += ' error';
+                else if (l.includes('DONE!') || l.includes('Report saved')) cls += ' done';
+                return `<div class="${cls}">${escHtml(l)}</div>`;
+              }).join('');
+              box.scrollTop = box.scrollHeight;
+            }
+
+            if (d.running) {
+              showStatus('running', d.status_msg || 'Running…');
+              document.getElementById('loadingText').textContent = d.status_msg || 'Running Product Agent…';
+              setTimeout(tick, 2000);
+            } else {
+              polling = false;
+              const btn = document.getElementById('runBtn');
+              btn.disabled = false;
+              btn.textContent = '▶ Run Product Agent';
+              document.getElementById('loading').classList.remove('show');
+
+              if (d.last_report) {
+                showStatus('done', 'Done! Report generated successfully.');
+                showReportBanner(d.last_report, d.last_run);
+              } else if (d.error) {
+                showStatus('error', 'Error: ' + d.error);
+              } else {
+                showStatus('done', 'Completed.');
+              }
+            }
+          })
+          .catch(() => { setTimeout(tick, 3000); });
+      })();
+    }
+
+    function showStatus(state, msg) {
+      const bar = document.getElementById('statusBar');
+      const dot = document.getElementById('statusDot');
+      const text = document.getElementById('statusText');
+      bar.classList.add('show');
+      dot.className = 'status-dot ' + state;
+      text.textContent = msg;
+    }
+
+    function showReportBanner(url, time) {
+      const banner = document.getElementById('reportBanner');
+      document.getElementById('reportBannerSub').textContent = 'Generated at ' + (time || '');
+      document.getElementById('reportBannerLink').href = url;
+      banner.classList.add('show');
+      banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function escHtml(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+  </script>
+</body>
+</html>
