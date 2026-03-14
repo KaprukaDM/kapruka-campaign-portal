@@ -8,22 +8,49 @@ from openai import OpenAI
 openai_client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 SERPAPI_KEY   = os.environ["SERPAPI_KEY"]
 
+# Platform configs: (name, site filter, extra query terms, url_must_contain)
 PLATFORMS = [
-    ("TikTok",    "site:tiktok.com"),
-    ("Pinterest", "site:pinterest.com"),
-    ("Amazon",    "site:amazon.com"),
-    ("Alibaba",   "site:alibaba.com"),
-    ("Temu",      "site:temu.com"),
+    {
+        "name":         "TikTok",
+        "site":         "site:tiktok.com",
+        "extra":        "video",
+        "url_contains": "/video/",
+    },
+    {
+        "name":         "Pinterest",
+        "site":         "site:pinterest.com",
+        "extra":        "video",
+        "url_contains": "/pin/",   # Pinterest video pins are at /pin/ URLs
+    },
+    {
+        "name":         "Amazon",
+        "site":         "site:amazon.com",
+        "extra":        "product video review",
+        "url_contains": "/dp/",    # Amazon product pages (contain embedded videos)
+    },
+    {
+        "name":         "Alibaba",
+        "site":         "site:alibaba.com",
+        "extra":        "product video",
+        "url_contains": "/product-detail/",
+    },
+    {
+        "name":         "Temu",
+        "site":         "site:temu.com",
+        "extra":        "video",
+        "url_contains": "/goods",
+    },
 ]
+
 
 # ── step 1 : vision ───────────────────────────────────────────────────────────
 def analyze_image(image_path: str, product_name: str) -> dict:
     with open(image_path, "rb") as f:
         img_b64 = base64.b64encode(f.read()).decode()
 
-    ext = image_path.rsplit(".", 1)[-1].lower()
+    ext  = image_path.rsplit(".", 1)[-1].lower()
     mime = {"jpg": "image/jpeg", "jpeg": "image/jpeg",
-            "png": "image/png", "webp": "image/webp"}.get(ext, "image/jpeg")
+            "png": "image/png",  "webp": "image/webp"}.get(ext, "image/jpeg")
 
     prompt = f"""You are a product identification expert.
 Product name provided by user: "{product_name}"
@@ -38,8 +65,10 @@ Analyze the image and return ONLY valid JSON (no markdown, no explanation):
   "search_keywords": ["...", "..."]
 }}
 
-If brand or model are unknown, use empty string "" not null.
-search_keywords should be 3-5 concise terms that best identify this product for video search."""
+Rules:
+- If brand or model are unknown use empty string "" not null
+- search_keywords: 3-5 short terms that uniquely identify this product (include brand+model if known)
+- key_features: visible physical features useful for search (color, shape, material, use case)"""
 
     response = openai_client.chat.completions.create(
         model="gpt-4o",
@@ -53,11 +82,10 @@ search_keywords should be 3-5 concise terms that best identify this product for 
         }]
     )
 
-    raw = response.choices[0].message.content.strip()
-    raw = raw.replace("```json", "").replace("```", "").strip()
+    raw  = response.choices[0].message.content.strip()
+    raw  = raw.replace("```json", "").replace("```", "").strip()
     data = json.loads(raw)
 
-    # ensure no None values for string fields
     for key in ("brand", "model", "category", "color"):
         if not data.get(key):
             data[key] = ""
@@ -77,17 +105,16 @@ def build_queries(product_name: str, attrs: dict) -> list[str]:
 
     base = f"{brand} {model}".strip() or product_name
 
-    queries = [
+    candidates = [
         product_name,
         base,
         f"{base} review",
         f"{base} unboxing",
+        " ".join(keywords[:3]) if keywords else "",
     ]
-    if keywords:
-        queries.append(" ".join(keywords[:3]))
 
     seen, unique = set(), []
-    for q in queries:
+    for q in candidates:
         q = q.strip()
         if q and q not in seen:
             seen.add(q)
@@ -95,49 +122,62 @@ def build_queries(product_name: str, attrs: dict) -> list[str]:
     return unique
 
 
-# ── step 3 : search via SerpAPI ───────────────────────────────────────────────
-def serpapi_search(query: str, site_filter: str) -> list[dict]:
-    full_query = f"{site_filter} {query} video"
+# ── step 3 : SerpAPI call ─────────────────────────────────────────────────────
+def serpapi_search(query: str, site: str, extra: str) -> list[dict]:
+    full_query = f"{site} {query} {extra}".strip()
     params = {
         "engine":  "google",
         "q":       full_query,
-        "num":     5,
+        "num":     10,
         "api_key": SERPAPI_KEY,
     }
     try:
         r = httpx.get("https://serpapi.com/search", params=params, timeout=15)
         r.raise_for_status()
-        data = r.json()
-        return data.get("organic_results", [])
+        return r.json().get("organic_results", [])
     except Exception as e:
         print(f"  [warn] SerpAPI error for '{full_query}': {e}")
         return []
 
 
-# ── step 4 : collect + deduplicate ────────────────────────────────────────────
+# ── step 4 : collect, filter, deduplicate ────────────────────────────────────
 def search_all_platforms(product_name: str, attrs: dict) -> list[dict]:
     queries   = build_queries(product_name, attrs)
     seen_urls = set()
     results   = []
 
-    for platform, site_filter in PLATFORMS:
-        print(f"\n🔍 Searching {platform}...")
+    for p in PLATFORMS:
+        print(f"\n🔍 Searching {p['name']}...")
+        platform_results = []
+
         for query in queries[:3]:
-            items = serpapi_search(query, site_filter)
+            items = serpapi_search(query, p["site"], p["extra"])
+
             for item in items:
                 url = item.get("link", "")
-                if url and url not in seen_urls:
-                    seen_urls.add(url)
-                    results.append({
-                        "platform":  platform,
-                        "title":     item.get("title", ""),
-                        "url":       url,
-                        "snippet":   item.get("snippet", ""),
-                        "thumbnail": (item.get("thumbnail") or
-                                      item.get("rich_snippet", {}).get("top", {}).get("img", "")),
-                    })
-            if items:
-                break
+                if not url or url in seen_urls:
+                    continue
+
+                # filter: URL must contain the expected path pattern
+                if p["url_contains"] and p["url_contains"] not in url:
+                    continue
+
+                seen_urls.add(url)
+                platform_results.append({
+                    "platform":  p["name"],
+                    "title":     item.get("title", ""),
+                    "url":       url,
+                    "snippet":   item.get("snippet", ""),
+                    "thumbnail": (item.get("thumbnail") or
+                                  item.get("rich_snippet", {})
+                                      .get("top", {}).get("img", "")),
+                })
+
+            if platform_results:
+                break  # found good results, stop trying more queries
+
+        results.extend(platform_results)
+        print(f"   → {len(platform_results)} results")
 
     return results
 
@@ -159,7 +199,7 @@ def rank_results(results: list[dict], product_name: str, attrs: dict) -> list[di
     return sorted(results, key=score, reverse=True)
 
 
-# ── main entry ────────────────────────────────────────────────────────────────
+# ── main ──────────────────────────────────────────────────────────────────────
 def find_product_videos(image_path: str, product_name: str) -> dict:
     print(f"\n🖼  Analyzing image with GPT-4o Vision...")
     attrs = analyze_image(image_path, product_name)
@@ -187,8 +227,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     output = find_product_videos(sys.argv[1], sys.argv[2])
-
     print(f"\n✅ Found {output['total_found']} results\n")
-    for i, r in enumerate(output["results"][:10], 1):
+    for i, r in enumerate(output["results"][:15], 1):
         print(f"{i:2}. [{r['platform']}] {r['title']}")
         print(f"     {r['url']}\n")
