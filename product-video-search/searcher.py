@@ -20,25 +20,25 @@ PLATFORMS = [
         "name":         "Pinterest",
         "site":         "site:pinterest.com",
         "extra":        "video",
-        "url_contains": "/pin/",   # Pinterest video pins are at /pin/ URLs
+        "url_contains": "/pin/",
     },
     {
         "name":         "Amazon",
         "site":         "site:amazon.com",
         "extra":        "product video review",
-        "url_contains": "/dp/",    # Amazon product pages (contain embedded videos)
+        "url_contains": "",
     },
     {
         "name":         "Alibaba",
         "site":         "site:alibaba.com",
         "extra":        "product video",
-        "url_contains": "/product-detail/",
+        "url_contains": "",
     },
     {
         "name":         "Temu",
         "site":         "site:temu.com",
         "extra":        "video",
-        "url_contains": "/goods",
+        "url_contains": "",
     },
 ]
 
