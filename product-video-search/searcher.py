@@ -18,7 +18,6 @@ PLATFORMS = [
 
 # ── step 1 : vision ───────────────────────────────────────────────────────────
 def analyze_image(image_path: str, product_name: str) -> dict:
-    """Use GPT-4o Vision to extract structured product attributes."""
     with open(image_path, "rb") as f:
         img_b64 = base64.b64encode(f.read()).decode()
 
@@ -39,6 +38,7 @@ Analyze the image and return ONLY valid JSON (no markdown, no explanation):
   "search_keywords": ["...", "..."]
 }}
 
+If brand or model are unknown, use empty string "" not null.
 search_keywords should be 3-5 concise terms that best identify this product for video search."""
 
     response = openai_client.chat.completions.create(
@@ -54,16 +54,26 @@ search_keywords should be 3-5 concise terms that best identify this product for 
     )
 
     raw = response.choices[0].message.content.strip()
-    # strip markdown fences if present
     raw = raw.replace("```json", "").replace("```", "").strip()
-    return json.loads(raw)
+    data = json.loads(raw)
+
+    # ensure no None values for string fields
+    for key in ("brand", "model", "category", "color"):
+        if not data.get(key):
+            data[key] = ""
+    if not isinstance(data.get("search_keywords"), list):
+        data["search_keywords"] = []
+    if not isinstance(data.get("key_features"), list):
+        data["key_features"] = []
+
+    return data
 
 
 # ── step 2 : build queries ────────────────────────────────────────────────────
 def build_queries(product_name: str, attrs: dict) -> list[str]:
-    brand    = attrs.get("brand", "")
-    model    = attrs.get("model", "")
-    keywords = attrs.get("search_keywords", [])
+    brand    = attrs.get("brand") or ""
+    model    = attrs.get("model") or ""
+    keywords = attrs.get("search_keywords") or []
 
     base = f"{brand} {model}".strip() or product_name
 
@@ -76,7 +86,6 @@ def build_queries(product_name: str, attrs: dict) -> list[str]:
     if keywords:
         queries.append(" ".join(keywords[:3]))
 
-    # deduplicate while preserving order
     seen, unique = set(), []
     for q in queries:
         q = q.strip()
@@ -107,13 +116,13 @@ def serpapi_search(query: str, site_filter: str) -> list[dict]:
 
 # ── step 4 : collect + deduplicate ────────────────────────────────────────────
 def search_all_platforms(product_name: str, attrs: dict) -> list[dict]:
-    queries  = build_queries(product_name, attrs)
+    queries   = build_queries(product_name, attrs)
     seen_urls = set()
     results   = []
 
     for platform, site_filter in PLATFORMS:
         print(f"\n🔍 Searching {platform}...")
-        for query in queries[:3]:          # top 3 queries per platform
+        for query in queries[:3]:
             items = serpapi_search(query, site_filter)
             for item in items:
                 url = item.get("link", "")
@@ -128,20 +137,21 @@ def search_all_platforms(product_name: str, attrs: dict) -> list[dict]:
                                       item.get("rich_snippet", {}).get("top", {}).get("img", "")),
                     })
             if items:
-                break   # found results for this platform, move on
+                break
 
     return results
 
 
 # ── step 5 : rank ─────────────────────────────────────────────────────────────
 def rank_results(results: list[dict], product_name: str, attrs: dict) -> list[dict]:
-    keywords = [product_name.lower()]
-    keywords += [attrs.get("brand", "").lower(), attrs.get("model", "").lower()]
-    keywords += [k.lower() for k in attrs.get("search_keywords", [])]
+    keywords  = [product_name.lower()]
+    keywords += [(attrs.get("brand") or "").lower()]
+    keywords += [(attrs.get("model") or "").lower()]
+    keywords += [k.lower() for k in (attrs.get("search_keywords") or [])]
     keywords  = [k for k in keywords if k]
 
     def score(r):
-        text  = (r["title"] + " " + r["snippet"]).lower()
+        text  = ((r.get("title") or "") + " " + (r.get("snippet") or "")).lower()
         hits  = sum(1 for k in keywords if k in text)
         bonus = 2 if any(w in text for w in ["review", "unboxing", "demo", "video"]) else 0
         return hits + bonus
@@ -158,8 +168,8 @@ def find_product_videos(image_path: str, product_name: str) -> dict:
     print(f"   Category: {attrs.get('category')}")
     print(f"   Keywords: {attrs.get('search_keywords')}")
 
-    raw     = search_all_platforms(product_name, attrs)
-    ranked  = rank_results(raw, product_name, attrs)
+    raw    = search_all_platforms(product_name, attrs)
+    ranked = rank_results(raw, product_name, attrs)
 
     return {
         "product_name": product_name,
@@ -171,7 +181,7 @@ def find_product_videos(image_path: str, product_name: str) -> dict:
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    import sys, pprint
+    import sys
     if len(sys.argv) < 3:
         print("Usage: python searcher.py <image_path> '<product name>'")
         sys.exit(1)
