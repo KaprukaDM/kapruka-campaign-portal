@@ -190,6 +190,17 @@
         </div>
       </a>
 
+      <!-- Product Video Search Card -->
+      <a href="product-video-search/product-search.html" class="option-card">
+        <div class="option-title">🎬 Product Video Search</div>
+        <div class="option-desc">Upload a product image to instantly find matching videos across TikTok, Pinterest, Amazon, Alibaba and Temu.</div>
+        <div class="option-features">
+          <div class="feature-item"><div class="feature-icon">✓</div><span>AI-powered image recognition</span></div>
+          <div class="feature-item"><div class="feature-icon">✓</div><span>Search across 5 major platforms</span></div>
+          <div class="feature-item"><div class="feature-icon">✓</div><span>Ranked results by relevance</span></div>
+        </div>
+      </a>
+
       <!-- Daraz Agent Card — password protected -->
       <div class="option-card" onclick="openDarazModal()" style="cursor:pointer;">
         <div class="lock-badge">🔒 Restricted Access</div>
@@ -275,9 +286,7 @@
       document.getElementById('passwordInput').value = '';
     }
 
-    function openDarazModal() {
-      openPasswordModal('daraz');
-    }
+    function openDarazModal() { openPasswordModal('daraz'); }
 
     function closePasswordModal() {
       document.getElementById('passwordModal').classList.remove('active');
