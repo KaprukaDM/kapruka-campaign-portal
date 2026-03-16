@@ -156,8 +156,7 @@ def product_matches_keyword(product_name: str, keyword: str) -> bool:
     words = [w for w in re.split(r'[+\s]+', keyword.lower().strip()) if len(w) > 2]
     if not words:
         return True
-    matches = sum(1 for w in words if w in name_lower)
-    return matches >= max(1, len(words) // 2)
+    return all(w in name_lower for w in words)
 
 # ─── KEYWORD BUILDER ──────────────────────────────────────────────────────────
 def build_keywords(category: str) -> tuple[str, list[str]]:
