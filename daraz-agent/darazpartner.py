@@ -6,6 +6,7 @@ Fixes:
   2. Variations always generated regardless of spaces in keyword
   3. Products filtered to only show items relevant to the searched keyword
   4. Report only includes suppliers WITH phone numbers (keeps searching until N found)
+  5. Site-wide proximity-based keyword matching (words must be ≤35 chars apart)
 """
 
 import os
@@ -147,16 +148,44 @@ def extract_phone(text: str) -> str:
 
 def product_matches_keyword(product_name: str, keyword: str) -> bool:
     """
-    FIX 3: Check product name actually contains the searched keyword words.
-    e.g. keyword='air+cooler' → product must contain 'air' AND 'cooler'.
+    Site-wide relevance check: keyword words must appear as a phrase or
+    within close proximity of each other (≤ 35 chars apart).
+
+    Examples:
+      keyword='air cooler'   → "Portable Air Cooler Fan"       ✓ (exact phrase)
+                              → "CPU Air Cooler"                ✓ (adjacent)
+                              → "Air Freshener in Cooler Bag"   ✗ (too far apart)
+      keyword='gaming chair' → "Gaming Chair RGB Lights"        ✓
+                              → "Office Chair for Gaming Room"  ✗ (>35 chars apart)
+      keyword='baby shoes'   → "Baby Shoes Size 3"              ✓
+                              → "Shoes Rack for Baby Nursery"   ✗ (>35 chars apart)
     """
     if not product_name or not keyword:
         return True
+
     name_lower = product_name.lower()
-    words = [w for w in re.split(r'[+\s]+', keyword.lower().strip()) if len(w) > 2]
+    phrase     = re.sub(r'[+\s]+', ' ', keyword.lower().strip())
+
+    # 1. Exact phrase match — strongest signal
+    if phrase in name_lower:
+        return True
+
+    # 2. All words must be present somewhere
+    words = [w for w in phrase.split() if len(w) > 2]
     if not words:
         return True
-    return all(w in name_lower for w in words)
+    if not all(w in name_lower for w in words):
+        return False
+
+    # 3. Single-word keyword — presence is enough
+    if len(words) == 1:
+        return True
+
+    # 4. Multi-word: words must appear within PROXIMITY_WINDOW chars of each other
+    PROXIMITY_WINDOW = 35
+    positions = [name_lower.find(w) for w in words]
+
+    return (max(positions) - min(positions)) <= PROXIMITY_WINDOW
 
 # ─── KEYWORD BUILDER ──────────────────────────────────────────────────────────
 def build_keywords(category: str) -> tuple[str, list[str]]:
@@ -209,7 +238,7 @@ def scrape_keyword(keyword: str, pages: int, filter_keyword: str = "") -> list[d
             image     = coalesce(x.get("image"), x.get("mainImage"), "")
             if image and image.startswith("//"): image = "https:" + image
 
-            # FIX 3: Skip products that don't match the keyword
+            # FIX 3+5: Skip products that don't match the keyword (proximity-based)
             if filter_keyword and not product_matches_keyword(prod_name, filter_keyword):
                 continue
 
