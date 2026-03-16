@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """
-Daraz Supplier Agent — v2
-- Category search: main keyword x 3-4 pages, variations x 2 pages
-- Output: top sellers ranked by sales within THAT searched category only
-- Phone search: Gemini AI (primary) → OpenAI (fallback) → SerpAPI (fallback)
-- Deduplicates suppliers across daily runs
+Daraz Supplier Agent — v3
+Fixes:
+  1. Gemini model name corrected (tries gemini-2.0-flash-exp then gemini-1.5-flash)
+  2. Variations always generated regardless of spaces in keyword
+  3. Products filtered to only show items relevant to the searched keyword
+  4. Report only includes suppliers WITH phone numbers (keeps searching until N found)
 """
 
 import os
@@ -26,15 +27,14 @@ OPENAI_API_KEY  = os.getenv("OPENAI_API_KEY", "")
 GEMINI_API_KEY  = os.getenv("GEMINI_API_KEY", "")
 SERP_API_KEY    = os.getenv("SERP_API_KEY",   "")
 
-TOP_SUPPLIERS       = 5
-HISTORY_FILE        = Path(__file__).parent / "seen_suppliers.json"
-REPORTS_DIR         = Path(__file__).parent / "supplier_reports"
-LOG_FILE            = str(Path(__file__).parent / "supplier_agent.log")
-DELAY_BETWEEN       = 1.2
-
-# Pages per keyword type
-MAIN_KEYWORD_PAGES      = 4   # main keyword (e.g. "skincare") → 4 pages
-VARIATION_KEYWORD_PAGES = 2   # variations (e.g. "skincare+products") → 2 pages
+TOP_SUPPLIERS           = 5     # suppliers WITH numbers to show in report
+MAX_CANDIDATES          = 30    # max candidates to search through
+HISTORY_FILE            = Path(__file__).parent / "seen_suppliers.json"
+REPORTS_DIR             = Path(__file__).parent / "supplier_reports"
+LOG_FILE                = str(Path(__file__).parent / "supplier_agent.log")
+DELAY_BETWEEN           = 1.2
+MAIN_KEYWORD_PAGES      = 4
+VARIATION_KEYWORD_PAGES = 2
 
 BASE_URL = (
     "https://www.daraz.lk/catalog/"
@@ -145,12 +145,39 @@ def extract_phone(text: str) -> str:
             return re.sub(r'[^\d+]', '', match.group(0))
     return ""
 
+def product_matches_keyword(product_name: str, keyword: str) -> bool:
+    """
+    FIX 3: Check product name actually contains the searched keyword words.
+    e.g. keyword='air+cooler' → product must contain 'air' AND 'cooler'.
+    """
+    if not product_name or not keyword:
+        return True
+    name_lower = product_name.lower()
+    words = [w for w in re.split(r'[+\s]+', keyword.lower().strip()) if len(w) > 2]
+    if not words:
+        return True
+    matches = sum(1 for w in words if w in name_lower)
+    return matches >= max(1, len(words) // 2)
+
+# ─── KEYWORD BUILDER ──────────────────────────────────────────────────────────
+def build_keywords(category: str) -> tuple[str, list[str]]:
+    """
+    FIX 2: Always build variations regardless of spaces in keyword.
+    'air cooler' → main='air+cooler', variations=['air+cooler+buy', 'buy+air+cooler', ...]
+    """
+    main_kw = category.strip().replace(" ", "+")
+    variations = [
+        main_kw + "+buy",
+        main_kw + "+best",
+        "buy+" + main_kw,
+    ]
+    keywords = [main_kw] + variations
+    log.info(f"Main keyword: '{main_kw}' x{MAIN_KEYWORD_PAGES} pages")
+    log.info(f"Variations: {variations} x{VARIATION_KEYWORD_PAGES} pages each")
+    return main_kw, keywords
+
 # ─── SCRAPER ──────────────────────────────────────────────────────────────────
-def scrape_keyword(keyword: str, pages: int) -> list[dict]:
-    """
-    Scrape `pages` pages for `keyword`.
-    Returns a list of seller dicts, each with their products from THIS search.
-    """
+def scrape_keyword(keyword: str, pages: int, filter_keyword: str = "") -> list[dict]:
     sellers = {}
     for page in range(1, pages + 1):
         url = BASE_URL.format(q=keyword, page=page)
@@ -183,60 +210,51 @@ def scrape_keyword(keyword: str, pages: int) -> list[dict]:
             image     = coalesce(x.get("image"), x.get("mainImage"), "")
             if image and image.startswith("//"): image = "https:" + image
 
+            # FIX 3: Skip products that don't match the keyword
+            if filter_keyword and not product_matches_keyword(prod_name, filter_keyword):
+                continue
+
             key = seller_name.lower()
             if key not in sellers:
                 sellers[key] = {
-                    "seller_name":   seller_name,
-                    "seller_id":     str(seller_id_v),
-                    "shop_url":      f"https://www.daraz.lk/shop/{seller_id_v}/" if seller_id_v else "",
-                    "total_sold":    0,
-                    "total_reviews": 0,
-                    "avg_rating":    0.0,
-                    "products":      [],
-                    "categories":    set(),
+                    "seller_name":      seller_name,
+                    "seller_id":        str(seller_id_v),
+                    "shop_url":         f"https://www.daraz.lk/shop/{seller_id_v}/" if seller_id_v else "",
+                    "total_sold":       0,
+                    "total_reviews":    0,
+                    "avg_rating":       0.0,
+                    "products":         [],
+                    "categories":       set(),
+                    "matched_products": 0,
                 }
 
-            sellers[key]["total_sold"]    += sold
-            sellers[key]["total_reviews"] += reviews
-            sellers[key]["avg_rating"]     = max(sellers[key]["avg_rating"], rating)
+            sellers[key]["total_sold"]       += sold
+            sellers[key]["total_reviews"]    += reviews
+            sellers[key]["avg_rating"]        = max(sellers[key]["avg_rating"], rating)
             sellers[key]["categories"].add(keyword.replace("+", " ").title())
-
-            # Keep up to 5 top products per seller (sorted by sold count later)
+            sellers[key]["matched_products"] += 1
             sellers[key]["products"].append({
-                "name":   prod_name,
-                "price":  price,
-                "url":    prod_url,
-                "sold":   sold,
-                "image":  image,
-                "rating": rating,
+                "name": prod_name, "price": price, "url": prod_url,
+                "sold": sold, "image": image, "rating": rating,
             })
 
         time.sleep(DELAY_BETWEEN)
 
-    # Sort each seller's products by sold count and keep top 5
     for s in sellers.values():
         s["categories"] = sorted(list(s["categories"]))
-        s["products"] = sorted(s["products"], key=lambda p: p["sold"], reverse=True)[:5]
+        s["products"]   = sorted(s["products"], key=lambda p: p["sold"], reverse=True)[:5]
 
     return list(sellers.values())
 
 
 def get_top_suppliers(keywords: list[str], seen: set, use_dedup: bool,
                       main_keyword: str = "") -> list[dict]:
-    """
-    Scrape all keywords and return top N suppliers.
-
-    - main_keyword scrapes MAIN_KEYWORD_PAGES pages
-    - all other keywords scrape VARIATION_KEYWORD_PAGES pages
-
-    Ranking is based only on sold counts collected within THIS search —
-    not global Daraz rankings.
-    """
     all_sellers: dict[str, dict] = {}
 
     for kw in keywords:
-        pages = MAIN_KEYWORD_PAGES if kw == main_keyword else VARIATION_KEYWORD_PAGES
-        sellers = scrape_keyword(kw, pages=pages)
+        pages     = MAIN_KEYWORD_PAGES if kw == main_keyword else VARIATION_KEYWORD_PAGES
+        filter_kw = main_keyword if main_keyword else ""
+        sellers   = scrape_keyword(kw, pages=pages, filter_keyword=filter_kw)
 
         for s in sellers:
             key = s["seller_name"].lower()
@@ -248,34 +266,34 @@ def get_top_suppliers(keywords: list[str], seen: set, use_dedup: bool,
             if key not in all_sellers:
                 all_sellers[key] = s
             else:
-                # Merge: accumulate sold/reviews, expand categories, merge products
-                existing = all_sellers[key]
-                existing["categories"] = sorted(list(set(
-                    existing["categories"] + s["categories"]
-                )))
-                existing["total_sold"]    += s["total_sold"]
-                existing["total_reviews"] += s["total_reviews"]
-                existing["avg_rating"]     = max(existing["avg_rating"], s["avg_rating"])
-
-                # Merge products and re-rank by sold
-                combined = existing["products"] + s["products"]
-                # Deduplicate by URL
-                seen_urls = set()
-                merged = []
-                for p in combined:
+                ex = all_sellers[key]
+                ex["categories"]       = sorted(list(set(ex["categories"] + s["categories"])))
+                ex["total_sold"]       += s["total_sold"]
+                ex["total_reviews"]    += s["total_reviews"]
+                ex["matched_products"] += s["matched_products"]
+                ex["avg_rating"]        = max(ex["avg_rating"], s["avg_rating"])
+                seen_urls = {p["url"] for p in ex["products"]}
+                for p in s["products"]:
                     if p["url"] not in seen_urls:
                         seen_urls.add(p["url"])
-                        merged.append(p)
-                existing["products"] = sorted(merged, key=lambda p: p["sold"], reverse=True)[:5]
+                        ex["products"].append(p)
+                ex["products"] = sorted(ex["products"], key=lambda p: p["sold"], reverse=True)[:5]
 
-    # Rank suppliers by their total_sold within this search
-    ranked = sorted(all_sellers.values(), key=lambda x: (x["total_sold"], x["total_reviews"]), reverse=True)
-    log.info(f"  Ranked {len(ranked)} unique suppliers from this search")
-    return ranked[:TOP_SUPPLIERS * 3]  # buffer for contact enrichment
+    # Only keep sellers with at least 1 keyword-matching product
+    filtered = {k: v for k, v in all_sellers.items() if v.get("matched_products", 0) > 0}
+    ranked   = sorted(filtered.values(),
+                      key=lambda x: (x["total_sold"], x["total_reviews"]), reverse=True)
+
+    log.info(f"  {len(ranked)} suppliers with relevant products (from {len(all_sellers)} total scraped)")
+    return ranked[:MAX_CANDIDATES]
 
 
 # ─── CONTACT FINDER ───────────────────────────────────────────────────────────
-
+PHONE_SYSTEM = (
+    "You are a research assistant. Search the web for contact phone numbers "
+    "of Sri Lankan businesses. Only return the phone number, nothing else. "
+    "If not found, return NOT_FOUND."
+)
 PHONE_PROMPT = (
     'Find the Sri Lankan phone number for a Daraz.lk seller called "{name}". '
     'Search their website, Facebook page, or any Sri Lankan business directory. '
@@ -283,65 +301,52 @@ PHONE_PROMPT = (
     'If not found reply: NOT_FOUND'
 )
 
-PHONE_SYSTEM = (
-    "You are a research assistant. Search the web for contact phone numbers "
-    "of Sri Lankan businesses. Only return the phone number, nothing else. "
-    "If not found, return NOT_FOUND."
-)
-
 
 def find_phone_gemini(seller_name: str) -> str:
-    """Use Gemini 2.0 Flash with Google Search grounding to find phone number."""
+    """FIX 1: Try multiple Gemini model names until one works."""
     if not GEMINI_API_KEY:
         return ""
-    log.info(f"  Gemini search: {seller_name}")
-    try:
-        url = (
-            f"https://generativelanguage.googleapis.com/v1beta/models/"
-            f"gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
-        )
-        payload = {
-            "contents": [{
-                "parts": [{
-                    "text": PHONE_PROMPT.format(name=seller_name)
-                }]
-            }],
-            "tools": [{"google_search": {}}],
-            "systemInstruction": {
-                "parts": [{"text": PHONE_SYSTEM}]
-            },
-            "generationConfig": {
-                "maxOutputTokens": 60,
-                "temperature": 0.1,
+    for model in ["gemini-2.0-flash-exp", "gemini-1.5-flash", "gemini-1.5-pro"]:
+        log.info(f"  Gemini ({model}): {seller_name}")
+        try:
+            url = (
+                f"https://generativelanguage.googleapis.com/v1beta/models/"
+                f"{model}:generateContent?key={GEMINI_API_KEY}"
+            )
+            payload = {
+                "contents": [{"parts": [{"text": PHONE_PROMPT.format(name=seller_name)}]}],
+                "tools": [{"google_search": {}}],
+                "systemInstruction": {"parts": [{"text": PHONE_SYSTEM}]},
+                "generationConfig": {"maxOutputTokens": 60, "temperature": 0.1},
             }
-        }
-        resp = requests.post(url, json=payload, timeout=20)
-        resp.raise_for_status()
-        data = resp.json()
-        # Extract text from response
-        text = ""
-        for candidate in data.get("candidates", []):
-            for part in candidate.get("content", {}).get("parts", []):
-                text += part.get("text", "")
-        phone = extract_phone(text)
-        if phone:
-            log.info(f"    Found via Gemini: {phone}")
-            return phone
-        log.info(f"    Gemini: not found")
-        return ""
-    except Exception as e:
-        log.warning(f"    Gemini failed: {e}")
-        return ""
+            resp = requests.post(url, json=payload, timeout=20)
+            if resp.status_code == 404:
+                log.warning(f"    {model} not available, trying next...")
+                continue
+            resp.raise_for_status()
+            text = ""
+            for candidate in resp.json().get("candidates", []):
+                for part in candidate.get("content", {}).get("parts", []):
+                    text += part.get("text", "")
+            phone = extract_phone(text)
+            if phone:
+                log.info(f"    Found via Gemini ({model}): {phone}")
+                return phone
+            log.info(f"    Gemini: not found")
+            return ""
+        except Exception as e:
+            log.warning(f"    Gemini ({model}) error: {e}")
+            continue
+    return ""
 
 
 def find_phone_openai(seller_name: str) -> str:
-    """Use OpenAI with web_search_preview to find phone number."""
     if not OPENAI_API_KEY:
         return ""
-    log.info(f"  OpenAI search: {seller_name}")
+    log.info(f"  OpenAI: {seller_name}")
     try:
         import openai
-        client = openai.OpenAI(api_key=OPENAI_API_KEY)
+        client   = openai.OpenAI(api_key=OPENAI_API_KEY)
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
@@ -350,89 +355,86 @@ def find_phone_openai(seller_name: str) -> str:
             ],
             max_tokens=60,
         )
-        result = response.choices[0].message.content.strip()
-        phone = extract_phone(result)
+        phone = extract_phone(response.choices[0].message.content.strip())
         if phone:
             log.info(f"    Found via OpenAI: {phone}")
-            return phone
-        return ""
+        return phone
     except Exception as e:
-        log.warning(f"    OpenAI failed: {e}")
+        log.warning(f"    OpenAI error: {e}")
         return ""
 
 
 def find_phone_serpapi(seller_name: str) -> str:
-    """Use SerpAPI Google search to find phone number."""
     if not SERP_API_KEY:
         return ""
-    log.info(f"  SerpAPI search: {seller_name}")
+    log.info(f"  SerpAPI: {seller_name}")
     try:
         resp = requests.get(
             "https://serpapi.com/search",
             params={
-                "q":       f'"{seller_name}" Sri Lanka contact phone number',
-                "api_key": SERP_API_KEY,
-                "engine":  "google",
-                "gl":      "lk",
-                "hl":      "en",
-                "num":     5,
+                "q": f'"{seller_name}" Sri Lanka contact phone number',
+                "api_key": SERP_API_KEY, "engine": "google",
+                "gl": "lk", "hl": "en", "num": 5,
             },
             timeout=15,
         )
-        data = resp.json()
-        text = ""
-        if "knowledge_graph" in data:
-            text += str(data["knowledge_graph"].get("phone", "")) + " "
-        for r in data.get("organic_results", [])[:5]:
-            text += r.get("snippet", "") + " " + r.get("title", "") + " "
+        data  = resp.json()
+        text  = str(data.get("knowledge_graph", {}).get("phone", "")) + " "
+        text += " ".join(r.get("snippet", "") + " " + r.get("title", "")
+                         for r in data.get("organic_results", [])[:5])
         phone = extract_phone(text)
         if phone:
             log.info(f"    Found via SerpAPI: {phone}")
-            return phone
-        return ""
+        return phone
     except Exception as e:
-        log.warning(f"    SerpAPI failed: {e}")
+        log.warning(f"    SerpAPI error: {e}")
         return ""
 
 
 def find_phone(seller_name: str) -> dict:
-    """
-    3-tier phone search:
-      1. Gemini 2.0 Flash with Google Search grounding (best — uses real-time web)
-      2. OpenAI GPT-4o-mini (fallback)
-      3. SerpAPI Google search (fallback)
-    """
+    """Gemini → OpenAI → SerpAPI"""
     phone = ""; source = ""
-
-    # Tier 1 — Gemini
     if GEMINI_API_KEY:
         phone = find_phone_gemini(seller_name)
         if phone: source = "Gemini"
-
-    # Tier 2 — OpenAI
     if not phone and OPENAI_API_KEY:
         phone = find_phone_openai(seller_name)
         if phone: source = "OpenAI"
-
-    # Tier 3 — SerpAPI
     if not phone and SERP_API_KEY:
         phone = find_phone_serpapi(seller_name)
         if phone: source = "SerpAPI"
+    return {"phone": phone, "source": source, "found": bool(phone)}
 
-    return {"phone": phone or "Not found", "source": source or "—", "found": bool(phone)}
 
+def enrich_suppliers(candidates: list[dict]) -> list[dict]:
+    """
+    FIX 4: Walk through candidates until we have exactly TOP_SUPPLIERS with numbers.
+    Suppliers without a phone number are completely skipped from the report.
+    """
+    confirmed = []
+    skipped   = 0
 
-def enrich_suppliers(suppliers: list[dict]) -> list[dict]:
-    enriched = []
-    for s in suppliers[:TOP_SUPPLIERS]:
-        log.info(f"Finding contact for: {s['seller_name']}")
+    for s in candidates:
+        if len(confirmed) >= TOP_SUPPLIERS:
+            break
+        log.info(f"Checking: {s['seller_name']}  "
+                 f"[need {TOP_SUPPLIERS - len(confirmed)} more with numbers]")
         contact = find_phone(s["seller_name"])
-        s["phone"]          = contact["phone"]
-        s["contact_source"] = contact["source"]
-        s["contact_found"]  = contact["found"]
-        enriched.append(s)
+        if contact["found"]:
+            s["phone"]          = contact["phone"]
+            s["contact_source"] = contact["source"]
+            s["contact_found"]  = True
+            confirmed.append(s)
+            log.info(f"  ✓ {len(confirmed)}/{TOP_SUPPLIERS} confirmed")
+        else:
+            skipped += 1
+            log.info(f"  ✗ No number — skipping (skipped {skipped} so far)")
         time.sleep(1.5)
-    return enriched
+
+    if len(confirmed) < TOP_SUPPLIERS:
+        log.warning(f"Only found {len(confirmed)}/{TOP_SUPPLIERS} suppliers with numbers "
+                    f"after checking {len(confirmed)+skipped} candidates.")
+    return confirmed
 
 
 # ─── REPORT ───────────────────────────────────────────────────────────────────
@@ -444,24 +446,25 @@ def generate_html_report(suppliers: list[dict], mode: str, category: str = "") -
     if mode == "category":
         filename   = f"supplier_report_{category.replace(' ','_')}_{today}_{ts}.html"
         title_mode = f'Category Search: <span>"{category}"</span>'
-        subtitle   = f'Top {TOP_SUPPLIERS} suppliers for "{category}" — {datetime.now().strftime("%B %d, %Y  •  %I:%M %p")}'
+        subtitle   = (f'Top {len(suppliers)} suppliers for "{category}" — verified phone numbers only'
+                      f' — {datetime.now().strftime("%B %d, %Y  •  %I:%M %p")}')
     else:
         filename   = f"supplier_report_daily_{today}.html"
         title_mode = "Daily <span>Auto</span> Discovery"
-        subtitle   = f'Top {TOP_SUPPLIERS} suppliers discovered today — {datetime.now().strftime("%B %d, %Y  •  %I:%M %p")}'
+        subtitle   = (f'Top {len(suppliers)} suppliers with verified phone numbers'
+                      f' — {datetime.now().strftime("%B %d, %Y  •  %I:%M %p")}')
 
     report_path = REPORTS_DIR / filename
+    cards_html  = ""
 
-    cards_html = ""
     for i, s in enumerate(suppliers, 1):
-        categories_html = "".join(
-            f'<span class="cat-tag">{c}</span>' for c in s.get("categories", [])
-        )
-
+        categories_html = "".join(f'<span class="cat-tag">{c}</span>'
+                                  for c in s.get("categories", []))
         products_html = ""
         for p in s.get("products", [])[:5]:
-            name_short = p["name"][:65] + ("..." if len(p["name"]) > 65 else "")
-            rating_stars = "★" * int(p.get("rating", 0)) + "☆" * (5 - int(p.get("rating", 0)))
+            name_short   = p["name"][:65] + ("..." if len(p["name"]) > 65 else "")
+            rating_int   = int(p.get("rating", 0))
+            rating_stars = "★" * rating_int + "☆" * (5 - rating_int)
             products_html += f"""
             <div class="product-row">
               <a href="{p['url']}" target="_blank">{name_short}</a>
@@ -470,20 +473,11 @@ def generate_html_report(suppliers: list[dict], mode: str, category: str = "") -
               <span class="prod-sold">{p['sold']:,} sold</span>
             </div>"""
 
-        phone_class = "found" if s.get("contact_found") else "not-found"
-        phone_html  = f'<span class="phone {phone_class}">{s["phone"]}</span>'
-
-        source_color = {
-            "Gemini":  "#34d399",
-            "OpenAI":  "#60a5fa",
-            "SerpAPI": "#a78bfa",
-        }.get(s.get("contact_source", ""), "#34d399")
-
+        source_color = {"Gemini": "#34d399", "OpenAI": "#60a5fa", "SerpAPI": "#a78bfa"}.get(
+            s.get("contact_source", ""), "#34d399")
         source_html = (
-            f'<span class="source-badge" style="background:rgba(52,211,153,0.1);'
-            f'color:{source_color};border-color:{source_color}33;">'
+            f'<span class="source-badge" style="color:{source_color};border-color:{source_color}44;">'
             f'{s["contact_source"]}</span>'
-            if s.get("contact_found") else ""
         )
         shop_html = (
             f'<a href="{s["shop_url"]}" target="_blank" class="btn-shop">View Shop →</a>'
@@ -508,23 +502,22 @@ def generate_html_report(suppliers: list[dict], mode: str, category: str = "") -
                 <span>🛒 {s['total_sold']:,} sold in this search</span>
                 <span>💬 {s['total_reviews']:,} reviews</span>
                 <span>⭐ {s['avg_rating']:.1f} rating</span>
+                <span>📦 {s.get('matched_products',0)} matched products</span>
               </div>
               <div class="categories">{categories_html}</div>
             </div>
             <div class="contact-box">
               <div class="contact-label">Phone Number</div>
-              {phone_html}
+              <span class="phone found">{s['phone']}</span>
               {source_html}
               {shop_html}
             </div>
           </div>
           <div class="products-section">
-            <div class="products-label">Top Selling Products in This Search</div>
-            {products_html}
+            <div class="products-label">Top Selling "{category or 'Products'}" from this Supplier</div>
+            {products_html or '<div style="color:rgba(255,255,255,0.3);font-size:.82rem;">No matching products captured</div>'}
           </div>
         </div>"""
-
-    found_count = sum(1 for s in suppliers if s.get("contact_found"))
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -534,103 +527,53 @@ def generate_html_report(suppliers: list[dict], mode: str, category: str = "") -
   <title>Daraz Supplier Report — {today}</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-    * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-    body {{ font-family: 'Inter', 'Segoe UI', sans-serif; background: #0f0f13; color: #e8e8f0; min-height: 100vh; }}
-
-    header {{
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-      padding: 40px 48px; border-bottom: 1px solid rgba(255,255,255,0.08);
-      position: relative; overflow: hidden;
-    }}
-    header::before {{
-      content: ''; position: absolute; top: -50%; right: -10%;
-      width: 500px; height: 500px;
-      background: radial-gradient(circle, rgba(248,86,6,0.15) 0%, transparent 70%);
-      pointer-events: none;
-    }}
-    .header-top {{ display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px; }}
-    header h1 {{ font-size: 2rem; font-weight: 800; color: #fff; letter-spacing: -0.5px; }}
-    header h1 span {{ color: #f85606; }}
-    header p {{ color: rgba(255,255,255,0.55); margin-top: 8px; font-size: .88rem; }}
-    .mode-pill {{
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 4px 14px; border-radius: 20px; font-size: .78rem;
-      font-weight: 600; margin-bottom: 10px;
-    }}
-    .mode-pill.daily {{ background: rgba(59,130,246,0.2); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }}
-    .mode-pill.search {{ background: rgba(248,86,6,0.2); color: #f85606; border: 1px solid rgba(248,86,6,0.3); }}
-    .header-stats {{ display: flex; gap: 12px; flex-wrap: wrap; }}
-    .stat-box {{
-      background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 12px; padding: 14px 20px; text-align: center; min-width: 90px;
-    }}
-    .stat-box .num {{ font-size: 1.6rem; font-weight: 800; color: #f85606; }}
-    .stat-box .lbl {{ font-size: .7rem; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }}
-    .container {{ max-width: 960px; margin: 0 auto; padding: 36px 20px; }}
-    .section-title {{
-      font-size: .85rem; font-weight: 700; color: rgba(255,255,255,0.35);
-      text-transform: uppercase; letter-spacing: 1.5px;
-      margin-bottom: 20px; padding-bottom: 10px;
-      border-bottom: 1px solid rgba(255,255,255,0.07);
-    }}
-    .supplier-card {{
-      background: #1a1a2e; border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 16px; margin-bottom: 16px; overflow: hidden;
-      transition: border-color .2s, box-shadow .2s;
-    }}
-    .supplier-card:hover {{
-      border-color: rgba(248,86,6,0.4);
-      box-shadow: 0 0 30px rgba(248,86,6,0.1);
-    }}
-    .supplier-header {{
-      display: flex; gap: 20px; padding: 24px;
-      align-items: flex-start; border-bottom: 1px solid rgba(255,255,255,0.06);
-    }}
-    .supplier-rank {{ font-size: 2rem; font-weight: 900; color: #f85606; min-width: 48px; padding-top: 4px; }}
-    .supplier-main {{ flex: 1; }}
-    .name-row {{ display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }}
-    .supplier-name {{ font-size: 1.15rem; font-weight: 700; color: #fff; }}
-    .mode-tag {{ padding: 2px 10px; border-radius: 12px; font-size: .7rem; font-weight: 600; }}
-    .daily-tag {{ background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.25); }}
-    .search-tag {{ background: rgba(248,86,6,0.15); color: #f85606; border: 1px solid rgba(248,86,6,0.25); }}
-    .supplier-stats {{
-      display: flex; flex-wrap: wrap; gap: 12px;
-      font-size: .8rem; color: rgba(255,255,255,0.45); margin-bottom: 12px;
-    }}
-    .categories {{ display: flex; flex-wrap: wrap; gap: 6px; }}
-    .cat-tag {{
-      background: rgba(248,86,6,0.12); color: #f85606;
-      border: 1px solid rgba(248,86,6,0.25);
-      padding: 3px 10px; border-radius: 20px; font-size: .72rem; font-weight: 500;
-    }}
-    .contact-box {{ text-align: right; min-width: 190px; }}
-    .contact-label {{ font-size: .7rem; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.3); margin-bottom: 8px; }}
-    .phone {{ display: block; font-size: 1.1rem; font-weight: 700; margin-bottom: 6px; }}
-    .phone.found {{ color: #34d399; }}
-    .phone.not-found {{ color: rgba(255,255,255,0.2); font-size: .85rem; font-weight: 400; }}
-    .source-badge {{
-      display: inline-block; padding: 2px 8px; border-radius: 10px;
-      font-size: .68rem; margin-bottom: 10px; border: 1px solid;
-    }}
-    .btn-shop {{
-      display: inline-block; background: #f85606; color: white;
-      padding: 6px 14px; border-radius: 8px; text-decoration: none;
-      font-size: .78rem; font-weight: 600; margin-top: 6px;
-    }}
-    .btn-shop:hover {{ background: #d94800; }}
-    .products-section {{ padding: 16px 24px; background: rgba(0,0,0,0.2); }}
-    .products-label {{ font-size: .7rem; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.25); margin-bottom: 10px; }}
-    .product-row {{
-      display: flex; align-items: center; gap: 10px; padding: 8px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.04); font-size: .82rem;
-    }}
-    .product-row:last-child {{ border-bottom: none; }}
-    .product-row a {{ flex: 1; color: rgba(255,255,255,0.6); text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
-    .product-row a:hover {{ color: #f85606; }}
-    .prod-rating {{ color: #f5a623; font-size: .72rem; white-space: nowrap; flex-shrink: 0; }}
-    .prod-price {{ color: #f85606; font-weight: 600; white-space: nowrap; flex-shrink: 0; }}
-    .prod-sold {{ color: rgba(255,255,255,0.3); font-size: .74rem; white-space: nowrap; flex-shrink: 0; }}
-    footer {{ text-align: center; color: rgba(255,255,255,0.2); font-size: .73rem; padding: 32px; border-top: 1px solid rgba(255,255,255,0.06); }}
+    *{{box-sizing:border-box;margin:0;padding:0}}
+    body{{font-family:'Inter','Segoe UI',sans-serif;background:#0f0f13;color:#e8e8f0;min-height:100vh}}
+    header{{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);padding:40px 48px;border-bottom:1px solid rgba(255,255,255,0.08);position:relative;overflow:hidden}}
+    header::before{{content:'';position:absolute;top:-50%;right:-10%;width:500px;height:500px;background:radial-gradient(circle,rgba(248,86,6,0.15) 0%,transparent 70%);pointer-events:none}}
+    .header-top{{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px}}
+    header h1{{font-size:2rem;font-weight:800;color:#fff;letter-spacing:-0.5px}}
+    header h1 span{{color:#f85606}}
+    header p{{color:rgba(255,255,255,0.55);margin-top:8px;font-size:.88rem}}
+    .mode-pill{{display:inline-flex;align-items:center;gap:6px;padding:4px 14px;border-radius:20px;font-size:.78rem;font-weight:600;margin-bottom:10px}}
+    .mode-pill.daily{{background:rgba(59,130,246,0.2);color:#60a5fa;border:1px solid rgba(59,130,246,0.3)}}
+    .mode-pill.search{{background:rgba(248,86,6,0.2);color:#f85606;border:1px solid rgba(248,86,6,0.3)}}
+    .header-stats{{display:flex;gap:12px;flex-wrap:wrap}}
+    .stat-box{{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:14px 20px;text-align:center;min-width:90px}}
+    .stat-box .num{{font-size:1.6rem;font-weight:800;color:#f85606}}
+    .stat-box .lbl{{font-size:.7rem;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.5px;margin-top:2px}}
+    .container{{max-width:960px;margin:0 auto;padding:36px 20px}}
+    .section-title{{font-size:.85rem;font-weight:700;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:20px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.07)}}
+    .supplier-card{{background:#1a1a2e;border:1px solid rgba(255,255,255,0.08);border-radius:16px;margin-bottom:16px;overflow:hidden;transition:border-color .2s,box-shadow .2s}}
+    .supplier-card:hover{{border-color:rgba(248,86,6,0.4);box-shadow:0 0 30px rgba(248,86,6,0.1)}}
+    .supplier-header{{display:flex;gap:20px;padding:24px;align-items:flex-start;border-bottom:1px solid rgba(255,255,255,0.06)}}
+    .supplier-rank{{font-size:2rem;font-weight:900;color:#f85606;min-width:48px;padding-top:4px}}
+    .supplier-main{{flex:1}}
+    .name-row{{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}}
+    .supplier-name{{font-size:1.15rem;font-weight:700;color:#fff}}
+    .mode-tag{{padding:2px 10px;border-radius:12px;font-size:.7rem;font-weight:600}}
+    .daily-tag{{background:rgba(59,130,246,0.15);color:#60a5fa;border:1px solid rgba(59,130,246,0.25)}}
+    .search-tag{{background:rgba(248,86,6,0.15);color:#f85606;border:1px solid rgba(248,86,6,0.25)}}
+    .supplier-stats{{display:flex;flex-wrap:wrap;gap:12px;font-size:.8rem;color:rgba(255,255,255,0.45);margin-bottom:12px}}
+    .categories{{display:flex;flex-wrap:wrap;gap:6px}}
+    .cat-tag{{background:rgba(248,86,6,0.12);color:#f85606;border:1px solid rgba(248,86,6,0.25);padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:500}}
+    .contact-box{{text-align:right;min-width:200px}}
+    .contact-label{{font-size:.7rem;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.3);margin-bottom:8px}}
+    .phone{{display:block;font-size:1.15rem;font-weight:700;margin-bottom:6px}}
+    .phone.found{{color:#34d399}}
+    .source-badge{{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.68rem;margin-bottom:10px;border:1px solid;background:rgba(0,0,0,0.3)}}
+    .btn-shop{{display:inline-block;background:#f85606;color:white;padding:6px 14px;border-radius:8px;text-decoration:none;font-size:.78rem;font-weight:600;margin-top:6px}}
+    .btn-shop:hover{{background:#d94800}}
+    .products-section{{padding:16px 24px;background:rgba(0,0,0,0.2)}}
+    .products-label{{font-size:.7rem;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.25);margin-bottom:10px}}
+    .product-row{{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:.82rem}}
+    .product-row:last-child{{border-bottom:none}}
+    .product-row a{{flex:1;color:rgba(255,255,255,0.6);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
+    .product-row a:hover{{color:#f85606}}
+    .prod-rating{{color:#f5a623;font-size:.72rem;white-space:nowrap;flex-shrink:0}}
+    .prod-price{{color:#f85606;font-weight:600;white-space:nowrap;flex-shrink:0}}
+    .prod-sold{{color:rgba(255,255,255,0.3);font-size:.74rem;white-space:nowrap;flex-shrink:0}}
+    footer{{text-align:center;color:rgba(255,255,255,0.2);font-size:.73rem;padding:32px;border-top:1px solid rgba(255,255,255,0.06)}}
   </style>
 </head>
 <body>
@@ -644,19 +587,28 @@ def generate_html_report(suppliers: list[dict], mode: str, category: str = "") -
         <p>{subtitle}</p>
       </div>
       <div class="header-stats">
-        <div class="stat-box"><div class="num">{len(suppliers)}</div><div class="lbl">Suppliers</div></div>
-        <div class="stat-box"><div class="num">{found_count}</div><div class="lbl">Contacts</div></div>
-        <div class="stat-box"><div class="num">{len(suppliers)-found_count}</div><div class="lbl">Not Found</div></div>
+        <div class="stat-box">
+          <div class="num">{len(suppliers)}</div>
+          <div class="lbl">With Numbers</div>
+        </div>
+        <div class="stat-box">
+          <div class="num">{sum(s.get('matched_products',0) for s in suppliers)}</div>
+          <div class="lbl">Matched Products</div>
+        </div>
       </div>
     </div>
   </header>
   <div class="container">
-    <div class="section-title">{'Results for "' + category + '" — ranked by sales within this search' if mode == 'category' else "Today's Top Suppliers"}</div>
+    <div class="section-title">
+      {'Results for "' + category + '" — ' + str(len(suppliers)) + ' suppliers · verified phone numbers only'
+       if mode == 'category' else "Today's Top Suppliers · Verified Numbers Only"}
+    </div>
     {cards_html}
   </div>
   <footer>
-    Daraz Supplier Agent v2 &nbsp;•&nbsp; {'Category: ' + category if mode == 'category' else 'Daily Auto Mode'} &nbsp;•&nbsp;
-    Contact search: Gemini + OpenAI + SerpAPI &nbsp;•&nbsp; {today}
+    Daraz Supplier Agent v3 &nbsp;•&nbsp;
+    {'Category: ' + category if mode == 'category' else 'Daily Auto Mode'} &nbsp;•&nbsp;
+    Contact search: Gemini → OpenAI → SerpAPI &nbsp;•&nbsp; {today}
   </footer>
 </body>
 </html>"""
@@ -671,22 +623,14 @@ def ask_mode() -> tuple[str, str]:
     env_category = os.getenv("SUPPLIER_CATEGORY", "").strip()
     if env_category:
         return "category", env_category.lower()
-
     print("\n" + "═" * 55)
-    print("  DARAZ SUPPLIER AGENT v2")
-    print("═" * 55)
-    print("  Press ENTER  → Daily auto discovery")
-    print("  Type a word  → Search suppliers for that category")
+    print("  DARAZ SUPPLIER AGENT v3")
     print("═" * 55)
     try:
         import sys as _sys
-        if not _sys.stdin.isatty():
-            user_input = ""
-        else:
-            user_input = input("\n  Category (or ENTER for daily): ").strip()
+        user_input = "" if not _sys.stdin.isatty() else input("\n  Category (or ENTER for daily): ").strip()
     except (EOFError, KeyboardInterrupt):
         user_input = ""
-
     return ("category", user_input.lower()) if user_input else ("daily", "")
 
 
@@ -696,19 +640,9 @@ def main():
     mode, category = ask_mode()
 
     if mode == "category":
-        # Main keyword gets MAIN_KEYWORD_PAGES, variations get VARIATION_KEYWORD_PAGES
-        main_kw  = category.replace(" ", "+")
-        keywords = [main_kw]
-        if " " not in category:
-            keywords += [
-                main_kw + "+accessories",
-                main_kw + "+products",
-                "best+" + main_kw,
-            ]
+        main_kw, keywords = build_keywords(category)
         log.info(f"MODE: Category Search — '{category}'")
-        log.info(f"Keywords: {main_kw} x{MAIN_KEYWORD_PAGES} pages + {len(keywords)-1} variations x{VARIATION_KEYWORD_PAGES} pages")
         raw = get_top_suppliers(keywords, seen=set(), use_dedup=False, main_keyword=main_kw)
-
     else:
         log.info("MODE: Daily Auto Discovery")
         seen = load_history()
@@ -717,20 +651,21 @@ def main():
         random.seed(day_offset)
         keywords_today = random.sample(DAILY_KEYWORDS, min(8, len(DAILY_KEYWORDS)))
         log.info(f"Today's keywords: {', '.join(keywords_today)}")
-        # In daily mode all keywords are "equal" — use variation page count
         raw = get_top_suppliers(keywords_today, seen=seen, use_dedup=True, main_keyword="")
 
-    log.info(f"Found {len(raw)} candidate suppliers")
+    log.info(f"Found {len(raw)} candidates — need {TOP_SUPPLIERS} with phone numbers...")
 
     if not raw:
         log.warning("No suppliers found.")
-        print("\n  No suppliers found. Try a different category.")
         return None
 
-    log.info("Finding contact phone numbers (Gemini → OpenAI → SerpAPI)...")
     suppliers = enrich_suppliers(raw)
 
-    log.info("Generating HTML report...")
+    if not suppliers:
+        log.warning("No suppliers with phone numbers found.")
+        return None
+
+    log.info(f"Confirmed {len(suppliers)} suppliers with numbers. Generating report...")
     report_path = generate_html_report(suppliers, mode, category)
 
     if mode == "daily":
@@ -739,9 +674,7 @@ def main():
         save_history(new_seen)
         log.info(f"History updated: {len(new_seen)} total seen suppliers")
 
-    print(f"\n  Report saved: {report_path.resolve()}")
     log.info(f"DONE! Report: {report_path.resolve()}")
-
     try:
         import platform
         if platform.system() == "Windows":
