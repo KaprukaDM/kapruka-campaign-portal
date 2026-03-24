@@ -50,7 +50,7 @@
     @keyframes rotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     .ads-manager-btn .label { font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
 
-    /* ── NEW: Avurudhu 2026 Checklist Button ── */
+    /* ── Avurudhu / Season Checklist Button ── */
     .avurudhu-btn {
       position: fixed; bottom: 240px; right: 30px;
       background: linear-gradient(135deg, rgba(255,105,135,0.9), rgba(255,165,0,0.9));
@@ -128,7 +128,7 @@
     </div>
 
     <div class="options-grid">
-      <!-- Campaign Booking Card -->
+
       <a href="campaign-booking.html" class="option-card">
         <div class="option-title">📋 Book Campaign Slot</div>
         <div class="option-desc">This is exclusively for departmental heads. (Special Request)</div>
@@ -139,7 +139,6 @@
         </div>
       </a>
 
-      <!-- Product Suggestion Card -->
       <a href="product-suggestion.html" class="option-card">
         <div class="option-title">💡 Social Media Direct Order (Factory Pages)</div>
         <div class="option-desc">Submit product suggestions for Facebook lead form campaigns with weekly submission tracking.</div>
@@ -150,7 +149,6 @@
         </div>
       </a>
 
-      <!-- Content Calendar Card -->
       <a href="content-calendar.html" class="option-card">
         <div class="option-title">📅 Content Calendar (Kapruka Official Page)</div>
         <div class="option-desc">Plan and schedule social media content across platforms with collaborative team management.</div>
@@ -161,7 +159,6 @@
         </div>
       </a>
 
-      <!-- Hot Products Card -->
       <a href="hot-products.html" class="option-card">
         <div class="option-title">🔥 Hot Products</div>
         <div class="option-desc">Browse and manage hot product suggestions by category with real-time listing status tracking.</div>
@@ -172,7 +169,6 @@
         </div>
       </a>
 
-      <!-- Product Performance Card -->
       <a href="product-performance.html" class="option-card">
         <div class="option-title">📊 Product Performance</div>
         <div class="option-desc">Search and analyze Meta Ads campaign performance by product, campaign, or keyword with detailed metrics.</div>
@@ -183,7 +179,6 @@
         </div>
       </a>
 
-      <!-- Performance Forecast Card -->
       <a href="performance-forecast.html" class="option-card">
         <div class="option-title">🚀 Performance Forecast</div>
         <div class="option-desc">Estimate campaign performance based on objective and budget with AI-powered predictive analytics.</div>
@@ -194,7 +189,6 @@
         </div>
       </a>
 
-      <!-- Homepage Slot Manager Card -->
       <a href="homepage-booking-portal.html" class="option-card">
         <div class="option-title">🏠 Homepage Slot Manager</div>
         <div class="option-desc">Manage PC vs Ecommerce product mix on the homepage. Book and track slots with a 60/40 ratio target.</div>
@@ -205,7 +199,6 @@
         </div>
       </a>
 
-      <!-- Product Video Search Card -->
       <a href="product-video-search/product-search.html" class="option-card">
         <div class="option-title">🎬 Product Video Search</div>
         <div class="option-desc">Upload a product image to instantly find matching videos across TikTok, Pinterest, Amazon, Alibaba and Temu.</div>
@@ -216,7 +209,6 @@
         </div>
       </a>
 
-      <!-- Daraz Agent Card — password protected -->
       <div class="option-card" onclick="openDarazModal()" style="cursor:pointer;">
         <div class="lock-badge">🔒 Restricted Access</div>
         <div class="option-title">🛒 Daraz Market Agent</div>
@@ -235,7 +227,7 @@
     </div>
   </div>
 
-  <!-- Floating Buttons (bottom to top order) -->
+  <!-- Floating Buttons -->
   <a href="experiments-dashboard.html" class="experiments-btn">
     <span class="icon">🧪</span>
     <span class="label">Experiments</span>
@@ -252,10 +244,10 @@
     <span class="label">Ads Manager</span>
   </div>
 
-  <!-- NEW: Avurudhu 2026 Checklist -->
+  <!-- Avurudhu / Season Checklist -->
   <div class="avurudhu-btn" onclick="openPasswordModal('avurudhu')">
     <span class="icon">🌸</span>
-    <span class="label">Avurudhu Checklist</span>
+    <span class="label">Season Checklist</span>
   </div>
 
   <div class="cod-confirmation-btn" onclick="openPasswordModal('cod')">
@@ -282,14 +274,14 @@
       ads:      'Fari',
       cod:      'Chamudhi',
       daraz:    '8055',
-      avurudhu: '207'   // ← change this to your preferred password
+      avurudhu: 'Avurudhu2026'
     };
 
     const URLS = {
       ads:      'https://docs.google.com/forms/d/e/1FAIpQLSfGSObGAIJz46oQd0xN3oISjS46SEkFtL0_ZGkIfh6ansvqPQ/viewform',
       cod:      'https://script.google.com/macros/s/AKfycbwA7rio-Gs2woBvLWKmq9KR_z1SLLV1O5d9apeShpfD4r8JdpaEI9g2pjBmyl1vK4DRDQ/exec',
       daraz:    'https://daraz-agent.onrender.com',
-      avurudhu: 'https://github.com/KaprukaDM/kapruka-campaign-portal/blob/main/kapruka_avurudhu_2026_checklist'
+      avurudhu: 'https://kaprukadm.github.io/kapruka-campaign-portal/season_checklist.html'
     };
 
     let currentSection = '';
@@ -300,7 +292,7 @@
         ads:      '🎯 Ads Manager Access',
         cod:      '✅ COD Confirmation Access',
         daraz:    '🛒 Daraz Market Agent',
-        avurudhu: '🌸 Avurudhu 2026 Checklist'
+        avurudhu: '🌸 Season Checklist'
       };
       document.getElementById('modalTitle').textContent = titles[section] || '🔒 Access Required';
       document.getElementById('modalSubtitle').textContent = 'Enter password to continue';
