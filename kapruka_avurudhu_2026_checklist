@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Kapruka Season Checklist – Promotion Checklist</title>
+  <style>
+    :root {
+      --brand: #e8002d;
+      --brand-dark: #b5001f;
+      --accent: #ff6b00;
+      --gold: #f5a623;
+      --bg: #fdf6f0;
+      --card: #ffffff;
+      --text: #1a1a1a;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --done: #16a34a;
+      --radius: 12px;
+      --shadow: 0 2px 12px rgba(0,0,0,.08);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* ── HEADER ── */
+    header {
+      background: linear-gradient(135deg, var(--brand) 0%, var(--accent) 100%);
+      color: #fff; padding: 28px 32px 24px;
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+    }
+    header .logo { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.5px; }
+    header .logo span { color: var(--gold); }
+    header .meta { text-align: right; }
+    header .meta h1 { font-size: 1.25rem; font-weight: 700; }
+    header .meta p { font-size: .85rem; opacity: .85; margin-top: 4px; }
+    .countdown-banner {
+      background: var(--gold); color: #1a1a1a;
+      text-align: center; padding: 10px 20px; font-weight: 700; font-size: .95rem;
+      letter-spacing: .4px;
+    }
+    .countdown-banner span#days { font-size: 1.3rem; font-weight: 900; color: var(--brand); }
+
+    /* ── PROGRESS ── */
+    .progress-wrap { background: #fff; padding: 20px 32px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+    .progress-text { font-size: .9rem; color: var(--muted); white-space: nowrap; }
+    .progress-bar-bg { flex: 1; min-width: 180px; height: 10px; background: var(--border); border-radius: 99px; overflow: hidden; }
+    .progress-bar { height: 100%; background: linear-gradient(90deg, var(--done), #4ade80); border-radius: 99px; transition: width .4s ease; width: 0%; }
+    .progress-pct { font-weight: 700; font-size: .95rem; color: var(--done); min-width: 42px; }
+    .reset-btn { margin-left: auto; background: #f3f4f6; border: 1px solid var(--border); border-radius: 8px; padding: 7px 16px; font-size: .82rem; cursor: pointer; color: var(--muted); transition: background .2s; }
+    .reset-btn:hover { background: #e5e7eb; }
+
+    /* ── LAYOUT ── */
+    .wrapper { max-width: 1100px; margin: 0 auto; padding: 28px 20px 60px; display: grid; grid-template-columns: 1fr; gap: 24px; }
+
+    /* ── SECTION CARDS ── */
+    .section-card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+    .section-header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 16px 20px; cursor: pointer; user-select: none;
+      border-bottom: 1px solid var(--border);
+      transition: background .15s;
+    }
+    .section-header:hover { background: #fafafa; }
+    .section-icon { font-size: 1.35rem; }
+    .section-title { font-size: 1.05rem; font-weight: 700; flex: 1; }
+    .section-badge { background: var(--brand); color: #fff; border-radius: 99px; font-size: .72rem; font-weight: 700; padding: 3px 10px; }
+    .section-badge.done { background: var(--done); }
+    .chevron { font-size: .75rem; color: var(--muted); transition: transform .25s; }
+    .section-header.collapsed .chevron { transform: rotate(-90deg); }
+
+    .section-body { padding: 16px 20px 20px; }
+    .section-body.hidden { display: none; }
+
+    /* ── SUBSECTION ── */
+    .subsection { margin-bottom: 18px; }
+    .subsection:last-child { margin-bottom: 0; }
+    .subsection-title { font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px dashed var(--border); }
+
+    /* ── CHECKLIST ITEMS ── */
+    .checklist { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+    .checklist li { display: flex; align-items: flex-start; gap: 10px; }
+    .checklist li label {
+      display: flex; align-items: flex-start; gap: 10px; cursor: pointer;
+      padding: 9px 12px; border-radius: 8px; width: 100%;
+      border: 1.5px solid transparent; transition: border-color .15s, background .15s;
+      font-size: .9rem; line-height: 1.4;
+    }
+    .checklist li label:hover { background: #fef3f2; border-color: #fecaca; }
+    .checklist li input[type="checkbox"] { display: none; }
+    .check-box {
+      width: 19px; height: 19px; min-width: 19px; border: 2px solid #d1d5db; border-radius: 5px;
+      display: flex; align-items: center; justify-content: center; margin-top: 1px;
+      transition: all .2s; background: #fff;
+    }
+    .check-box svg { display: none; width: 11px; height: 11px; }
+    .checklist li input[type="checkbox"]:checked + label { background: #f0fdf4; border-color: #86efac; }
+    .checklist li input[type="checkbox"]:checked + label .check-box { background: var(--done); border-color: var(--done); }
+    .checklist li input[type="checkbox"]:checked + label .check-box svg { display: block; }
+    .checklist li input[type="checkbox"]:checked + label .item-text { text-decoration: line-through; color: var(--muted); }
+    .item-text { flex: 1; }
+    .item-note { display: block; font-size: .78rem; color: var(--muted); margin-top: 2px; }
+    .tag { display: inline-block; background: #fef3c7; color: #92400e; border-radius: 4px; font-size: .7rem; font-weight: 600; padding: 1px 6px; margin-left: 6px; vertical-align: middle; }
+    .tag.red { background: #fee2e2; color: #991b1b; }
+    .tag.blue { background: #dbeafe; color: #1e40af; }
+    .tag.green { background: #dcfce7; color: #166534; }
+    .tag.purple { background: #ede9fe; color: #5b21b6; }
+
+    /* ── PRIORITY INDICATOR ── */
+    .priority { width: 6px; min-width: 6px; height: 6px; border-radius: 99px; margin-top: 7px; }
+    .p-high { background: var(--brand); }
+    .p-mid { background: var(--gold); }
+    .p-low { background: #9ca3af; }
+
+    /* ── URGENCY STRIP ── */
+    .urgent-strip { background: #fff7ed; border: 1.5px solid #fed7aa; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; font-size: .82rem; color: #9a3412; display: flex; align-items: center; gap: 8px; }
+
+    /* ── FOOTER ── */
+    footer { text-align: center; padding: 20px; font-size: .8rem; color: var(--muted); }
+
+    @media (max-width: 600px) {
+      header { padding: 20px; }
+      .wrapper { padding: 16px 12px 40px; }
+      .section-body { padding: 14px 14px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">kap<span>ruka</span>.com</div>
+  <div class="meta">
+    <h1>🎊 Avurudhu 2026 – Promotion Checklist</h1>
+    <p>Sinhala &amp; Tamil New Year — April 13–14, 2026</p>
+  </div>
+</header>
+
+<div class="countdown-banner">
+  ⏳ <span id="days">--</span> days until Avurudhu 2026 (April 14)
+</div>
+
+<div class="progress-wrap">
+  <span class="progress-text">Overall Progress</span>
+  <div class="progress-bar-bg"><div class="progress-bar" id="progressBar"></div></div>
+  <span class="progress-pct" id="progressPct">0%</span>
+  <button class="reset-btn" onclick="resetAll()">↺ Reset All</button>
+</div>
+
+<div class="wrapper" id="checklistRoot">
+
+  <!-- ═══════════════════════════════════════════════
+       SECTION 1 — CONTENT
+  ════════════════════════════════════════════════ -->
+  <div class="section-card">
+    <div class="section-header" onclick="toggleSection(this)">
+      <span class="section-icon">🎬</span>
+      <span class="section-title">Content</span>
+      <span class="section-badge" id="badge-content">0 / 0</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="section-body" id="body-content">
+
+      <div class="urgent-strip">🔴 <strong>Priority:</strong> Video &amp; branded assets should be finalized at least 2 weeks before April 13.</div>
+
+      <!-- Video Content -->
+      <div class="subsection">
+        <div class="subsection-title">🎥 Video Content</div>
+        <ul class="checklist">
+          <li><input type="checkbox" id="c1"><label for="c1"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Product showcase video <span class="tag">Reel/Short</span><em class="item-note">Feature top Avurudhu-gifted products — sweets, oil, clothes, gift packs</em></span></label></li>
+          <li><input type="checkbox" id="c2"><label for="c2"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Celebrate Avurudhu with Kapruka — brand story video <span class="tag red">Hero Ad</span><em class="item-note">Emotional storytelling: why Kapruka, convenience, islandwide delivery</em></span></label></li>
+          <li><input type="checkbox" id="c3"><label for="c3"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Range-of-products display video <span class="tag blue">Catalog Ad</span><em class="item-note">Carousel-style collage: categories like clothing, oil, sweets, electronics</em></span></label></li>
+          <li><input type="checkbox" id="c4"><label for="c4"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Special Event × Brand commercial collab videos <span class="tag purple">Collab</span><em class="item-note">Co-branded videos with key product brands on Kapruka</em></span></label></li>
+          <li><input type="checkbox" id="c5"><label for="c5"><span class="priority p-low"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">TikTok-native short videos (15–30s) <span class="tag green">TikTok</span><em class="item-note">Trending audio + Avurudhu feel; show gifting process, unboxing</em></span></label></li>
+        </ul>
+      </div>
+
+      <!-- Branded Campaigns -->
+      <div class="subsection">
+        <div class="subsection-title">📣 Branded Campaign Assets</div>
+        <ul class="checklist">
+          <li><input type="checkbox" id="c6"><label for="c6"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Review &amp; shortlist old Avurudhu videos for reuse <span class="tag">Archive</span><em class="item-note">Check previous years' top-performing posts — repurpose with updated captions</em></span></label></li>
+          <li><input type="checkbox" id="c7"><label for="c7"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Celebrate Avurudhu with Kapruka — "Why Kapruka?" campaign post<em class="item-note">Value prop: same-day Colombo delivery, countrywide, wide selection, trusted brand</em></span></label></li>
+          <li><input type="checkbox" id="c8"><label for="c8"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Key categories — Avurudhu-themed creatives <span class="tag blue">Static + Video</span><em class="item-note">Avurudhu clothing, oil &amp; bath sets, sweets, gift packs, electronics</em></span></label></li>
+          <li><input type="checkbox" id="c9"><label for="c9"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Key products — Avurudhu-themed individual product posts <span class="tag blue">Product Ads</span><em class="item-note">Hero SKUs in each category with Avurudhu design overlay</em></span></label></li>
+        </ul>
+      </div>
+
+      <!-- Social Profile Assets -->
+      <div class="subsection">
+        <div class="subsection-title">🖼️ Social Profile Assets</div>
+        <ul class="checklist">
+          <li><input type="checkbox" id="c10"><label for="c10"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Profile Picture — Avurudhu-themed overlay or seasonal version<em class="item-note">Update on FB, Instagram, TikTok — use consistent design across platforms</em></span></label></li>
+          <li><input type="checkbox" id="c11"><label for="c11"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Cover Photo — Avurudhu promotional banner<em class="item-note">FB: 820×312px | Include key offer, website URL, April 13–14 dates</em></span></label></li>
+        </ul>
+      </div>
+
+      <!-- Hashtags & Keywords -->
+      <div class="subsection">
+        <div class="subsection-title"># Hashtags, Keywords &amp; Slangs</div>
+        <ul class="checklist">
+          <li><input type="checkbox" id="c12"><label for="c12"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Compile master hashtag list for all platforms<em class="item-note">#Avurudhu #AluthAvuruddu #SinhalaNewYear #AvurudhuGifts #Avurudu2026 #SriLankaNY #KaprukaSL #AvurudhuOffers #SinhalaTamilNewYear #KaprukaTEAM</em></span></label></li>
+          <li><input type="checkbox" id="c13"><label for="c13"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Avurudhu keyword list for captions, SEO &amp; Google Ads<em class="item-note">Avurudu, Avurudhu, Aluth Avuruddu, Avurudu Ledi, Avurudu Hamudaawa, Avurudhu Deals SL, Avurudu Gifts Online</em></span></label></li>
+          <li><input type="checkbox" id="c14"><label for="c14"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Sinhala slangs &amp; cultural terms for copy<em class="item-note">Subha Aluth Avuruddak Wewa, Avurudu Nakata, Litha, Kavum, Kokis, Aasiri, Adara</em></span></label></li>
+          <li><input type="checkbox" id="c15"><label for="c15"><span class="priority p-low"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">TikTok trending Avurudhu sounds &amp; audio research<em class="item-note">Identify trending Avurudhu music on TikTok; save audio links for video creation</em></span></label></li>
+        </ul>
+      </div>
+
+      <!-- Music & Reusable -->
+      <div class="subsection">
+        <div class="subsection-title">🎵 Music &amp; Reusable Content</div>
+        <ul class="checklist">
+          <li><input type="checkbox" id="c16"><label for="c16"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Source &amp; license Avurudhu background music for videos<em class="item-note">Traditional Avurudhu songs, Raban music — check copyright for FB/TikTok use</em></span></label></li>
+          <li><input type="checkbox" id="c17"><label for="c17"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Identify &amp; tag previous Avurudhu reusable content from archive<em class="item-note">Flag top-performing posts, videos, and static graphics from 2023–2025</em></span></label></li>
+          <li><input type="checkbox" id="c18"><label for="c18"><span class="priority p-low"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Create content calendar &amp; schedule posts in Meta Business Suite<em class="item-note">Pre-schedule countdown, teaser, offer, and celebration posts</em></span></label></li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════
+       SECTION 2 — CAMPAIGNS & PAID CHANNELS
+  ════════════════════════════════════════════════ -->
+  <div class="section-card">
+    <div class="section-header" onclick="toggleSection(this)">
+      <span class="section-icon">📢</span>
+      <span class="section-title">Campaigns &amp; Paid Channels</span>
+      <span class="section-badge" id="badge-campaigns">0 / 0</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="section-body" id="body-campaigns">
+
+      <!-- Mass Mail -->
+      <div class="subsection">
+        <div class="subsection-title">📧 Mass Mail</div>
+        <ul class="checklist">
+          <li><input type="checkbox" id="d1"><label for="d1"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Design Avurudhu email template (header banner, offer blocks, CTA)<em class="item-note">Mobile-first HTML email — include discount codes and top category links</em></span></label></li>
+          <li><input type="checkbox" id="d2"><label for="d2"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Teaser email — 10–14 days before (preview deals, category spotlight)<em class="item-note">Subject line ideas: "Avurudu is almost here 🎊 | Your gift guide is ready"</em></span></label></li>
+          <li><input type="checkbox" id="d3"><label for="d3"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Main offer email — 3–5 days before April 13<em class="item-note">Full deal email: best sellers, deals, countdown timer, gifting CTA</em></span></label></li>
+          <li><input type="checkbox" id="d4"><label for="d4"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Last-minute Avurudhu email — April 12–13<em class="item-note">"Order by tonight for same-day delivery" urgency messaging</em></span></label></li>
+          <li><input type="checkbox" id="d5"><label for="d5"><span class="priority p-low"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Happy Avurudhu email — April 14 morning<em class="item-note">Warm greeting email, no hard sell — reinforce brand love</em></span></label></li>
+        </ul>
+      </div>
+
+      <!-- Google Ads -->
+      <div class="subsection">
+        <div class="subsection-title">🔍 Google Ads</div>
+        <ul class="checklist">
+          <li><input type="checkbox" id="d6"><label for="d6"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Create Avurudhu-specific Search campaign with seasonal keywords<em class="item-note">Keywords: "avurudu gifts online", "avurudu clothes sri lanka", "avurudu sweets delivery"</em></span></label></li>
+          <li><input type="checkbox" id="d7"><label for="d7"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Update ad copy &amp; extensions with Avurudhu messaging<em class="item-note">Sitelinks: Avurudhu Deals, Gift Packs, Same-Day Delivery, Clothing</em></span></label></li>
+          <li><input type="checkbox" id="d8"><label for="d8"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Set up Performance Max / Shopping campaign for Avurudhu products<em class="item-note">Feed-based campaign with Avurudhu themed custom labels in product feed</em></span></label></li>
+          <li><input type="checkbox" id="d9"><label for="d9"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Display / YouTube remarketing with Avurudhu creatives<em class="item-note">Retarget site visitors from last 30 days + abandoned cart users</em></span></label></li>
+          <li><input type="checkbox" id="d10"><label for="d10"><span class="priority p-low"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Pause / end all Avurudhu campaigns after April 15<em class="item-note">Schedule campaign end dates in advance to avoid wasted spend</em></span></label></li>
+        </ul>
+      </div>
+
+      <!-- In-App Notification -->
+      <div class="subsection">
+        <div class="subsection-title">📲 In-App Notification &amp; Push</div>
+        <ul class="checklist">
+          <li><input type="checkbox" id="d11"><label for="d11"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Avurudhu countdown push notification — 7 days before<em class="item-note">Title: "7 days to Avurudhu 🎊" | Deep link to Avurudhu landing page</em></span></label></li>
+          <li><input type="checkbox" id="d12"><label for="d12"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">In-app banner — Avurudhu deals homepage takeover<em class="item-note">Full-width banner with offer CTA; A/B test headline copy</em></span></label></li>
+          <li><input type="checkbox" id="d13"><label for="d13"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Last-minute push — April 12 (urgency: order today for Avurudhu delivery)<em class="item-note">Segment: users who viewed Avurudhu products but didn't convert</em></span></label></li>
+          <li><input type="checkbox" id="d14"><label for="d14"><span class="priority p-low"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Happy Avurudhu push notification — April 14 morning<em class="item-note">Warm greeting + soft CTA to post-Avurudhu deals</em></span></label></li>
+        </ul>
+      </div>
+
+      <!-- Countdown & Celebration Posts -->
+      <div class="subsection">
+        <div class="subsection-title">🗓️ Countdown &amp; Celebration Posts</div>
+        <ul class="checklist">
+          <li><input type="checkbox" id="d15"><label for="d15"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Daily / weekly countdown posts on Social Media (FB, IG, TikTok)<em class="item-note">Design templates: "X days to go 🎊" with product highlight each day</em></span></label></li>
+          <li><input type="checkbox" id="d16"><label for="d16"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Last-Minute Avurudhu post — April 12–13 (urgency &amp; last call for deals)<em class="item-note">Emphasize same-day/next-day delivery; use countdown timer sticker on IG Story</em></span></label></li>
+          <li><input type="checkbox" id="d17"><label for="d17"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Happy Avurudhu post — April 14 (brand celebration, no hard sell)<em class="item-note">Warm visual, Sinhala greeting "සුභ අලුත් අවුරුද්දක් වේවා!" — high engagement expected</em></span></label></li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════
+       SECTION 3 — WEBSITE EXPERIENCE
+  ════════════════════════════════════════════════ -->
+  <div class="section-card">
+    <div class="section-header" onclick="toggleSection(this)">
+      <span class="section-icon">🌐</span>
+      <span class="section-title">Website Experience</span>
+      <span class="section-badge" id="badge-website">0 / 0</span>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="section-body" id="body-website">
+
+      <!-- Search & Navigation -->
+      <div class="subsection">
+        <div class="subsection-title">🔎 Search Results &amp; Navigation</div>
+        <ul class="checklist">
+          <li><input type="checkbox" id="w1"><label for="w1"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Set up search redirects for Avurudhu keywords to landing page<em class="item-note">"avurudu", "new year gifts", "avurudu ledi" → Avurudhu 2026 collection page</em></span></label></li>
+          <li><input type="checkbox" id="w2"><label for="w2"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Handle OOS (Out of Stock) search results gracefully<em class="item-note">Redirect OOS searches to similar in-stock products; no dead-end pages</em></span></label></li>
+          <li><input type="checkbox" id="w3"><label for="w3"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Add "Similar Items" section on all OOS product pages<em class="item-note">Retain user on site — show 4–8 related in-stock alternatives</em></span></label></li>
+          <li><input type="checkbox" id="w4"><label for="w4"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Add Avurudhu collection to sidebar navigation &amp; top nav<em class="item-note">Ensure Avurudhu deals page is visible without needing to search</em></span></label></li>
+          <li><input type="checkbox" id="w5"><label for="w5"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Verify all side navigation category links are functional<em class="item-note">Test clothing, gifts, sweets, electronics, bath &amp; beauty category paths</em></span></label></li>
+        </ul>
+      </div>
+
+      <!-- Product Quality -->
+      <div class="subsection">
+        <div class="subsection-title">🖼️ Product Listing Quality</div>
+        <ul class="checklist">
+          <li><input type="checkbox" id="w6"><label for="w6"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Audit image quality on all Avurudhu-tagged products<em class="item-note">Minimum 800×800px; no blurry, watermarked, or placeholder images</em></span></label></li>
+          <li><input type="checkbox" id="w7"><label for="w7"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Audit product description quality for key Avurudhu SKUs<em class="item-note">Ensure all descriptions are complete, accurate, and have relevant keywords</em></span></label></li>
+          <li><input type="checkbox" id="w8"><label for="w8"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Check &amp; optimize "See More" click functionality on product pages<em class="item-note">Collapsed description with expand — ensure it works on mobile browsers</em></span></label></li>
+          <li><input type="checkbox" id="w9"><label for="w9"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Implement / verify "Similar Items" widget on product detail pages<em class="item-note">Cross-sell &amp; upsell: show related products in same category or price range</em></span></label></li>
+        </ul>
+      </div>
+
+      <!-- SEO & Sitemaps -->
+      <div class="subsection">
+        <div class="subsection-title">🗺️ SEO &amp; Sitemaps</div>
+        <ul class="checklist">
+          <li><input type="checkbox" id="w10"><label for="w10"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Submit updated sitemap to Google Search Console<em class="item-note">Include Avurudhu landing page, new collection URLs, and updated product pages</em></span></label></li>
+          <li><input type="checkbox" id="w11"><label for="w11"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Add Avurudhu meta titles &amp; descriptions on landing and category pages<em class="item-note">Include "Avurudu 2026", "Sinhala New Year gifts", "avurudu online shopping" in meta</em></span></label></li>
+          <li><input type="checkbox" id="w12"><label for="w12"><span class="priority p-low"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Request indexing of Avurudhu pages in Google Search Console<em class="item-note">Use "Inspect URL → Request Indexing" for all new seasonal pages</em></span></label></li>
+          <li><input type="checkbox" id="w13"><label for="w13"><span class="priority p-low"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Verify page speed &amp; Core Web Vitals on Avurudhu landing page<em class="item-note">Use PageSpeed Insights — target LCP &lt; 2.5s, CLS &lt; 0.1 on mobile</em></span></label></li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /wrapper -->
+
+<footer>Kapruka.com · Avurudhu 2026 Promotions · Internal Use Only · Generated March 2026</footer>
+
+<script>
+  // ── COUNTDOWN ──
+  function updateCountdown() {
+    const target = new Date('2026-04-14T09:32:00+05:30');
+    const now = new Date();
+    const diff = target - now;
+    const days = Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
+    document.getElementById('days').textContent = days;
+  }
+  updateCountdown();
+
+  // ── TOGGLE SECTIONS ──
+  function toggleSection(header) {
+    const body = header.nextElementSibling;
+    body.classList.toggle('hidden');
+    header.classList.toggle('collapsed');
+  }
+
+  // ── PROGRESS ──
+  function updateProgress() {
+    const all = document.querySelectorAll('#checklistRoot input[type="checkbox"]');
+    const checked = document.querySelectorAll('#checklistRoot input[type="checkbox"]:checked');
+    const pct = all.length ? Math.round((checked.length / all.length) * 100) : 0;
+    document.getElementById('progressBar').style.width = pct + '%';
+    document.getElementById('progressPct').textContent = pct + '%';
+
+    // Per-section badges
+    const sections = [
+      {id: 'content', bodyId: 'body-content'},
+      {id: 'campaigns', bodyId: 'body-campaigns'},
+      {id: 'website', bodyId: 'body-website'},
+    ];
+    sections.forEach(s => {
+      const body = document.getElementById(s.bodyId);
+      const sAll = body.querySelectorAll('input[type="checkbox"]');
+      const sDone = body.querySelectorAll('input[type="checkbox"]:checked');
+      const badge = document.getElementById('badge-' + s.id);
+      badge.textContent = sDone.length + ' / ' + sAll.length;
+      badge.classList.toggle('done', sDone.length === sAll.length && sAll.length > 0);
+    });
+
+    localStorage.setItem('kapruka_avurudhu_2026', JSON.stringify(
+      [...all].map(c => c.checked)
+    ));
+  }
+
+  function loadProgress() {
+    const saved = localStorage.getItem('kapruka_avurudhu_2026');
+    if (!saved) return;
+    const states = JSON.parse(saved);
+    const all = document.querySelectorAll('#checklistRoot input[type="checkbox"]');
+    all.forEach((c, i) => { if (states[i] !== undefined) c.checked = states[i]; });
+    updateProgress();
+  }
+
+  function resetAll() {
+    if (!confirm('Reset all checklist items?')) return;
+    document.querySelectorAll('#checklistRoot input[type="checkbox"]').forEach(c => c.checked = false);
+    updateProgress();
+  }
+
+  document.getElementById('checklistRoot').addEventListener('change', updateProgress);
+  loadProgress();
+  updateProgress();
+</script>
+</body>
+</html>
