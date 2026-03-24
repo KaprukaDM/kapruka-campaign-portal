@@ -50,8 +50,22 @@
     @keyframes rotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     .ads-manager-btn .label { font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
 
-    .cod-confirmation-btn {
+    /* ── NEW: Avurudhu 2026 Checklist Button ── */
+    .avurudhu-btn {
       position: fixed; bottom: 240px; right: 30px;
+      background: linear-gradient(135deg, rgba(255,105,135,0.9), rgba(255,165,0,0.9));
+      color: white; padding: 16px 28px; border-radius: 50px;
+      font-weight: 700; font-size: 15px;
+      box-shadow: 0 8px 25px rgba(255,105,135,0.4); transition: all 0.3s;
+      border: 3px solid rgba(255,255,255,0.3); z-index: 1000;
+      display: flex; align-items: center; gap: 10px; backdrop-filter: blur(10px); cursor: pointer;
+    }
+    .avurudhu-btn:hover { transform: translateY(-5px) scale(1.05); box-shadow: 0 12px 35px rgba(255,105,135,0.6); }
+    .avurudhu-btn .icon { font-size: 20px; animation: pulse 2s infinite; }
+    .avurudhu-btn .label { font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .cod-confirmation-btn {
+      position: fixed; bottom: 310px; right: 30px;
       background: linear-gradient(135deg, rgba(16,185,129,0.9), rgba(5,150,105,0.9));
       color: white; padding: 16px 28px; border-radius: 50px;
       text-decoration: none; font-weight: 700; font-size: 15px;
@@ -93,11 +107,12 @@
     }
 
     @media (max-width: 768px) {
-      .experiments-btn, .messenger-btn, .ads-manager-btn, .cod-confirmation-btn { bottom: 20px; right: 20px; padding: 12px 20px; font-size: 13px; }
+      .experiments-btn, .messenger-btn, .ads-manager-btn, .avurudhu-btn, .cod-confirmation-btn { bottom: 20px; right: 20px; padding: 12px 20px; font-size: 13px; }
       .messenger-btn { bottom: 80px; }
       .ads-manager-btn { bottom: 140px; }
-      .cod-confirmation-btn { bottom: 200px; }
-      .experiments-btn .icon, .messenger-btn .icon, .ads-manager-btn .icon, .cod-confirmation-btn .icon { font-size: 18px; }
+      .avurudhu-btn { bottom: 200px; }
+      .cod-confirmation-btn { bottom: 260px; }
+      .experiments-btn .icon, .messenger-btn .icon, .ads-manager-btn .icon, .avurudhu-btn .icon, .cod-confirmation-btn .icon { font-size: 18px; }
       .password-box { padding: 30px 20px; }
     }
   </style>
@@ -220,16 +235,11 @@
     </div>
   </div>
 
-  <!-- Floating Buttons -->
-  <div class="cod-confirmation-btn" onclick="openPasswordModal('cod')">
-    <span class="icon">✅</span>
-    <span class="label">COD Confirmation</span>
-  </div>
-
-  <div class="ads-manager-btn" onclick="openPasswordModal('ads')">
-    <span class="icon">🎯</span>
-    <span class="label">Ads Manager</span>
-  </div>
+  <!-- Floating Buttons (bottom to top order) -->
+  <a href="experiments-dashboard.html" class="experiments-btn">
+    <span class="icon">🧪</span>
+    <span class="label">Experiments</span>
+  </a>
 
   <a href="messenger-hub.html" class="messenger-btn">
     <span class="icon">💬</span>
@@ -237,10 +247,21 @@
     <span class="badge">NEW</span>
   </a>
 
-  <a href="experiments-dashboard.html" class="experiments-btn">
-    <span class="icon">🧪</span>
-    <span class="label">Experiments</span>
-  </a>
+  <div class="ads-manager-btn" onclick="openPasswordModal('ads')">
+    <span class="icon">🎯</span>
+    <span class="label">Ads Manager</span>
+  </div>
+
+  <!-- NEW: Avurudhu 2026 Checklist -->
+  <div class="avurudhu-btn" onclick="openPasswordModal('avurudhu')">
+    <span class="icon">🌸</span>
+    <span class="label">Avurudhu Checklist</span>
+  </div>
+
+  <div class="cod-confirmation-btn" onclick="openPasswordModal('cod')">
+    <span class="icon">✅</span>
+    <span class="label">COD Confirmation</span>
+  </div>
 
   <!-- Shared Password Modal -->
   <div class="password-modal" id="passwordModal">
@@ -258,15 +279,17 @@
 
   <script>
     const PASSWORDS = {
-      ads:   'Fari',
-      cod:   'Chamudhi',
-      daraz: '8055'
+      ads:      'Fari',
+      cod:      'Chamudhi',
+      daraz:    '8055',
+      avurudhu: 'Avurudhu2026'   // ← change this to your preferred password
     };
 
     const URLS = {
-      ads:   'https://docs.google.com/forms/d/e/1FAIpQLSfGSObGAIJz46oQd0xN3oISjS46SEkFtL0_ZGkIfh6ansvqPQ/viewform',
-      cod:   'https://script.google.com/macros/s/AKfycbwA7rio-Gs2woBvLWKmq9KR_z1SLLV1O5d9apeShpfD4r8JdpaEI9g2pjBmyl1vK4DRDQ/exec',
-      daraz: 'https://daraz-agent.onrender.com'
+      ads:      'https://docs.google.com/forms/d/e/1FAIpQLSfGSObGAIJz46oQd0xN3oISjS46SEkFtL0_ZGkIfh6ansvqPQ/viewform',
+      cod:      'https://script.google.com/macros/s/AKfycbwA7rio-Gs2woBvLWKmq9KR_z1SLLV1O5d9apeShpfD4r8JdpaEI9g2pjBmyl1vK4DRDQ/exec',
+      daraz:    'https://daraz-agent.onrender.com',
+      avurudhu: 'https://github.com/KaprukaDM/kapruka-campaign-portal/blob/main/kapruka_avurudhu_2026_checklist'
     };
 
     let currentSection = '';
@@ -274,9 +297,10 @@
     function openPasswordModal(section) {
       currentSection = section;
       const titles = {
-        ads:   '🎯 Ads Manager Access',
-        cod:   '✅ COD Confirmation Access',
-        daraz: '🛒 Daraz Market Agent'
+        ads:      '🎯 Ads Manager Access',
+        cod:      '✅ COD Confirmation Access',
+        daraz:    '🛒 Daraz Market Agent',
+        avurudhu: '🌸 Avurudhu 2026 Checklist'
       };
       document.getElementById('modalTitle').textContent = titles[section] || '🔒 Access Required';
       document.getElementById('modalSubtitle').textContent = 'Enter password to continue';
