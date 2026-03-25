@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Kapruka · Goal Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --purple:#5A0A8A;--purple-dark:#3d0660;--purple-mid:#7B1DB5;--purple-light:#9B3DD4;
+  --purple-dim:#2a0640;--purple-muted:rgba(90,10,138,.18);
+  --yellow:#FFC107;--yellow-dark:#e6ac00;--yellow-dim:rgba(255,193,7,.15);--yellow-text:#7a5a00;
+  --bg:#1a0229;--surface:#220834;--surface2:#2d0b45;--surface3:#380d55;
+  --border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.14);
+  --text:#ffffff;--text-sec:#EDEDED;--muted:rgba(237,237,237,.55);--hint:rgba(237,237,237,.28);
+  --green:#34d399;--green-bg:rgba(52,211,153,.1);--green-border:rgba(52,211,153,.25);
+  --amber:#fbbf24;--amber-bg:rgba(251,191,36,.1);--amber-border:rgba(251,191,36,.25);
+  --red:#f87171;--red-bg:rgba(248,113,113,.1);--red-border:rgba(248,113,113,.25);
+  --gads:#4f8ef7;--fbbrand:#a855f7;--fbrev:#3b82f6;--fborg:#ec4899;--seo:#34d399;--fact:#fb923c;
+  --r:10px;--r-sm:6px;--r-pill:30px;
+}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);font-size:13px;line-height:1.55;min-height:100vh}
+
+/* ── Layout ── */
+.app{display:grid;grid-template-columns:210px 1fr;min-height:100vh}
+.sidebar{background:var(--purple-dark);border-right:1px solid rgba(255,255,255,.06);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.main{padding:24px 28px;overflow:auto;min-width:0;background:var(--bg)}
+
+/* ── Sidebar ── */
+.logo{padding:16px 14px 14px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:9px}
+.logo-mark{width:30px;height:30px;background:var(--yellow);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--purple-dark);flex-shrink:0}
+.logo-text{font-size:14px;font-weight:700;color:#fff;letter-spacing:-.01em}
+.logo-text span{color:rgba(255,255,255,.4);font-weight:400}
+.nav-section{padding:10px 0 4px}
+.nav-label{font-size:9px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:.12em;text-transform:uppercase;padding:0 12px 5px}
+.nav-item{display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;color:rgba(255,255,255,.55);font-size:12px;font-weight:500;transition:all .12s;position:relative;border-radius:0}
+.nav-item:hover{color:#fff;background:rgba(255,255,255,.06)}
+.nav-item.active{color:#fff;background:rgba(255,255,255,.1)}
+.nav-item.active::before{content:'';position:absolute;left:0;top:6px;bottom:6px;width:3px;background:var(--yellow);border-radius:0 3px 3px 0}
+.nav-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.nav-count{margin-left:auto;font-size:9px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.5);padding:1px 6px;border-radius:var(--r-pill);font-weight:600}
+.nav-item.active .nav-count{background:var(--yellow-dim);color:var(--yellow)}
+.nav-divider{height:1px;background:rgba(255,255,255,.06);margin:6px 0}
+.nav-add-btn{display:flex;align-items:center;gap:6px;padding:6px 12px;cursor:pointer;color:var(--yellow);font-size:11px;font-weight:600;transition:all .12s}
+.nav-add-btn:hover{background:rgba(255,193,7,.08)}
+
+/* ── Topbar ── */
+.topbar{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:16px;flex-wrap:wrap}
+.page-title{font-size:22px;font-weight:700;letter-spacing:-.02em}
+.page-sub{font-size:11px;color:var(--muted);margin-top:2px;font-family:'JetBrains Mono',monospace}
+.top-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.month-strip{display:flex;gap:1px;background:var(--surface2);border:1px solid var(--border);padding:3px;border-radius:var(--r-sm);overflow:hidden}
+.mtab{padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;border:none;background:transparent;color:var(--muted);font-family:'Plus Jakarta Sans',sans-serif;transition:all .12s;font-weight:600}
+.mtab.on{background:var(--yellow);color:var(--purple-dark)}
+.view-tabs{display:flex;border:1px solid var(--border);border-radius:var(--r-sm);overflow:hidden}
+.vtab{padding:6px 12px;font-size:11px;cursor:pointer;border:none;border-right:1px solid var(--border);background:var(--surface2);color:var(--muted);font-family:'Plus Jakarta Sans',sans-serif;font-weight:600;transition:all .12s}
+.vtab:last-child{border-right:none}
+.vtab.on{background:var(--purple);color:#fff}
+.btn{padding:6px 13px;border-radius:var(--r-sm);font-size:12px;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;border:1px solid var(--border);background:var(--surface2);color:var(--text-sec);transition:all .12s;font-weight:600}
+.btn:hover{background:var(--surface3);border-color:var(--border2)}
+.btn-yellow{background:var(--yellow);color:var(--purple-dark);border-color:var(--yellow)}
+.btn-yellow:hover{background:var(--yellow-dark);border-color:var(--yellow-dark)}
+.btn-purple{background:var(--purple);color:#fff;border-color:var(--purple)}
+.btn-purple:hover{background:var(--purple-mid);border-color:var(--purple-mid)}
+.btn-red{background:var(--red-bg);color:var(--red);border-color:var(--red-border)}
+.btn-red:hover{background:rgba(248,113,113,.2);border-color:var(--red)}
+.btn-sm{padding:4px 10px;font-size:11px}
+.btn-ghost{background:transparent;border-color:var(--border);color:var(--muted)}
+.btn-ghost:hover{background:var(--surface2);color:var(--text-sec)}
+
+/* ── Pill tag ── */
+.pill-tag{display:inline-block;background:var(--yellow);color:var(--purple-dark);font-size:9px;font-weight:700;padding:2px 9px;border-radius:var(--r-pill);letter-spacing:.07em;text-transform:uppercase}
+.pill-tag-purple{background:var(--purple-muted);color:var(--yellow);border:1px solid rgba(255,193,7,.2);font-size:9px;font-weight:700;padding:2px 9px;border-radius:var(--r-pill);letter-spacing:.07em;text-transform:uppercase;display:inline-block}
+
+/* ── Summary cards ── */
+.sum-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.sc{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;position:relative;overflow:hidden}
+.sc::before{content:'';position:absolute;top:-30px;right:-30px;width:90px;height:90px;border-radius:50%;background:rgba(255,193,7,.04)}
+.sc-label{font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px}
+.sc-val{font-size:24px;font-weight:700;letter-spacing:-.03em;line-height:1}
+.sc-sub{font-size:10px;color:var(--muted);margin-top:5px}
+
+/* ── Channel cards ── */
+.channel-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px;overflow:hidden;transition:border-color .15s}
+.channel-card:hover{border-color:var(--border2)}
+.ch-header{display:flex;align-items:center;gap:10px;padding:13px 14px;cursor:pointer;user-select:none;transition:background .12s}
+.ch-header:hover{background:rgba(255,255,255,.02)}
+.ch-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.ch-name{font-size:13px;font-weight:700;flex:1}
+.ch-source{font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;background:rgba(255,255,255,.06);padding:2px 7px;border-radius:3px}
+.ch-meta{display:flex;align-items:center;gap:6px}
+.chevron{color:var(--hint);font-size:10px;transition:transform .2s;margin-left:2px}
+.chevron.open{transform:rotate(180deg)}
+.ch-body{border-top:1px solid var(--border);padding:14px}
+
+/* ── Delete channel btn ── */
+.ch-del-btn{opacity:0;font-size:10px;padding:2px 8px;border-radius:3px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Plus Jakarta Sans',sans-serif;transition:all .12s;flex-shrink:0}
+.channel-card:hover .ch-del-btn{opacity:1}
+.ch-del-btn:hover{border-color:var(--red);color:var(--red);background:var(--red-bg)}
+
+/* ── Status badges ── */
+.s-on{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.s-risk{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
+.s-off{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+.s-pend{background:rgba(255,255,255,.06);color:var(--muted);border:1px solid var(--border)}
+.s-done{background:rgba(255,193,7,.12);color:var(--yellow);border:1px solid rgba(255,193,7,.3)}
+.badge{font-size:9px;font-weight:700;padding:2px 8px;border-radius:var(--r-pill);text-transform:uppercase;letter-spacing:.05em}
+
+/* ── Goals grid ── */
+.goals-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.goals-bar-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.goals-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:8px;margin-bottom:10px}
+
+/* ── Goal card ── */
+.goal-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);padding:13px;position:relative;transition:border-color .15s}
+.goal-card:hover{border-color:var(--border2)}
+.goal-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:6px}
+.goal-type-row{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.goal-name{font-size:12px;font-weight:700;line-height:1.3;color:var(--text)}
+.goal-del{opacity:0;font-size:10px;padding:2px 6px;border:1px solid var(--border);border-radius:3px;cursor:pointer;background:transparent;color:var(--muted);font-family:'Plus Jakarta Sans',sans-serif;transition:all .12s;margin-left:auto;flex-shrink:0}
+.goal-card:hover .goal-del{opacity:1}
+.goal-del:hover{border-color:var(--red);color:var(--red);background:var(--red-bg)}
+
+/* ── Output checklist ── */
+.output-checklist{display:flex;flex-direction:column;gap:4px;margin-top:8px}
+.output-item{display:flex;align-items:flex-start;gap:8px;padding:7px 9px;background:var(--surface2);border-radius:var(--r-sm);border:1px solid var(--border);transition:all .15s;cursor:default}
+.output-item.done{background:var(--yellow-dim);border-color:rgba(255,193,7,.25)}
+.output-checkbox{width:15px;height:15px;min-width:15px;border-radius:3px;border:2px solid var(--border2);background:transparent;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;font-size:9px;cursor:pointer;margin-top:1px}
+.output-item.done .output-checkbox{background:var(--yellow);border-color:var(--yellow);color:var(--purple-dark);font-weight:700}
+.output-item-right{flex:1;min-width:0}
+.output-item-label{font-size:11px;font-weight:600;color:var(--muted);transition:color .15s;word-break:break-word}
+.output-item.done .output-item-label{color:var(--yellow);text-decoration:line-through;text-decoration-color:rgba(255,193,7,.4)}
+.output-item-note{font-size:9px;color:var(--hint);margin-top:2px;font-style:italic;display:none}
+.output-item.done .output-item-note{display:block;color:rgba(255,193,7,.5)}
+.output-note-input{width:100%;margin-top:4px;padding:4px 6px;border:1px solid var(--border);border-radius:3px;background:var(--surface);color:var(--text);font-size:10px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;resize:none;display:none}
+.output-note-input:focus{border-color:rgba(255,193,7,.4)}
+.output-item:not(.done) .output-note-input{display:block}
+.output-progress{display:flex;align-items:center;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
+.output-progress-bar{flex:1;height:3px;background:var(--surface3);border-radius:2px;overflow:hidden}
+.output-progress-fill{height:100%;border-radius:2px;background:var(--yellow);transition:width .4s ease}
+.output-progress-text{font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;white-space:nowrap}
+
+/* ── KPI rows ── */
+.kpi-block{display:flex;flex-direction:column;gap:7px}
+.kpi-item{display:flex;flex-direction:column;gap:3px}
+.kpi-top-row{display:flex;align-items:center;justify-content:space-between;gap:4px}
+.kpi-name{font-size:11px;color:var(--muted);font-weight:600}
+.kpi-vals{display:flex;align-items:center;gap:5px}
+.kpi-actual{font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace}
+.kpi-target{font-size:10px;color:var(--hint);font-family:'JetBrains Mono',monospace}
+.kpi-bar{height:3px;background:var(--surface3);border-radius:2px;overflow:hidden}
+.kpi-fill{height:100%;border-radius:2px;transition:width .5s ease}
+
+/* ── Goal footer ── */
+.goal-footer{display:flex;align-items:center;justify-content:space-between;margin-top:9px;padding-top:8px;border-top:1px solid var(--border)}
+.goal-kpi-count{font-size:10px;color:var(--muted)}
+
+/* ── Budget strip ── */
+.budget-strip{display:flex;align-items:center;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+
+/* ── Add goal modal ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:300;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:22px;width:540px;max-width:96vw;max-height:88vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.6)}
+.modal-head{margin-bottom:16px}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:3px}
+.modal-sub{font-size:11px;color:var(--muted)}
+.form-section{margin-bottom:14px}
+.form-section-label{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px}
+.form-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:0}
+.form-col{display:flex;flex-direction:column;gap:4px;flex:1;min-width:120px}
+.form-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+.form-input,.form-select{padding:8px 10px;border:1px solid var(--border2);border-radius:var(--r-sm);background:var(--surface2);color:var(--text);font-size:12px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;transition:border .12s;width:100%}
+.form-input:focus,.form-select:focus{border-color:var(--yellow)}
+.form-select option{background:var(--surface)}
+
+/* Metric chips */
+.metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.metric-chip{display:flex;align-items:flex-start;gap:8px;padding:9px 10px;border:1px solid var(--border);border-radius:var(--r-sm);cursor:pointer;transition:all .12s;background:var(--surface2)}
+.metric-chip:hover{border-color:rgba(255,193,7,.4)}
+.metric-chip.selected{border-color:var(--yellow);background:var(--yellow-dim)}
+.metric-chip input[type=checkbox]{accent-color:var(--yellow);width:13px;height:13px;flex-shrink:0;margin-top:1px}
+.metric-chip-info{flex:1;min-width:0}
+.metric-chip-name{font-size:11px;font-weight:700;color:var(--text)}
+.metric-chip-desc{font-size:9px;color:var(--muted);margin-top:1px}
+.metric-target{width:80px;padding:5px 7px;border:1px solid var(--border2);border-radius:4px;font-size:11px;font-family:'JetBrains Mono',monospace;background:var(--surface);color:var(--text);text-align:right;outline:none;flex-shrink:0}
+.metric-target:focus{border-color:var(--yellow)}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;padding-top:14px;border-top:1px solid var(--border);margin-top:14px}
+
+/* Output items builder in modal */
+.output-items-list{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+.output-item-row{display:flex;align-items:center;gap:6px}
+.output-item-row input{flex:1;padding:6px 8px;border:1px solid var(--border2);border-radius:4px;background:var(--surface2);color:var(--text);font-size:11px;font-family:'Plus Jakarta Sans',sans-serif;outline:none}
+.output-item-row input:focus{border-color:var(--yellow)}
+.output-item-row .rm-item{width:24px;height:24px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.output-item-row .rm-item:hover{border-color:var(--red);color:var(--red)}
+
+/* ── Add Channel modal ── */
+.channel-color-row{display:flex;gap:6px;flex-wrap:wrap}
+.color-swatch{width:26px;height:26px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .12s}
+.color-swatch.selected{border-color:#fff;transform:scale(1.15)}
+
+/* ── AI Panel ── */
+.ai-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:18px}
+.ai-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.ai-badge{background:linear-gradient(135deg,var(--purple-light),var(--yellow));color:#fff;font-size:9px;font-weight:700;padding:2px 8px;border-radius:var(--r-pill);letter-spacing:.07em}
+.ai-title{font-size:13px;font-weight:700;flex:1}
+.ai-row{display:flex;gap:8px;flex-wrap:wrap}
+.ai-input{flex:1;min-width:180px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface2);color:var(--text);font-size:12px;font-family:'Plus Jakarta Sans',sans-serif;outline:none}
+.ai-input:focus{border-color:var(--yellow)}
+.ai-sel{padding:7px 10px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface2);color:var(--text);font-size:12px;font-family:'Plus Jakarta Sans',sans-serif;outline:none}
+.ai-sel option{background:var(--surface)}
+.ai-result{margin-top:10px;background:var(--surface2);border-radius:var(--r-sm);padding:10px}
+.ai-reasoning{font-size:11px;color:var(--muted);margin-bottom:8px;font-style:italic;border-left:2px solid var(--yellow);padding-left:8px}
+.ai-kpi-item{display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--surface);border-radius:4px;margin-bottom:4px;border:1px solid var(--border)}
+.ai-kpi-name{flex:1;font-size:12px;font-weight:600}
+.ai-kpi-why{font-size:9px;color:var(--muted)}
+.ai-approve{font-size:10px;padding:3px 8px;border-radius:3px;cursor:pointer;border:1px solid rgba(255,193,7,.3);background:var(--yellow-dim);color:var(--yellow);font-family:'Plus Jakarta Sans',sans-serif;font-weight:600}
+.loader-dots{display:inline-flex;gap:4px;align-items:center}
+.ld{width:5px;height:5px;border-radius:50%;background:var(--yellow);animation:ld .8s ease infinite alternate}
+.ld:nth-child(2){animation-delay:.2s}.ld:nth-child(3){animation-delay:.4s}
+@keyframes ld{0%{opacity:.2;transform:scale(.8)}100%{opacity:1;transform:scale(1)}}
+
+/* ── Budget card ── */
+.budget-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:10px}
+.budget-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.budget-title{font-size:13px;font-weight:700}
+.budget-meta{font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+.bi{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.bi:last-child{margin-bottom:0}
+.bi-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.bi-name{font-size:11px;font-weight:600;min-width:140px}
+.bi-bar{flex:1;height:4px;background:var(--surface3);border-radius:2px;overflow:hidden}
+.bi-fill{height:100%;border-radius:2px;opacity:.8}
+.bi-nums{font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;min-width:150px;text-align:right}
+.bi-left{font-size:11px;font-weight:700;min-width:90px;text-align:right;font-family:'JetBrains Mono',monospace}
+
+/* ── Pacing ── */
+.pace-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:8px}
+.pace-head{font-size:12px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.pace-tbl{width:100%;border-collapse:collapse;font-size:11px}
+.pace-tbl th{color:var(--muted);font-weight:700;padding:5px 8px;text-align:left;border-bottom:1px solid var(--border);letter-spacing:.04em;font-size:10px}
+.pace-tbl td{padding:6px 8px;border-bottom:1px solid var(--border)}
+.pace-tbl tr:last-child td{border:none}
+.pace-pill{font-size:9px;font-weight:700;padding:2px 7px;border-radius:var(--r-pill);text-transform:uppercase;letter-spacing:.04em}
+
+/* ── Section label ── */
+.sec-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+.sec-label::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ── Confirm modal ── */
+.confirm-modal{background:var(--surface);border:1px solid var(--red-border);border-radius:12px;padding:20px;width:360px;max-width:96vw;box-shadow:0 24px 80px rgba(0,0,0,.6)}
+.confirm-title{font-size:14px;font-weight:700;margin-bottom:6px;color:var(--red)}
+.confirm-body{font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.6}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:20px;right:20px;z-index:999;padding:10px 16px;border-radius:var(--r-sm);font-size:12px;font-weight:600;background:var(--green-bg);color:var(--green);border:1px solid var(--green-border);animation:fadeUp .3s ease;pointer-events:none}
+.toast.err{background:var(--red-bg);color:var(--red);border-color:var(--red-border)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ══ SIDEBAR ══ -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-mark">K</div>
+    <div class="logo-text">Kapruka <span>/ Goals</span></div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Channels</div>
+    <div class="nav-item active" id="nav-all" onclick="setActivity('all',this)">
+      <span class="nav-dot" style="background:#9B3DD4"></span>All channels
+      <span class="nav-count" id="nc-all">0</span>
+    </div>
+    <div id="channel-nav-list"></div>
+  </div>
+
+  <div class="nav-divider"></div>
+  <div class="nav-add-btn" onclick="openChannelModal()">＋ Add channel</div>
+  <div class="nav-divider"></div>
+
+  <div class="nav-section">
+    <div class="nav-label">Views</div>
+    <div class="nav-item" onclick="setView('monthly')"><span class="nav-dot" style="background:rgba(255,255,255,.2)"></span>Monthly</div>
+    <div class="nav-item" onclick="setView('weekly')"><span class="nav-dot" style="background:rgba(255,255,255,.2)"></span>Weekly</div>
+    <div class="nav-item" onclick="setView('daily')"><span class="nav-dot" style="background:rgba(255,255,255,.2)"></span>Daily</div>
+  </div>
+  <div class="nav-divider"></div>
+  <div class="nav-section">
+    <div class="nav-label">Settings</div>
+    <div class="nav-item" onclick="toggleConn()"><span class="nav-dot" style="background:rgba(255,255,255,.2)"></span>Data connections</div>
+  </div>
+</aside>
+
+<!-- ══ MAIN ══ -->
+<main class="main">
+  <div class="topbar">
+    <div>
+      <div class="page-title" id="page-title">All channels</div>
+      <div class="page-sub" id="page-sub"></div>
+    </div>
+    <div class="top-controls">
+      <div class="month-strip" id="month-strip"></div>
+      <div class="view-tabs">
+        <button class="vtab on" id="vt-monthly" onclick="setView('monthly')">Monthly</button>
+        <button class="vtab" id="vt-weekly" onclick="setView('weekly')">Weekly</button>
+        <button class="vtab" id="vt-daily" onclick="setView('daily')">Daily</button>
+      </div>
+      <button class="btn btn-sm" onclick="syncData()" id="sync-btn">↻ Sync</button>
+    </div>
+  </div>
+
+  <div class="sum-row" id="sum-row"></div>
+
+  <!-- AI Interpreter -->
+  <div class="ai-panel">
+    <div class="ai-head">
+      <span class="ai-badge">AI</span>
+      <span class="ai-title">Goal interpreter</span>
+      <span style="font-size:10px;color:var(--muted)">Describe a goal — AI suggests the right KPIs to track</span>
+    </div>
+    <div class="ai-row">
+      <input class="ai-input" id="ai-text" placeholder='e.g. "Increase factory page orders by 20% this month"'/>
+      <select class="ai-sel" id="ai-channel"><option value="">Channel…</option></select>
+      <select class="ai-sel" id="ai-type">
+        <option value="outcome">Outcome goal</option>
+        <option value="output">Output goal</option>
+      </select>
+      <button class="btn btn-yellow btn-sm" onclick="runAI()">Suggest KPIs ✦</button>
+    </div>
+    <div id="ai-out"></div>
+  </div>
+
+  <div class="sec-label" id="sec-label">Monthly goals by channel</div>
+  <div id="channels-list"></div>
+  <div id="pacing-section"></div>
+
+  <div class="budget-card">
+    <div class="budget-head">
+      <span class="budget-title">Budget tracker</span>
+      <span class="budget-meta" id="budget-meta"></span>
+    </div>
+    <div id="budget-list"></div>
+  </div>
+
+  <div class="budget-card" id="conn-card" style="display:none">
+    <div class="budget-head"><span class="budget-title">Data connections</span></div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px" id="conn-list"></div>
+  </div>
+</main>
+</div>
+
+<!-- ══ ADD GOAL MODAL ══ -->
+<div class="overlay" id="goal-modal" onclick="if(event.target===this)closeGoalModal()">
+<div class="modal">
+  <div class="modal-head">
+    <div class="modal-title" id="gm-title">Add goal</div>
+    <div class="modal-sub" id="gm-sub">Choose metrics to track and set targets</div>
+  </div>
+  <div class="form-section">
+    <div class="form-row" style="gap:8px">
+      <div class="form-col" style="flex:2">
+        <div class="form-label">Goal name</div>
+        <input class="form-input" id="gm-name" placeholder='e.g. "Grow monthly conversions"'/>
+      </div>
+      <div class="form-col" style="flex:0 0 120px">
+        <div class="form-label">Type</div>
+        <select class="form-select" id="gm-type" onchange="onGoalTypeChange()">
+          <option value="outcome">Outcome</option>
+          <option value="output">Output</option>
+        </select>
+      </div>
+      <div class="form-col" style="flex:0 0 130px">
+        <div class="form-label">Budget (LKR)</div>
+        <input type="number" class="form-input" id="gm-budget" placeholder="Optional"/>
+      </div>
+    </div>
+  </div>
+
+  <!-- Outcome: metric selector -->
+  <div id="gm-outcome-section" class="form-section">
+    <div class="form-section-label">Choose metrics to monitor &amp; set targets</div>
+    <div class="metric-grid" id="gm-metric-grid"></div>
+  </div>
+
+  <!-- Output: checklist builder -->
+  <div id="gm-output-section" class="form-section" style="display:none">
+    <div class="form-section-label">Checklist items <span style="color:var(--hint);font-weight:400;text-transform:none;letter-spacing:0">(each becomes a trackable checkbox with evidence note)</span></div>
+    <div class="output-items-list" id="gm-output-items"></div>
+    <button class="btn btn-ghost btn-sm" onclick="addOutputItem()" style="width:100%;justify-content:center;display:flex;align-items:center;gap:4px">＋ Add item</button>
+    <div style="font-size:10px;color:var(--muted);margin-top:8px;padding:8px;background:var(--surface2);border-radius:var(--r-sm);border:1px solid var(--border)">
+      ⓘ Each item gets a checkbox on the goal card. When you check it off, you can add a note as evidence.
+    </div>
+  </div>
+
+  <div class="modal-footer">
+    <button class="btn btn-ghost" onclick="closeGoalModal()">Cancel</button>
+    <button class="btn btn-yellow" onclick="saveGoal()">Save goal</button>
+  </div>
+</div>
+</div>
+
+<!-- ══ ADD CHANNEL MODAL ══ -->
+<div class="overlay" id="ch-modal" onclick="if(event.target===this)closeChanModal()">
+<div class="modal" style="max-width:480px">
+  <div class="modal-head">
+    <div class="modal-title">Add new channel</div>
+    <div class="modal-sub">Create a new activity to track goals for</div>
+  </div>
+  <div class="form-section">
+    <div class="form-row">
+      <div class="form-col">
+        <div class="form-label">Channel name</div>
+        <input class="form-input" id="cm-name" placeholder='e.g. "TikTok Ads"'/>
+      </div>
+      <div class="form-col" style="flex:0 0 150px">
+        <div class="form-label">Data source</div>
+        <input class="form-input" id="cm-source" placeholder='e.g. "TikTok Ads API"'/>
+      </div>
+    </div>
+  </div>
+  <div class="form-section">
+    <div class="form-label" style="margin-bottom:8px">Monthly budget (LKR)</div>
+    <input type="number" class="form-input" id="cm-budget" placeholder="e.g. 150000"/>
+  </div>
+  <div class="form-section">
+    <div class="form-label" style="margin-bottom:8px">Channel colour</div>
+    <div class="channel-color-row" id="color-swatches"></div>
+  </div>
+  <div class="form-section">
+    <div class="form-label" style="margin-bottom:8px">Custom metrics (one per line)</div>
+    <textarea class="form-input" id="cm-metrics" rows="4" placeholder="Impressions&#10;Clicks&#10;Conversions&#10;CPA LKR" style="resize:vertical"></textarea>
+    <div style="font-size:10px;color:var(--muted);margin-top:4px">Leave blank to use defaults. Add LKR or % after name (e.g. "CPA LKR", "CTR %")</div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-ghost" onclick="closeChanModal()">Cancel</button>
+    <button class="btn btn-yellow" onclick="saveChannel()">Add channel</button>
+  </div>
+</div>
+</div>
+
+<!-- ══ CONFIRM MODAL ══ -->
+<div class="overlay" id="confirm-modal" onclick="if(event.target===this)closeConfirm()">
+<div class="confirm-modal">
+  <div class="confirm-title" id="confirm-title">Confirm delete</div>
+  <div class="confirm-body" id="confirm-body">This action cannot be undone.</div>
+  <div style="display:flex;gap:8px;justify-content:flex-end">
+    <button class="btn btn-ghost" onclick="closeConfirm()">Cancel</button>
+    <button class="btn btn-red" id="confirm-ok">Delete</button>
+  </div>
+</div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// CONFIG — swap this URL for your Vercel deployment
+// ═══════════════════════════════════════════════════════
+const API = (()=>{
+  // Auto-detect: if opened from Vercel, use relative /api
+  // Otherwise fall back to localhost for dev
+  const host = window.location.hostname;
+  if(host.includes('vercel.app') || host.includes('kapruka.com')) return '/api';
+  return "https://YOUR-APP.onrender.com/api";
+})();
+
+const SWATCHES = ['#4f8ef7','#a855f7','#ec4899','#34d399','#fb923c','#f43f5e','#06b6d4','#eab308','#8b5cf6','#10b981'];
+let selectedSwatch = SWATCHES[0];
+
+// ═══════════════════════════════════════════════════════
+// CHANNEL & METRICS DEFINITIONS
+// ═══════════════════════════════════════════════════════
+let CHANNELS = [
+  {id:'google_ads',   name:'Google Ads',      color:'#4f8ef7', source:'Google Ads API',         budget:400000, spent:320000},
+  {id:'fb_branding',  name:'FB Branding',     color:'#a855f7', source:'Meta Ads API',            budget:200000, spent:140000},
+  {id:'fb_revenue',   name:'FB Revenue',      color:'#3b82f6', source:'Meta Ads API',            budget:350000, spent:280000},
+  {id:'fb_organic',   name:'FB / IG Organic', color:'#ec4899', source:'Meta Page Insights',      budget:50000,  spent:31000},
+  {id:'seo',          name:'SEO',             color:'#34d399', source:'Search Console API',      budget:80000,  spent:62000},
+  {id:'factory',      name:'Factory Pages',   color:'#fb923c', source:'Google Sheets',           budget:60000,  spent:48000},
+];
+
+const DEFAULT_METRICS = {
+  google_ads:  [
+    {key:'conversions',  label:'Conversions',   unit:'',    desc:'Total conversion actions',      lowerBetter:false},
+    {key:'cpa',          label:'CPA',           unit:'LKR', desc:'Cost per acquisition',          lowerBetter:true},
+    {key:'spend',        label:'Amount Spend',  unit:'LKR', desc:'Total ad spend this period',    lowerBetter:false},
+  ],
+  fb_branding: [
+    {key:'reach',        label:'Reach',         unit:'',    desc:'Unique accounts reached',       lowerBetter:false},
+    {key:'impressions',  label:'Impressions',   unit:'',    desc:'Total ad impressions',          lowerBetter:false},
+    {key:'frequency',    label:'Frequency',     unit:'',    desc:'Avg. times each person saw ad', lowerBetter:false},
+    {key:'cpm',          label:'CPM',           unit:'LKR', desc:'Cost per 1,000 impressions',   lowerBetter:true},
+    {key:'spend',        label:'Amount Spend',  unit:'LKR', desc:'Total spend on branding',       lowerBetter:false},
+    {key:'video_views',  label:'Video Views',   unit:'',    desc:'3-second video views',          lowerBetter:false},
+    {key:'link_clicks',  label:'Link Clicks',   unit:'',    desc:'Clicks to site from ads',       lowerBetter:false},
+    {key:'ctr',          label:'CTR',           unit:'%',   desc:'Click-through rate',            lowerBetter:false},
+  ],
+  fb_revenue:  [
+    {key:'conversions',  label:'Conversions',   unit:'',    desc:'Purchase or lead events',       lowerBetter:false},
+    {key:'reach',        label:'Reach',         unit:'',    desc:'Unique accounts reached',       lowerBetter:false},
+    {key:'impressions',  label:'Impressions',   unit:'',    desc:'Total ad impressions',          lowerBetter:false},
+    {key:'cpa',          label:'CPA',           unit:'LKR', desc:'Cost per acquisition',          lowerBetter:true},
+    {key:'roas',         label:'ROAS',          unit:'x',   desc:'Return on ad spend',            lowerBetter:false},
+    {key:'spend',        label:'Amount Spend',  unit:'LKR', desc:'Total revenue campaign spend',  lowerBetter:false},
+    {key:'link_clicks',  label:'Link Clicks',   unit:'',    desc:'Clicks driving to site',        lowerBetter:false},
+  ],
+  fb_organic:  [
+    {key:'reach',           label:'Reach',           unit:'',  desc:'Organic post reach',             lowerBetter:false},
+    {key:'engagement_rate', label:'Engagement Rate', unit:'%', desc:'Eng / reach %',                  lowerBetter:false},
+    {key:'followers_gained',label:'Followers Gained',unit:'',  desc:'Net new followers this period',  lowerBetter:false},
+    {key:'post_impressions',label:'Post Impressions',unit:'',  desc:'Total post impressions',         lowerBetter:false},
+    {key:'reactions',       label:'Reactions',       unit:'',  desc:'Likes, loves, etc.',             lowerBetter:false},
+    {key:'shares',          label:'Shares',          unit:'',  desc:'Post shares',                    lowerBetter:false},
+  ],
+  seo:         [
+    {key:'clicks',       label:'Clicks',        unit:'',  desc:'Organic search clicks (GSC)',   lowerBetter:false},
+    {key:'impressions',  label:'Impressions',   unit:'',  desc:'Search impressions (GSC)',       lowerBetter:false},
+    {key:'avg_position', label:'Avg. Position', unit:'',  desc:'Average ranking position',      lowerBetter:true},
+    {key:'ctr',          label:'CTR',           unit:'%', desc:'Click-through rate from GSC',   lowerBetter:false},
+  ],
+  factory:     [
+    {key:'orders',          label:'Orders',           unit:'',    desc:'Total orders from factory pages', lowerBetter:false},
+    {key:'cpa',             label:'CPA',              unit:'LKR', desc:'Cost per acquisition',           lowerBetter:true},
+    {key:'cost_per_order',  label:'Cost per Order',   unit:'LKR', desc:'Total cost / total orders',      lowerBetter:true},
+    {key:'conversion_rate', label:'Conversion Rate',  unit:'%',   desc:'Sessions → order %',             lowerBetter:false},
+  ],
+};
+
+let METRICS = {...DEFAULT_METRICS};
+
+// ═══════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════
+let goals = {};
+let liveData = {};
+let expanded = {};
+let currentView    = 'monthly';
+let currentActivity= 'all';
+let currentMonth   = new Date().getMonth() + 1;
+let currentYear    = new Date().getFullYear();
+let modalCtx       = null;
+
+CHANNELS.forEach(c => { goals[c.id] = []; expanded[c.id] = true; });
+
+// Seed data
+goals['google_ads'] = [{
+  id:'seed_gads', type:'outcome', name:'Monthly Performance',
+  kpis:[
+    {key:'conversions',  label:'Conversions',  unit:'',    lowerBetter:false, target:300},
+    {key:'cpa',          label:'CPA',          unit:'LKR', lowerBetter:true,  target:1200},
+    {key:'spend',        label:'Amount Spend', unit:'LKR', lowerBetter:false, target:400000},
+  ]
+}];
+goals['seo'] = [{
+  id:'seed_seo', type:'outcome', name:'Organic search growth',
+  kpis:[
+    {key:'clicks',       label:'Clicks',        unit:'',  lowerBetter:false, target:7000},
+    {key:'impressions',  label:'Impressions',   unit:'',  lowerBetter:false, target:120000},
+    {key:'avg_position', label:'Avg. Position', unit:'',  lowerBetter:true,  target:10},
+  ]
+}];
+// Output goal with per-item checklist (12 factory pages)
+goals['factory'] = [{
+  id:'seed_factory', type:'output', name:'Publish factory page updates',
+  items: Array.from({length:12}, (_,i)=>({
+    id:`fi_${i}`, label:`Factory page ${i+1}`, done:false, note:''
+  })),
+  kpis:[]
+}];
+
+// ═══════════════════════════════════════════════════════
+// FORMATTING UTILS
+// ═══════════════════════════════════════════════════════
+function fmt(v, unit){
+  if(v===null||v===undefined) return '—';
+  if(unit==='LKR'){
+    if(v>=1000000) return 'LKR '+(v/1000000).toFixed(1)+'M';
+    if(v>=1000)    return 'LKR '+(v/1000).toFixed(0)+'k';
+    return 'LKR '+Math.round(v).toLocaleString();
+  }
+  if(unit==='%') return parseFloat(v).toFixed(1)+'%';
+  if(unit==='x') return parseFloat(v).toFixed(2)+'x';
+  if(v>=1000000) return (v/1000000).toFixed(1)+'M';
+  if(v>=1000)    return (v/1000).toFixed(1)+'k';
+  return parseFloat(v)%1 ? parseFloat(v).toFixed(1) : parseInt(v).toLocaleString();
+}
+function calcPct(actual, target, lowerBetter){
+  if(actual===null||actual===undefined||!target) return null;
+  return lowerBetter
+    ? Math.min(Math.round((target/Math.max(actual,.01))*100), 150)
+    : Math.min(Math.round((actual/target)*100), 150);
+}
+function calcStatus(p){ return p===null?'pending':p>=90?'on_track':p>=75?'at_risk':'off_track'; }
+function statusLabel(s){ return {on_track:'On track',at_risk:'At risk',off_track:'Off track',pending:'Pending',done:'Done'}[s]||'—'; }
+function badgeCls(s){ return {on_track:'s-on',at_risk:'s-risk',off_track:'s-off',pending:'s-pend',done:'s-done'}[s]||'s-pend'; }
+function barColor(s){ return {on_track:'var(--green)',at_risk:'var(--amber)',off_track:'var(--red)',pending:'var(--hint)',done:'var(--yellow)'}[s]||'var(--hint)'; }
+function getLive(chId, key){ return liveData[chId]?.[key]??null; }
+
+// ═══════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════
+function toast(msg, err=false){
+  const t = document.createElement('div');
+  t.className = 'toast'+(err?' err':'');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 2800);
+}
+
+// ═══════════════════════════════════════════════════════
+// CONFIRM MODAL
+// ═══════════════════════════════════════════════════════
+let confirmCallback = null;
+function showConfirm(title, body, cb){
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-body').textContent  = body;
+  confirmCallback = cb;
+  document.getElementById('confirm-modal').classList.add('open');
+  document.getElementById('confirm-ok').onclick = ()=>{ closeConfirm(); cb(); };
+}
+function closeConfirm(){ document.getElementById('confirm-modal').classList.remove('open'); confirmCallback=null; }
+
+// ═══════════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════════
+function renderAll(){
+  renderSidebar();
+  renderSummary();
+  renderChannels();
+  renderPacing();
+  renderBudget();
+}
+
+function renderSidebar(){
+  const total = CHANNELS.reduce((s,c)=>s+(goals[c.id]||[]).length,0);
+  document.getElementById('nc-all').textContent = total;
+
+  document.getElementById('channel-nav-list').innerHTML = CHANNELS.map(c=>`
+    <div class="nav-item" id="nav-${c.id}" onclick="setActivity('${c.id}',this)">
+      <span class="nav-dot" style="background:${c.color}"></span>${c.name}
+      <span class="nav-count" id="nc-${c.id}">${(goals[c.id]||[]).length}</span>
+    </div>`).join('');
+
+  const sel = document.getElementById('ai-channel');
+  const curVal = sel.value;
+  sel.innerHTML = `<option value="">Channel…</option>` +
+    CHANNELS.map(c=>`<option value="${c.id}"${curVal===c.id?' selected':''}>${c.name}</option>`).join('');
+
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const active = document.getElementById(`nav-${currentActivity}`) || document.getElementById('nav-all');
+  if(active) active.classList.add('active');
+}
+
+function renderSummary(){
+  const allKpis = CHANNELS.flatMap(c=>(goals[c.id]||[]).flatMap(g=>{
+    if(g.type==='output'){
+      const items = g.items||[];
+      if(!items.length) return [g.completed?'done':'pending'];
+      const doneCount = items.filter(i=>i.done).length;
+      if(doneCount===items.length) return ['done'];
+      if(doneCount>0) return ['at_risk'];
+      return ['pending'];
+    }
+    return (g.kpis||[]).map(kpi=>{
+      const p = calcPct(getLive(c.id,kpi.key), kpi.target, kpi.lowerBetter);
+      return calcStatus(p);
+    });
+  }));
+  const on   = allKpis.filter(s=>s==='on_track').length;
+  const risk = allKpis.filter(s=>s==='at_risk').length;
+  const off  = allKpis.filter(s=>s==='off_track').length;
+  const done = allKpis.filter(s=>s==='done').length;
+  const total= allKpis.length;
+  const totalB = CHANNELS.reduce((s,c)=>s+c.budget,0);
+  const totalS = CHANNELS.reduce((s,c)=>s+c.spent,0);
+  const day = new Date().getDate();
+  const daysInM = new Date(currentYear,currentMonth,0).getDate();
+  const elapsed = Math.round(day/daysInM*100);
+
+  document.getElementById('sum-row').innerHTML = `
+    <div class="sc">
+      <div class="sc-label">KPIs on track</div>
+      <div class="sc-val" style="color:var(--green)">${on}<span style="font-size:14px;color:var(--muted)">/${total}</span></div>
+      <div class="sc-sub">${risk} at risk · ${off} off track · ${done} done</div>
+    </div>
+    <div class="sc">
+      <div class="sc-label">Goals set</div>
+      <div class="sc-val">${CHANNELS.reduce((s,c)=>s+(goals[c.id]||[]).length,0)}</div>
+      <div class="sc-sub">across ${CHANNELS.length} channels</div>
+    </div>
+    <div class="sc">
+      <div class="sc-label">Budget remaining</div>
+      <div class="sc-val" style="color:var(--yellow)">${fmt(totalB-totalS,'LKR')}</div>
+      <div class="sc-sub">of ${fmt(totalB,'LKR')} allocated</div>
+    </div>
+    <div class="sc">
+      <div class="sc-label">Month elapsed</div>
+      <div class="sc-val">${elapsed}<span style="font-size:14px;color:var(--muted)">%</span></div>
+      <div class="sc-sub">Day ${day} of ${daysInM}</div>
+    </div>`;
+}
+
+function renderChannels(){
+  const toShow = currentActivity==='all' ? CHANNELS : CHANNELS.filter(c=>c.id===currentActivity);
+  document.getElementById('channels-list').innerHTML = toShow.map(ch=>renderChannel(ch)).join('');
+}
+
+function renderChannel(ch){
+  const chGoals = goals[ch.id]||[];
+  const isOpen  = expanded[ch.id];
+
+  const allSts = chGoals.map(g=>{
+    if(g.type==='output'){
+      const items = g.items||[];
+      if(!items.length) return g.completed ? 'done' : 'pending';
+      const doneCount = items.filter(i=>i.done).length;
+      if(doneCount===items.length) return 'done';
+      if(doneCount>0) return 'at_risk';
+      return 'pending';
+    }
+    const kpiSts = (g.kpis||[]).map(kpi=>calcStatus(calcPct(getLive(ch.id,kpi.key),kpi.target,kpi.lowerBetter)));
+    if(!kpiSts.length) return 'pending';
+    if(kpiSts.every(s=>s==='on_track')) return 'on_track';
+    if(kpiSts.some(s=>s==='off_track')) return 'off_track';
+    return 'at_risk';
+  });
+  const overallSt = !allSts.length ? 'pending'
+    : allSts.every(s=>s==='on_track'||s==='done') ? 'on_track'
+    : allSts.some(s=>s==='off_track') ? 'off_track' : 'at_risk';
+
+  const body = isOpen ? `
+    <div class="ch-body">
+      <div class="goals-bar">
+        <span class="goals-bar-label">${chGoals.length} goal${chGoals.length!==1?'s':''}</span>
+        <button class="btn btn-yellow btn-sm" onclick="event.stopPropagation();openGoalModal('${ch.id}')">＋ Add goal</button>
+      </div>
+      ${chGoals.length ? `<div class="goals-grid">${chGoals.map(g=>renderGoalCard(ch.id,g)).join('')}</div>` : `<div style="font-size:11px;color:var(--muted);padding:6px 0 8px">No goals set. Click "+ Add goal" to start tracking.</div>`}
+      <div class="budget-strip">
+        <span style="font-size:10px;color:var(--muted);min-width:55px">Budget</span>
+        <div style="flex:1;height:3px;background:var(--surface3);border-radius:2px;overflow:hidden"><div style="height:100%;border-radius:2px;background:${ch.color};opacity:.7;width:${Math.min(Math.round(ch.spent/ch.budget*100),100)}%"></div></div>
+        <span style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace">${fmt(ch.spent,'LKR')} / ${fmt(ch.budget,'LKR')}</span>
+        <span style="font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace;color:${(ch.budget-ch.spent)<ch.budget*.15?'var(--red)':(ch.budget-ch.spent)<ch.budget*.3?'var(--amber)':'var(--green)'}">${fmt(ch.budget-ch.spent,'LKR')} left</span>
+      </div>
+    </div>` : '';
+
+  return `<div class="channel-card">
+    <div class="ch-header" onclick="toggleExpand('${ch.id}')">
+      <span class="ch-dot" style="background:${ch.color}"></span>
+      <span class="ch-name">${ch.name}</span>
+      <span class="ch-source">${ch.source}</span>
+      <div class="ch-meta">
+        <span class="badge ${badgeCls(overallSt)}">${statusLabel(overallSt)}</span>
+      </div>
+      <button class="ch-del-btn" onclick="event.stopPropagation();confirmDeleteChannel('${ch.id}')">✕ Delete</button>
+      <span class="chevron ${isOpen?'open':''}">▾</span>
+    </div>
+    ${body}
+  </div>`;
+}
+
+function renderGoalCard(chId, g){
+  // ── Output goal with per-item checklist ──
+  if(g.type==='output'){
+    const items = g.items||[];
+    const doneCount = items.filter(i=>i.done).length;
+    const total = items.length;
+    const pct = total ? Math.round(doneCount/total*100) : (g.completed?100:0);
+    const isDone = total ? doneCount===total : g.completed;
+    const st = isDone?'done':doneCount>0?'at_risk':'pending';
+
+    const checklistHtml = items.map(item=>`
+      <div class="output-item ${item.done?'done':''}" id="oi-${item.id}">
+        <div class="output-checkbox" onclick="toggleOutputItem('${chId}','${g.id}','${item.id}')">${item.done?'✓':''}</div>
+        <div class="output-item-right">
+          <div class="output-item-label">${item.label}</div>
+          ${item.done
+            ? `<div class="output-item-note">${item.note||'No note added'}</div>`
+            : `<textarea class="output-note-input" rows="1" placeholder="Add evidence note…" onblur="saveItemNote('${chId}','${g.id}','${item.id}',this.value)">${item.note||''}</textarea>`
+          }
+        </div>
+      </div>`).join('');
+
+    return `<div class="goal-card">
+      <div class="goal-type-row">
+        <span class="pill-tag-purple">Output</span>
+        <span class="badge ${badgeCls(st)}">${isDone?'Done':doneCount>0?`${doneCount}/${total}`:'Pending'}</span>
+        <button class="goal-del" onclick="confirmDeleteGoal('${chId}','${g.id}')">✕</button>
+      </div>
+      <div class="goal-name" style="margin-bottom:8px">${g.name}</div>
+      ${total ? `
+        <div class="output-checklist">${checklistHtml}</div>
+        <div class="output-progress">
+          <div class="output-progress-bar"><div class="output-progress-fill" style="width:${pct}%"></div></div>
+          <span class="output-progress-text">${doneCount}/${total} · ${pct}%</span>
+        </div>` : `<div style="font-size:10px;color:var(--muted)">No checklist items added.</div>`}
+    </div>`;
+  }
+
+  // ── Outcome goal ──
+  const kpiSts = (g.kpis||[]).map(kpi=>{
+    const p = calcPct(getLive(chId,kpi.key), kpi.target, kpi.lowerBetter);
+    return {kpi, p, st:calcStatus(p)};
+  });
+  const overallSts = kpiSts.map(x=>x.st);
+  const goalSt = !overallSts.length ? 'pending'
+    : overallSts.every(s=>s==='on_track') ? 'on_track'
+    : overallSts.some(s=>s==='off_track') ? 'off_track' : 'at_risk';
+
+  const kpiHtml = kpiSts.map(({kpi,p,st})=>{
+    const actual = getLive(chId,kpi.key);
+    return `<div class="kpi-item">
+      <div class="kpi-top-row">
+        <span class="kpi-name">${kpi.label}</span>
+        <div class="kpi-vals">
+          <span class="kpi-actual" style="color:${barColor(st)}">${fmt(actual,kpi.unit)}</span>
+          <span class="kpi-target">/ ${fmt(kpi.target,kpi.unit)}</span>
+          <span class="badge ${badgeCls(st)}" style="font-size:8px;padding:1px 6px">${statusLabel(st)}</span>
+        </div>
+      </div>
+      <div class="kpi-bar"><div class="kpi-fill" style="width:${Math.min(p||0,100)}%;background:${barColor(st)}"></div></div>
+      <div style="font-size:9px;color:var(--hint);margin-top:1px">${p!==null?p+'% of target':'No data yet'}</div>
+    </div>`;
+  }).join('');
+
+  return `<div class="goal-card">
+    <div class="goal-type-row">
+      <span class="pill-tag">Outcome</span>
+      <button class="goal-del" style="margin-left:auto" onclick="confirmDeleteGoal('${chId}','${g.id}')">✕</button>
+    </div>
+    <div class="goal-name" style="margin-bottom:8px">${g.name}</div>
+    <div class="kpi-block">${kpiHtml||'<div style="font-size:10px;color:var(--muted)">No KPIs configured</div>'}</div>
+    <div class="goal-footer">
+      <span class="goal-kpi-count">${(g.kpis||[]).length} KPI${(g.kpis||[]).length!==1?'s':''} tracked</span>
+      <span class="badge ${badgeCls(goalSt)}">${statusLabel(goalSt)}</span>
+    </div>
+  </div>`;
+}
+
+function renderBudget(){
+  const totalB = CHANNELS.reduce((s,c)=>s+c.budget,0);
+  const totalS = CHANNELS.reduce((s,c)=>s+c.spent,0);
+  document.getElementById('budget-meta').textContent = `Total ${fmt(totalB,'LKR')} · Spent ${fmt(totalS,'LKR')} · Left ${fmt(totalB-totalS,'LKR')}`;
+  document.getElementById('budget-list').innerHTML = CHANNELS.map(c=>{
+    const p    = Math.round(c.spent/c.budget*100);
+    const left = c.budget-c.spent;
+    const lc   = left<c.budget*.15?'var(--red)':left<c.budget*.3?'var(--amber)':'var(--green)';
+    return `<div class="bi">
+      <span class="bi-dot" style="background:${c.color}"></span>
+      <span class="bi-name">${c.name}</span>
+      <div class="bi-bar"><div class="bi-fill" style="width:${Math.min(p,100)}%;background:${c.color}"></div></div>
+      <span class="bi-nums">${fmt(c.spent,'LKR')} / ${fmt(c.budget,'LKR')}</span>
+      <span class="bi-left" style="color:${lc}">${fmt(left,'LKR')} left</span>
+    </div>`;
+  }).join('');
+}
+
+function renderPacing(){
+  if(currentView==='monthly'){ document.getElementById('pacing-section').innerHTML=''; return; }
+  const day = new Date().getDate();
+  const daysInM = new Date(currentYear,currentMonth,0).getDate();
+  const elapsed = day/daysInM;
+  const periods = currentView==='weekly'
+    ? ['Wk 1','Wk 2','Wk 3','Wk 4']
+    : ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const toShow = currentActivity==='all' ? CHANNELS : CHANNELS.filter(c=>c.id===currentActivity);
+
+  document.getElementById('pacing-section').innerHTML = toShow.map(ch=>{
+    const chGoals = (goals[ch.id]||[]).filter(g=>g.type==='outcome');
+    if(!chGoals.length) return '';
+    const rows = chGoals.flatMap(g=>(g.kpis||[]).map(kpi=>{
+      const actual = getLive(ch.id,kpi.key);
+      const p = calcPct(actual,kpi.target,kpi.lowerBetter);
+      const st = calcStatus(p);
+      return `<tr>
+        <td><span style="font-weight:700">${g.name}</span> — ${kpi.label}</td>
+        ${periods.map((_,i)=>{
+          const period_elapsed = (i+1)/periods.length;
+          const isNow = period_elapsed >= elapsed && (i===0||periods.length*(elapsed)>i);
+          const val = actual!==null ? Math.round(actual*(period_elapsed/Math.max(elapsed,.01))) : null;
+          return `<td style="${isNow?'font-weight:700;color:var(--text)':'color:var(--muted)'}">${val!==null?fmt(val,kpi.unit):'—'}</td>`;
+        }).join('')}
+        <td><span class="pace-pill badge ${badgeCls(st)}">${statusLabel(st)}</span></td>
+      </tr>`;
+    }));
+    if(!rows.length) return '';
+    return `<div class="pace-card">
+      <div class="pace-head"><span class="ch-dot" style="background:${ch.color}"></span>${ch.name} — ${currentView==='weekly'?'Weekly':'Daily'} pacing</div>
+      <div style="overflow-x:auto"><table class="pace-tbl">
+        <thead><tr><th>Goal / KPI</th>${periods.map(p=>`<th>${p}</th>`).join('')}<th>Status</th></tr></thead>
+        <tbody>${rows.join('')}</tbody>
+      </table></div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// OUTPUT CHECKLIST ACTIONS
+// ═══════════════════════════════════════════════════════
+function toggleOutputItem(chId, goalId, itemId){
+  const g = (goals[chId]||[]).find(x=>x.id===goalId);
+  if(!g) return;
+  const item = (g.items||[]).find(i=>i.id===itemId);
+  if(!item) return;
+  // If checking, capture any pending note from the textarea
+  if(!item.done){
+    const ta = document.querySelector(`#oi-${itemId} .output-note-input`);
+    if(ta) item.note = ta.value;
+  }
+  item.done = !item.done;
+  // API call (non-blocking)
+  apiPatchGoal(goalId, {items: g.items}).catch(()=>{});
+  renderAll();
+}
+
+function saveItemNote(chId, goalId, itemId, value){
+  const g = (goals[chId]||[]).find(x=>x.id===goalId);
+  if(!g) return;
+  const item = (g.items||[]).find(i=>i.id===itemId);
+  if(item) item.note = value;
+}
+
+// ═══════════════════════════════════════════════════════
+// DELETE CHANNEL & GOAL
+// ═══════════════════════════════════════════════════════
+function confirmDeleteChannel(chId){
+  const ch = CHANNELS.find(c=>c.id===chId);
+  showConfirm(
+    `Delete channel`,
+    `Delete "${ch?.name||chId}" and all its goals? This cannot be undone.`,
+    ()=> deleteChannel(chId)
+  );
+}
+
+async function deleteChannel(chId){
+  CHANNELS = CHANNELS.filter(c=>c.id!==chId);
+  delete goals[chId];
+  delete expanded[chId];
+  if(currentActivity===chId) currentActivity='all';
+  try{
+    await fetch(`${API}/channels/${chId}`,{method:'DELETE'});
+  } catch{}
+  toast(`Channel deleted`);
+  renderAll();
+}
+
+function confirmDeleteGoal(chId, goalId){
+  const g = (goals[chId]||[]).find(x=>x.id===goalId);
+  showConfirm(
+    `Delete goal`,
+    `Delete "${g?.name||'this goal'}"? This cannot be undone.`,
+    ()=> deleteGoal(chId, goalId)
+  );
+}
+
+async function deleteGoal(chId, goalId){
+  goals[chId] = (goals[chId]||[]).filter(g=>g.id!==goalId);
+  try{
+    await fetch(`${API}/goals/${goalId}`,{method:'DELETE'});
+  } catch{}
+  toast('Goal deleted');
+  renderAll();
+}
+
+// ═══════════════════════════════════════════════════════
+// ADD GOAL MODAL
+// ═══════════════════════════════════════════════════════
+function openGoalModal(channelId){
+  const ch = CHANNELS.find(c=>c.id===channelId);
+  modalCtx = {channelId, selectedKeys: new Set()};
+  document.getElementById('gm-title').textContent = `Add goal — ${ch.name}`;
+  document.getElementById('gm-sub').textContent   = `Choose metrics to track and set targets`;
+  document.getElementById('gm-name').value        = '';
+  document.getElementById('gm-budget').value      = '';
+  document.getElementById('gm-type').value        = 'outcome';
+  document.getElementById('gm-output-desc-val') && (document.getElementById('gm-output-desc-val').value='');
+  document.getElementById('gm-output-items').innerHTML = '';
+  addOutputItem(); // Start with one blank item
+  onGoalTypeChange();
+  buildMetricGrid(channelId);
+  document.getElementById('goal-modal').classList.add('open');
+}
+function closeGoalModal(){ document.getElementById('goal-modal').classList.remove('open'); modalCtx=null; }
+
+function onGoalTypeChange(){
+  const t = document.getElementById('gm-type').value;
+  document.getElementById('gm-outcome-section').style.display = t==='outcome'?'':'none';
+  document.getElementById('gm-output-section').style.display  = t==='output' ?'':'none';
+}
+
+let outputItemCounter = 0;
+function addOutputItem(){
+  const id = `new_item_${outputItemCounter++}`;
+  const row = document.createElement('div');
+  row.className='output-item-row';
+  row.id=`orow-${id}`;
+  row.innerHTML=`<input type="text" placeholder="e.g. Update page 1 with new banner" id="oitem-${id}"/>
+    <button class="rm-item" onclick="document.getElementById('orow-${id}').remove()">×</button>`;
+  document.getElementById('gm-output-items').appendChild(row);
+}
+
+function buildMetricGrid(channelId){
+  const metrics = METRICS[channelId]||[];
+  document.getElementById('gm-metric-grid').innerHTML = metrics.map(m=>`
+    <div class="metric-chip" id="chip-${m.key}" onclick="toggleMetric('${m.key}')">
+      <input type="checkbox" id="chk-${m.key}" onclick="event.stopPropagation();toggleMetric('${m.key}')"/>
+      <div class="metric-chip-info">
+        <div class="metric-chip-name">${m.label} <span style="color:var(--muted);font-size:9px">${m.unit||''}</span></div>
+        <div class="metric-chip-desc">${m.desc}</div>
+      </div>
+      <input type="number" class="metric-target" id="tgt-${m.key}" placeholder="Target" onclick="event.stopPropagation()" style="display:none" step="any"/>
+    </div>`).join('');
+}
+
+function toggleMetric(key){
+  if(!modalCtx) return;
+  const s = modalCtx.selectedKeys;
+  s.has(key)?s.delete(key):s.add(key);
+  document.getElementById(`chip-${key}`)?.classList.toggle('selected', s.has(key));
+  const chk = document.getElementById(`chk-${key}`); if(chk) chk.checked=s.has(key);
+  const tgt = document.getElementById(`tgt-${key}`); if(tgt) tgt.style.display=s.has(key)?'block':'none';
+}
+
+async function saveGoal(){
+  if(!modalCtx) return;
+  const name   = document.getElementById('gm-name').value.trim();
+  const type   = document.getElementById('gm-type').value;
+  const budget = parseFloat(document.getElementById('gm-budget').value)||null;
+  if(!name){ alert('Please enter a goal name.'); return; }
+
+  let newGoal;
+  if(type==='output'){
+    // Collect checklist items from the modal builder
+    const rows = document.querySelectorAll('#gm-output-items .output-item-row');
+    const items = [];
+    rows.forEach((row,i)=>{
+      const inp = row.querySelector('input[type=text]');
+      const label = inp?.value.trim();
+      if(label) items.push({id:`item_${Date.now()}_${i}`, label, done:false, note:''});
+    });
+    newGoal = {id:`g_${Date.now()}`,type:'output',name,budget,items,kpis:[]};
+    goals[modalCtx.channelId].push(newGoal);
+  } else {
+    const metrics = METRICS[modalCtx.channelId]||[];
+    const kpis = [...modalCtx.selectedKeys].map(key=>{
+      const m = metrics.find(x=>x.key===key)||{};
+      const target = parseFloat(document.getElementById(`tgt-${key}`)?.value)||0;
+      return {key, label:m.label||key, unit:m.unit||'', lowerBetter:m.lowerBetter||false, target};
+    });
+    newGoal = {id:`g_${Date.now()}`,type:'outcome',name,budget,kpis};
+    goals[modalCtx.channelId].push(newGoal);
+  }
+
+  closeGoalModal();
+  renderAll();
+
+  // Persist to API
+  try{
+    const body = {
+      channel_id: modalCtx?.channelId,
+      name, type, budget,
+      month: currentMonth, year: currentYear,
+      kpis: newGoal.kpis||[],
+      items: newGoal.items||[],
+    };
+    const r = await fetch(`${API}/goals`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(r.ok){ const d=await r.json(); newGoal._serverId=d.id; }
+  } catch{}
+}
+
+// ═══════════════════════════════════════════════════════
+// ADD CHANNEL MODAL
+// ═══════════════════════════════════════════════════════
+function openChannelModal(){
+  document.getElementById('cm-name').value    = '';
+  document.getElementById('cm-source').value  = '';
+  document.getElementById('cm-budget').value  = '';
+  document.getElementById('cm-metrics').value = '';
+  selectedSwatch = SWATCHES[0];
+  document.getElementById('color-swatches').innerHTML = SWATCHES.map(c=>`
+    <div class="color-swatch ${c===selectedSwatch?'selected':''}" style="background:${c}" onclick="pickSwatch('${c}',this)"></div>`).join('');
+  document.getElementById('ch-modal').classList.add('open');
+}
+function closeChanModal(){ document.getElementById('ch-modal').classList.remove('open'); }
+function pickSwatch(color, el){
+  selectedSwatch = color;
+  document.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('selected'));
+  el.classList.add('selected');
+}
+async function saveChannel(){
+  const name   = document.getElementById('cm-name').value.trim();
+  const source = document.getElementById('cm-source').value.trim()||'Manual / API';
+  const budget = parseFloat(document.getElementById('cm-budget').value)||100000;
+  if(!name){ alert('Please enter a channel name.'); return; }
+  const id = 'ch_'+Date.now();
+  CHANNELS.push({id, name, color:selectedSwatch, source, budget, spent:0});
+  goals[id]    = [];
+  expanded[id] = true;
+
+  const rawMetrics = document.getElementById('cm-metrics').value.trim();
+  if(rawMetrics){
+    METRICS[id] = rawMetrics.split('\n').filter(Boolean).map(line=>{
+      const parts = line.trim().split(' ');
+      const unit  = ['LKR','%','x'].includes(parts[parts.length-1]) ? parts.pop() : '';
+      const label = parts.join(' ');
+      const key   = label.toLowerCase().replace(/[^a-z0-9]/g,'_');
+      return {key, label, unit, desc:`${label} for ${name}`, lowerBetter: unit==='LKR'&&label.toLowerCase().includes('cost')};
+    });
+  } else {
+    METRICS[id] = [{key:'metric_1',label:'Metric 1',unit:'',desc:'Custom metric',lowerBetter:false}];
+  }
+
+  closeChanModal();
+  renderAll();
+
+  try{
+    await fetch(`${API}/channels`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      id, name, color:selectedSwatch, source, budget,
+      metrics: METRICS[id]
+    })});
+    toast(`Channel "${name}" added`);
+  } catch{ toast(`Channel added (offline)`, false); }
+}
+
+// ═══════════════════════════════════════════════════════
+// AI SUGGESTIONS
+// ═══════════════════════════════════════════════════════
+async function runAI(){
+  const text    = document.getElementById('ai-text').value.trim();
+  const chId    = document.getElementById('ai-channel').value;
+  const type    = document.getElementById('ai-type').value;
+  const out     = document.getElementById('ai-out');
+  if(!text||!chId){
+    out.innerHTML=`<div style="font-size:11px;color:var(--muted);margin-top:6px">Enter a goal description and select a channel.</div>`;
+    return;
+  }
+  out.innerHTML=`<div class="ai-result"><div class="loader-dots"><div class="ld"></div><div class="ld"></div><div class="ld"></div></div><span style="font-size:11px;color:var(--muted);margin-left:6px">Analysing…</span></div>`;
+  try{
+    const res  = await fetch(`${API}/goals/suggest`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({goalName:text,goalType:type,activity:chId})});
+    const data = await res.json();
+    showAISugg(data, chId, type, text);
+  } catch {
+    const demo = {
+      reasoning:`Based on "${text}", these KPIs directly measure what matters for this channel.`,
+      suggested_kpis:(METRICS[chId]||[]).slice(0,3).map(m=>({key:m.key,label:m.label,unit:m.unit||'',suggested_target:0,why:'Direct performance indicator for this goal'}))
+    };
+    showAISugg(demo, chId, type, text);
+  }
+  document.getElementById('ai-text').value='';
+}
+
+function showAISugg(data, chId, type, goalText){
+  const ch = CHANNELS.find(c=>c.id===chId);
+  document.getElementById('ai-out').innerHTML=`<div class="ai-result">
+    ${data.reasoning?`<div class="ai-reasoning">${data.reasoning}</div>`:''}
+    ${(data.suggested_kpis||[]).map((k,i)=>`
+      <div class="ai-kpi-item" id="ai-s-${i}">
+        <div style="flex:1"><div class="ai-kpi-name">${k.label}</div><div class="ai-kpi-why">${k.why||''}</div></div>
+        <span style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace">Target: ${k.suggested_target||'—'}</span>
+        <button class="ai-approve" onclick="approveAI('${chId}','${k.key}','${k.label}','${k.unit||''}',${k.suggested_target||0},'${type}',\`${goalText.replace(/`/g,"'")}\`,${i})">+ Add</button>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('ai-s-${i}').remove()" style="font-size:10px">✕</button>
+      </div>`).join('')}
+  </div>`;
+}
+
+function approveAI(chId, key, label, unit, target, type, goalName, idx){
+  const m = (METRICS[chId]||[]).find(x=>x.key===key)||{};
+  const existing = (goals[chId]||[]).find(g=>g.name===goalName&&g.type===type);
+  if(existing){
+    if(!existing.kpis.find(k=>k.key===key))
+      existing.kpis.push({key,label,unit:unit||m.unit||'',lowerBetter:m.lowerBetter||false,target});
+  } else {
+    goals[chId].push({id:`g_${Date.now()}`,type,name:goalName,budget:null,kpis:[{key,label,unit:unit||m.unit||'',lowerBetter:m.lowerBetter||false,target}]});
+  }
+  document.getElementById(`ai-s-${idx}`)?.remove();
+  expanded[chId]=true;
+  renderAll();
+}
+
+// ═══════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════
+function toggleExpand(id){ expanded[id]=!expanded[id]; renderAll(); }
+
+function setActivity(id, el){
+  currentActivity=id;
+  const ch = CHANNELS.find(c=>c.id===id);
+  document.getElementById('page-title').textContent = ch?ch.name:'All channels';
+  renderAll();
+  document.querySelector('.main').scrollTop=0;
+}
+
+function setView(v){
+  currentView=v;
+  ['monthly','weekly','daily'].forEach(x=>{
+    const el=document.getElementById(`vt-${x}`);
+    if(el) el.classList.toggle('on',x===v);
+  });
+  document.getElementById('sec-label').textContent =
+    v==='monthly'?'Monthly goals by channel':v==='weekly'?'Weekly pacing':'Daily pacing';
+  renderAll();
+}
+
+function setMonth(m,btn){
+  currentMonth=m;
+  document.querySelectorAll('.mtab').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  syncData();
+}
+
+function toggleConn(){
+  const el = document.getElementById('conn-card');
+  if(el.style.display==='none'){
+    el.style.display='block';
+    document.getElementById('conn-list').innerHTML = [
+      {name:'Google Ads',        sub:'API · cust 9657202480',       ok:true},
+      {name:'FB Ads (Branding)', sub:'Meta · act_762541868191388',  ok:true},
+      {name:'FB Ads (Revenue)',  sub:'Meta · act_762541868191388',  ok:true},
+      {name:'FB / IG Organic',   sub:'Meta Page Insights API',      ok:true},
+      {name:'Search Console',    sub:'OAuth refresh token set',     ok:true},
+      {name:'Factory Sheets',    sub:'Google Sheets API',           ok:true},
+    ].map(c=>`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:9px 11px;display:flex;align-items:center;gap:8px">
+      <div style="width:6px;height:6px;border-radius:50%;background:${c.ok?'var(--green)':'var(--amber)'};flex-shrink:0"></div>
+      <div><div style="font-size:11px;font-weight:700">${c.name}</div><div style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace">${c.sub}</div></div>
+    </div>`).join('');
+  } else el.style.display='none';
+}
+
+// ═══════════════════════════════════════════════════════
+// API HELPERS
+// ═══════════════════════════════════════════════════════
+async function apiPatchGoal(goalId, body){
+  return fetch(`${API}/goals/${goalId}`,{
+    method:'PATCH',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(body)
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// LIVE DATA SYNC
+// ═══════════════════════════════════════════════════════
+async function syncData(){
+  const btn=document.getElementById('sync-btn');
+  btn.textContent='↻ Syncing…';btn.disabled=true;
+  try{
+    // Load channels from Supabase
+    const [chRes, goalRes, actRes] = await Promise.all([
+      fetch(`${API}/channels`),
+      fetch(`${API}/goals?month=${currentMonth}&year=${currentYear}`),
+      fetch(`${API}/actuals?month=${currentMonth}&year=${currentYear}`),
+    ]);
+
+    if(chRes.ok){
+      const chData = await chRes.json();
+      if(chData.length){
+        CHANNELS = chData.map(c=>({
+          id:c.id, name:c.name, color:c.color, source:c.source,
+          budget:parseFloat(c.budget)||0, spent:parseFloat(c.spent)||0
+        }));
+        // Rebuild METRICS from channel metrics
+        chData.forEach(ch=>{
+          if(ch.metrics?.length){
+            METRICS[ch.id] = ch.metrics.map(m=>({
+              key:m.key, label:m.label, unit:m.unit||'',
+              desc:m.description||'', lowerBetter:m.lower_better||false
+            }));
+          }
+        });
+        CHANNELS.forEach(c=>{ if(!goals[c.id]) goals[c.id]=[]; if(expanded[c.id]===undefined) expanded[c.id]=true; });
+      }
+    }
+
+    if(goalRes.ok){
+      const goalData = await goalRes.json();
+      if(goalData.length){
+        const newGoals = {};
+        CHANNELS.forEach(c=>newGoals[c.id]=[]);
+        goalData.forEach(g=>{
+          const chId = g.channel_id;
+          if(!newGoals[chId]) return;
+          newGoals[chId].push({
+            id: g.id,
+            type: g.type,
+            name: g.name,
+            budget: g.budget,
+            completed: g.completed,
+            items: g.items||[],
+            kpis: (g.goal_kpis||[]).map(k=>({
+              key:k.key, label:k.label, unit:k.unit,
+              lowerBetter:k.lower_better, target:parseFloat(k.target)
+            }))
+          });
+        });
+        goals = newGoals;
+      }
+    }
+
+    if(actRes.ok){
+      const actData = await actRes.json();
+      liveData = actData.actuals||{};
+    }
+
+    document.getElementById('page-sub').textContent='Live · Synced '+new Date().toLocaleTimeString();
+  } catch(e){
+    injectDemo();
+    document.getElementById('page-sub').textContent='Demo data · Connect backend for live sync';
+  }
+  btn.textContent='↻ Sync';btn.disabled=false;
+  renderAll();
+}
+
+function injectDemo(){
+  const d=new Date().getDate(), dm=new Date(currentYear,currentMonth,0).getDate();
+  const e=d/dm;
+  liveData={
+    google_ads: {conversions:Math.round(300*e*.93), cpa:1310, spend:Math.round(400000*e*.87)},
+    fb_branding:{reach:Math.round(120000*e*1.06), impressions:Math.round(400000*e*1.01), frequency:2.1, cpm:315, spend:Math.round(200000*e*.83), video_views:18400, link_clicks:2500, ctr:1.5},
+    fb_revenue: {conversions:Math.round(200*e*.79), reach:Math.round(90000*e*.92), impressions:290000, cpa:1820, roas:2.25, spend:275000, link_clicks:4100},
+    fb_organic: {reach:Math.round(50000*e*1.09), engagement_rate:4.3, followers_gained:Math.round(500*e*.87), post_impressions:92000, reactions:3100, shares:400},
+    seo:        {clicks:Math.round(7000*e*.95), impressions:Math.round(120000*e*.97), avg_position:11.4, ctr:3.0},
+    factory:    {orders:Math.round(250*e*.92), cpa:830, cost_per_order:770, conversion_rate:4.7},
+  };
+}
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+(()=>{
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  document.getElementById('month-strip').innerHTML = months.map((m,i)=>
+    `<button class="mtab${i+1===currentMonth?' on':''}" onclick="setMonth(${i+1},this)">${m}</button>`).join('');
+})();
+
+document.getElementById('page-sub').textContent =
+  new Date().toLocaleDateString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+CHANNELS.forEach(c=>expanded[c.id]=true);
+syncData();
+</script>
+</body>
+</html>
