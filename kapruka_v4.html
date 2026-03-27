@@ -110,7 +110,13 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 /* ── Goals grid ── */
 .goals-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .goals-bar-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
-.goals-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:8px;margin-bottom:10px}
+.goals-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px;margin-bottom:10px}
+
+/* ── Empty state ── */
+.goals-empty{padding:24px 16px;text-align:center;background:var(--surface2);border:1px dashed var(--border2);border-radius:var(--r-sm);margin-bottom:10px}
+.goals-empty-icon{font-size:22px;margin-bottom:6px;opacity:.5}
+.goals-empty-text{font-size:12px;font-weight:600;color:var(--muted);margin-bottom:3px}
+.goals-empty-sub{font-size:10px;color:var(--hint)}
 
 /* ── Goal card ── */
 .goal-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:13px;position:relative;transition:all .15s;box-shadow:0 1px 4px rgba(90,10,138,.05)}
@@ -141,16 +147,19 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 .output-progress-fill{height:100%;border-radius:2px;background:var(--yellow);transition:width .4s ease}
 .output-progress-text{font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;white-space:nowrap}
 
-/* ── KPI rows ── */
-.kpi-block{display:flex;flex-direction:column;gap:7px}
-.kpi-item{display:flex;flex-direction:column;gap:3px}
-.kpi-top-row{display:flex;align-items:center;justify-content:space-between;gap:4px}
-.kpi-name{font-size:11px;color:var(--muted);font-weight:600}
-.kpi-vals{display:flex;align-items:center;gap:5px}
-.kpi-actual{font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace}
-.kpi-target{font-size:10px;color:var(--hint);font-family:'JetBrains Mono',monospace}
-.kpi-bar{height:3px;background:var(--surface3);border-radius:2px;overflow:hidden}
-.kpi-fill{height:100%;border-radius:2px;transition:width .5s ease}
+/* ── KPI 4-column table ── */
+.kpi-table{width:100%;border-collapse:collapse;margin-bottom:4px}
+.kpi-table thead th{font-size:9px;font-weight:700;color:var(--hint);text-transform:uppercase;letter-spacing:.08em;padding:0 6px 6px;border-bottom:1px solid var(--border);text-align:right}
+.kpi-table thead th:first-child{text-align:left}
+.kpi-table tbody td{padding:5px 6px;border-bottom:1px solid var(--border);vertical-align:middle;text-align:right}
+.kpi-table tbody td:first-child{text-align:left}
+.kpi-table tbody tr:last-child td{border-bottom:none}
+.kpi-name-cell{font-size:11px;font-weight:600;color:var(--muted)}
+.kpi-baseline-cell{font-size:10px;color:var(--hint);font-family:'JetBrains Mono',monospace}
+.kpi-target-cell{font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+.kpi-current-cell{font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace}
+.kpi-bar-wrap{height:2px;background:var(--surface3);border-radius:2px;overflow:hidden;margin-top:3px}
+.kpi-bar-fill{height:100%;border-radius:2px;transition:width .5s ease}
 
 /* ── Goal footer ── */
 .goal-footer{display:flex;align-items:center;justify-content:space-between;margin-top:9px;padding-top:8px;border-top:1px solid var(--border)}
@@ -375,7 +384,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
         </select>
       </div>
       <div class="form-col" style="flex:0 0 130px">
-        <div class="form-label">Budget (LKR)</div>
+        <div class="form-label">Budget ($)</div>
         <input type="number" class="form-input" id="gm-budget" placeholder="Optional"/>
       </div>
     </div>
@@ -424,8 +433,8 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
     </div>
   </div>
   <div class="form-section">
-    <div class="form-label" style="margin-bottom:8px">Monthly budget (LKR)</div>
-    <input type="number" class="form-input" id="cm-budget" placeholder="e.g. 150000"/>
+    <div class="form-label" style="margin-bottom:8px">Monthly budget ($)</div>
+    <input type="number" class="form-input" id="cm-budget" placeholder="e.g. 2500"/>
   </div>
   <div class="form-section">
     <div class="form-label" style="margin-bottom:8px">Channel colour</div>
@@ -433,8 +442,8 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
   </div>
   <div class="form-section">
     <div class="form-label" style="margin-bottom:8px">Custom metrics (one per line)</div>
-    <textarea class="form-input" id="cm-metrics" rows="4" placeholder="Impressions&#10;Clicks&#10;Conversions&#10;CPA LKR" style="resize:vertical"></textarea>
-    <div style="font-size:10px;color:var(--muted);margin-top:4px">Leave blank to use defaults. Add LKR or % after name (e.g. "CPA LKR", "CTR %")</div>
+    <textarea class="form-input" id="cm-metrics" rows="4" placeholder="Impressions&#10;Clicks&#10;Conversions&#10;CPA USD" style="resize:vertical"></textarea>
+    <div style="font-size:10px;color:var(--muted);margin-top:4px">Leave blank to use defaults. Add USD or % after name (e.g. "CPA USD", "CTR %")</div>
   </div>
   <div class="modal-footer">
     <button class="btn btn-ghost" onclick="closeChanModal()">Cancel</button>
@@ -457,11 +466,9 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 
 <script>
 // ═══════════════════════════════════════════════════════
-// CONFIG — swap this URL for your Vercel deployment
+// CONFIG
 // ═══════════════════════════════════════════════════════
 const API = (()=>{
-  // Auto-detect: if opened from Vercel, use relative /api
-  // Otherwise fall back to localhost for dev
   const host = window.location.hostname;
   if(host.includes('vercel.app') || host.includes('kapruka.com')) return '/api';
   return "https://YOUR-APP.onrender.com/api";
@@ -474,26 +481,26 @@ let selectedSwatch = SWATCHES[0];
 // CHANNEL & METRICS DEFINITIONS
 // ═══════════════════════════════════════════════════════
 let CHANNELS = [
-  {id:'google_ads',   name:'Google Ads',      color:'#4f8ef7', source:'Google Ads API',         budget:400000, spent:320000},
-  {id:'fb_branding',  name:'FB Branding',     color:'#a855f7', source:'Meta Ads API',            budget:200000, spent:140000},
-  {id:'fb_revenue',   name:'FB Revenue',      color:'#3b82f6', source:'Meta Ads API',            budget:350000, spent:280000},
-  {id:'fb_organic',   name:'FB / IG Organic', color:'#ec4899', source:'Meta Page Insights',      budget:50000,  spent:31000},
-  {id:'seo',          name:'SEO',             color:'#34d399', source:'Search Console API',      budget:80000,  spent:62000},
-  {id:'factory',      name:'Factory Pages',   color:'#fb923c', source:'Google Sheets',           budget:60000,  spent:48000},
+  {id:'google_ads',   name:'Google Ads',      color:'#4f8ef7', source:'Google Ads API',         budget:3000,  spent:2400},
+  {id:'fb_branding',  name:'FB Branding',     color:'#a855f7', source:'Meta Ads API',            budget:1500,  spent:1050},
+  {id:'fb_revenue',   name:'FB Revenue',      color:'#3b82f6', source:'Meta Ads API',            budget:2600,  spent:2100},
+  {id:'fb_organic',   name:'FB / IG Organic', color:'#ec4899', source:'Meta Page Insights',      budget:400,   spent:230},
+  {id:'seo',          name:'SEO',             color:'#34d399', source:'Search Console API',      budget:600,   spent:465},
+  {id:'factory',      name:'Factory Pages',   color:'#fb923c', source:'Google Sheets',           budget:450,   spent:360},
 ];
 
 const DEFAULT_METRICS = {
   google_ads:  [
     {key:'conversions',  label:'Conversions',   unit:'',    desc:'Total conversion actions',      lowerBetter:false},
-    {key:'cpa',          label:'CPA',           unit:'LKR', desc:'Cost per acquisition',          lowerBetter:true},
-    {key:'spend',        label:'Amount Spend',  unit:'LKR', desc:'Total ad spend this period',    lowerBetter:false},
+    {key:'cpa',          label:'CPA',           unit:'USD', desc:'Cost per acquisition',          lowerBetter:true},
+    {key:'spend',        label:'Amount Spend',  unit:'USD', desc:'Total ad spend this period',    lowerBetter:false},
   ],
   fb_branding: [
     {key:'reach',        label:'Reach',         unit:'',    desc:'Unique accounts reached',       lowerBetter:false},
     {key:'impressions',  label:'Impressions',   unit:'',    desc:'Total ad impressions',          lowerBetter:false},
     {key:'frequency',    label:'Frequency',     unit:'',    desc:'Avg. times each person saw ad', lowerBetter:false},
-    {key:'cpm',          label:'CPM',           unit:'LKR', desc:'Cost per 1,000 impressions',   lowerBetter:true},
-    {key:'spend',        label:'Amount Spend',  unit:'LKR', desc:'Total spend on branding',       lowerBetter:false},
+    {key:'cpm',          label:'CPM',           unit:'USD', desc:'Cost per 1,000 impressions',   lowerBetter:true},
+    {key:'spend',        label:'Amount Spend',  unit:'USD', desc:'Total spend on branding',       lowerBetter:false},
     {key:'video_views',  label:'Video Views',   unit:'',    desc:'3-second video views',          lowerBetter:false},
     {key:'link_clicks',  label:'Link Clicks',   unit:'',    desc:'Clicks to site from ads',       lowerBetter:false},
     {key:'ctr',          label:'CTR',           unit:'%',   desc:'Click-through rate',            lowerBetter:false},
@@ -502,9 +509,9 @@ const DEFAULT_METRICS = {
     {key:'conversions',  label:'Conversions',   unit:'',    desc:'Purchase or lead events',       lowerBetter:false},
     {key:'reach',        label:'Reach',         unit:'',    desc:'Unique accounts reached',       lowerBetter:false},
     {key:'impressions',  label:'Impressions',   unit:'',    desc:'Total ad impressions',          lowerBetter:false},
-    {key:'cpa',          label:'CPA',           unit:'LKR', desc:'Cost per acquisition',          lowerBetter:true},
+    {key:'cpa',          label:'CPA',           unit:'USD', desc:'Cost per acquisition',          lowerBetter:true},
     {key:'roas',         label:'ROAS',          unit:'x',   desc:'Return on ad spend',            lowerBetter:false},
-    {key:'spend',        label:'Amount Spend',  unit:'LKR', desc:'Total revenue campaign spend',  lowerBetter:false},
+    {key:'spend',        label:'Amount Spend',  unit:'USD', desc:'Total revenue campaign spend',  lowerBetter:false},
     {key:'link_clicks',  label:'Link Clicks',   unit:'',    desc:'Clicks driving to site',        lowerBetter:false},
   ],
   fb_organic:  [
@@ -523,8 +530,8 @@ const DEFAULT_METRICS = {
   ],
   factory:     [
     {key:'orders',          label:'Orders',           unit:'',    desc:'Total orders from factory pages', lowerBetter:false},
-    {key:'cpa',             label:'CPA',              unit:'LKR', desc:'Cost per acquisition',           lowerBetter:true},
-    {key:'cost_per_order',  label:'Cost per Order',   unit:'LKR', desc:'Total cost / total orders',      lowerBetter:true},
+    {key:'cpa',             label:'CPA',              unit:'USD', desc:'Cost per acquisition',           lowerBetter:true},
+    {key:'cost_per_order',  label:'Cost per Order',   unit:'USD', desc:'Total cost / total orders',      lowerBetter:true},
     {key:'conversion_rate', label:'Conversion Rate',  unit:'%',   desc:'Sessions → order %',             lowerBetter:false},
   ],
 };
@@ -532,11 +539,12 @@ const DEFAULT_METRICS = {
 let METRICS = {...DEFAULT_METRICS};
 
 // ═══════════════════════════════════════════════════════
-// STATE
+// STATE — no seed goals, goals start empty
 // ═══════════════════════════════════════════════════════
 let goals = {};
 let liveData = {};
 let expanded = {};
+let baselines = {};
 let currentView    = 'monthly';
 let currentActivity= 'all';
 let currentMonth   = new Date().getMonth() + 1;
@@ -545,41 +553,16 @@ let modalCtx       = null;
 
 CHANNELS.forEach(c => { goals[c.id] = []; expanded[c.id] = true; });
 
-// Seed data
-goals['google_ads'] = [{
-  id:'seed_gads', type:'outcome', name:'Monthly Performance',
-  kpis:[
-    {key:'conversions',  label:'Conversions',  unit:'',    lowerBetter:false, target:300},
-    {key:'cpa',          label:'CPA',          unit:'LKR', lowerBetter:true,  target:1200},
-    {key:'spend',        label:'Amount Spend', unit:'LKR', lowerBetter:false, target:400000},
-  ]
-}];
-goals['seo'] = [{
-  id:'seed_seo', type:'outcome', name:'Organic search growth',
-  kpis:[
-    {key:'clicks',       label:'Clicks',        unit:'',  lowerBetter:false, target:7000},
-    {key:'impressions',  label:'Impressions',   unit:'',  lowerBetter:false, target:120000},
-    {key:'avg_position', label:'Avg. Position', unit:'',  lowerBetter:true,  target:10},
-  ]
-}];
-// Output goal with per-item checklist (12 factory pages)
-goals['factory'] = [{
-  id:'seed_factory', type:'output', name:'Publish factory page updates',
-  items: Array.from({length:12}, (_,i)=>({
-    id:`fi_${i}`, label:`Factory page ${i+1}`, done:false, note:''
-  })),
-  kpis:[]
-}];
-
 // ═══════════════════════════════════════════════════════
-// FORMATTING UTILS
+// FORMATTING UTILS — $ instead of LKR, USD label
 // ═══════════════════════════════════════════════════════
 function fmt(v, unit){
   if(v===null||v===undefined) return '—';
-  if(unit==='LKR'){
-    if(v>=1000000) return 'LKR '+(v/1000000).toFixed(1)+'M';
-    if(v>=1000)    return 'LKR '+(v/1000).toFixed(0)+'k';
-    return 'LKR '+Math.round(v).toLocaleString();
+  if(unit==='USD'||unit==='LKR'){
+    // Always display as $ regardless of which unit key comes in
+    if(v>=1000000) return '$'+(v/1000000).toFixed(1)+'M';
+    if(v>=1000)    return '$'+(v/1000).toFixed(0)+'k';
+    return '$'+parseFloat(v).toFixed(2);
   }
   if(unit==='%') return parseFloat(v).toFixed(1)+'%';
   if(unit==='x') return parseFloat(v).toFixed(2)+'x';
@@ -587,6 +570,8 @@ function fmt(v, unit){
   if(v>=1000)    return (v/1000).toFixed(1)+'k';
   return parseFloat(v)%1 ? parseFloat(v).toFixed(1) : parseInt(v).toLocaleString();
 }
+function fmtBudget(v){ return fmt(v,'USD'); }
+
 function calcPct(actual, target, lowerBetter){
   if(actual===null||actual===undefined||!target) return null;
   return lowerBetter
@@ -598,6 +583,7 @@ function statusLabel(s){ return {on_track:'On track',at_risk:'At risk',off_track
 function badgeCls(s){ return {on_track:'s-on',at_risk:'s-risk',off_track:'s-off',pending:'s-pend',done:'s-done'}[s]||'s-pend'; }
 function barColor(s){ return {on_track:'var(--green)',at_risk:'var(--amber)',off_track:'var(--red)',pending:'var(--hint)',done:'var(--yellow)'}[s]||'var(--hint)'; }
 function getLive(chId, key){ return liveData[chId]?.[key]??null; }
+function getBaseline(chId, key){ return baselines[chId]?.[key]??null; }
 
 // ═══════════════════════════════════════════════════════
 // TOAST
@@ -693,8 +679,8 @@ function renderSummary(){
     </div>
     <div class="sc">
       <div class="sc-label">Budget remaining</div>
-      <div class="sc-val" style="color:var(--yellow)">${fmt(totalB-totalS,'LKR')}</div>
-      <div class="sc-sub">of ${fmt(totalB,'LKR')} allocated</div>
+      <div class="sc-val" style="color:var(--yellow)">${fmtBudget(totalB-totalS)}</div>
+      <div class="sc-sub">of ${fmtBudget(totalB)} allocated</div>
     </div>
     <div class="sc">
       <div class="sc-label">Month elapsed</div>
@@ -731,18 +717,28 @@ function renderChannel(ch){
     : allSts.every(s=>s==='on_track'||s==='done') ? 'on_track'
     : allSts.some(s=>s==='off_track') ? 'off_track' : 'at_risk';
 
+  // Empty state HTML
+  const emptyState = `
+    <div class="goals-empty">
+      <div class="goals-empty-icon">🎯</div>
+      <div class="goals-empty-text">No goals set yet</div>
+      <div class="goals-empty-sub">Click "+ Add goal" above to start tracking performance for this channel.</div>
+    </div>`;
+
   const body = isOpen ? `
     <div class="ch-body">
       <div class="goals-bar">
         <span class="goals-bar-label">${chGoals.length} goal${chGoals.length!==1?'s':''}</span>
         <button class="btn btn-yellow btn-sm" onclick="event.stopPropagation();openGoalModal('${ch.id}')">＋ Add goal</button>
       </div>
-      ${chGoals.length ? `<div class="goals-grid">${chGoals.map(g=>renderGoalCard(ch.id,g)).join('')}</div>` : `<div style="font-size:11px;color:var(--muted);padding:6px 0 8px">No goals set. Click "+ Add goal" to start tracking.</div>`}
+      ${chGoals.length
+        ? `<div class="goals-grid">${chGoals.map(g=>renderGoalCard(ch.id,g)).join('')}</div>`
+        : emptyState}
       <div class="budget-strip">
         <span style="font-size:10px;color:var(--muted);min-width:55px">Budget</span>
         <div style="flex:1;height:3px;background:var(--surface3);border-radius:2px;overflow:hidden"><div style="height:100%;border-radius:2px;background:${ch.color};opacity:.7;width:${Math.min(Math.round(ch.spent/ch.budget*100),100)}%"></div></div>
-        <span style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace">${fmt(ch.spent,'LKR')} / ${fmt(ch.budget,'LKR')}</span>
-        <span style="font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace;color:${(ch.budget-ch.spent)<ch.budget*.15?'var(--red)':(ch.budget-ch.spent)<ch.budget*.3?'var(--amber)':'var(--green)'}">${fmt(ch.budget-ch.spent,'LKR')} left</span>
+        <span style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace">${fmtBudget(ch.spent)} / ${fmtBudget(ch.budget)}</span>
+        <span style="font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace;color:${(ch.budget-ch.spent)<ch.budget*.15?'var(--red)':(ch.budget-ch.spent)<ch.budget*.3?'var(--amber)':'var(--green)'}">${fmtBudget(ch.budget-ch.spent)} left</span>
       </div>
     </div>` : '';
 
@@ -759,6 +755,48 @@ function renderChannel(ch){
     </div>
     ${body}
   </div>`;
+}
+
+// ── KPI 4-column table renderer ──────────────────────────────
+function renderKpiTable(chId, kpis){
+  if(!kpis||!kpis.length) return `<div style="font-size:10px;color:var(--muted)">No KPIs configured</div>`;
+
+  const rows = kpis.map(kpi=>{
+    const actual   = getLive(chId, kpi.key);
+    const bl       = getBaseline(chId, kpi.key);
+    const p        = calcPct(actual, kpi.target, kpi.lowerBetter);
+    const st       = calcStatus(p);
+    const barW     = Math.min(p||0, 100);
+    const color    = barColor(st);
+
+    const baselineCell = bl!==null
+      ? `<td class="kpi-baseline-cell">${fmt(bl, kpi.unit)}</td>`
+      : `<td class="kpi-baseline-cell" style="color:var(--hint)">—</td>`;
+
+    return `<tr>
+      <td class="kpi-name-cell">${kpi.label}</td>
+      ${baselineCell}
+      <td class="kpi-target-cell">${fmt(kpi.target, kpi.unit)}</td>
+      <td class="kpi-current-cell">
+        <div style="color:${color}">${fmt(actual, kpi.unit)}</div>
+        <div class="kpi-bar-wrap"><div class="kpi-bar-fill" style="width:${barW}%;background:${color}"></div></div>
+      </td>
+      <td><span class="badge ${badgeCls(st)}" style="font-size:8px;padding:1px 6px">${statusLabel(st)}</span></td>
+    </tr>`;
+  }).join('');
+
+  return `<table class="kpi-table">
+    <thead>
+      <tr>
+        <th style="text-align:left">KPI</th>
+        <th>Baseline</th>
+        <th>Target</th>
+        <th>Current</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>`;
 }
 
 function renderGoalCard(chId, g){
@@ -799,39 +837,19 @@ function renderGoalCard(chId, g){
     </div>`;
   }
 
-  // ── Outcome goal ──
-  const kpiSts = (g.kpis||[]).map(kpi=>{
-    const p = calcPct(getLive(chId,kpi.key), kpi.target, kpi.lowerBetter);
-    return {kpi, p, st:calcStatus(p)};
-  });
-  const overallSts = kpiSts.map(x=>x.st);
-  const goalSt = !overallSts.length ? 'pending'
-    : overallSts.every(s=>s==='on_track') ? 'on_track'
-    : overallSts.some(s=>s==='off_track') ? 'off_track' : 'at_risk';
-
-  const kpiHtml = kpiSts.map(({kpi,p,st})=>{
-    const actual = getLive(chId,kpi.key);
-    return `<div class="kpi-item">
-      <div class="kpi-top-row">
-        <span class="kpi-name">${kpi.label}</span>
-        <div class="kpi-vals">
-          <span class="kpi-actual" style="color:${barColor(st)}">${fmt(actual,kpi.unit)}</span>
-          <span class="kpi-target">/ ${fmt(kpi.target,kpi.unit)}</span>
-          <span class="badge ${badgeCls(st)}" style="font-size:8px;padding:1px 6px">${statusLabel(st)}</span>
-        </div>
-      </div>
-      <div class="kpi-bar"><div class="kpi-fill" style="width:${Math.min(p||0,100)}%;background:${barColor(st)}"></div></div>
-      <div style="font-size:9px;color:var(--hint);margin-top:1px">${p!==null?p+'% of target':'No data yet'}</div>
-    </div>`;
-  }).join('');
+  // ── Outcome goal — 4-column KPI table ──
+  const kpiSts  = (g.kpis||[]).map(kpi=>calcStatus(calcPct(getLive(chId,kpi.key), kpi.target, kpi.lowerBetter)));
+  const goalSt  = !kpiSts.length ? 'pending'
+    : kpiSts.every(s=>s==='on_track') ? 'on_track'
+    : kpiSts.some(s=>s==='off_track') ? 'off_track' : 'at_risk';
 
   return `<div class="goal-card">
     <div class="goal-type-row">
       <span class="pill-tag">Outcome</span>
       <button class="goal-del" style="margin-left:auto" onclick="confirmDeleteGoal('${chId}','${g.id}')">✕</button>
     </div>
-    <div class="goal-name" style="margin-bottom:8px">${g.name}</div>
-    <div class="kpi-block">${kpiHtml||'<div style="font-size:10px;color:var(--muted)">No KPIs configured</div>'}</div>
+    <div class="goal-name" style="margin-bottom:10px">${g.name}</div>
+    ${renderKpiTable(chId, g.kpis)}
     <div class="goal-footer">
       <span class="goal-kpi-count">${(g.kpis||[]).length} KPI${(g.kpis||[]).length!==1?'s':''} tracked</span>
       <span class="badge ${badgeCls(goalSt)}">${statusLabel(goalSt)}</span>
@@ -842,7 +860,7 @@ function renderGoalCard(chId, g){
 function renderBudget(){
   const totalB = CHANNELS.reduce((s,c)=>s+c.budget,0);
   const totalS = CHANNELS.reduce((s,c)=>s+c.spent,0);
-  document.getElementById('budget-meta').textContent = `Total ${fmt(totalB,'LKR')} · Spent ${fmt(totalS,'LKR')} · Left ${fmt(totalB-totalS,'LKR')}`;
+  document.getElementById('budget-meta').textContent = `Total ${fmtBudget(totalB)} · Spent ${fmtBudget(totalS)} · Left ${fmtBudget(totalB-totalS)}`;
   document.getElementById('budget-list').innerHTML = CHANNELS.map(c=>{
     const p    = Math.round(c.spent/c.budget*100);
     const left = c.budget-c.spent;
@@ -851,8 +869,8 @@ function renderBudget(){
       <span class="bi-dot" style="background:${c.color}"></span>
       <span class="bi-name">${c.name}</span>
       <div class="bi-bar"><div class="bi-fill" style="width:${Math.min(p,100)}%;background:${c.color}"></div></div>
-      <span class="bi-nums">${fmt(c.spent,'LKR')} / ${fmt(c.budget,'LKR')}</span>
-      <span class="bi-left" style="color:${lc}">${fmt(left,'LKR')} left</span>
+      <span class="bi-nums">${fmtBudget(c.spent)} / ${fmtBudget(c.budget)}</span>
+      <span class="bi-left" style="color:${lc}">${fmtBudget(left)} left</span>
     </div>`;
   }).join('');
 }
@@ -904,13 +922,11 @@ function toggleOutputItem(chId, goalId, itemId){
   if(!g) return;
   const item = (g.items||[]).find(i=>i.id===itemId);
   if(!item) return;
-  // If checking, capture any pending note from the textarea
   if(!item.done){
     const ta = document.querySelector(`#oi-${itemId} .output-note-input`);
     if(ta) item.note = ta.value;
   }
   item.done = !item.done;
-  // API call (non-blocking)
   apiPatchGoal(goalId, {items: g.items}).catch(()=>{});
   renderAll();
 }
@@ -939,9 +955,7 @@ async function deleteChannel(chId){
   delete goals[chId];
   delete expanded[chId];
   if(currentActivity===chId) currentActivity='all';
-  try{
-    await fetch(`${API}/channels/${chId}`,{method:'DELETE'});
-  } catch{}
+  try{ await fetch(`${API}/channels/${chId}`,{method:'DELETE'}); } catch{}
   toast(`Channel deleted`);
   renderAll();
 }
@@ -957,9 +971,7 @@ function confirmDeleteGoal(chId, goalId){
 
 async function deleteGoal(chId, goalId){
   goals[chId] = (goals[chId]||[]).filter(g=>g.id!==goalId);
-  try{
-    await fetch(`${API}/goals/${goalId}`,{method:'DELETE'});
-  } catch{}
+  try{ await fetch(`${API}/goals/${goalId}`,{method:'DELETE'}); } catch{}
   toast('Goal deleted');
   renderAll();
 }
@@ -975,9 +987,8 @@ function openGoalModal(channelId){
   document.getElementById('gm-name').value        = '';
   document.getElementById('gm-budget').value      = '';
   document.getElementById('gm-type').value        = 'outcome';
-  document.getElementById('gm-output-desc-val') && (document.getElementById('gm-output-desc-val').value='');
   document.getElementById('gm-output-items').innerHTML = '';
-  addOutputItem(); // Start with one blank item
+  addOutputItem();
   onGoalTypeChange();
   buildMetricGrid(channelId);
   document.getElementById('goal-modal').classList.add('open');
@@ -1032,7 +1043,6 @@ async function saveGoal(){
 
   let newGoal;
   if(type==='output'){
-    // Collect checklist items from the modal builder
     const rows = document.querySelectorAll('#gm-output-items .output-item-row');
     const items = [];
     rows.forEach((row,i)=>{
@@ -1056,7 +1066,6 @@ async function saveGoal(){
   closeGoalModal();
   renderAll();
 
-  // Persist to API
   try{
     const body = {
       channel_id: modalCtx?.channelId,
@@ -1092,7 +1101,7 @@ function pickSwatch(color, el){
 async function saveChannel(){
   const name   = document.getElementById('cm-name').value.trim();
   const source = document.getElementById('cm-source').value.trim()||'Manual / API';
-  const budget = parseFloat(document.getElementById('cm-budget').value)||100000;
+  const budget = parseFloat(document.getElementById('cm-budget').value)||1000;
   if(!name){ alert('Please enter a channel name.'); return; }
   const id = 'ch_'+Date.now();
   CHANNELS.push({id, name, color:selectedSwatch, source, budget, spent:0});
@@ -1103,10 +1112,10 @@ async function saveChannel(){
   if(rawMetrics){
     METRICS[id] = rawMetrics.split('\n').filter(Boolean).map(line=>{
       const parts = line.trim().split(' ');
-      const unit  = ['LKR','%','x'].includes(parts[parts.length-1]) ? parts.pop() : '';
+      const unit  = ['USD','LKR','%','x'].includes(parts[parts.length-1]) ? parts.pop() : '';
       const label = parts.join(' ');
       const key   = label.toLowerCase().replace(/[^a-z0-9]/g,'_');
-      return {key, label, unit, desc:`${label} for ${name}`, lowerBetter: unit==='LKR'&&label.toLowerCase().includes('cost')};
+      return {key, label, unit: unit==='LKR'?'USD':unit, desc:`${label} for ${name}`, lowerBetter: unit==='USD'&&label.toLowerCase().includes('cost')};
     });
   } else {
     METRICS[id] = [{key:'metric_1',label:'Metric 1',unit:'',desc:'Custom metric',lowerBetter:false}];
@@ -1152,7 +1161,6 @@ async function runAI(){
 }
 
 function showAISugg(data, chId, type, goalText){
-  const ch = CHANNELS.find(c=>c.id===chId);
   document.getElementById('ai-out').innerHTML=`<div class="ai-result">
     ${data.reasoning?`<div class="ai-reasoning">${data.reasoning}</div>`:''}
     ${(data.suggested_kpis||[]).map((k,i)=>`
@@ -1215,12 +1223,12 @@ function toggleConn(){
   if(el.style.display==='none'){
     el.style.display='block';
     document.getElementById('conn-list').innerHTML = [
-      {name:'Google Ads',        sub:'API · cust 9657202480',       ok:true},
-      {name:'FB Ads (Branding)', sub:'Meta · act_762541868191388',  ok:true},
-      {name:'FB Ads (Revenue)',  sub:'Meta · act_762541868191388',  ok:true},
-      {name:'FB / IG Organic',   sub:'Meta Page Insights API',      ok:true},
-      {name:'Search Console',    sub:'OAuth refresh token set',     ok:true},
-      {name:'Factory Sheets',    sub:'Google Sheets API',           ok:true},
+      {name:'Google Ads',        sub:'API · USD · cust 9657202480',          ok:true},
+      {name:'FB Ads (Branding)', sub:'Meta · USD · act_762541868191388',      ok:true},
+      {name:'FB Ads (Revenue)',  sub:'Meta · USD · act_762541868191388',      ok:true},
+      {name:'FB / IG Organic',   sub:'Meta Page Insights API',                ok:true},
+      {name:'Search Console',    sub:'OAuth refresh token set',               ok:true},
+      {name:'Factory Sheets',    sub:'Google Sheets API',                     ok:true},
     ].map(c=>`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:9px 11px;display:flex;align-items:center;gap:8px">
       <div style="width:6px;height:6px;border-radius:50%;background:${c.ok?'var(--green)':'var(--amber)'};flex-shrink:0"></div>
       <div><div style="font-size:11px;font-weight:700">${c.name}</div><div style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace">${c.sub}</div></div>
@@ -1241,12 +1249,12 @@ async function apiPatchGoal(goalId, body){
 
 // ═══════════════════════════════════════════════════════
 // LIVE DATA SYNC
+// injectDemo() ONLY sets liveData — never touches goals
 // ═══════════════════════════════════════════════════════
 async function syncData(){
   const btn=document.getElementById('sync-btn');
   btn.textContent='↻ Syncing…';btn.disabled=true;
   try{
-    // Load channels from Supabase
     const [chRes, goalRes, actRes] = await Promise.all([
       fetch(`${API}/channels`),
       fetch(`${API}/goals?month=${currentMonth}&year=${currentYear}`),
@@ -1260,11 +1268,11 @@ async function syncData(){
           id:c.id, name:c.name, color:c.color, source:c.source,
           budget:parseFloat(c.budget)||0, spent:parseFloat(c.spent)||0
         }));
-        // Rebuild METRICS from channel metrics
         chData.forEach(ch=>{
           if(ch.metrics?.length){
             METRICS[ch.id] = ch.metrics.map(m=>({
-              key:m.key, label:m.label, unit:m.unit||'',
+              key:m.key, label:m.label,
+              unit: m.unit==='LKR' ? 'USD' : (m.unit||''),
               desc:m.description||'', lowerBetter:m.lower_better||false
             }));
           }
@@ -1275,6 +1283,7 @@ async function syncData(){
 
     if(goalRes.ok){
       const goalData = await goalRes.json();
+      // Only replace goals if server returned data
       if(goalData.length){
         const newGoals = {};
         CHANNELS.forEach(c=>newGoals[c.id]=[]);
@@ -1289,13 +1298,15 @@ async function syncData(){
             completed: g.completed,
             items: g.items||[],
             kpis: (g.goal_kpis||[]).map(k=>({
-              key:k.key, label:k.label, unit:k.unit,
+              key:k.key, label:k.label,
+              unit: k.unit==='LKR' ? 'USD' : (k.unit||''),
               lowerBetter:k.lower_better, target:parseFloat(k.target)
             }))
           });
         });
         goals = newGoals;
       }
+      // If server returned empty, keep existing goals (don't wipe local state)
     }
 
     if(actRes.ok){
@@ -1303,8 +1314,12 @@ async function syncData(){
       liveData = actData.actuals||{};
     }
 
+    // Fetch baselines for all channels
+    await fetchBaselines();
+
     document.getElementById('page-sub').textContent='Live · Synced '+new Date().toLocaleTimeString();
   } catch(e){
+    // Demo fallback — only injects liveData, never goals
     injectDemo();
     document.getElementById('page-sub').textContent='Demo data · Connect backend for live sync';
   }
@@ -1312,16 +1327,42 @@ async function syncData(){
   renderAll();
 }
 
+// Fetch baselines (3-month avg) for all channels
+async function fetchBaselines(){
+  const results = await Promise.allSettled(
+    CHANNELS.map(async ch=>{
+      try{
+        const r = await fetch(`${API}/goals/baseline/bulk?channel_id=${ch.id}&month=${currentMonth}&year=${currentYear}`);
+        if(r.ok){
+          const d = await r.json();
+          baselines[ch.id] = d;
+        }
+      } catch{}
+    })
+  );
+}
+
+// injectDemo ONLY populates liveData — goals are NEVER touched here
 function injectDemo(){
   const d=new Date().getDate(), dm=new Date(currentYear,currentMonth,0).getDate();
   const e=d/dm;
+  // All values in USD (already converted from API)
   liveData={
-    google_ads: {conversions:Math.round(300*e*.93), cpa:1310, spend:Math.round(400000*e*.87)},
-    fb_branding:{reach:Math.round(120000*e*1.06), impressions:Math.round(400000*e*1.01), frequency:2.1, cpm:315, spend:Math.round(200000*e*.83), video_views:18400, link_clicks:2500, ctr:1.5},
-    fb_revenue: {conversions:Math.round(200*e*.79), reach:Math.round(90000*e*.92), impressions:290000, cpa:1820, roas:2.25, spend:275000, link_clicks:4100},
+    google_ads: {conversions:Math.round(300*e*.93), cpa:parseFloat((9.25*e).toFixed(2)), spend:parseFloat((2800*e*.87).toFixed(2))},
+    fb_branding:{reach:Math.round(120000*e*1.06), impressions:Math.round(400000*e*1.01), frequency:2.1, cpm:parseFloat((2.15*e).toFixed(2)), spend:parseFloat((1300*e*.83).toFixed(2)), video_views:18400, link_clicks:2500, ctr:1.5},
+    fb_revenue: {conversions:Math.round(200*e*.79), reach:Math.round(90000*e*.92), impressions:290000, cpa:parseFloat((12.60*e).toFixed(2)), roas:2.25, spend:parseFloat((1960*e).toFixed(2)), link_clicks:4100},
     fb_organic: {reach:Math.round(50000*e*1.09), engagement_rate:4.3, followers_gained:Math.round(500*e*.87), post_impressions:92000, reactions:3100, shares:400},
     seo:        {clicks:Math.round(7000*e*.95), impressions:Math.round(120000*e*.97), avg_position:11.4, ctr:3.0},
-    factory:    {orders:Math.round(250*e*.92), cpa:830, cost_per_order:770, conversion_rate:4.7},
+    factory:    {orders:Math.round(250*e*.92), cpa:parseFloat((5.75*e).toFixed(2)), cost_per_order:parseFloat((5.35*e).toFixed(2)), conversion_rate:4.7},
+  };
+  // Inject demo baselines (3-month average approximations)
+  baselines={
+    google_ads: {conversions:{baseline:275},  cpa:{baseline:10.50},  spend:{baseline:2600}},
+    fb_branding:{reach:{baseline:110000},      impressions:{baseline:380000}, frequency:{baseline:2.0}, cpm:{baseline:2.30}, spend:{baseline:1400}, video_views:{baseline:16000}, link_clicks:{baseline:2200}, ctr:{baseline:1.3}},
+    fb_revenue: {conversions:{baseline:180},   reach:{baseline:85000}, impressions:{baseline:260000}, cpa:{baseline:13.80}, roas:{baseline:2.10}, spend:{baseline:1850}, link_clicks:{baseline:3800}},
+    fb_organic: {reach:{baseline:44000},       engagement_rate:{baseline:4.0}, followers_gained:{baseline:420}, post_impressions:{baseline:84000}, reactions:{baseline:2800}, shares:{baseline:350}},
+    seo:        {clicks:{baseline:6400},       impressions:{baseline:112000}, avg_position:{baseline:12.1}, ctr:{baseline:2.8}},
+    factory:    {orders:{baseline:230},        cpa:{baseline:6.10}, cost_per_order:{baseline:5.60}, conversion_rate:{baseline:4.3}},
   };
 }
 
