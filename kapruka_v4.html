@@ -471,7 +471,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 const API = (()=>{
   const host = window.location.hostname;
   if(host.includes('vercel.app') || host.includes('kapruka.com')) return '/api';
-  return "https://YOUR-APP.onrender.com/api";
+  return "https://kaprukagoalsdash.onrender.com/api";
 })();
 
 const SWATCHES = ['#4f8ef7','#a855f7','#ec4899','#34d399','#fb923c','#f43f5e','#06b6d4','#eab308','#8b5cf6','#10b981'];
@@ -557,7 +557,7 @@ CHANNELS.forEach(c => { goals[c.id] = []; expanded[c.id] = true; });
 // FORMATTING UTILS — $ instead of LKR, USD label
 // ═══════════════════════════════════════════════════════
 function fmt(v, unit){
-  if(v===null||v===undefined) return '—';
+  if(v===null||v===undefined||isNaN(Number(v))) return '—';
   if(unit==='USD'||unit==='LKR'){
     // Always display as $ regardless of which unit key comes in
     if(v>=1000000) return '$'+(v/1000000).toFixed(1)+'M';
