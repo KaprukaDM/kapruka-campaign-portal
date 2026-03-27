@@ -1008,7 +1008,7 @@ function addOutputItem(){
   row.className='output-item-row';
   row.id=`orow-${id}`;
   row.innerHTML=`<input type="text" placeholder="e.g. Update page 1 with new banner" id="oitem-${id}"/>
-    <button class="rm-item" onclick="document.getElementById('orow-${id}').remove()">×</button>`;
+    <button class="rm-item" onclick="this.closest('.output-item-row').remove()">×</button>`;
   document.getElementById('gm-output-items').appendChild(row);
 }
 
@@ -1036,6 +1036,8 @@ function toggleMetric(key){
 
 async function saveGoal(){
   if(!modalCtx) return;
+  const channel_id = modalCtx?.channelId;
+  if(!channel_id){ toast('No channel selected — please reopen the modal from a channel', true); return; }
   const name   = document.getElementById('gm-name').value.trim();
   const type   = document.getElementById('gm-type').value;
   const budget = parseFloat(document.getElementById('gm-budget').value)||null;
