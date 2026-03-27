@@ -272,7 +272,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 <body>
 <div class="app">
 
-<!-- ══ SIDEBAR ══ -->
 <aside class="sidebar">
   <div class="logo">
     <div class="logo-mark">K</div>
@@ -305,7 +304,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
   </div>
 </aside>
 
-<!-- ══ MAIN ══ -->
 <main class="main">
   <div class="topbar">
     <div>
@@ -325,7 +323,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 
   <div class="sum-row" id="sum-row"></div>
 
-  <!-- AI Interpreter -->
   <div class="ai-panel">
     <div class="ai-head">
       <span class="ai-badge">AI</span>
@@ -363,7 +360,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 </main>
 </div>
 
-<!-- ══ ADD GOAL MODAL ══ -->
 <div class="overlay" id="goal-modal" onclick="if(event.target===this)closeGoalModal()">
 <div class="modal">
   <div class="modal-head">
@@ -390,13 +386,11 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
     </div>
   </div>
 
-  <!-- Outcome: metric selector -->
   <div id="gm-outcome-section" class="form-section">
     <div class="form-section-label">Choose metrics to monitor &amp; set targets</div>
     <div class="metric-grid" id="gm-metric-grid"></div>
   </div>
 
-  <!-- Output: checklist builder -->
   <div id="gm-output-section" class="form-section" style="display:none">
     <div class="form-section-label">Checklist items <span style="color:var(--hint);font-weight:400;text-transform:none;letter-spacing:0">(each becomes a trackable checkbox with evidence note)</span></div>
     <div class="output-items-list" id="gm-output-items"></div>
@@ -413,7 +407,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 </div>
 </div>
 
-<!-- ══ ADD CHANNEL MODAL ══ -->
 <div class="overlay" id="ch-modal" onclick="if(event.target===this)closeChanModal()">
 <div class="modal" style="max-width:480px">
   <div class="modal-head">
@@ -452,7 +445,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 </div>
 </div>
 
-<!-- ══ CONFIRM MODAL ══ -->
 <div class="overlay" id="confirm-modal" onclick="if(event.target===this)closeConfirm()">
 <div class="confirm-modal">
   <div class="confirm-title" id="confirm-title">Confirm delete</div>
@@ -524,8 +516,8 @@ const DEFAULT_METRICS = {
   ],
   seo:         [
     {key:'clicks',       label:'Clicks',        unit:'',  desc:'Organic search clicks (GSC)',   lowerBetter:false},
-    {key:'impressions',  label:'Impressions',   unit:'',  desc:'Search impressions (GSC)',       lowerBetter:false},
-    {key:'avg_position', label:'Avg. Position', unit:'',  desc:'Average ranking position',      lowerBetter:true},
+    {key:'impressions',  label:'Impressions',   unit:'',  desc:'Search impressions (GSC)',        lowerBetter:false},
+    {key:'avg_position', label:'Avg. Position', unit:'',  desc:'Average ranking position',       lowerBetter:true},
     {key:'ctr',          label:'CTR',           unit:'%', desc:'Click-through rate from GSC',   lowerBetter:false},
   ],
   factory:     [
@@ -539,7 +531,7 @@ const DEFAULT_METRICS = {
 let METRICS = {...DEFAULT_METRICS};
 
 // ═══════════════════════════════════════════════════════
-// STATE — no seed goals, goals start empty
+// STATE
 // ═══════════════════════════════════════════════════════
 let goals = {};
 let liveData = {};
@@ -554,12 +546,11 @@ let modalCtx       = null;
 CHANNELS.forEach(c => { goals[c.id] = []; expanded[c.id] = true; });
 
 // ═══════════════════════════════════════════════════════
-// FORMATTING UTILS — $ instead of LKR, USD label
+// FORMATTING UTILS
 // ═══════════════════════════════════════════════════════
 function fmt(v, unit){
   if(v===null||v===undefined||isNaN(Number(v))) return '—';
   if(unit==='USD'||unit==='LKR'){
-    // Always display as $ regardless of which unit key comes in
     if(v>=1000000) return '$'+(v/1000000).toFixed(1)+'M';
     if(v>=1000)    return '$'+(v/1000).toFixed(0)+'k';
     return '$'+parseFloat(v).toFixed(2);
@@ -717,7 +708,6 @@ function renderChannel(ch){
     : allSts.every(s=>s==='on_track'||s==='done') ? 'on_track'
     : allSts.some(s=>s==='off_track') ? 'off_track' : 'at_risk';
 
-  // Empty state HTML
   const emptyState = `
     <div class="goals-empty">
       <div class="goals-empty-icon">🎯</div>
@@ -757,7 +747,6 @@ function renderChannel(ch){
   </div>`;
 }
 
-// ── KPI 4-column table renderer ──────────────────────────────
 function renderKpiTable(chId, kpis){
   if(!kpis||!kpis.length) return `<div style="font-size:10px;color:var(--muted)">No KPIs configured</div>`;
 
@@ -766,7 +755,7 @@ function renderKpiTable(chId, kpis){
     const bl       = getBaseline(chId, kpi.key);
     const p        = calcPct(actual, kpi.target, kpi.lowerBetter);
     const st       = calcStatus(p);
-    const barW     = Math.min(p||0, 100);
+    const barW      = Math.min(p||0, 100);
     const color    = barColor(st);
 
     const baselineCell = bl!==null
@@ -800,7 +789,6 @@ function renderKpiTable(chId, kpis){
 }
 
 function renderGoalCard(chId, g){
-  // ── Output goal with per-item checklist ──
   if(g.type==='output'){
     const items = g.items||[];
     const doneCount = items.filter(i=>i.done).length;
@@ -837,7 +825,6 @@ function renderGoalCard(chId, g){
     </div>`;
   }
 
-  // ── Outcome goal — 4-column KPI table ──
   const kpiSts  = (g.kpis||[]).map(kpi=>calcStatus(calcPct(getLive(chId,kpi.key), kpi.target, kpi.lowerBetter)));
   const goalSt  = !kpiSts.length ? 'pending'
     : kpiSts.every(s=>s==='on_track') ? 'on_track'
@@ -939,21 +926,16 @@ function saveItemNote(chId, goalId, itemId, value){
 }
 
 // ═══════════════════════════════════════════════════════
-// DELETE CHANNEL & GOAL
+// DELETE ACTIONS
 // ═══════════════════════════════════════════════════════
 function confirmDeleteChannel(chId){
   const ch = CHANNELS.find(c=>c.id===chId);
-  showConfirm(
-    `Delete channel`,
-    `Delete "${ch?.name||chId}" and all its goals? This cannot be undone.`,
-    ()=> deleteChannel(chId)
-  );
+  showConfirm(`Delete channel`,`Delete "${ch?.name||chId}" and all its goals?`,()=> deleteChannel(chId));
 }
 
 async function deleteChannel(chId){
   CHANNELS = CHANNELS.filter(c=>c.id!==chId);
-  delete goals[chId];
-  delete expanded[chId];
+  delete goals[chId]; delete expanded[chId];
   if(currentActivity===chId) currentActivity='all';
   try{ await fetch(`${API}/channels/${chId}`,{method:'DELETE'}); } catch{}
   toast(`Channel deleted`);
@@ -962,11 +944,7 @@ async function deleteChannel(chId){
 
 function confirmDeleteGoal(chId, goalId){
   const g = (goals[chId]||[]).find(x=>x.id===goalId);
-  showConfirm(
-    `Delete goal`,
-    `Delete "${g?.name||'this goal'}"? This cannot be undone.`,
-    ()=> deleteGoal(chId, goalId)
-  );
+  showConfirm(`Delete goal`,`Delete "${g?.name||'this goal'}"?`,()=> deleteGoal(chId, goalId));
 }
 
 async function deleteGoal(chId, goalId){
@@ -983,10 +961,9 @@ function openGoalModal(channelId){
   const ch = CHANNELS.find(c=>c.id===channelId);
   modalCtx = {channelId, selectedKeys: new Set()};
   document.getElementById('gm-title').textContent = `Add goal — ${ch.name}`;
-  document.getElementById('gm-sub').textContent   = `Choose metrics to track and set targets`;
-  document.getElementById('gm-name').value        = '';
-  document.getElementById('gm-budget').value      = '';
-  document.getElementById('gm-type').value        = 'outcome';
+  document.getElementById('gm-name').value = '';
+  document.getElementById('gm-budget').value = '';
+  document.getElementById('gm-type').value = 'outcome';
   document.getElementById('gm-output-items').innerHTML = '';
   addOutputItem();
   onGoalTypeChange();
@@ -1006,7 +983,6 @@ function addOutputItem(){
   const id = `new_item_${outputItemCounter++}`;
   const row = document.createElement('div');
   row.className='output-item-row';
-  row.id=`orow-${id}`;
   row.innerHTML=`<input type="text" placeholder="e.g. Update page 1 with new banner" id="oitem-${id}"/>
     <button class="rm-item" onclick="this.closest('.output-item-row').remove()">×</button>`;
   document.getElementById('gm-output-items').appendChild(row);
@@ -1036,8 +1012,7 @@ function toggleMetric(key){
 
 async function saveGoal(){
   if(!modalCtx) return;
-  const channel_id = modalCtx?.channelId;
-  if(!channel_id){ toast('No channel selected — please reopen the modal from a channel', true); return; }
+  const _channelId = modalCtx.channelId;
   const name   = document.getElementById('gm-name').value.trim();
   const type   = document.getElementById('gm-type').value;
   const budget = parseFloat(document.getElementById('gm-budget').value)||null;
@@ -1053,16 +1028,16 @@ async function saveGoal(){
       if(label) items.push({id:`item_${Date.now()}_${i}`, label, done:false, note:''});
     });
     newGoal = {id:`g_${Date.now()}`,type:'output',name,budget,items,kpis:[]};
-    goals[modalCtx.channelId].push(newGoal);
+    goals[_channelId].push(newGoal);
   } else {
-    const metrics = METRICS[modalCtx.channelId]||[];
+    const metrics = METRICS[_channelId]||[];
     const kpis = [...modalCtx.selectedKeys].map(key=>{
       const m = metrics.find(x=>x.key===key)||{};
       const target = parseFloat(document.getElementById(`tgt-${key}`)?.value)||0;
       return {key, label:m.label||key, unit:m.unit||'', lowerBetter:m.lowerBetter||false, target};
     });
     newGoal = {id:`g_${Date.now()}`,type:'outcome',name,budget,kpis};
-    goals[modalCtx.channelId].push(newGoal);
+    goals[_channelId].push(newGoal);
   }
 
   closeGoalModal();
@@ -1070,14 +1045,13 @@ async function saveGoal(){
 
   try{
     const body = {
-      channel_id: modalCtx?.channelId,
+      channel_id: _channelId,
       name, type, budget,
       month: currentMonth, year: currentYear,
       kpis: newGoal.kpis||[],
       items: newGoal.items||[],
     };
-    const r = await fetch(`${API}/goals`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-    if(r.ok){ const d=await r.json(); newGoal._serverId=d.id; }
+    await fetch(`${API}/goals`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   } catch{}
 }
 
@@ -1085,9 +1059,9 @@ async function saveGoal(){
 // ADD CHANNEL MODAL
 // ═══════════════════════════════════════════════════════
 function openChannelModal(){
-  document.getElementById('cm-name').value    = '';
-  document.getElementById('cm-source').value  = '';
-  document.getElementById('cm-budget').value  = '';
+  document.getElementById('cm-name').value = '';
+  document.getElementById('cm-source').value = '';
+  document.getElementById('cm-budget').value = '';
   document.getElementById('cm-metrics').value = '';
   selectedSwatch = SWATCHES[0];
   document.getElementById('color-swatches').innerHTML = SWATCHES.map(c=>`
@@ -1101,23 +1075,21 @@ function pickSwatch(color, el){
   el.classList.add('selected');
 }
 async function saveChannel(){
-  const name   = document.getElementById('cm-name').value.trim();
+  const name = document.getElementById('cm-name').value.trim();
   const source = document.getElementById('cm-source').value.trim()||'Manual / API';
   const budget = parseFloat(document.getElementById('cm-budget').value)||1000;
   if(!name){ alert('Please enter a channel name.'); return; }
   const id = 'ch_'+Date.now();
   CHANNELS.push({id, name, color:selectedSwatch, source, budget, spent:0});
-  goals[id]    = [];
-  expanded[id] = true;
-
+  goals[id] = []; expanded[id] = true;
+  
   const rawMetrics = document.getElementById('cm-metrics').value.trim();
   if(rawMetrics){
     METRICS[id] = rawMetrics.split('\n').filter(Boolean).map(line=>{
       const parts = line.trim().split(' ');
-      const unit  = ['USD','LKR','%','x'].includes(parts[parts.length-1]) ? parts.pop() : '';
+      const unit = ['USD','LKR','%','x'].includes(parts[parts.length-1]) ? parts.pop() : '';
       const label = parts.join(' ');
-      const key   = label.toLowerCase().replace(/[^a-z0-9]/g,'_');
-      return {key, label, unit: unit==='LKR'?'USD':unit, desc:`${label} for ${name}`, lowerBetter: unit==='USD'&&label.toLowerCase().includes('cost')};
+      return {key:label.toLowerCase().replace(/[^a-z0-9]/g,'_'), label, unit:unit==='LKR'?'USD':unit, desc:`${label} for ${name}`, lowerBetter: unit==='USD'&&label.toLowerCase().includes('cost')};
     });
   } else {
     METRICS[id] = [{key:'metric_1',label:'Metric 1',unit:'',desc:'Custom metric',lowerBetter:false}];
@@ -1125,38 +1097,28 @@ async function saveChannel(){
 
   closeChanModal();
   renderAll();
-
   try{
-    await fetch(`${API}/channels`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-      id, name, color:selectedSwatch, source, budget,
-      metrics: METRICS[id]
-    })});
+    await fetch(`${API}/channels`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,name,color:selectedSwatch,source,budget,metrics:METRICS[id]})});
     toast(`Channel "${name}" added`);
-  } catch{ toast(`Channel added (offline)`, false); }
+  } catch{ toast(`Channel added (offline)`); }
 }
 
 // ═══════════════════════════════════════════════════════
-// AI SUGGESTIONS
+// AI & NAVIGATION
 // ═══════════════════════════════════════════════════════
 async function runAI(){
-  const text    = document.getElementById('ai-text').value.trim();
-  const chId    = document.getElementById('ai-channel').value;
-  const type    = document.getElementById('ai-type').value;
-  const out     = document.getElementById('ai-out');
-  if(!text||!chId){
-    out.innerHTML=`<div style="font-size:11px;color:var(--muted);margin-top:6px">Enter a goal description and select a channel.</div>`;
-    return;
-  }
+  const text = document.getElementById('ai-text').value.trim();
+  const chId = document.getElementById('ai-channel').value;
+  const type = document.getElementById('ai-type').value;
+  const out = document.getElementById('ai-out');
+  if(!text||!chId){ out.innerHTML=`<div style="font-size:11px;color:var(--muted);margin-top:6px">Select channel & describe goal.</div>`; return; }
   out.innerHTML=`<div class="ai-result"><div class="loader-dots"><div class="ld"></div><div class="ld"></div><div class="ld"></div></div><span style="font-size:11px;color:var(--muted);margin-left:6px">Analysing…</span></div>`;
   try{
-    const res  = await fetch(`${API}/goals/suggest`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({goalName:text,goalType:type,activity:chId})});
+    const res = await fetch(`${API}/goals/suggest`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({goalName:text,goalType:type,activity:chId})});
     const data = await res.json();
     showAISugg(data, chId, type, text);
   } catch {
-    const demo = {
-      reasoning:`Based on "${text}", these KPIs directly measure what matters for this channel.`,
-      suggested_kpis:(METRICS[chId]||[]).slice(0,3).map(m=>({key:m.key,label:m.label,unit:m.unit||'',suggested_target:0,why:'Direct performance indicator for this goal'}))
-    };
+    const demo = { reasoning:`Analysis for "${text}"`, suggested_kpis:(METRICS[chId]||[]).slice(0,2).map(m=>({key:m.key,label:m.label,unit:m.unit||'',suggested_target:0,why:'KPI Match'})) };
     showAISugg(demo, chId, type, text);
   }
   document.getElementById('ai-text').value='';
@@ -1168,9 +1130,7 @@ function showAISugg(data, chId, type, goalText){
     ${(data.suggested_kpis||[]).map((k,i)=>`
       <div class="ai-kpi-item" id="ai-s-${i}">
         <div style="flex:1"><div class="ai-kpi-name">${k.label}</div><div class="ai-kpi-why">${k.why||''}</div></div>
-        <span style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace">Target: ${k.suggested_target||'—'}</span>
         <button class="ai-approve" onclick="approveAI('${chId}','${k.key}','${k.label}','${k.unit||''}',${k.suggested_target||0},'${type}',\`${goalText.replace(/`/g,"'")}\`,${i})">+ Add</button>
-        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('ai-s-${i}').remove()" style="font-size:10px">✕</button>
       </div>`).join('')}
   </div>`;
 }
@@ -1179,208 +1139,73 @@ function approveAI(chId, key, label, unit, target, type, goalName, idx){
   const m = (METRICS[chId]||[]).find(x=>x.key===key)||{};
   const existing = (goals[chId]||[]).find(g=>g.name===goalName&&g.type===type);
   if(existing){
-    if(!existing.kpis.find(k=>k.key===key))
-      existing.kpis.push({key,label,unit:unit||m.unit||'',lowerBetter:m.lowerBetter||false,target});
+    if(!existing.kpis.find(k=>k.key===key)) existing.kpis.push({key,label,unit:unit||m.unit||'',lowerBetter:m.lowerBetter||false,target});
   } else {
     goals[chId].push({id:`g_${Date.now()}`,type,name:goalName,budget:null,kpis:[{key,label,unit:unit||m.unit||'',lowerBetter:m.lowerBetter||false,target}]});
   }
-  document.getElementById(`ai-s-${idx}`)?.remove();
-  expanded[chId]=true;
-  renderAll();
+  document.getElementById(`ai-s-${idx}`)?.remove(); renderAll();
 }
 
-// ═══════════════════════════════════════════════════════
-// NAVIGATION
-// ═══════════════════════════════════════════════════════
 function toggleExpand(id){ expanded[id]=!expanded[id]; renderAll(); }
-
-function setActivity(id, el){
-  currentActivity=id;
-  const ch = CHANNELS.find(c=>c.id===id);
-  document.getElementById('page-title').textContent = ch?ch.name:'All channels';
-  renderAll();
-  document.querySelector('.main').scrollTop=0;
-}
-
+function setActivity(id){ currentActivity=id; renderAll(); }
 function setView(v){
-  currentView=v;
-  ['monthly','weekly','daily'].forEach(x=>{
-    const el=document.getElementById(`vt-${x}`);
-    if(el) el.classList.toggle('on',x===v);
-  });
-  document.getElementById('sec-label').textContent =
-    v==='monthly'?'Monthly goals by channel':v==='weekly'?'Weekly pacing':'Daily pacing';
+  currentView=v; ['monthly','weekly','daily'].forEach(x=>document.getElementById(`vt-${x}`)?.classList.toggle('on',x===v));
+  document.getElementById('sec-label').textContent = v==='monthly'?'Monthly goals by channel':'Pacing Analysis';
   renderAll();
 }
-
-function setMonth(m,btn){
-  currentMonth=m;
-  document.querySelectorAll('.mtab').forEach(b=>b.classList.remove('on'));
-  btn.classList.add('on');
-  syncData();
-}
-
-function toggleConn(){
-  const el = document.getElementById('conn-card');
-  if(el.style.display==='none'){
-    el.style.display='block';
-    document.getElementById('conn-list').innerHTML = [
-      {name:'Google Ads',        sub:'API · USD · cust 9657202480',          ok:true},
-      {name:'FB Ads (Branding)', sub:'Meta · USD · act_762541868191388',      ok:true},
-      {name:'FB Ads (Revenue)',  sub:'Meta · USD · act_762541868191388',      ok:true},
-      {name:'FB / IG Organic',   sub:'Meta Page Insights API',                ok:true},
-      {name:'Search Console',    sub:'OAuth refresh token set',               ok:true},
-      {name:'Factory Sheets',    sub:'Google Sheets API',                     ok:true},
-    ].map(c=>`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:9px 11px;display:flex;align-items:center;gap:8px">
-      <div style="width:6px;height:6px;border-radius:50%;background:${c.ok?'var(--green)':'var(--amber)'};flex-shrink:0"></div>
-      <div><div style="font-size:11px;font-weight:700">${c.name}</div><div style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace">${c.sub}</div></div>
-    </div>`).join('');
-  } else el.style.display='none';
-}
+function setMonth(m,btn){ currentMonth=m; document.querySelectorAll('.mtab').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); syncData(); }
+function toggleConn(){ const el = document.getElementById('conn-card'); el.style.display=el.style.display==='none'?'block':'none'; }
 
 // ═══════════════════════════════════════════════════════
-// API HELPERS
+// DATA SYNC
 // ═══════════════════════════════════════════════════════
-async function apiPatchGoal(goalId, body){
-  return fetch(`${API}/goals/${goalId}`,{
-    method:'PATCH',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify(body)
-  });
-}
+async function apiPatchGoal(goalId, body){ return fetch(`${API}/goals/${goalId}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); }
 
-// ═══════════════════════════════════════════════════════
-// LIVE DATA SYNC
-// injectDemo() ONLY sets liveData — never touches goals
-// ═══════════════════════════════════════════════════════
 async function syncData(){
-  const btn=document.getElementById('sync-btn');
-  btn.textContent='↻ Syncing…';btn.disabled=true;
+  const btn=document.getElementById('sync-btn'); btn.textContent='↻ Syncing…'; btn.disabled=true;
   try{
     const [chRes, goalRes, actRes] = await Promise.all([
       fetch(`${API}/channels`),
       fetch(`${API}/goals?month=${currentMonth}&year=${currentYear}`),
       fetch(`${API}/actuals?month=${currentMonth}&year=${currentYear}`),
     ]);
-
     if(chRes.ok){
       const chData = await chRes.json();
-      if(chData.length){
-        CHANNELS = chData.map(c=>({
-          id:c.id, name:c.name, color:c.color, source:c.source,
-          budget:parseFloat(c.budget)||0, spent:parseFloat(c.spent)||0
-        }));
-        chData.forEach(ch=>{
-          if(ch.metrics?.length){
-            METRICS[ch.id] = ch.metrics.map(m=>({
-              key:m.key, label:m.label,
-              unit: m.unit==='LKR' ? 'USD' : (m.unit||''),
-              desc:m.description||'', lowerBetter:m.lower_better||false
-            }));
-          }
-        });
-        CHANNELS.forEach(c=>{ if(!goals[c.id]) goals[c.id]=[]; if(expanded[c.id]===undefined) expanded[c.id]=true; });
-      }
+      if(chData.length) CHANNELS = chData.map(c=>({id:c.id, name:c.name, color:c.color, source:c.source, budget:parseFloat(c.budget)||0, spent:parseFloat(c.spent)||0}));
     }
-
     if(goalRes.ok){
       const goalData = await goalRes.json();
-      // Only replace goals if server returned data
       if(goalData.length){
-        const newGoals = {};
-        CHANNELS.forEach(c=>newGoals[c.id]=[]);
-        goalData.forEach(g=>{
-          const chId = g.channel_id;
-          if(!newGoals[chId]) return;
-          newGoals[chId].push({
-            id: g.id,
-            type: g.type,
-            name: g.name,
-            budget: g.budget,
-            completed: g.completed,
-            items: g.items||[],
-            kpis: (g.goal_kpis||[]).map(k=>({
-              key:k.key, label:k.label,
-              unit: k.unit==='LKR' ? 'USD' : (k.unit||''),
-              lowerBetter:k.lower_better, target:parseFloat(k.target)
-            }))
-          });
-        });
+        const newGoals = {}; CHANNELS.forEach(c=>newGoals[c.id]=[]);
+        goalData.forEach(g=>newGoals[g.channel_id]?.push({id:g.id,type:g.type,name:g.name,budget:g.budget,items:g.items||[],kpis:(g.goal_kpis||[]).map(k=>({key:k.key,label:k.label,unit:k.unit==='LKR'?'USD':(k.unit||''),lowerBetter:k.lower_better,target:parseFloat(k.target)}))}));
         goals = newGoals;
       }
-      // If server returned empty, keep existing goals (don't wipe local state)
     }
-
-    if(actRes.ok){
-      const actData = await actRes.json();
-      liveData = actData.actuals||{};
-    }
-
-    // Fetch baselines for all channels
+    if(actRes.ok){ const actData = await actRes.json(); liveData = actData.actuals||{}; }
     await fetchBaselines();
-
     document.getElementById('page-sub').textContent='Live · Synced '+new Date().toLocaleTimeString();
-  } catch(e){
-    // Demo fallback — only injects liveData, never goals
-    injectDemo();
-    document.getElementById('page-sub').textContent='Demo data · Connect backend for live sync';
+  } catch{
+    injectDemo(); document.getElementById('page-sub').textContent='Demo data mode';
   }
-  btn.textContent='↻ Sync';btn.disabled=false;
-  renderAll();
+  btn.textContent='↻ Sync'; btn.disabled=false; renderAll();
 }
 
-// Fetch baselines (3-month avg) for all channels
 async function fetchBaselines(){
-  const results = await Promise.allSettled(
-    CHANNELS.map(async ch=>{
-      try{
-        const r = await fetch(`${API}/goals/baseline/bulk?channel_id=${ch.id}&month=${currentMonth}&year=${currentYear}`);
-        if(r.ok){
-          const d = await r.json();
-          baselines[ch.id] = d;
-        }
-      } catch{}
-    })
-  );
+  await Promise.allSettled(CHANNELS.map(async ch=>{
+    try{ const r = await fetch(`${API}/goals/baseline/bulk?channel_id=${ch.id}&month=${currentMonth}&year=${currentYear}`); if(r.ok) baselines[ch.id] = await r.json(); } catch{}
+  }));
 }
 
-// injectDemo ONLY populates liveData — goals are NEVER touched here
 function injectDemo(){
-  const d=new Date().getDate(), dm=new Date(currentYear,currentMonth,0).getDate();
-  const e=d/dm;
-  // All values in USD (already converted from API)
-  liveData={
-    google_ads: {conversions:Math.round(300*e*.93), cpa:parseFloat((9.25*e).toFixed(2)), spend:parseFloat((2800*e*.87).toFixed(2))},
-    fb_branding:{reach:Math.round(120000*e*1.06), impressions:Math.round(400000*e*1.01), frequency:2.1, cpm:parseFloat((2.15*e).toFixed(2)), spend:parseFloat((1300*e*.83).toFixed(2)), video_views:18400, link_clicks:2500, ctr:1.5},
-    fb_revenue: {conversions:Math.round(200*e*.79), reach:Math.round(90000*e*.92), impressions:290000, cpa:parseFloat((12.60*e).toFixed(2)), roas:2.25, spend:parseFloat((1960*e).toFixed(2)), link_clicks:4100},
-    fb_organic: {reach:Math.round(50000*e*1.09), engagement_rate:4.3, followers_gained:Math.round(500*e*.87), post_impressions:92000, reactions:3100, shares:400},
-    seo:        {clicks:Math.round(7000*e*.95), impressions:Math.round(120000*e*.97), avg_position:11.4, ctr:3.0},
-    factory:    {orders:Math.round(250*e*.92), cpa:parseFloat((5.75*e).toFixed(2)), cost_per_order:parseFloat((5.35*e).toFixed(2)), conversion_rate:4.7},
-  };
-  // Inject demo baselines (3-month average approximations)
-  baselines={
-    google_ads: {conversions:{baseline:275},  cpa:{baseline:10.50},  spend:{baseline:2600}},
-    fb_branding:{reach:{baseline:110000},      impressions:{baseline:380000}, frequency:{baseline:2.0}, cpm:{baseline:2.30}, spend:{baseline:1400}, video_views:{baseline:16000}, link_clicks:{baseline:2200}, ctr:{baseline:1.3}},
-    fb_revenue: {conversions:{baseline:180},   reach:{baseline:85000}, impressions:{baseline:260000}, cpa:{baseline:13.80}, roas:{baseline:2.10}, spend:{baseline:1850}, link_clicks:{baseline:3800}},
-    fb_organic: {reach:{baseline:44000},       engagement_rate:{baseline:4.0}, followers_gained:{baseline:420}, post_impressions:{baseline:84000}, reactions:{baseline:2800}, shares:{baseline:350}},
-    seo:        {clicks:{baseline:6400},       impressions:{baseline:112000}, avg_position:{baseline:12.1}, ctr:{baseline:2.8}},
-    factory:    {orders:{baseline:230},        cpa:{baseline:6.10}, cost_per_order:{baseline:5.60}, conversion_rate:{baseline:4.3}},
-  };
+  const e=new Date().getDate()/30;
+  liveData={ google_ads:{conversions:Math.round(270*e),cpa:9.50,spend:2400*e}, seo:{clicks:Math.round(6500*e),impressions:110000*e,avg_position:11.2,ctr:2.9} };
+  baselines={ google_ads:{conversions:{baseline:250},cpa:{baseline:10.2}}, seo:{clicks:{baseline:6000}} };
 }
 
-// ═══════════════════════════════════════════════════════
-// INIT
-// ═══════════════════════════════════════════════════════
 (()=>{
   const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  document.getElementById('month-strip').innerHTML = months.map((m,i)=>
-    `<button class="mtab${i+1===currentMonth?' on':''}" onclick="setMonth(${i+1},this)">${m}</button>`).join('');
+  document.getElementById('month-strip').innerHTML = months.map((m,i)=>`<button class="mtab${i+1===currentMonth?' on':''}" onclick="setMonth(${i+1},this)">${m}</button>`).join('');
 })();
-
-document.getElementById('page-sub').textContent =
-  new Date().toLocaleDateString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-
-CHANNELS.forEach(c=>expanded[c.id]=true);
 syncData();
 </script>
 </body>
