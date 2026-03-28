@@ -6,46 +6,9 @@
   <title>Content Calendar - Kapruka</title>
   <link rel="icon" type="image/png" href="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Inter', sans-serif;
-      background: linear-gradient(135deg, #1a0b2e 0%, #3d2461 50%, #5e3a8e 100%);
-      min-height: 100vh;
-      padding: 40px 20px;
-    }
-    .container { max-width: 1400px; margin: 0 auto; }
-    .header {
-      text-align: center;
-      margin-bottom: 40px;
-    }
-    .kapruka-logo {
-      width: 100px;
-      height: 100px;
-      margin: 0 auto 20px;
-      border-radius: 50%;
-      overflow: hidden;
-      box-shadow: 0 15px 50px rgba(0,0,0,0.5);
-    }
-    .kapruka-logo img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    h1 {
-      font-family: 'Playfair Display', serif;
-      font-size: 42px;
-      background: linear-gradient(135deg, #FFD700, #FFF, #FFD700);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 10px;
-    }
-    .subtitle {
-      color: rgba(255,255,255,0.8);
-      font-size: 14px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-    }
+    /* ── Page-specific styles only ── */
     .controls {
       display: flex;
       justify-content: center;
@@ -114,7 +77,6 @@
       position: relative;
       display: flex;
       flex-direction: column;
-      /* ✅ FIX: Prevent overflow */
       overflow: hidden;
     }
     .day-cell:hover {
@@ -122,354 +84,115 @@
       box-shadow: 0 8px 20px rgba(0,0,0,0.1);
       border-color: #FFD700;
     }
-    .day-cell.other-month {
-      opacity: 0.3;
-      cursor: default;
-    }
-    .day-cell.other-month:hover {
-      transform: none;
-      box-shadow: none;
-      border-color: transparent;
-    }
-    .day-cell.seasonal {
-      background: linear-gradient(135deg, #FFE5E5, #FFF0F0);
-      border-color: #FF69B4;
-    }
-    .day-cell.fully-booked {
-      background: linear-gradient(135deg, #C8E6C9, #A5D6A7);
-      border-color: #4CAF50;
-      border-width: 3px;
-    }
+    .day-cell.other-month { opacity: 0.3; cursor: default; }
+    .day-cell.other-month:hover { transform: none; box-shadow: none; border-color: transparent; }
+    .day-cell.seasonal { background: linear-gradient(135deg, #FFE5E5, #FFF0F0); border-color: #FF69B4; }
+    .day-cell.fully-booked { background: linear-gradient(135deg, #C8E6C9, #A5D6A7); border-color: #4CAF50; border-width: 3px; }
     .fully-booked-badge {
-      position: absolute;
-      top: 5px;
-      right: 5px;
-      background: #4CAF50;
-      color: white;
-      font-size: 8px;
-      padding: 2px 6px;
-      border-radius: 10px;
-      font-weight: 700;
-      text-transform: uppercase;
+      position: absolute; top: 5px; right: 5px;
+      background: #4CAF50; color: white;
+      font-size: 8px; padding: 2px 6px; border-radius: 10px; font-weight: 700; text-transform: uppercase;
     }
-    .day-number {
-      font-weight: 700;
-      font-size: 16px;
-      color: #5e3a8e;
-      margin-bottom: 8px;
-      flex-shrink: 0;
-    }
+    .day-number { font-weight: 700; font-size: 16px; color: #5e3a8e; margin-bottom: 8px; flex-shrink: 0; }
     .day-theme {
-      font-size: 10px;
-      color: #666;
-      margin-bottom: 5px;
-      font-weight: 600;
-      text-transform: uppercase;
-      flex-shrink: 0;
-      /* ✅ FIX: Truncate long theme names */
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      font-size: 10px; color: #666; margin-bottom: 5px; font-weight: 600; text-transform: uppercase;
+      flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
-
-    /* ✅ FIXED: Better slot preview styling with overflow control */
     .slot-preview {
-      font-size: 9px;
-      background: rgba(94,58,142,0.1);
-      padding: 4px 6px;
-      border-radius: 4px;
-      margin: 2px 0;
-      color: #5e3a8e;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
-      /* ✅ FIX: Contain overflow */
-      overflow: hidden;
-      word-wrap: break-word;
-      min-height: 20px;
+      font-size: 9px; background: rgba(94,58,142,0.1); padding: 4px 6px; border-radius: 4px;
+      margin: 2px 0; color: #5e3a8e; font-weight: 500; cursor: pointer; transition: all 0.2s;
+      overflow: hidden; word-wrap: break-word; min-height: 20px;
     }
-    .slot-preview:hover {
-      background: rgba(94,58,142,0.2);
-      transform: scale(1.02);
-    }
-    .slot-preview.booked {
-      background: #d4edda;
-      color: #155724;
-      border-left: 3px solid #28a745;
-    }
-    .slot-preview.pending {
-      background: #fff3cd;
-      color: #856404;
-      border-left: 3px solid #ffc107;
-    }
-    .slot-preview.rejected {
-      background: #f8d7da;
-      color: #721c24;
-      border-left: 3px solid #dc3545;
-      text-decoration: line-through;
-      opacity: 0.6;
-    }
-
-    /* ✅ FIXED: Product code display with truncation */
+    .slot-preview:hover { background: rgba(94,58,142,0.2); transform: scale(1.02); }
+    .slot-preview.booked  { background: #d4edda; color: #155724; border-left: 3px solid #28a745; }
+    .slot-preview.pending { background: #fff3cd; color: #856404; border-left: 3px solid #ffc107; }
+    .slot-preview.rejected { background: #f8d7da; color: #721c24; border-left: 3px solid #dc3545; text-decoration: line-through; opacity: 0.6; }
     .slot-code {
-      font-weight: 700;
-      font-size: 9px;
-      margin-top: 2px;
-      display: block;
-      /* ✅ FIX: Truncate long product codes */
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      max-width: 100%;
+      font-weight: 700; font-size: 9px; margin-top: 2px; display: block;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
     }
-
-    .loading {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.85);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-    }
-    .spinner {
-      width: 60px;
-      height: 60px;
-      border: 5px solid rgba(255,215,0,0.3);
-      border-top-color: #FFD700;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
     .modal {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.85);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 10000;
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.85); display: none;
+      align-items: center; justify-content: center; z-index: 10000;
     }
     .modal-content {
-      background: white;
-      padding: 40px;
-      border-radius: 24px;
-      max-width: 600px;
-      max-height: 90vh;
-      overflow-y: auto;
-      width: 90%;
+      background: white; padding: 40px; border-radius: 24px;
+      max-width: 600px; max-height: 90vh; overflow-y: auto; width: 90%;
     }
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 25px;
-    }
-    .modal h2 {
-      font-family: 'Playfair Display', serif;
-      color: #5e3a8e;
-      font-size: 28px;
-    }
-    .close-btn {
-      background: none;
-      border: none;
-      font-size: 28px;
-      cursor: pointer;
-      color: #999;
-      transition: color 0.3s;
-    }
-    .close-btn:hover {
-      color: #5e3a8e;
-    }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+    .modal h2 { font-family: 'Playfair Display', serif; color: #5e3a8e; font-size: 28px; }
+    .close-btn { background: none; border: none; font-size: 28px; cursor: pointer; color: #999; transition: color 0.3s; }
+    .close-btn:hover { color: #5e3a8e; }
     .date-info {
       background: linear-gradient(135deg, #5e3a8e, #3d2461);
-      color: white;
-      padding: 15px;
-      border-radius: 12px;
-      margin-bottom: 20px;
-      text-align: center;
+      color: white; padding: 15px 20px; border-radius: 12px; margin-bottom: 25px;
     }
-    .fully-booked-message {
-      background: linear-gradient(135deg, #4CAF50, #45a049);
-      color: white;
-      padding: 20px;
-      border-radius: 12px;
-      text-align: center;
-      margin: 20px 0;
-      font-weight: 600;
+    .date-info h3 { font-size: 18px; margin-bottom: 5px; }
+    .date-info p  { font-size: 13px; opacity: 0.8; }
+    .slots-list { margin-bottom: 25px; }
+    .slot-item {
+      display: flex; align-items: center; gap: 15px;
+      padding: 15px; background: #f9f9f9; border-radius: 12px; margin-bottom: 10px;
+      border: 2px solid transparent; transition: all 0.3s; cursor: pointer;
     }
-    .fully-booked-message .icon {
-      font-size: 40px;
-      margin-bottom: 10px;
+    .slot-item:hover { border-color: #5e3a8e; background: #f0ebff; }
+    .slot-item.booked  { background: #e8f5e9; border-color: #4CAF50; }
+    .slot-item.pending { background: #fff8e1; border-color: #FFC107; }
+    .slot-item.rejected { background: #ffeef0; border-color: #dc3545; opacity: 0.7; }
+    .slot-number {
+      width: 35px; height: 35px; background: linear-gradient(135deg, #5e3a8e, #3d2461);
+      color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 14px; flex-shrink: 0;
     }
-    .slots-container {
-      display: grid;
-      gap: 15px;
-      margin-bottom: 20px;
-    }
-    .slot-card {
-      border: 2px solid #e8e8e8;
-      border-radius: 12px;
-      padding: 15px;
-      cursor: pointer;
+    .slot-info { flex: 1; }
+    .slot-platform { font-weight: 700; font-size: 14px; color: #333; }
+    .slot-time     { font-size: 12px; color: #666; margin-top: 2px; }
+    .slot-status   { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; }
+    .slot-status.available { background: #e3f2fd; color: #1976D2; }
+    .slot-status.booked    { background: #e8f5e9; color: #2E7D32; }
+    .slot-status.pending   { background: #fff8e1; color: #F57F17; }
+    .slot-status.rejected  { background: #ffeef0; color: #c62828; }
+    .booking-form label { display: block; font-weight: 600; color: #333; margin-bottom: 8px; font-size: 14px; }
+    .booking-form input,
+    .booking-form select,
+    .booking-form textarea {
+      width: 100%; padding: 12px 16px; border: 2px solid #e8e8e8; border-radius: 10px;
+      font-size: 14px; font-family: 'Inter', sans-serif; margin-bottom: 20px;
       transition: all 0.3s;
     }
-    .slot-card:hover {
-      border-color: #FFD700;
-      box-shadow: 0 5px 15px rgba(255,215,0,0.2);
+    .booking-form input:focus,
+    .booking-form select:focus,
+    .booking-form textarea:focus { outline: none; border-color: #FFD700; box-shadow: 0 0 0 3px rgba(255,215,0,0.1); }
+    .booking-form textarea { height: 100px; resize: vertical; }
+    .submit-btn {
+      width: 100%; padding: 16px; background: linear-gradient(135deg, #5e3a8e, #3d2461);
+      color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700;
+      cursor: pointer; transition: all 0.3s; text-transform: uppercase; letter-spacing: 1px;
     }
-    .slot-card.selected {
-      border-color: #5e3a8e;
-      background: rgba(94,58,142,0.05);
-    }
-    .slot-card.booked {
-      background: #f5f5f5;
-      cursor: not-allowed;
-      opacity: 0.6;
-    }
-    .slot-card.booked:hover {
-      border-color: #e8e8e8;
-      box-shadow: none;
-    }
-    .slot-card.booked.clickable {
-      cursor: pointer;
-      opacity: 1;
-      background: #e8f5e9;
-      border-color: #4caf50;
-    }
-    .slot-card.booked.clickable:hover {
-      border-color: #388e3c;
-      box-shadow: 0 5px 15px rgba(76,175,80,0.3);
-    }
-    .slot-card.rejected {
-      background: #fff5f5;
-      border-color: #ffcdd2;
-      opacity: 0.7;
-    }
-    .slot-card.rejected .slot-title {
-      text-decoration: line-through;
-      color: #999;
-    }
-    .rejection-badge {
-      background: #dc3545;
-      color: white;
-      padding: 3px 8px;
-      border-radius: 12px;
-      font-size: 11px;
-      font-weight: 600;
-    }
-    .slot-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-    .slot-title {
-      font-weight: 700;
-      color: #5e3a8e;
-      font-size: 16px;
-    }
-    .slot-category {
-      background: #FFD700;
-      color: #5e3a8e;
-      padding: 4px 10px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-    }
-    .booking-details {
-      margin-top: 10px;
-      padding: 10px;
-      background: #f0f0f0;
-      border-radius: 8px;
-      font-size: 13px;
-    }
-    .booking-details strong {
-      display: block;
-      color: #5e3a8e;
-      margin-bottom: 5px;
-    }
-    .booking-details .product-code {
-      font-family: monospace;
-      font-size: 14px;
-      font-weight: 700;
-      color: #155724;
-      background: #d4edda;
-      padding: 5px 10px;
-      border-radius: 5px;
-      display: inline-block;
-      margin-top: 5px;
-      /* ✅ FIX: Word wrap for long codes */
-      word-wrap: break-word;
-      max-width: 100%;
-    }
-    .form-group {
-      margin-bottom: 20px;
-    }
-    label {
-      display: block;
-      color: #5e3a8e;
-      font-weight: 600;
-      margin-bottom: 8px;
-      font-size: 14px;
-    }
-    input, textarea {
-      width: 100%;
-      padding: 12px;
-      border: 2px solid #e8e8e8;
-      border-radius: 10px;
-      font-size: 14px;
-      font-family: 'Inter', sans-serif;
-      transition: border-color 0.3s;
-    }
-    input:focus, textarea:focus {
-      outline: none;
-      border-color: #FFD700;
-    }
-    .btn-submit {
-      width: 100%;
-      padding: 15px;
-      background: linear-gradient(135deg, #5e3a8e, #3d2461);
-      color: white;
-      border: none;
-      border-radius: 12px;
-      font-size: 16px;
-      font-weight: 700;
-      cursor: pointer;
-      text-transform: uppercase;
-      transition: all 0.3s;
-    }
-    .btn-submit:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(94,58,142,0.4);
-    }
-    .btn-submit:disabled {
-      background: #ccc;
-      cursor: not-allowed;
-      transform: none;
-    }
+    .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(94,58,142,0.4); }
+    .booked-detail { padding: 15px; background: #e8f5e9; border-radius: 12px; margin-bottom: 15px; }
+    .booked-detail .detail-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
+    .booked-detail .detail-label { color: #666; }
+    .booked-detail .detail-value { font-weight: 700; color: #333; }
+    .legend { display: flex; gap: 15px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #666; }
+    .legend-dot   { width: 12px; height: 12px; border-radius: 50%; }
+    .legend-dot.available { background: #f9f9f9; border: 2px solid #ddd; }
+    .legend-dot.booked    { background: #4CAF50; }
+    .legend-dot.pending   { background: #FFC107; }
+    .legend-dot.seasonal  { background: #FF69B4; }
     @media (max-width: 768px) {
       h1 { font-size: 28px; }
-      .calendar-grid { grid-template-columns: repeat(7, 1fr); gap: 5px; }
-      .day-cell { min-height: 80px; padding: 5px; }
-      .day-number { font-size: 12px; }
-      .slot-preview { font-size: 8px; }
-      .slot-code { font-size: 8px; }
+      .calendar-grid { gap: 5px; }
+      .day-cell { min-height: 80px; padding: 6px; }
+      .day-number { font-size: 13px; }
       .modal-content { padding: 20px; }
     }
   </style>
 </head>
 <body>
   <div class="loading" id="loading"><div class="spinner"></div></div>
-  <div class="modal" id="modal">
-    <div class="modal-content" id="modalContent"></div>
-  </div>
 
   <div class="container">
     <div class="header">
@@ -477,493 +200,253 @@
         <img src="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw" alt="Kapruka">
       </div>
       <h1>Content Calendar</h1>
-      <p class="subtitle">Daily Content Booking System</p>
+      <p class="subtitle">Kapruka Official Page</p>
     </div>
+
+    <a href="index.html" class="back-btn">← Back to Home</a>
 
     <div class="controls">
       <div class="month-selector">
-        <button onclick="changeMonth(-1)">←</button>
+        <button onclick="changeMonth(-1)">‹</button>
         <div class="month-display" id="monthDisplay">Loading...</div>
-        <button onclick="changeMonth(1)">→</button>
+        <button onclick="changeMonth(1)">›</button>
       </div>
     </div>
 
     <div class="calendar-card">
       <div class="calendar-grid" id="calendarGrid">
-        <div style="text-align:center;padding:40px;grid-column:1/-1;">Loading calendar...</div>
+        <!-- Day headers -->
+        <div class="day-header">Sun</div>
+        <div class="day-header">Mon</div>
+        <div class="day-header">Tue</div>
+        <div class="day-header">Wed</div>
+        <div class="day-header">Thu</div>
+        <div class="day-header">Fri</div>
+        <div class="day-header">Sat</div>
       </div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot available"></div> Available</div>
+        <div class="legend-item"><div class="legend-dot booked"></div> Booked</div>
+        <div class="legend-item"><div class="legend-dot pending"></div> Pending</div>
+        <div class="legend-item"><div class="legend-dot seasonal"></div> Seasonal</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Day Modal -->
+  <div class="modal" id="dayModal" style="display:none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalTitle">Select Slot</h2>
+        <button class="close-btn" onclick="closeModal()">✕</button>
+      </div>
+      <div class="date-info" id="dateInfo"></div>
+      <div class="slots-list" id="slotsList"></div>
+    </div>
+  </div>
+
+  <!-- Booking Modal -->
+  <div class="modal" id="bookingModal" style="display:none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Book Slot</h2>
+        <button class="close-btn" onclick="closeBookingModal()">✕</button>
+      </div>
+      <div class="date-info" id="bookingDateInfo"></div>
+      <form class="booking-form" id="bookingForm" onsubmit="submitBooking(event)">
+        <label>Your Name</label>
+        <input type="text" id="bookingName" placeholder="Enter your name" required>
+        <label>Department</label>
+        <select id="bookingDept" required>
+          <option value="">Select Department</option>
+          <option>Marketing</option>
+          <option>Sales</option>
+          <option>Operations</option>
+          <option>Creative</option>
+          <option>Management</option>
+        </select>
+        <label>Content Description</label>
+        <textarea id="bookingDesc" placeholder="Describe the content..." required></textarea>
+        <button type="submit" class="submit-btn">Submit Booking</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Booked Detail Modal -->
+  <div class="modal" id="bookedModal" style="display:none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Booking Details</h2>
+        <button class="close-btn" onclick="closeBookedModal()">✕</button>
+      </div>
+      <div id="bookedDetails"></div>
     </div>
   </div>
 
   <script src="js/supabase-api.js"></script>
   <script>
-    let currentMonth = new Date().getMonth() + 1;
-    let currentYear = new Date().getFullYear();
-    let calendarData = null;
-    let selectedDate = null;
+    let currentDate = new Date();
+    let calendarData = {};
     let selectedSlot = null;
 
-    function showLoading() {
-      document.getElementById('loading').style.display = 'flex';
+    const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+    const SEASONAL_DATES = {
+      '02-14': '💝 Valentine\'s Day',
+      '04-14': '🎊 Sinhala New Year',
+      '04-15': '🎊 Sinhala New Year',
+      '05-01': '👷 May Day',
+      '12-25': '🎄 Christmas',
+      '12-31': '🎆 New Year\'s Eve',
+    };
+
+    function changeMonth(dir) {
+      currentDate.setMonth(currentDate.getMonth() + dir);
+      renderCalendar();
+      loadCalendarData();
     }
 
-    function hideLoading() {
-      document.getElementById('loading').style.display = 'none';
-    }
-
-    function changeMonth(delta) {
-      currentMonth += delta;
-      if (currentMonth > 12) {
-        currentMonth = 1;
-        currentYear++;
-      } else if (currentMonth < 1) {
-        currentMonth = 12;
-        currentYear--;
-      }
-      loadCalendar();
-    }
-
-    async function loadCalendar() {
+    async function loadCalendarData() {
       try {
-        showLoading();
-
-        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
-                           'July', 'August', 'September', 'October', 'November', 'December'];
-        document.getElementById('monthDisplay').textContent = `${monthNames[currentMonth - 1]} ${currentYear}`;
-
-        calendarData = await getCalendarData(currentMonth, currentYear);
-        console.log('Calendar Data:', calendarData);
+        const year  = currentDate.getFullYear();
+        const month = currentDate.getMonth() + 1;
+        const data  = await getContentCalendar(year, month);
+        calendarData = {};
+        (data || []).forEach(item => {
+          const key = item.date;
+          if (!calendarData[key]) calendarData[key] = [];
+          calendarData[key].push(item);
+        });
         renderCalendar();
-
-        hideLoading();
-      } catch (error) {
-        hideLoading();
-        console.error('Calendar load error:', error);
-        alert('Error loading calendar: ' + error.message);
+      } catch(e) {
+        console.error('Calendar load error:', e);
       }
     }
 
     function renderCalendar() {
-      const grid = document.getElementById('calendarGrid');
+      const year  = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      document.getElementById('monthDisplay').textContent = MONTHS[month] + ' ' + year;
+
+      const grid    = document.getElementById('calendarGrid');
+      const headers = grid.querySelectorAll('.day-header');
       grid.innerHTML = '';
+      headers.forEach(h => grid.appendChild(h.cloneNode(true)));
 
-      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      days.forEach(day => {
-        const header = document.createElement('div');
-        header.className = 'day-header';
-        header.textContent = day;
-        grid.appendChild(header);
-      });
+      const firstDay    = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const daysInPrev  = new Date(year, month, 0).getDate();
 
-      const firstDay = new Date(currentYear, currentMonth - 1, 1).getDay();
-      const totalDays = new Date(currentYear, currentMonth, 0).getDate();
-
-      for (let i = 0; i < firstDay; i++) {
+      // Previous month padding
+      for (let i = firstDay - 1; i >= 0; i--) {
         const cell = document.createElement('div');
         cell.className = 'day-cell other-month';
+        cell.innerHTML = '<div class="day-number">' + (daysInPrev - i) + '</div>';
         grid.appendChild(cell);
       }
 
-      const bookingsByDate = {};
-      if (calendarData.bookings && calendarData.bookings.length > 0) {
-        calendarData.bookings.forEach(booking => {
-          const dateKey = booking.date;
-          if (!bookingsByDate[dateKey]) {
-            bookingsByDate[dateKey] = [];
-          }
-          bookingsByDate[dateKey].push(booking);
+      // Current month days
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr   = year + '-' + String(month + 1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+        const mmdd      = String(month + 1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+        const isSeasonal = SEASONAL_DATES[mmdd];
+        const slots     = calendarData[dateStr] || [];
+        const isBooked  = slots.length >= 3;
+
+        const cell = document.createElement('div');
+        cell.className = 'day-cell' + (isSeasonal ? ' seasonal' : '') + (isBooked ? ' fully-booked' : '');
+
+        let html = (isBooked ? '<div class="fully-booked-badge">FULL</div>' : '');
+        html += '<div class="day-number">' + d + '</div>';
+        if (isSeasonal) html += '<div class="day-theme">' + isSeasonal + '</div>';
+
+        slots.slice(0, 3).forEach(s => {
+          const statusClass = (s.status || 'pending').toLowerCase();
+          html += '<div class="slot-preview ' + statusClass + '" onclick="showBookedDetail(event, \'' + s.id + '\')">' +
+            '<span class="slot-code">' + (s.platform || '') + (s.content_type ? ' · ' + s.content_type : '') + '</span>' +
+          '</div>';
         });
+
+        if (!isBooked) {
+          html += '<div class="slot-preview" style="cursor:pointer;opacity:0.4;" onclick="openBookingModal(\'' + dateStr + '\', ' + slots.length + ')">+ Add</div>';
+        }
+
+        cell.innerHTML = html;
+        grid.appendChild(cell);
       }
 
-      for (let day = 1; day <= totalDays; day++) {
-        const dateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        const dayBookings = bookingsByDate[dateStr] || [];
-        const cell = createDayCell(day, dateStr, dayBookings);
+      // Next month padding
+      const totalCells = firstDay + daysInMonth;
+      const remaining  = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+      for (let i = 1; i <= remaining; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'day-cell other-month';
+        cell.innerHTML = '<div class="day-number">' + i + '</div>';
         grid.appendChild(cell);
       }
     }
 
-    // ✅ FIXED: Truncate long product codes for display
-    function truncateCode(code, maxLength = 12) {
-      if (!code) return '';
-      if (code.length <= maxLength) return code;
-      return code.substring(0, maxLength) + '...';
+    function openBookingModal(dateStr, slotIndex) {
+      selectedSlot = { dateStr, slotIndex };
+      const d = new Date(dateStr);
+      document.getElementById('bookingDateInfo').innerHTML =
+        '<h3>' + MONTHS[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear() + '</h3>' +
+        '<p>Slot #' + (slotIndex + 1) + '</p>';
+      document.getElementById('bookingModal').style.display = 'flex';
     }
 
-    function createDayCell(day, dateStr, dayBookings) {
-      const cell = document.createElement('div');
-      cell.className = 'day-cell';
+    function closeModal()        { document.getElementById('dayModal').style.display = 'none'; }
+    function closeBookingModal() { document.getElementById('bookingModal').style.display = 'none'; }
+    function closeBookedModal()  { document.getElementById('bookedModal').style.display = 'none'; }
 
-      const themes = calendarData.themes.filter(t => dateStr >= t.start_date && dateStr <= t.end_date);
-
-      const hasSeasonal = themes.some(t => t.is_seasonal);
-      if (hasSeasonal) {
-        cell.classList.add('seasonal');
-        const seasonalTheme = themes.find(t => t.is_seasonal);
-        if (seasonalTheme && seasonalTheme.theme_color) {
-          cell.style.borderColor = seasonalTheme.theme_color;
-          cell.style.background = `linear-gradient(135deg, ${seasonalTheme.theme_color}22, ${seasonalTheme.theme_color}11)`;
-        }
-      }
-
-      const themeNames = themes.map(t => t.theme_name).join(' + ');
-
-      cell.innerHTML = `
-        <div class="day-number">${day}</div>
-        ${themes.length > 0 ? `<div class="day-theme" title="${themeNames}">${themeNames}</div>` : ''}
-      `;
-
-      const availableSlots = calendarData.categorySlots.filter(s => s.date === dateStr);
-      const activeBookings = dayBookings.filter(b => b.status === 'Approved' || b.status === 'Pending');
-
-      const allSlotsFilled = availableSlots.length > 0 && 
-        availableSlots.every(slot => 
-          activeBookings.some(b => b.slot_number === slot.slot_number)
-        );
-
-      if (allSlotsFilled) {
-        cell.classList.add('fully-booked');
-        const badge = document.createElement('div');
-        badge.className = 'fully-booked-badge';
-        badge.textContent = 'FULL';
-        cell.appendChild(badge);
-      }
-
-      if (dayBookings.length > 0) {
-        dayBookings.forEach(booking => {
-          const slotDiv = document.createElement('div');
-          slotDiv.className = 'slot-preview';
-
-          if (booking.status === 'Approved') {
-            slotDiv.classList.add('booked');
-          } else if (booking.status === 'Pending') {
-            slotDiv.classList.add('pending');
-          } else if (booking.status === 'Rejected') {
-            slotDiv.classList.add('rejected');
-          }
-
-          const statusIcon = booking.status === 'Approved' ? '✓' : 
-                            booking.status === 'Pending' ? '⏳' : '✗';
-
-          // ✅ FIX: Truncate category and product code
-          const categoryShort = booking.category.length > 15 ? booking.category.substring(0, 15) + '...' : booking.category;
-          const productCodeShort = truncateCode(booking.product_code, 10);
-
-          slotDiv.innerHTML = `
-            <div style="display:flex;justify-content:space-between;align-items:center;width:100%;">
-              <span title="${booking.category}">${categoryShort}</span>
-              <span>${statusIcon}</span>
-            </div>
-            ${booking.product_code ? `<span class="slot-code" title="${booking.product_code}">📦 ${productCodeShort}</span>` : ''}
-          `;
-
-          slotDiv.style.cursor = 'pointer';
-          slotDiv.onclick = (e) => {
-            e.stopPropagation();
-            showBookingDetails(booking, dateStr, themes);
-          };
-
-          cell.appendChild(slotDiv);
-        });
-      }
-
-      if (availableSlots.length > 0) {
-        availableSlots.forEach(slot => {
-          const isSlotBooked = activeBookings.some(b => b.slot_number === slot.slot_number);
-
-          if (!isSlotBooked) {
-            const slotDiv = document.createElement('div');
-            slotDiv.className = 'slot-preview';
-            const categoryShort = slot.category.length > 15 ? slot.category.substring(0, 15) + '...' : slot.category;
-            slotDiv.innerHTML = `<span title="${slot.category}">${categoryShort}</span><span>○</span>`;
-            cell.appendChild(slotDiv);
-          }
-        });
-      }
-
-      const hasAvailableSlots = availableSlots.some(slot => 
-        !activeBookings.some(b => b.slot_number === slot.slot_number)
-      );
-
-      if (themes.length > 0 && hasAvailableSlots) {
-        cell.style.cursor = 'pointer';
-        cell.onclick = () => openBookingModal(dateStr, themes, availableSlots, dayBookings);
-      } else if (themes.length === 0 || availableSlots.length === 0 || allSlotsFilled) {
-        cell.style.cursor = 'default';
-        if (!allSlotsFilled) {
-          cell.style.opacity = '0.7';
-        }
-      }
-
-      return cell;
-    }
-
-    function showBookingDetails(booking, date, themes) {
-      const modal = document.getElementById('modal');
-      const content = document.getElementById('modalContent');
-
-      const dateObj = new Date(date + 'T00:00:00');
-      const formattedDate = dateObj.toLocaleDateString('en-US', {
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric'
-      });
-
-      const themeNames = Array.isArray(themes) 
-        ? themes.map(t => t.theme_name).join(' + ') 
-        : themes.theme_name || 'No Theme';
-
-      let statusBadge;
-      if (booking.status === 'Approved') {
-        statusBadge = '<span style="background:#28a745;color:white;padding:5px 15px;border-radius:20px;font-size:12px;">✓ Approved</span>';
-      } else if (booking.status === 'Pending') {
-        statusBadge = '<span style="background:#ffc107;color:#856404;padding:5px 15px;border-radius:20px;font-size:12px;">⏳ Pending</span>';
-      } else if (booking.status === 'Rejected') {
-        statusBadge = '<span style="background:#dc3545;color:white;padding:5px 15px;border-radius:20px;font-size:12px;">✗ Rejected</span>';
-      }
-
-      content.innerHTML = `
-        <div class="modal-header">
-          <h2>Booking Details</h2>
-          <button class="close-btn" onclick="closeModal()">×</button>
-        </div>
-
-        <div class="date-info">
-          <strong>${formattedDate}</strong>
-          <div style="margin-top:5px;font-size:14px;">${themeNames}</div>
-        </div>
-
-        <div style="background:#f9f9f9;padding:20px;border-radius:12px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
-            <h3 style="color:#5e3a8e;margin:0;">Slot ${booking.slot_number}</h3>
-            ${statusBadge}
-          </div>
-
-          <div style="margin-bottom:15px;">
-            <strong style="color:#666;font-size:12px;text-transform:uppercase;">Category</strong>
-            <div style="background:#FFD700;color:#5e3a8e;padding:8px 15px;border-radius:8px;display:inline-block;margin-top:5px;font-weight:600;">
-              ${booking.category}
-            </div>
-          </div>
-
-          <div style="margin-bottom:15px;">
-            <strong style="color:#666;font-size:12px;text-transform:uppercase;">Product Code</strong>
-            <div style="background:#d4edda;color:#155724;padding:10px 15px;border-radius:8px;margin-top:5px;font-family:monospace;font-size:16px;font-weight:700;word-wrap:break-word;">
-              📦 ${booking.product_code || 'N/A'}
-            </div>
-          </div>
-
-          ${booking.product_link ? `
-          <div style="margin-bottom:15px;">
-            <strong style="color:#666;font-size:12px;text-transform:uppercase;">Product Link</strong>
-            <div style="margin-top:5px;">
-              <a href="${booking.product_link}" target="_blank" style="color:#5e3a8e;word-break:break-all;">
-                🔗 ${booking.product_link}
-              </a>
-            </div>
-          </div>
-          ` : ''}
-
-          ${booking.rejection_reason ? `
-          <div style="margin-bottom:15px;">
-            <strong style="color:#dc3545;font-size:12px;text-transform:uppercase;">❌ Rejection Reason</strong>
-            <div style="background:#f8d7da;color:#721c24;padding:10px 15px;border-radius:8px;margin-top:5px;">
-              ${booking.rejection_reason}
-            </div>
-          </div>
-          ` : ''}
-
-          <div style="margin-bottom:15px;">
-            <strong style="color:#666;font-size:12px;text-transform:uppercase;">Submitted By</strong>
-            <div style="margin-top:5px;color:#333;">
-              👤 ${booking.submitted_by || 'Unknown'}
-            </div>
-          </div>
-
-          <div>
-            <strong style="color:#666;font-size:12px;text-transform:uppercase;">Submitted On</strong>
-            <div style="margin-top:5px;color:#333;">
-              📅 ${booking.created_at ? new Date(booking.created_at).toLocaleString() : 'N/A'}
-            </div>
-          </div>
-        </div>
-
-        <button class="btn-submit" onclick="closeModal()" style="margin-top:20px;background:#6c757d;">
-          Close
-        </button>
-      `;
-
-      modal.style.display = 'flex';
-    }
-
-    function openBookingModal(date, themes, slots, bookings) {
-      selectedDate = date;
-      const modal = document.getElementById('modal');
-      const content = document.getElementById('modalContent');
-
-      const dateObj = new Date(date + 'T00:00:00');
-      const formattedDate = dateObj.toLocaleDateString('en-US', {
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric'
-      });
-
-      const themeNames = Array.isArray(themes) 
-        ? themes.map(t => t.theme_name).join(' + ') 
-        : themes.theme_name;
-
-      content.innerHTML = `
-        <div class="modal-header">
-          <h2>Book Content Slot</h2>
-          <button class="close-btn" onclick="closeModal()">×</button>
-        </div>
-
-        <div class="date-info">
-          <strong>${formattedDate}</strong>
-          <div style="margin-top:5px;font-size:14px;">${themeNames}</div>
-        </div>
-
-        <div class="slots-container" id="slotsContainer"></div>
-
-        <div id="bookingForm" style="display:none;">
-          <hr style="margin:20px 0;border:none;border-top:2px solid #f0f0f0;">
-          <div class="form-group">
-            <label>📦 Product Code *</label>
-            <input type="text" id="productCode" required placeholder="Enter product code">
-          </div>
-          <div class="form-group">
-            <label>🔗 Product Link (Optional)</label>
-            <input type="url" id="productLink" placeholder="https://www.kapruka.com/...">
-          </div>
-          <button class="btn-submit" onclick="submitBooking()">🚀 Submit Booking</button>
-        </div>
-      `;
-
-      const slotsContainer = document.getElementById('slotsContainer');
-      let hasAvailableSlots = false;
-
-      slots.forEach(slot => {
-        const existingBooking = bookings.find(b => b.slot_number === slot.slot_number);
-        const isBooked = existingBooking && (existingBooking.status === 'Approved' || existingBooking.status === 'Pending');
-
-        if (!isBooked) hasAvailableSlots = true;
-
-        const slotCard = document.createElement('div');
-
-        if (isBooked) {
-          slotCard.className = 'slot-card booked clickable';
-          slotCard.innerHTML = `
-            <div class="slot-header">
-              <div class="slot-title">Slot ${slot.slot_number}</div>
-              <div class="slot-category">${slot.category}</div>
-            </div>
-            <div class="booking-details">
-              <strong>Booked by: ${existingBooking.submitted_by || 'someone'}</strong>
-              <div class="product-code">${existingBooking.product_code || 'No code'}</div>
-            </div>
-          `;
-          slotCard.onclick = () => showBookingDetails(existingBooking, date, themes);
-        } else if (existingBooking && existingBooking.status === 'Rejected') {
-          slotCard.className = 'slot-card rejected';
-          slotCard.innerHTML = `
-            <div class="slot-header">
-              <div class="slot-title">Slot ${slot.slot_number}</div>
-              <div class="slot-category">${slot.category}</div>
-            </div>
-            <div style="margin-top:10px;padding:8px;background:#fff0f0;border-radius:6px;font-size:12px;color:#666;">
-              <span class="rejection-badge">REJECTED</span>
-              <div style="margin-top:5px;font-style:italic;">${existingBooking.rejection_reason || 'Previously rejected'}</div>
-              <div style="margin-top:8px;font-weight:600;color:#5e3a8e;">✨ Available for new booking</div>
-            </div>
-          `;
-          slotCard.onclick = () => selectSlot(slot, slotCard);
-        } else {
-          slotCard.className = 'slot-card';
-          slotCard.innerHTML = `
-            <div class="slot-header">
-              <div class="slot-title">Slot ${slot.slot_number}</div>
-              <div class="slot-category">${slot.category}</div>
-            </div>
-          `;
-          slotCard.onclick = () => selectSlot(slot, slotCard);
-        }
-
-        slotsContainer.appendChild(slotCard);
-      });
-
-      if (!hasAvailableSlots) {
-        slotsContainer.innerHTML = `
-          <div class="fully-booked-message">
-            <div class="icon">🎉</div>
-            <div style="font-size:20px;margin-bottom:10px;">All Slots Booked!</div>
-            <div style="font-size:14px;opacity:0.9;">This day is fully booked. Check back later or contact admin.</div>
-          </div>
-        ` + slotsContainer.innerHTML;
-      }
-
-      modal.style.display = 'flex';
-    }
-
-    function selectSlot(slot, element) {
-      document.querySelectorAll('.slot-card').forEach(c => c.classList.remove('selected'));
-      element.classList.add('selected');
-      selectedSlot = slot;
-      document.getElementById('bookingForm').style.display = 'block';
-    }
-
-    async function submitBooking() {
-      if (!selectedSlot) {
-        alert('Please select a slot');
-        return;
-      }
-
-      const productCode = document.getElementById('productCode').value.trim();
-      if (!productCode) {
-        alert('Please enter product code');
-        return;
-      }
-
+    async function submitBooking(e) {
+      e.preventDefault();
+      if (!selectedSlot) return;
+      const payload = {
+        date:         selectedSlot.dateStr,
+        slot_number:  selectedSlot.slotIndex + 1,
+        booked_by:    document.getElementById('bookingName').value,
+        department:   document.getElementById('bookingDept').value,
+        description:  document.getElementById('bookingDesc').value,
+        status:       'pending',
+        platform:     'Social Media',
+        content_type: 'Post'
+      };
       try {
-        showLoading();
-
-        const bookingData = {
-          date: selectedDate,
-          slotNumber: selectedSlot.slot_number,
-          category: selectedSlot.category,
-          productCode: productCode,
-          productLink: document.getElementById('productLink').value.trim(),
-          submittedBy: 'User'
-        };
-
-        await submitContentBooking(bookingData);
-
-        hideLoading();
-        closeModal();
-        alert('✅ Booking submitted successfully!\n\nYour booking is pending admin approval.');
-        loadCalendar();
-
-      } catch (error) {
-        hideLoading();
-        console.error('Submit error:', error);
-        alert('Error: ' + error.message);
+        document.getElementById('loading').style.display = 'flex';
+        await createContentCalendarEntry(payload);
+        document.getElementById('loading').style.display = 'none';
+        closeBookingModal();
+        document.getElementById('bookingForm').reset();
+        await loadCalendarData();
+        alert('Booking submitted successfully!');
+      } catch(err) {
+        document.getElementById('loading').style.display = 'none';
+        alert('Error: ' + err.message);
       }
     }
 
-    function closeModal() {
-      document.getElementById('modal').style.display = 'none';
-      selectedSlot = null;
+    async function showBookedDetail(e, id) {
+      e.stopPropagation();
+      const allSlots = Object.values(calendarData).flat();
+      const slot = allSlots.find(s => s.id == id);
+      if (!slot) return;
+      const statusColors = { booked: '#4CAF50', pending: '#FFC107', rejected: '#dc3545' };
+      const color = statusColors[(slot.status || 'pending').toLowerCase()] || '#999';
+      document.getElementById('bookedDetails').innerHTML =
+        '<div class="booked-detail">' +
+          '<div class="detail-row"><span class="detail-label">Date</span><span class="detail-value">' + slot.date + '</span></div>' +
+          '<div class="detail-row"><span class="detail-label">Platform</span><span class="detail-value">' + (slot.platform || 'N/A') + '</span></div>' +
+          '<div class="detail-row"><span class="detail-label">Booked by</span><span class="detail-value">' + (slot.booked_by || 'N/A') + '</span></div>' +
+          '<div class="detail-row"><span class="detail-label">Department</span><span class="detail-value">' + (slot.department || 'N/A') + '</span></div>' +
+          '<div class="detail-row"><span class="detail-label">Status</span><span class="detail-value" style="color:' + color + '">' + (slot.status || 'pending') + '</span></div>' +
+          '<div class="detail-row"><span class="detail-label">Description</span><span class="detail-value">' + (slot.description || 'N/A') + '</span></div>' +
+        '</div>';
+      document.getElementById('bookedModal').style.display = 'flex';
     }
 
-    window.onclick = function(event) {
-      const modal = document.getElementById('modal');
-      if (event.target === modal) {
-        closeModal();
-      }
-    }
-
-    window.onload = loadCalendar;
+    // Init
+    loadCalendarData();
   </script>
 </body>
 </html>
