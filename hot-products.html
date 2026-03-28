@@ -3,125 +3,173 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hot Products - Kapruka</title>
+  <title>Hot Products — Kapruka</title>
   <link rel="icon" type="image/png" href="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Inter', sans-serif;
-      background: linear-gradient(135deg, #1a0b2e 0%, #3d2461 50%, #5e3a8e 100%);
-      min-height: 100vh;
-      padding: 40px 20px;
-    }
-    .container { max-width: 1400px; margin: 0 auto; }
-    .header { text-align: center; margin-bottom: 40px; }
-    .kapruka-logo {
-      width: 100px; height: 100px;
-      margin: 0 auto 20px;
-      border-radius: 50%; overflow: hidden;
-      box-shadow: 0 15px 50px rgba(0,0,0,0.5);
-    }
-    .kapruka-logo img { width: 100%; height: 100%; object-fit: cover; }
-    h1 {
-      font-family: 'Playfair Display', serif;
-      font-size: 42px;
-      background: linear-gradient(135deg, #FFD700, #FFF, #FFD700);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 10px;
-    }
-    .subtitle {
-      color: rgba(255,255,255,0.8);
-      font-size: 14px; letter-spacing: 2px; text-transform: uppercase;
-    }
-    .back-btn {
-      display: inline-flex; align-items: center; gap: 8px;
-      background: rgba(255,255,255,0.1); color: white;
-      padding: 12px 24px; border-radius: 12px;
-      text-decoration: none; font-weight: 600; transition: all 0.3s;
-      margin-bottom: 30px; border: 2px solid rgba(255,255,255,0.2);
-    }
-    .back-btn:hover {
-      background: rgba(255,215,0,0.2); border-color: #FFD700;
-      transform: translateX(-5px);
-    }
-    .card {
-      background: rgba(255,255,255,0.98);
-      padding: 35px; border-radius: 20px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3); margin-bottom: 30px;
-    }
-    .card h2 {
-      font-family: 'Playfair Display', serif;
-      color: #5e3a8e; font-size: 28px; margin-bottom: 20px;
+    /* ── TOKENS ─────────────────────────────────────────────── */
+    :root {
+      --bg:            #f5f4f0;
+      --surface:       #fffffe;
+      --surface2:      #f0ede8;
+      --border:        rgba(0,0,0,0.07);
+      --border-strong: rgba(0,0,0,0.16);
+      --text:          #111;
+      --text-muted:    #888;
+      --text-faint:    #bbb;
+      --purple:        #5e3a8e;
+      --purple-dark:   #4a2d70;
+      --purple-light:  #f3eeff;
+      --purple-mid:    rgba(94,58,142,0.08);
+      --gold:          #c9a227;
+      --gold-bg:       #fef9ec;
+      --gold-border:   rgba(201,162,39,0.35);
+      --green:         #16a34a;
+      --green-bg:      #dcfce7;
+      --amber:         #b45309;
+      --amber-bg:      #fef3c7;
+      --red:           #dc2626;
+      --red-bg:        #fee2e2;
     }
 
-    /* ── Overview Table ── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 40px 20px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container { max-width: 1400px; margin: 0 auto; }
+
+    /* ── PAGE HEADER ─────────────────────────────────────────── */
+    .page-header {
+      background: var(--surface);
+      padding: 20px 28px;
+      border-radius: 16px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header-left { display: flex; align-items: center; gap: 16px; }
+    .header-logo {
+      width: 40px; height: 40px;
+      border-radius: 10px; overflow: hidden;
+      border: 1px solid var(--border); flex-shrink: 0;
+    }
+    .header-logo img { width: 100%; height: 100%; object-fit: cover; }
+    .page-header h1 {
+      font-size: 20px; font-weight: 600;
+      color: var(--text); letter-spacing: -0.02em;
+    }
+    .page-header .subtitle {
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 0.10em; text-transform: uppercase;
+      color: var(--text-muted); margin-top: 3px;
+    }
+    .back-btn {
+      padding: 8px 20px;
+      background: var(--purple); color: white;
+      border: none; border-radius: 10px; cursor: pointer;
+      font-weight: 500; font-size: 13px;
+      font-family: 'DM Sans', sans-serif;
+      text-decoration: none; display: inline-block;
+      transition: opacity 0.15s; white-space: nowrap;
+    }
+    .back-btn:hover { opacity: 0.85; }
+
+    /* ── CARD ───────────────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      padding: 28px; border-radius: 20px;
+      border: 1px solid var(--border); margin-bottom: 20px;
+    }
+    .card h2 {
+      font-size: 16px; font-weight: 600;
+      color: var(--text); letter-spacing: -0.02em;
+      margin-bottom: 20px;
+    }
+
+    /* ── OVERVIEW TABLE ───────────────────────────────────────── */
     .overview-table {
       width: 100%; border-collapse: collapse;
-      border-radius: 12px; overflow: hidden;
     }
     .overview-table th {
-      background: linear-gradient(135deg, #5e3a8e, #3d2461);
-      color: white; padding: 14px 16px; text-align: left;
-      font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;
+      font-size: 9px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.10em;
+      color: var(--text-muted);
+      padding: 0 12px 10px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
     }
     .overview-table th.center { text-align: center; }
     .overview-table td {
-      padding: 13px 16px;
-      border-bottom: 1px solid #f0f0f0;
-      font-size: 14px; color: #333;
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px; color: var(--text);
       vertical-align: middle;
     }
     .overview-table td.center { text-align: center; }
-    .overview-table tbody tr { transition: background 0.2s; cursor: pointer; }
-    .overview-table tbody tr:hover { background: #f5f0ff; }
-    .overview-table tbody tr.active-row { background: #ede4ff; }
+    .overview-table tbody tr { transition: background 0.15s; cursor: pointer; }
+    .overview-table tbody tr:hover { background: var(--surface2); }
+    .overview-table tbody tr.active-row { background: var(--purple-light); }
     .overview-table tbody tr:last-child td { border-bottom: none; }
     .overview-table tfoot td {
-      padding: 13px 16px; font-weight: 700;
-      background: #f9f4ff; color: #5e3a8e;
-      font-size: 14px; border-top: 2px solid #e0d0ff;
+      padding: 12px;
+      font-weight: 600; font-size: 12px;
+      background: var(--surface2);
+      color: var(--text-muted);
+      border-top: 1px solid var(--border-strong);
     }
     .overview-table tfoot td.center { text-align: center; }
 
-    /* Badges */
+    /* ── BADGES ───────────────────────────────────────────────── */
     .badge {
-      display: inline-flex; align-items: center; gap: 5px;
-      padding: 5px 12px; border-radius: 20px;
-      font-weight: 700; font-size: 13px;
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 10px; border-radius: 6px;
+      font-weight: 700; font-size: 12px;
     }
-    .badge-suggested { background: #f0e6ff; color: #5e3a8e; border: 1px solid #c9a9f5; }
-    .badge-fulfilled  { background: #e6f9ed; color: #2e7d4f; border: 1px solid #a0dbb8; }
-    .badge-pending    { background: #fff4e0; color: #a05c00; border: 1px solid #f5c97a; }
-    .badge-zero       { background: #f5f5f5; color: #aaa;    border: 1px solid #ddd; }
+    .badge-suggested { background: var(--purple-light); color: var(--purple); }
+    .badge-fulfilled  { background: var(--green-bg);    color: var(--green); }
+    .badge-pending    { background: var(--amber-bg);    color: var(--amber); }
+    .badge-zero       { background: var(--surface2);    color: var(--text-faint); }
 
-    /* Progress bar */
+    /* ── PROGRESS BAR ────────────────────────────────────────── */
     .progress-wrap {
-      width: 100%; background: #eee;
-      border-radius: 10px; height: 8px; overflow: hidden;
+      width: 100%; background: var(--surface2);
+      border-radius: 999px; height: 6px; overflow: hidden;
     }
     .progress-bar {
-      height: 8px; border-radius: 10px;
-      background: linear-gradient(90deg, #5e3a8e, #a07fd4);
+      height: 6px; border-radius: 999px;
+      background: var(--purple);
       transition: width 0.5s ease;
     }
 
-    /* View button */
+    /* ── VIEW BUTTON ─────────────────────────────────────────── */
     .view-btn {
-      padding: 7px 16px; border-radius: 8px;
-      border: 2px solid #5e3a8e; background: white;
-      color: #5e3a8e; font-weight: 700; font-size: 13px;
-      cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif;
+      padding: 5px 14px; border-radius: 7px;
+      border: 1px solid var(--border-strong);
+      background: var(--surface); color: var(--text);
+      font-weight: 500; font-size: 12px;
+      cursor: pointer; transition: all 0.15s;
+      font-family: 'DM Sans', sans-serif;
     }
-    .view-btn:hover, .view-btn.active {
-      background: #5e3a8e; color: white;
+    .view-btn:hover:not(:disabled), .view-btn.active {
+      background: var(--purple); color: white; border-color: var(--purple);
     }
+    .view-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
-    /* Shimmer skeleton */
+    /* ── SHIMMER ──────────────────────────────────────────────── */
     .shimmer {
-      display: inline-block; width: 36px; height: 14px;
-      background: linear-gradient(90deg, #e0e0e0 25%, #f5f5f5 50%, #e0e0e0 75%);
+      display: inline-block; width: 36px; height: 12px;
+      background: linear-gradient(90deg, var(--surface2) 25%, var(--bg) 50%, var(--surface2) 75%);
       background-size: 200% 100%;
       animation: shimmer 1.2s infinite;
       border-radius: 4px; vertical-align: middle;
@@ -131,134 +179,189 @@
       100% { background-position: -200% 0; }
     }
 
-    /* Search */
+    /* ── SEARCH INPUT ────────────────────────────────────────── */
     .search-input {
-      padding: 10px 16px; border: 2px solid #e0e0e0;
-      border-radius: 10px; font-size: 14px;
-      font-family: 'Inter', sans-serif; width: 240px;
-      transition: border-color 0.2s;
+      padding: 9px 14px;
+      border: 1px solid var(--border-strong);
+      border-radius: 9px; font-size: 13px;
+      font-family: 'DM Sans', sans-serif; width: 240px;
+      background: var(--surface); color: var(--text);
+      transition: border-color 0.15s, box-shadow 0.15s;
     }
-    .search-input:focus { outline: none; border-color: #a07fd4; }
+    .search-input:focus {
+      outline: none; border-color: var(--purple);
+      box-shadow: 0 0 0 3px var(--purple-mid);
+    }
+    .search-input::placeholder { color: var(--text-faint); }
 
-    /* Stats bar */
+    /* ── STATS BAR ───────────────────────────────────────────── */
     .stats-bar {
-      display: flex; gap: 20px; padding: 22px;
-      background: linear-gradient(135deg, #5e3a8e, #3d2461);
-      border-radius: 14px; margin-bottom: 25px; color: white; flex-wrap: wrap;
-      align-items: center;
+      display: flex; gap: 0;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; margin-bottom: 16px;
+      flex-wrap: wrap; align-items: stretch;
+      overflow: hidden;
     }
-    .stat { flex: 1; min-width: 140px; }
-    .stat-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8; margin-bottom: 5px; }
-    .stat-value { font-size: 28px; font-weight: 700; font-family: 'Playfair Display', serif; }
+    .stat {
+      flex: 1; min-width: 140px;
+      padding: 20px 24px;
+      border-right: 1px solid var(--border);
+    }
+    .stat:last-of-type { border-right: none; }
+    .stat-label {
+      font-size: 9px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.10em;
+      color: var(--text-muted); margin-bottom: 6px;
+    }
+    .stat-value {
+      font-size: 28px; font-weight: 300;
+      font-family: 'DM Mono', monospace;
+      color: var(--purple); letter-spacing: -0.02em;
+    }
+    .stats-bar-actions {
+      display: flex; align-items: center;
+      padding: 20px 24px;
+    }
 
-    /* Products table */
+    /* ── PRODUCTS TABLE ───────────────────────────────────────── */
     .products-table {
       width: 100%; border-collapse: collapse;
-      background: white; border-radius: 12px;
-      overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.05);
     }
     .products-table th {
-      background: linear-gradient(135deg, #5e3a8e, #3d2461);
-      color: white; padding: 14px 12px; text-align: left;
-      font-weight: 700; font-size: 13px;
-      text-transform: uppercase; letter-spacing: 0.5px;
+      font-size: 9px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.10em;
+      color: var(--text-muted);
+      padding: 0 12px 10px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
     }
     .products-table td {
-      padding: 14px 12px; border-bottom: 1px solid #f0f0f0;
-      font-size: 14px; color: #333;
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px; color: var(--text);
+      vertical-align: middle;
     }
-    .products-table tr:hover { background: #fafafa; }
+    .products-table tr:hover td { background: var(--surface2); }
     .products-table tr:last-child td { border-bottom: none; }
+
     .product-link {
-      color: #5e3a8e; text-decoration: none;
-      font-weight: 600; transition: color 0.2s;
+      color: var(--purple); text-decoration: none;
+      font-weight: 500; font-size: 13px;
+      transition: opacity 0.15s;
     }
-    .product-link:hover { color: #a07fd4; text-decoration: underline; }
-    input[type="checkbox"] { width: 18px; height: 18px; accent-color: #5e3a8e; cursor: pointer; }
-    input[type="text"] {
-      width: 100%; padding: 8px 12px;
-      border: 2px solid #e8e8e8; border-radius: 8px;
-      font-size: 13px; font-family: 'Inter', sans-serif; transition: border-color 0.2s;
-    }
-    input[type="text"]:focus { outline: none; border-color: #FFD700; }
-    input[type="text"]:disabled { background: #f5f5f5; cursor: not-allowed; }
-    .sales-count {
-      color: #FFD700; background: #5e3a8e;
-      padding: 4px 10px; border-radius: 8px;
-      font-weight: 700; font-size: 12px;
+    .product-link:hover { opacity: 0.7; text-decoration: underline; }
+
+    input[type="checkbox"] {
+      width: 16px; height: 16px;
+      accent-color: var(--purple); cursor: pointer;
     }
 
-    /* Loading overlay */
+    input[type="text"] {
+      width: 100%; padding: 8px 12px;
+      border: 1px solid var(--border-strong);
+      border-radius: 7px; font-size: 13px;
+      font-family: 'DM Sans', sans-serif;
+      background: var(--surface); color: var(--text);
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    input[type="text"]:focus {
+      outline: none; border-color: var(--purple);
+      box-shadow: 0 0 0 3px var(--purple-mid);
+    }
+    input[type="text"]:disabled {
+      background: var(--surface2);
+      color: var(--text-faint); cursor: not-allowed;
+    }
+    input[type="text"]::placeholder { color: var(--text-faint); }
+
+    .sales-count {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px; font-weight: 500;
+      color: var(--purple);
+      background: var(--purple-light);
+      padding: 3px 10px; border-radius: 6px;
+    }
+
+    /* ── LOADING ─────────────────────────────────────────────── */
     .loading {
       position: fixed; inset: 0;
-      background: rgba(0,0,0,0.8);
+      background: rgba(245,244,240,0.85);
+      backdrop-filter: blur(4px);
       display: none; align-items: center;
       justify-content: center; z-index: 9999;
     }
     .spinner {
-      width: 60px; height: 60px;
-      border: 5px solid rgba(255,215,0,0.3);
-      border-top-color: #FFD700;
-      border-radius: 50%; animation: spin 1s linear infinite;
+      width: 36px; height: 36px;
+      border: 3px solid var(--border-strong);
+      border-top-color: var(--purple);
+      border-radius: 50%; animation: spin 0.75s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Save toast */
+    /* ── SAVE TOAST ─────────────────────────────────────────── */
     .save-status {
       display: none; position: fixed;
-      bottom: 30px; right: 30px;
-      background: #4CAF50; color: white;
-      padding: 15px 25px; border-radius: 12px; font-weight: 600;
-      box-shadow: 0 8px 25px rgba(76,175,80,0.4);
-      animation: slideUp 0.3s ease-out; z-index: 9998;
+      bottom: 28px; right: 28px;
+      background: var(--green); color: white;
+      padding: 12px 22px; border-radius: 10px;
+      font-weight: 600; font-size: 13px;
+      animation: slideUp 0.25s ease-out; z-index: 9998;
     }
     @keyframes slideUp {
-      from { transform: translateY(60px); opacity: 0; }
+      from { transform: translateY(50px); opacity: 0; }
       to   { transform: translateY(0);    opacity: 1; }
     }
 
-    /* Close btn */
+    /* ── CLOSE BTN ──────────────────────────────────────────── */
     .close-btn {
-      background: rgba(255,255,255,0.15);
-      border: 2px solid rgba(255,255,255,0.3);
-      color: white; padding: 10px 20px;
-      border-radius: 10px; cursor: pointer;
-      font-weight: 600; font-size: 14px;
-      font-family: 'Inter', sans-serif; transition: all 0.2s;
+      padding: 8px 18px;
+      background: var(--surface2);
+      border: 1px solid var(--border-strong);
+      color: var(--text); border-radius: 9px;
+      cursor: pointer; font-weight: 500; font-size: 13px;
+      font-family: 'DM Sans', sans-serif; transition: background 0.15s;
     }
-    .close-btn:hover { background: rgba(255,255,255,0.25); }
+    .close-btn:hover { background: var(--border-strong); }
 
+    /* ── RESPONSIVE ─────────────────────────────────────────── */
     @media (max-width: 768px) {
-      h1 { font-size: 28px; }
+      body { padding: 20px 16px; }
+      .page-header { flex-direction: column; align-items: flex-start; gap: 12px; }
       .search-input { width: 100%; }
       .stats-bar { flex-direction: column; }
-      .overview-table td, .overview-table th { padding: 10px 10px; font-size: 12px; }
-      .products-table td, .products-table th { padding: 10px 8px; font-size: 12px; }
+      .stat { border-right: none; border-bottom: 1px solid var(--border); }
+      .overview-table td, .overview-table th { padding: 8px; font-size: 11px; }
+      .products-table td, .products-table th { padding: 8px; font-size: 11px; }
     }
   </style>
 </head>
 <body>
 
 <div class="loading" id="loading"><div class="spinner"></div></div>
-<div class="save-status" id="saveStatus">✓ Saved Successfully!</div>
+<div class="save-status" id="saveStatus">✓ Saved</div>
 
 <div class="container">
-  <a href="index.html" class="back-btn">← Back to Home</a>
 
-  <div class="header">
-    <div class="kapruka-logo">
-      <img src="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw" alt="Kapruka">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-left">
+      <div class="header-logo">
+        <img src="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw" alt="Kapruka">
+      </div>
+      <div>
+        <h1>Hot Products</h1>
+        <div class="subtitle">Product Suggestions Dashboard</div>
+      </div>
     </div>
-    <h1>Hot Products</h1>
-    <p class="subtitle">Product Suggestions Dashboard</p>
+    <a href="index.html" class="back-btn">← Back</a>
   </div>
 
-  <!-- ── Overview Table Card ── -->
+  <!-- Overview Table Card -->
   <div class="card">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
       <h2 style="margin-bottom:0;">🔥 All Categories Overview</h2>
       <input class="search-input" type="text" id="tableSearch"
-             placeholder="🔍 Search category..."
+             placeholder="Search category..."
              oninput="filterTable(this.value)">
     </div>
 
@@ -268,15 +371,14 @@
           <tr>
             <th style="width:4%;">#</th>
             <th style="width:30%;">Category</th>
-            <th class="center" style="width:14%;">📦 Suggested</th>
-            <th class="center" style="width:14%;">✅ Fulfilled</th>
-            <th class="center" style="width:14%;">⏳ Pending</th>
+            <th class="center" style="width:14%;">Suggested</th>
+            <th class="center" style="width:14%;">Fulfilled</th>
+            <th class="center" style="width:14%;">Pending</th>
             <th style="width:18%;">Progress</th>
             <th class="center" style="width:6%;">View</th>
           </tr>
         </thead>
         <tbody id="overviewBody">
-          <!-- JS renders rows -->
         </tbody>
         <tfoot>
           <tr>
@@ -291,7 +393,7 @@
     </div>
   </div>
 
-  <!-- ── Detail Panel ── -->
+  <!-- Detail Panel -->
   <div id="detailPanel" style="display:none;">
     <div class="stats-bar">
       <div class="stat">
@@ -304,9 +406,9 @@
       </div>
       <div class="stat">
         <div class="stat-label">Category</div>
-        <div class="stat-value" id="currentCategory" style="font-size:20px;">—</div>
+        <div class="stat-value" id="currentCategory" style="font-size:16px;font-family:'DM Sans',sans-serif;font-weight:600;">—</div>
       </div>
-      <div style="display:flex;align-items:center;margin-left:auto;">
+      <div class="stats-bar-actions" style="margin-left:auto;">
         <button class="close-btn" onclick="closeDetail()">✕ Close</button>
       </div>
     </div>
@@ -325,7 +427,7 @@
             </tr>
           </thead>
           <tbody id="productsTableBody">
-            <tr><td colspan="5" style="text-align:center;padding:40px;">Select a category</td></tr>
+            <tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted);">Select a category</td></tr>
           </tbody>
         </table>
       </div>
@@ -340,10 +442,9 @@
 
   let selectedCategory = null;
   let currentProducts  = [];
-  let categoryCountMap = {}; // { cat: { total, listed } }
-  let allRowsData      = []; // for search filtering
+  let categoryCountMap = {};
+  let allRowsData      = [];
 
-  /* ── Utilities ── */
   const showLoading = () => document.getElementById('loading').style.display = 'flex';
   const hideLoading = () => document.getElementById('loading').style.display = 'none';
 
@@ -363,13 +464,12 @@
     } catch { return 'Product Link'; }
   }
 
-  /* ── Build skeleton rows immediately ── */
   function buildSkeletonRows() {
     const tbody = document.getElementById('overviewBody');
     tbody.innerHTML = PRODUCT_CATEGORIES.map((cat, i) => `
       <tr id="row-${i}">
-        <td style="color:#aaa;font-size:13px;">${i + 1}</td>
-        <td style="font-weight:600;">${cat}</td>
+        <td style="color:var(--text-faint);font-size:12px;">${i + 1}</td>
+        <td style="font-weight:500;">${cat}</td>
         <td class="center"><span class="shimmer"></span></td>
         <td class="center"><span class="shimmer"></span></td>
         <td class="center"><span class="shimmer"></span></td>
@@ -384,7 +484,6 @@
     allRowsData = PRODUCT_CATEGORIES.map((cat, i) => ({ cat, i }));
   }
 
-  /* ── Load all category counts in parallel ── */
   async function loadAllCategoryCounts() {
     const results = await Promise.all(
       PRODUCT_CATEGORIES.map((cat, i) =>
@@ -428,7 +527,7 @@
           <div class="progress-wrap" style="flex:1;">
             <div class="progress-bar" style="width:${pct}%"></div>
           </div>
-          <span style="font-size:12px;color:#888;min-width:32px;">${pct}%</span>
+          <span style="font-size:11px;color:var(--text-muted);min-width:30px;font-family:'DM Mono',monospace;">${pct}%</span>
         </div>`;
 
       const btn = document.getElementById(`viewbtn-${i}`);
@@ -446,7 +545,6 @@
         : `<span class="badge badge-zero">⏳ 0</span>`;
   }
 
-  /* ── Filter table by search ── */
   function filterTable(query) {
     const q = query.toLowerCase().trim();
     document.querySelectorAll('#overviewBody tr').forEach(row => {
@@ -455,11 +553,9 @@
     });
   }
 
-  /* ── Select category → show detail ── */
   async function selectCategory(category, rowIndex) {
     selectedCategory = category;
 
-    // Highlight active row
     document.querySelectorAll('#overviewBody tr').forEach(r => r.classList.remove('active-row'));
     document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
     const activeRow = document.getElementById(`row-${rowIndex}`);
@@ -479,7 +575,6 @@
     hideLoading();
   }
 
-  /* ── Close detail panel ── */
   function closeDetail() {
     document.getElementById('detailPanel').style.display = 'none';
     document.querySelectorAll('#overviewBody tr').forEach(r => r.classList.remove('active-row'));
@@ -487,7 +582,6 @@
     selectedCategory = null;
   }
 
-  /* ── Render products in detail table ── */
   function displayProducts(products, category) {
     currentProducts = products;
     document.getElementById('currentCategory').textContent = category;
@@ -503,8 +597,8 @@
     if (total === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="5" style="text-align:center;padding:60px;color:#bbb;">
-            <div style="font-size:48px;margin-bottom:12px;">📭</div>
+          <td colspan="5" style="text-align:center;padding:60px;color:var(--text-faint);">
+            <div style="font-size:40px;margin-bottom:12px;">📭</div>
             No products added to this category yet
           </td>
         </tr>`;
@@ -513,7 +607,7 @@
 
     tbody.innerHTML = products.map(p => `
       <tr data-id="${p.id}">
-        <td style="font-weight:600;color:#333;">${extractProductName(p.product_link)}</td>
+        <td style="font-weight:500;">${extractProductName(p.product_link)}</td>
         <td><a href="${p.product_link}" target="_blank" class="product-link">View →</a></td>
         <td><span class="sales-count">${p.sales_count || 0}</span></td>
         <td style="text-align:center;">
@@ -534,7 +628,6 @@
     `).join('');
   }
 
-  /* ── Update listed status ── */
   async function updateListed(productId, isListed) {
     try {
       await updateHotProduct(productId, { listed: isListed });
@@ -552,7 +645,6 @@
       const newListed = currentProducts.filter(p => p.listed).length;
       document.getElementById('listedProducts').textContent = newListed;
 
-      // Refresh overview row badge
       if (selectedCategory) {
         categoryCountMap[selectedCategory] = { total: currentProducts.length, listed: newListed };
         const rowIndex = PRODUCT_CATEGORIES.indexOf(selectedCategory);
@@ -572,7 +664,7 @@
                 <div class="progress-wrap" style="flex:1;">
                   <div class="progress-bar" style="width:${pct}%"></div>
                 </div>
-                <span style="font-size:12px;color:#888;min-width:32px;">${pct}%</span>
+                <span style="font-size:11px;color:var(--text-muted);min-width:30px;font-family:'DM Mono',monospace;">${pct}%</span>
               </div>`;
           }
         }
@@ -586,7 +678,6 @@
     }
   }
 
-  /* ── Update Kapruka link ── */
   async function updateKaprukaLink(productId, link) {
     try {
       await updateHotProduct(productId, { kapruka_link: link });
@@ -597,7 +688,6 @@
     }
   }
 
-  /* ── Init ── */
   window.onload = () => {
     buildSkeletonRows();
     loadAllCategoryCounts();
