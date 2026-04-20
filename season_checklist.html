@@ -8,7 +8,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
-    /* ── TOKENS ──────────────────────────────────────────── */
     :root {
       --bg:            #f5f4f0;
       --surface:       #fffffe;
@@ -36,9 +35,7 @@
       --done-border:   rgba(22,163,74,0.2);
       --radius:        16px;
     }
-
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     body {
       font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
       background: var(--bg);
@@ -46,8 +43,6 @@
       min-height: 100vh;
       -webkit-font-smoothing: antialiased;
     }
-
-    /* ── HEADER ──────────────────────────────────────────── */
     header {
       background: var(--surface);
       padding: 18px 40px;
@@ -57,193 +52,64 @@
       position: sticky; top: 0; z-index: 100;
     }
     .header-left { display: flex; align-items: center; gap: 14px; }
-    .logo {
-      font-size: 15px; font-weight: 700;
-      letter-spacing: -0.02em; color: var(--purple);
-    }
+    .logo { font-size: 15px; font-weight: 700; letter-spacing: -0.02em; color: var(--purple); }
     .logo span { color: var(--gold); }
-    .header-meta h1 {
-      font-size: 14px; font-weight: 600;
-      color: var(--text); letter-spacing: -0.01em;
-    }
-    .header-meta p {
-      font-size: 11px; font-weight: 700;
-      letter-spacing: 0.08em; text-transform: uppercase;
-      color: var(--text-muted); margin-top: 2px;
-    }
+    .header-meta h1 { font-size: 14px; font-weight: 600; color: var(--text); letter-spacing: -0.01em; }
+    .header-meta p { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-top: 2px; }
     .divider { width: 1px; height: 32px; background: var(--border); }
-
-    /* ── PROGRESS BAR ────────────────────────────────────── */
     .progress-wrap {
       background: var(--surface);
       padding: 14px 40px;
       border-bottom: 1px solid var(--border);
       display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
     }
-    .progress-text {
-      font-size: 11px; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 0.09em;
-      color: var(--text-muted); white-space: nowrap;
-    }
-    .progress-bar-bg {
-      flex: 1; min-width: 180px; height: 6px;
-      background: var(--surface2); border-radius: 999px; overflow: hidden;
-    }
-    .progress-bar {
-      height: 100%; background: var(--purple);
-      border-radius: 999px; transition: width .4s ease; width: 0%;
-    }
-    .progress-pct {
-      font-weight: 700; font-size: 13px;
-      font-family: 'DM Mono', monospace;
-      color: var(--purple); min-width: 42px;
-    }
-    .reset-btn {
-      margin-left: auto; background: transparent;
-      border: 1px solid var(--border-strong); border-radius: 8px;
-      padding: 7px 14px; font-size: 12px; cursor: pointer;
-      color: var(--text-muted); font-family: 'DM Sans', sans-serif;
-      transition: border-color .15s, color .15s;
-    }
+    .progress-text { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; color: var(--text-muted); white-space: nowrap; }
+    .progress-bar-bg { flex: 1; min-width: 180px; height: 6px; background: var(--surface2); border-radius: 999px; overflow: hidden; }
+    .progress-bar { height: 100%; background: var(--purple); border-radius: 999px; transition: width .4s ease; width: 0%; }
+    .progress-pct { font-weight: 700; font-size: 13px; font-family: 'DM Mono', monospace; color: var(--purple); min-width: 42px; }
+    .reset-btn { margin-left: auto; background: transparent; border: 1px solid var(--border-strong); border-radius: 8px; padding: 7px 14px; font-size: 12px; cursor: pointer; color: var(--text-muted); font-family: 'DM Sans', sans-serif; transition: border-color .15s, color .15s; }
     .reset-btn:hover { border-color: var(--red); color: var(--red); }
-
-    /* ── WRAPPER ─────────────────────────────────────────── */
-    .wrapper {
-      max-width: 1000px; margin: 0 auto;
-      padding: 28px 24px 64px; display: grid; gap: 16px;
-    }
-
-    /* ── SECTION CARDS ───────────────────────────────────── */
-    .section-card {
-      background: var(--surface);
-      border-radius: var(--radius);
-      border: 1px solid var(--border);
-      overflow: hidden;
-    }
-    .section-header {
-      display: flex; align-items: center; gap: 12px;
-      padding: 16px 22px; cursor: pointer; user-select: none;
-      border-bottom: 1px solid var(--border);
-      transition: background .15s;
-    }
+    .wrapper { max-width: 1000px; margin: 0 auto; padding: 28px 24px 64px; display: grid; gap: 16px; }
+    .section-card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; }
+    .section-header { display: flex; align-items: center; gap: 12px; padding: 16px 22px; cursor: pointer; user-select: none; border-bottom: 1px solid var(--border); transition: background .15s; }
     .section-header:hover { background: var(--surface2); }
     .section-header.collapsed { border-bottom: none; }
     .section-icon { font-size: 1.2rem; }
-    .section-title {
-      font-size: 14px; font-weight: 600; flex: 1;
-      color: var(--text); letter-spacing: -0.01em;
-    }
-    .section-badge {
-      background: var(--gold-bg);
-      color: var(--gold);
-      border: 1px solid var(--gold-border);
-      border-radius: 999px; font-size: 11px; font-weight: 700;
-      padding: 3px 10px; font-family: 'DM Mono', monospace;
-    }
-    .section-badge.done {
-      background: var(--green-bg);
-      color: var(--green);
-      border-color: var(--green-border);
-    }
-    .chevron {
-      font-size: 10px; color: var(--text-faint);
-      transition: transform .25s;
-    }
+    .section-title { font-size: 14px; font-weight: 600; flex: 1; color: var(--text); letter-spacing: -0.01em; }
+    .section-badge { background: var(--gold-bg); color: var(--gold); border: 1px solid var(--gold-border); border-radius: 999px; font-size: 11px; font-weight: 700; padding: 3px 10px; font-family: 'DM Mono', monospace; }
+    .section-badge.done { background: var(--green-bg); color: var(--green); border-color: var(--green-border); }
+    .chevron { font-size: 10px; color: var(--text-faint); transition: transform .25s; }
     .section-header.collapsed .chevron { transform: rotate(-90deg); }
     .section-body { padding: 20px 22px 24px; }
     .section-body.hidden { display: none; }
-
-    /* ── SUBSECTIONS ─────────────────────────────────────── */
     .subsection { margin-bottom: 22px; }
     .subsection:last-child { margin-bottom: 0; }
-    .subsection-title {
-      font-size: 10px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.10em; color: var(--purple);
-      margin-bottom: 10px; padding-bottom: 8px;
-      border-bottom: 1px solid rgba(94,58,142,0.12);
-    }
-
-    /* ── CHECKLIST ITEMS ─────────────────────────────────── */
+    .subsection-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.10em; color: var(--purple); margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(94,58,142,0.12); }
     .checklist { list-style: none; display: flex; flex-direction: column; gap: 4px; }
-    .checklist li label {
-      display: flex; align-items: flex-start; gap: 10px; cursor: pointer;
-      padding: 9px 12px; border-radius: 9px; width: 100%;
-      border: 1px solid transparent;
-      transition: border-color .15s, background .15s;
-      font-size: 13px; line-height: 1.5;
-    }
-    .checklist li label:hover {
-      background: var(--surface2);
-      border-color: var(--border-strong);
-    }
+    .checklist li label { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; padding: 9px 12px; border-radius: 9px; width: 100%; border: 1px solid transparent; transition: border-color .15s, background .15s; font-size: 13px; line-height: 1.5; }
+    .checklist li label:hover { background: var(--surface2); border-color: var(--border-strong); }
     .checklist li input[type="checkbox"] { display: none; }
-    .check-box {
-      width: 18px; height: 18px; min-width: 18px;
-      border: 1.5px solid var(--border-strong); border-radius: 5px;
-      display: flex; align-items: center; justify-content: center; margin-top: 1px;
-      transition: all .2s; background: var(--surface);
-      flex-shrink: 0;
-    }
+    .check-box { width: 18px; height: 18px; min-width: 18px; border: 1.5px solid var(--border-strong); border-radius: 5px; display: flex; align-items: center; justify-content: center; margin-top: 1px; transition: all .2s; background: var(--surface); flex-shrink: 0; }
     .check-box svg { display: none; width: 10px; height: 10px; }
-    .checklist li input[type="checkbox"]:checked + label {
-      background: var(--done-bg);
-      border-color: var(--done-border);
-    }
-    .checklist li input[type="checkbox"]:checked + label .check-box {
-      background: var(--done); border-color: var(--done);
-    }
+    .checklist li input[type="checkbox"]:checked + label { background: var(--done-bg); border-color: var(--done-border); }
+    .checklist li input[type="checkbox"]:checked + label .check-box { background: var(--done); border-color: var(--done); }
     .checklist li input[type="checkbox"]:checked + label .check-box svg { display: block; }
-    .checklist li input[type="checkbox"]:checked + label .item-text {
-      text-decoration: line-through; color: var(--text-muted);
-    }
+    .checklist li input[type="checkbox"]:checked + label .item-text { text-decoration: line-through; color: var(--text-muted); }
     .item-text { flex: 1; color: var(--text); }
-    .item-note {
-      display: block; font-size: 11px;
-      color: var(--text-muted); margin-top: 2px; font-style: normal;
-    }
-
-    /* ── TAGS ────────────────────────────────────────────── */
-    .tag {
-      display: inline-block; background: var(--gold-bg);
-      color: var(--gold); border: 1px solid var(--gold-border);
-      border-radius: 5px; font-size: 10px; font-weight: 700;
-      padding: 1px 6px; margin-left: 5px; vertical-align: middle;
-      letter-spacing: 0.03em;
-    }
+    .item-note { display: block; font-size: 11px; color: var(--text-muted); margin-top: 2px; font-style: normal; }
+    .tag { display: inline-block; background: var(--gold-bg); color: var(--gold); border: 1px solid var(--gold-border); border-radius: 5px; font-size: 10px; font-weight: 700; padding: 1px 6px; margin-left: 5px; vertical-align: middle; letter-spacing: 0.03em; }
     .tag.red   { background: var(--red-bg);   color: var(--red);   border-color: var(--red-border); }
     .tag.blue  { background: #eff6ff; color: #2563eb; border-color: rgba(37,99,235,0.2); }
     .tag.green { background: var(--green-bg); color: var(--green); border-color: var(--green-border); }
     .tag.purple{ background: var(--purple-light); color: var(--purple); border-color: rgba(94,58,142,0.2); }
     .tag.pink  { background: #fdf2f8; color: #9d174d; border-color: rgba(157,23,77,0.2); }
     .tag.teal  { background: #f0fdfa; color: #0f766e; border-color: rgba(15,118,110,0.2); }
-
-    /* ── PRIORITY DOTS ───────────────────────────────────── */
-    .priority {
-      width: 5px; min-width: 5px; height: 5px;
-      border-radius: 999px; margin-top: 7px; flex-shrink: 0;
-    }
+    .priority { width: 5px; min-width: 5px; height: 5px; border-radius: 999px; margin-top: 7px; flex-shrink: 0; }
     .p-high { background: var(--red); }
     .p-mid  { background: var(--gold); }
     .p-low  { background: var(--text-faint); }
-
-    /* ── URGENT STRIP ────────────────────────────────────── */
-    .urgent-strip {
-      background: var(--red-bg);
-      border: 1px solid var(--red-border);
-      border-radius: 9px; padding: 10px 14px; margin-bottom: 16px;
-      font-size: 12px; color: var(--red);
-      display: flex; align-items: center; gap: 8px;
-    }
-
-    /* ── FOOTER ──────────────────────────────────────────── */
-    footer {
-      text-align: center; padding: 24px;
-      font-size: 11px; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 0.09em;
-      color: var(--text-faint);
-    }
-
-    /* ── RESPONSIVE ──────────────────────────────────────── */
+    .urgent-strip { background: var(--red-bg); border: 1px solid var(--red-border); border-radius: 9px; padding: 10px 14px; margin-bottom: 16px; font-size: 12px; color: var(--red); display: flex; align-items: center; gap: 8px; }
+    footer { text-align: center; padding: 24px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; color: var(--text-faint); }
     @media (max-width: 600px) {
       header { padding: 14px 16px; }
       .progress-wrap { padding: 12px 16px; }
@@ -285,99 +151,96 @@
     </div>
     <div class="section-body" id="body-content">
 
-      <div class="urgent-strip">🔴 <strong>Priority:</strong> Video &amp; branded assets should be finalized at least 2 weeks before the event date.</div>
+      <div class="urgent-strip">🔴 <strong>Priority:</strong> Video &amp; branded assets should be finalised at least 2 weeks before the event date.</div>
 
+      <!-- Video Content -->
       <div class="subsection">
         <div class="subsection-title">🎥 Video Content</div>
         <ul class="checklist">
           <li><input type="checkbox" id="c1"><label for="c1"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Product showcase video <span class="tag">Reel/Short</span><em class="item-note">Feature top seasonal products relevant to the campaign</em></span></label></li>
-          <li><input type="checkbox" id="c2"><label for="c2"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Brand story / hero ad video <span class="tag red">Hero Ad</span><em class="item-note">Emotional storytelling: convenience, islandwide delivery, trusted brand</em></span></label></li>
-          <li><input type="checkbox" id="c3"><label for="c3"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Range-of-products display video <span class="tag blue">Catalog Ad</span><em class="item-note">Carousel-style collage across key categories</em></span></label></li>
-          <li><input type="checkbox" id="c4"><label for="c4"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Brand collab commercial videos <span class="tag purple">Collab</span><em class="item-note">Co-branded videos with key product brands or partners</em></span></label></li>
-          <li><input type="checkbox" id="c5"><label for="c5"><span class="priority p-low"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">TikTok-native short videos (15–30s) <span class="tag green">TikTok</span><em class="item-note">Trending audio + seasonal feel; show gifting process, unboxing</em></span></label></li>
+          <li><input type="checkbox" id="c2"><label for="c2"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Event × Kapruka brand video <span class="tag red">Hero Ad</span><em class="item-note">Emotional storytelling tied to the event: convenience, islandwide delivery, trusted brand</em></span></label></li>
+          <li><input type="checkbox" id="c3"><label for="c3"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Collab commercial videos <span class="tag purple">Collab</span><em class="item-note">Co-branded videos with key product brands or partners for the event</em></span></label></li>
+          <li><input type="checkbox" id="c4"><label for="c4"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">TikTok Office – Event Vibes video <span class="tag green">TikTok</span><em class="item-note">Behind-the-scenes office/warehouse energy for the event; trending audio + authentic feel</em></span></label></li>
         </ul>
       </div>
 
+      <!-- Old Branded Campaign Assets -->
       <div class="subsection">
-        <div class="subsection-title">📣 Branded Campaign Assets</div>
+        <div class="subsection-title">📣 Old Branded Campaign Assets</div>
         <ul class="checklist">
-          <li><input type="checkbox" id="c6"><label for="c6"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Review &amp; shortlist old campaign videos for reuse <span class="tag">Archive</span><em class="item-note">Check previous years' top-performing posts — repurpose with updated captions</em></span></label></li>
-          <li><input type="checkbox" id="c7"><label for="c7"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">"Why Kapruka?" campaign post<em class="item-note">Value prop: same-day Colombo delivery, countrywide reach, wide selection, trusted brand</em></span></label></li>
-          <li><input type="checkbox" id="c8"><label for="c8"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Key categories — seasonal-themed creatives <span class="tag blue">Static + Video</span><em class="item-note">Design creatives for each major product category in the campaign</em></span></label></li>
-          <li><input type="checkbox" id="c9"><label for="c9"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Key products — individual seasonal product posts <span class="tag blue">Product Ads</span><em class="item-note">Hero SKUs in each category with seasonal design overlay</em></span></label></li>
+          <li><input type="checkbox" id="c5"><label for="c5"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Review &amp; shortlist old campaign videos for reuse <span class="tag">Archive</span><em class="item-note">Check previous years' top-performing posts — repurpose with updated captions &amp; event dates</em></span></label></li>
+          <li><input type="checkbox" id="c6"><label for="c6"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Identify &amp; tag reusable static graphics from past campaigns<em class="item-note">Flag top-performing statics, carousels &amp; banners — refresh with current season branding</em></span></label></li>
+          <li><input type="checkbox" id="c7"><label for="c7"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Archive all current campaign assets in organised folder structure<em class="item-note">Categorise by type (video, static, email, ads) in Drive/Notion for future reuse</em></span></label></li>
         </ul>
       </div>
 
+      <!-- Social Profile Assets -->
       <div class="subsection">
         <div class="subsection-title">🖼️ Social Profile Assets</div>
         <ul class="checklist">
-          <li><input type="checkbox" id="c10"><label for="c10"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Profile Picture — seasonal-themed overlay<em class="item-note">Update on FB, Instagram, TikTok — use consistent design across platforms</em></span></label></li>
-          <li><input type="checkbox" id="c11"><label for="c11"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Cover Photo — campaign promotional banner<em class="item-note">FB: 820×312px | Include key offer, website URL, campaign dates</em></span></label></li>
+          <li><input type="checkbox" id="c8"><label for="c8"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Profile Picture — event-themed seasonal overlay<em class="item-note">Update on FB, Instagram, TikTok — use consistent design across all platforms</em></span></label></li>
+          <li><input type="checkbox" id="c9"><label for="c9"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Cover Photo — campaign promotional banner<em class="item-note">FB: 820×312px | Include key offer, website URL, campaign dates &amp; event branding</em></span></label></li>
         </ul>
       </div>
 
+      <!-- Hashtags & Keywords -->
       <div class="subsection">
-        <div class="subsection-title"># Hashtags, Keywords &amp; Copy</div>
+        <div class="subsection-title"># Hashtags &amp; Keywords</div>
         <ul class="checklist">
-          <li><input type="checkbox" id="c12"><label for="c12"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Compile master hashtag list for all platforms<em class="item-note">Include campaign-specific, brand, category, and seasonal hashtags</em></span></label></li>
-          <li><input type="checkbox" id="c13"><label for="c13"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Keyword list for captions, SEO &amp; Google Ads<em class="item-note">Research high-volume, low-competition terms relevant to the season and product</em></span></label></li>
-          <li><input type="checkbox" id="c14"><label for="c14"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Local language / cultural copy terms for captions<em class="item-note">Compile slangs, greetings, or culturally relevant phrases for the target audience</em></span></label></li>
-          <li><input type="checkbox" id="c15"><label for="c15"><span class="priority p-low"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">TikTok trending sounds &amp; audio research<em class="item-note">Identify trending seasonal music on TikTok; save audio links for video creation</em></span></label></li>
+          <li><input type="checkbox" id="c10"><label for="c10"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Compile master hashtag list for all platforms<em class="item-note">Include campaign-specific, brand, category, event and seasonal hashtags</em></span></label></li>
+          <li><input type="checkbox" id="c11"><label for="c11"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Keyword list for captions, SEO &amp; Google Ads<em class="item-note">Research high-volume, low-competition terms relevant to the season and product categories</em></span></label></li>
+          <li><input type="checkbox" id="c12"><label for="c12"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Local language copy terms — Sinhala &amp; Tamil captions<em class="item-note">Compile culturally relevant phrases, greetings &amp; slangs for each language audience segment</em></span></label></li>
+          <li><input type="checkbox" id="c13"><label for="c13"><span class="priority p-low"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">TikTok trending sounds &amp; audio research<em class="item-note">Identify trending seasonal music on TikTok; save audio links for video creation team</em></span></label></li>
         </ul>
       </div>
 
+      <!-- Music & Reusable Content -->
       <div class="subsection">
         <div class="subsection-title">🎵 Music &amp; Reusable Content</div>
         <ul class="checklist">
-          <li><input type="checkbox" id="c16"><label for="c16"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Source &amp; license seasonal background music for videos<em class="item-note">Check copyright clearance for FB/TikTok use before including in any video</em></span></label></li>
-          <li><input type="checkbox" id="c17"><label for="c17"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Identify &amp; tag previous campaign reusable content from archive<em class="item-note">Flag top-performing posts, videos, and static graphics from past campaigns</em></span></label></li>
-          <li><input type="checkbox" id="c18"><label for="c18"><span class="priority p-low"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Create content calendar &amp; schedule posts in Meta Business Suite<em class="item-note">Pre-schedule countdown, teaser, offer, and celebration posts</em></span></label></li>
+          <li><input type="checkbox" id="c14"><label for="c14"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Source &amp; license seasonal background music for videos<em class="item-note">Check copyright clearance for FB/TikTok use before including in any video asset</em></span></label></li>
+          <li><input type="checkbox" id="c15"><label for="c15"><span class="priority p-low"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Create content calendar &amp; schedule posts in Meta Business Suite<em class="item-note">Pre-schedule countdown, teaser, offer, and celebration posts across all platforms</em></span></label></li>
         </ul>
       </div>
 
+      <!-- Event-Based Memes -->
       <div class="subsection">
         <div class="subsection-title">😂 Event-Based Memes</div>
         <ul class="checklist">
-          <li><input type="checkbox" id="eb1"><label for="eb1"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Create event-themed relatable memes for FB &amp; IG <span class="tag green">Organic</span><em class="item-note">Relatable scenarios tied to the season — culturally warm, brand-safe humour</em></span></label></li>
-          <li><input type="checkbox" id="eb2"><label for="eb2"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">TikTok meme / trend adaptations for the season <span class="tag green">TikTok</span><em class="item-note">Adapt trending meme formats with seasonal context; hook in first 2 seconds</em></span></label></li>
-          <li><input type="checkbox" id="eb3"><label for="eb3"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">"Before vs After" meme series featuring the product solution<em class="item-note">Show pain point in first frame → Kapruka solution in second; humour-driven format</em></span></label></li>
-          <li><input type="checkbox" id="eb4"><label for="eb4"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Meme calendar — plan topics in advance for the campaign window<em class="item-note">Rotate meme themes: gifting, delivery, urgency, product humour — 1 every 2 days</em></span></label></li>
+          <li><input type="checkbox" id="eb1"><label for="eb1"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Create event-themed relatable memes for FB &amp; IG <span class="tag green">Organic</span><em class="item-note">Relatable scenarios tied to the event — culturally warm, brand-safe humour</em></span></label></li>
+          <li><input type="checkbox" id="eb2"><label for="eb2"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">TikTok meme / trend adaptations for the event <span class="tag green">TikTok</span><em class="item-note">Adapt trending meme formats with event context; hook in first 2 seconds</em></span></label></li>
+          <li><input type="checkbox" id="eb3"><label for="eb3"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">"Before vs After" meme series featuring the product solution<em class="item-note">Pain point in first frame → Kapruka solution in second; humour-driven format</em></span></label></li>
+          <li><input type="checkbox" id="eb4"><label for="eb4"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Meme calendar — plan topics in advance for the campaign window<em class="item-note">Rotate themes: gifting, delivery, urgency, product humour — 1 every 2 days</em></span></label></li>
         </ul>
       </div>
 
+      <!-- Creative & Occasion-Based Posts -->
       <div class="subsection">
-        <div class="subsection-title">📖 Product Guides</div>
+        <div class="subsection-title">🎨 Creative &amp; Occasion-Based Posts / Product Posts</div>
         <ul class="checklist">
-          <li><input type="checkbox" id="pg1"><label for="pg1"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">"Top 10 [Season] Gifts on Kapruka" guide carousel <span class="tag blue">Carousel</span><em class="item-note">Ranked list with price range, use case, and direct product link for each item</em></span></label></li>
-          <li><input type="checkbox" id="pg2"><label for="pg2"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Category-specific product guide carousels<em class="item-note">One carousel per major category — 6–8 slides each; include product names &amp; prices</em></span></label></li>
-          <li><input type="checkbox" id="pg3"><label for="pg3"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">"What to buy by budget" product guide <span class="tag">Budget Guide</span><em class="item-note">Segment into 3 budget tiers — each with curated product picks and direct links</em></span></label></li>
-          <li><input type="checkbox" id="pg4"><label for="pg4"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">"New arrivals for this season" showcase post<em class="item-note">Highlight freshly listed or restocked seasonal products — build FOMO and urgency</em></span></label></li>
-          <li><input type="checkbox" id="pg5"><label for="pg5"><span class="priority p-low"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Blog / SEO article: "Complete [Season] Shopping Guide"<em class="item-note">Long-form article targeting search traffic; cover gift ideas, delivery info, FAQs</em></span></label></li>
-        </ul>
-      </div>
-
-      <div class="subsection">
-        <div class="subsection-title">🎨 Creative &amp; Occasion-Based Posts</div>
-        <ul class="checklist">
-          <li><input type="checkbox" id="cp1"><label for="cp1"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Key date / moment creative post — timed for peak campaign day <span class="tag red">High Impact</span><em class="item-note">Warm greeting visual with strong seasonal identity; schedule in advance</em></span></label></li>
-          <li><input type="checkbox" id="cp2"><label for="cp2"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Educational / traditions carousel tied to the occasion<em class="item-note">Cultural or event context builds brand affinity; tie tradition into relevant products</em></span></label></li>
+          <li><input type="checkbox" id="cp1"><label for="cp1"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Key date creative post — timed for peak campaign day <span class="tag red">High Impact</span><em class="item-note">Warm greeting visual with strong event identity; schedule in advance</em></span></label></li>
+          <li><input type="checkbox" id="cp2"><label for="cp2"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Educational / traditions carousel tied to the occasion<em class="item-note">Cultural context builds brand affinity; tie tradition into relevant Kapruka products</em></span></label></li>
           <li><input type="checkbox" id="cp3"><label for="cp3"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">"Gift for [persona]" occasion-specific posts <span class="tag purple">Persona</span><em class="item-note">Relatable gifting angle per recipient type — drives emotional connection &amp; click-throughs</em></span></label></li>
-          <li><input type="checkbox" id="cp4"><label for="cp4"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">"Send gifts from anywhere" diaspora / remote buyer post<em class="item-note">Target out-of-city or overseas audience; emphasize delivery reliability</em></span></label></li>
-          <li><input type="checkbox" id="cp5"><label for="cp5"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Aesthetic flat-lay / styled product photography posts<em class="item-note">Seasonal props and colour palette with Kapruka products; high-quality visuals</em></span></label></li>
-          <li><input type="checkbox" id="cp6"><label for="cp6"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Poll / Quiz engagement posts <span class="tag green">Engagement</span><em class="item-note">Interactive story polls on IG &amp; FB; drive comments and saves; high engagement, low effort</em></span></label></li>
-          <li><input type="checkbox" id="cp7"><label for="cp7"><span class="priority p-low"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Audience-segment specific post (e.g. different language / region)<em class="item-note">Tailor creative and copy for a secondary audience segment where relevant</em></span></label></li>
+          <li><input type="checkbox" id="cp4"><label for="cp4"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Key category — event-themed product category posts <span class="tag blue">Category</span><em class="item-note">One creative per major product category with event design overlay</em></span></label></li>
+          <li><input type="checkbox" id="cp5"><label for="cp5"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Key product — individual seasonal product posts <span class="tag blue">Product Ads</span><em class="item-note">Hero SKUs in each category with seasonal design overlay &amp; direct product link</em></span></label></li>
+          <li><input type="checkbox" id="cp6"><label for="cp6"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">"Send gifts from anywhere" diaspora / remote buyer post<em class="item-note">Target out-of-city or overseas audience; emphasize delivery reliability islandwide</em></span></label></li>
+          <li><input type="checkbox" id="cp7"><label for="cp7"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Poll / Quiz engagement posts <span class="tag green">Engagement</span><em class="item-note">Interactive story polls on IG &amp; FB — drive comments and saves; high engagement, low effort</em></span></label></li>
+          <li><input type="checkbox" id="cp8"><label for="cp8"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Fun posts — lighthearted event-day content <span class="tag green">Organic</span><em class="item-note">Celebratory, feel-good content for event day; boost organic reach &amp; brand love</em></span></label></li>
+          <li><input type="checkbox" id="cp9"><label for="cp9"><span class="priority p-low"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Aesthetic flat-lay / styled product photography posts<em class="item-note">Seasonal props and colour palette with Kapruka products; high-quality visuals</em></span></label></li>
         </ul>
       </div>
 
+      <!-- Product Guides -->
       <div class="subsection">
-        <div class="subsection-title">🛒 Buying Guides</div>
+        <div class="subsection-title">📖 Product Guides / Event Product Guides</div>
         <ul class="checklist">
-          <li><input type="checkbox" id="bg1"><label for="bg1"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">"Last-minute buying guide" — 3 days before campaign peak <span class="tag red">Urgency</span><em class="item-note">Highlight same-day / next-day delivery items; reassure late buyers on cut-off times</em></span></label></li>
-          <li><input type="checkbox" id="bg2"><label for="bg2"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">"How to order on Kapruka" step-by-step guide for new users<em class="item-note">Simple 4-step visual: Browse → Add to cart → Checkout → Delivered; target first-timers</em></span></label></li>
-          <li><input type="checkbox" id="bg3"><label for="bg3"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">"Gift ideas by recipient" buying guide carousel<em class="item-note">Segments: for parents, kids, colleagues, friends — curated product sets per group</em></span></label></li>
-          <li><input type="checkbox" id="bg4"><label for="bg4"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Category spotlight buying guide (food, fashion, lifestyle, etc.) <span class="tag">Category</span><em class="item-note">Highlight key products per category with freshness, delivery speed, and seller info</em></span></label></li>
-          <li><input type="checkbox" id="bg5"><label for="bg5"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Fashion / lifestyle buying guide for the season <span class="tag blue">Fashion</span><em class="item-note">Curated outfit or lifestyle picks — showcase Kapruka range with styling tips</em></span></label></li>
-          <li><input type="checkbox" id="bg6"><label for="bg6"><span class="priority p-low"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Delivery cut-off guide post — "Order by [date] for guaranteed delivery"<em class="item-note">Clear dates for same-day Colombo, next-day outstation, pre-order items — pin to profile</em></span></label></li>
+          <li><input type="checkbox" id="pg1"><label for="pg1"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">"Top 10 [Event] Gifts on Kapruka" guide carousel <span class="tag blue">Carousel</span><em class="item-note">Ranked list with price range, use case, and direct product link for each item</em></span></label></li>
+          <li><input type="checkbox" id="pg2"><label for="pg2"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Category-specific event product guide carousels<em class="item-note">One carousel per major category — 6–8 slides each; include product names &amp; prices</em></span></label></li>
+          <li><input type="checkbox" id="pg3"><label for="pg3"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">"Gift ideas by recipient" buying guide carousel<em class="item-note">Segments: for parents, kids, colleagues, friends — curated product sets per group</em></span></label></li>
+          <li><input type="checkbox" id="pg4"><label for="pg4"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">"What to buy by budget" product guide <span class="tag">Budget Guide</span><em class="item-note">3 budget tiers — each with curated product picks and direct links</em></span></label></li>
+          <li><input type="checkbox" id="pg5"><label for="pg5"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">"Last-minute buying guide" — 3 days before campaign peak <span class="tag red">Urgency</span><em class="item-note">Highlight same-day / next-day delivery items; reassure late buyers on cut-off times</em></span></label></li>
+          <li><input type="checkbox" id="pg6"><label for="pg6"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">"New arrivals for this season" showcase post<em class="item-note">Highlight freshly listed or restocked seasonal products — build FOMO and urgency</em></span></label></li>
+          <li><input type="checkbox" id="pg7"><label for="pg7"><span class="priority p-low"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Blog / SEO article: "Complete [Event] Shopping Guide"<em class="item-note">Long-form article targeting search traffic; cover gift ideas, delivery info, FAQs</em></span></label></li>
         </ul>
       </div>
 
@@ -394,6 +257,7 @@
     </div>
     <div class="section-body" id="body-campaigns">
 
+      <!-- Mass Mail -->
       <div class="subsection">
         <div class="subsection-title">📧 Mass Mail</div>
         <ul class="checklist">
@@ -405,33 +269,48 @@
         </ul>
       </div>
 
+      <!-- Facebook Campaigns -->
+      <div class="subsection">
+        <div class="subsection-title">📘 Facebook Campaigns</div>
+        <ul class="checklist">
+          <li><input type="checkbox" id="fb1"><label for="fb1"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Key Products campaign — individual product ad sets <span class="tag blue">Product Ads</span><em class="item-note">Carousel or single-image ads for hero SKUs; optimise for conversions</em></span></label></li>
+          <li><input type="checkbox" id="fb2"><label for="fb2"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Key Categories campaign — category-level ad sets <span class="tag blue">Category Ads</span><em class="item-note">Drive traffic to each major category landing page; broad + interest targeting</em></span></label></li>
+          <li><input type="checkbox" id="fb3"><label for="fb3"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Event × Brand campaign — co-branded event awareness ads <span class="tag purple">Collab</span><em class="item-note">Feature brand partners; run reach &amp; awareness objective for event momentum</em></span></label></li>
+          <li><input type="checkbox" id="fb4"><label for="fb4"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Retargeting campaign — website visitors &amp; abandoned cart users<em class="item-note">Custom audience: site visitors last 30 days + add-to-cart non-converters</em></span></label></li>
+        </ul>
+      </div>
+
+      <!-- Google Ads -->
       <div class="subsection">
         <div class="subsection-title">🔍 Google Ads</div>
         <ul class="checklist">
-          <li><input type="checkbox" id="d6"><label for="d6"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Create seasonal Search campaign with event-specific keywords<em class="item-note">Target high-intent searches around the event, gifts, and delivery</em></span></label></li>
-          <li><input type="checkbox" id="d7"><label for="d7"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Update ad copy &amp; extensions with seasonal messaging<em class="item-note">Sitelinks: Seasonal Deals, Gift Packs, Same-Day Delivery, Top Categories</em></span></label></li>
-          <li><input type="checkbox" id="d8"><label for="d8"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Set up Performance Max / Shopping campaign for seasonal products<em class="item-note">Feed-based campaign with seasonal custom labels in product feed</em></span></label></li>
-          <li><input type="checkbox" id="d9"><label for="d9"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Display / YouTube remarketing with seasonal creatives<em class="item-note">Retarget site visitors from last 30 days + abandoned cart users</em></span></label></li>
-          <li><input type="checkbox" id="d10"><label for="d10"><span class="priority p-low"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Pause / end all seasonal campaigns after event date<em class="item-note">Schedule campaign end dates in advance to avoid wasted spend</em></span></label></li>
+          <li><input type="checkbox" id="g1"><label for="g1"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Create / update Search Ads campaign with event-specific keywords<em class="item-note">Target high-intent searches around the event, gifts, and delivery; tight keyword match types</em></span></label></li>
+          <li><input type="checkbox" id="g2"><label for="g2"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Set up / refresh PMAX campaign for seasonal products<em class="item-note">Feed-based campaign with seasonal custom labels; include all asset types</em></span></label></li>
+          <li><input type="checkbox" id="g3"><label for="g3"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Update ad extensions with seasonal messaging <span class="tag">Extensions</span><em class="item-note">Sitelinks: Seasonal Deals, Gift Packs, Same-Day Delivery, Top Categories; add callouts &amp; promos</em></span></label></li>
+          <li><input type="checkbox" id="g4"><label for="g4"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">GSC keyword mining → feed into Google Ads<em class="item-note">Pull top organic queries from GSC; convert high-CTR terms into paid keyword targets</em></span></label></li>
+          <li><input type="checkbox" id="g5"><label for="g5"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Display / YouTube remarketing with seasonal creatives<em class="item-note">Retarget site visitors from last 30 days + abandoned cart users</em></span></label></li>
+          <li><input type="checkbox" id="g6"><label for="g6"><span class="priority p-low"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Pause / end all seasonal campaigns after event date<em class="item-note">Schedule campaign end dates in advance to avoid wasted spend</em></span></label></li>
         </ul>
       </div>
 
+      <!-- In-App Push & Notifications -->
       <div class="subsection">
-        <div class="subsection-title">📲 In-App Notification &amp; Push</div>
+        <div class="subsection-title">📲 In-App Push &amp; Notifications</div>
         <ul class="checklist">
-          <li><input type="checkbox" id="d11"><label for="d11"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Campaign countdown push notification — 7 days before<em class="item-note">Deep link to seasonal landing page; create urgency early</em></span></label></li>
-          <li><input type="checkbox" id="d12"><label for="d12"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">In-app banner — seasonal deals homepage takeover<em class="item-note">Full-width banner with offer CTA; A/B test headline copy</em></span></label></li>
-          <li><input type="checkbox" id="d13"><label for="d13"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Last-minute push — 1–2 days before (order today for on-time delivery)<em class="item-note">Segment: users who viewed seasonal products but didn't convert</em></span></label></li>
-          <li><input type="checkbox" id="d14"><label for="d14"><span class="priority p-low"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Celebration push notification — on event day<em class="item-note">Warm greeting + soft CTA to post-event deals</em></span></label></li>
+          <li><input type="checkbox" id="p1"><label for="p1"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Campaign countdown push notification — 7 days before<em class="item-note">Deep link to seasonal landing page; create urgency early</em></span></label></li>
+          <li><input type="checkbox" id="p2"><label for="p2"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">In-app banner — seasonal deals homepage takeover<em class="item-note">Full-width banner with offer CTA; A/B test headline copy</em></span></label></li>
+          <li><input type="checkbox" id="p3"><label for="p3"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Last-minute push — 1–2 days before (order today for on-time delivery)<em class="item-note">Segment: users who viewed seasonal products but didn't convert</em></span></label></li>
+          <li><input type="checkbox" id="p4"><label for="p4"><span class="priority p-low"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Celebration push notification — on event day<em class="item-note">Warm greeting + soft CTA to post-event deals</em></span></label></li>
         </ul>
       </div>
 
+      <!-- Countdown Posts -->
       <div class="subsection">
-        <div class="subsection-title">🗓️ Countdown &amp; Celebration Posts</div>
+        <div class="subsection-title">🗓️ Countdown Posts</div>
         <ul class="checklist">
-          <li><input type="checkbox" id="d15"><label for="d15"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Daily / weekly countdown posts on Social Media (FB, IG, TikTok)<em class="item-note">Design templates: "X days to go" with product highlight each day</em></span></label></li>
-          <li><input type="checkbox" id="d16"><label for="d16"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Last-minute post — 1–2 days before (urgency &amp; last call messaging)<em class="item-note">Emphasize same-day/next-day delivery; use countdown timer sticker on IG Story</em></span></label></li>
-          <li><input type="checkbox" id="d17"><label for="d17"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Celebration post — on event day (brand moment, no hard sell)<em class="item-note">Warm visual and greeting — high organic engagement expected on event day</em></span></label></li>
+          <li><input type="checkbox" id="cd1"><label for="cd1"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Daily / weekly countdown posts on Social Media (FB, IG, TikTok)<em class="item-note">Design templates: "X days to go" with product highlight each day</em></span></label></li>
+          <li><input type="checkbox" id="cd2"><label for="cd2"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Last-minute post — 1–2 days before (urgency &amp; last call messaging)<em class="item-note">Emphasize same-day/next-day delivery; use countdown timer sticker on IG Story</em></span></label></li>
+          <li><input type="checkbox" id="cd3"><label for="cd3"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Celebration post — on event day (brand moment, no hard sell)<em class="item-note">Warm visual and greeting — high organic engagement expected on event day</em></span></label></li>
         </ul>
       </div>
 
@@ -448,34 +327,49 @@
     </div>
     <div class="section-body" id="body-website">
 
+      <!-- Search & Landing Page -->
       <div class="subsection">
-        <div class="subsection-title">🔎 Search Results &amp; Navigation</div>
+        <div class="subsection-title">🔎 Search Landing Page &amp; Search Bar Experience</div>
         <ul class="checklist">
-          <li><input type="checkbox" id="w1"><label for="w1"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Set up search redirects for seasonal keywords to landing page<em class="item-note">Map all relevant search terms to the campaign collection page</em></span></label></li>
-          <li><input type="checkbox" id="w2"><label for="w2"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Handle OOS (Out of Stock) search results gracefully<em class="item-note">Redirect OOS searches to similar in-stock products; no dead-end pages</em></span></label></li>
-          <li><input type="checkbox" id="w3"><label for="w3"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Add "Similar Items" section on all OOS product pages<em class="item-note">Retain user on site — show 4–8 related in-stock alternatives</em></span></label></li>
-          <li><input type="checkbox" id="w4"><label for="w4"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Add seasonal collection to sidebar &amp; top navigation<em class="item-note">Ensure campaign deals page is visible without needing to search</em></span></label></li>
-          <li><input type="checkbox" id="w5"><label for="w5"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Verify all navigation category links are functional<em class="item-note">Test all major category paths; check on mobile and desktop</em></span></label></li>
+          <li><input type="checkbox" id="w1"><label for="w1"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Set up search redirects for seasonal &amp; event keywords to landing page<em class="item-note">Map all relevant search terms to the campaign collection page</em></span></label></li>
+          <li><input type="checkbox" id="w2"><label for="w2"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Handle OOS (Out of Stock) search results — no dead-end pages <span class="tag red">OOS</span><em class="item-note">Redirect OOS searches to similar in-stock products; ensure no products surface as OOS</em></span></label></li>
+          <li><input type="checkbox" id="w3"><label for="w3"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Add "Similar Items" section on all OOS product pages<em class="item-note">Retain user on site — show 4–8 related in-stock alternatives on every OOS page</em></span></label></li>
+          <li><input type="checkbox" id="w4"><label for="w4"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Verify "Similar Items" widget on product detail pages<em class="item-note">Cross-sell &amp; upsell: show related products in same category or price range</em></span></label></li>
         </ul>
       </div>
 
+      <!-- Navigation Experience -->
+      <div class="subsection">
+        <div class="subsection-title">🗂️ Navigation, Tabs &amp; See More Experience</div>
+        <ul class="checklist">
+          <li><input type="checkbox" id="n1"><label for="n1"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Add seasonal event collection to sidebar &amp; top navigation<em class="item-note">Ensure campaign deals page is visible without needing to search</em></span></label></li>
+          <li><input type="checkbox" id="n2"><label for="n2"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Verify all navigation category links are functional<em class="item-note">Test all major category paths; check on mobile and desktop browsers</em></span></label></li>
+          <li><input type="checkbox" id="n3"><label for="n3"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Check &amp; optimise "See More" expand functionality on product pages<em class="item-note">Ensure collapsed descriptions expand correctly on mobile browsers</em></span></label></li>
+          <li><input type="checkbox" id="n4"><label for="n4"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Tabs experience — verify product &amp; category tab filtering works correctly<em class="item-note">Check filter/sort tabs on category and collection pages; test on mobile</em></span></label></li>
+          <li><input type="checkbox" id="n5"><label for="n5"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Product range audit — ensure full seasonal product range is listed &amp; visible<em class="item-note">Confirm all campaign SKUs are live, correctly categorised, and surfacing in browsing</em></span></label></li>
+        </ul>
+      </div>
+
+      <!-- Product Listing Quality -->
       <div class="subsection">
         <div class="subsection-title">🖼️ Product Listing Quality</div>
         <ul class="checklist">
-          <li><input type="checkbox" id="w6"><label for="w6"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Audit image quality on all campaign-tagged products<em class="item-note">Minimum 800×800px; no blurry, watermarked, or placeholder images</em></span></label></li>
-          <li><input type="checkbox" id="w7"><label for="w7"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Audit product description quality for key campaign SKUs<em class="item-note">Ensure all descriptions are complete, accurate, and have relevant keywords</em></span></label></li>
-          <li><input type="checkbox" id="w8"><label for="w8"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Check &amp; optimize "See More" expand functionality on product pages<em class="item-note">Ensure collapsed descriptions expand correctly on mobile browsers</em></span></label></li>
-          <li><input type="checkbox" id="w9"><label for="w9"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Verify "Similar Items" widget on product detail pages<em class="item-note">Cross-sell &amp; upsell: show related products in same category or price range</em></span></label></li>
+          <li><input type="checkbox" id="pl1"><label for="pl1"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Image audit on all campaign-tagged products <span class="tag red">Audit</span><em class="item-note">Minimum 800×800px; no blurry, watermarked, or placeholder images</em></span></label></li>
+          <li><input type="checkbox" id="pl2"><label for="pl2"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Description audit for key campaign SKUs <span class="tag red">Audit</span><em class="item-note">Ensure all descriptions are complete, accurate, and contain relevant keywords</em></span></label></li>
         </ul>
       </div>
 
+      <!-- Event Page SEO -->
       <div class="subsection">
-        <div class="subsection-title">🗺️ SEO &amp; Sitemaps</div>
+        <div class="subsection-title">🗺️ Event Page SEO</div>
         <ul class="checklist">
-          <li><input type="checkbox" id="w10"><label for="w10"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Submit updated sitemap to Google Search Console<em class="item-note">Include campaign landing page, new collection URLs, and updated product pages</em></span></label></li>
-          <li><input type="checkbox" id="w11"><label for="w11"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Add seasonal meta titles &amp; descriptions on landing and category pages<em class="item-note">Include campaign name, year, and key product terms in meta tags</em></span></label></li>
-          <li><input type="checkbox" id="w12"><label for="w12"><span class="priority p-low"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Request indexing of seasonal pages in Google Search Console<em class="item-note">Use "Inspect URL → Request Indexing" for all new campaign pages</em></span></label></li>
-          <li><input type="checkbox" id="w13"><label for="w13"><span class="priority p-low"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Verify page speed &amp; Core Web Vitals on campaign landing page<em class="item-note">Use PageSpeed Insights — target LCP &lt; 2.5s, CLS &lt; 0.1 on mobile</em></span></label></li>
+          <li><input type="checkbox" id="s1"><label for="s1"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">On-page SEO — seasonal meta titles, descriptions &amp; H1s on all campaign pages<em class="item-note">Include event name, year, and key product terms in meta tags &amp; headings</em></span></label></li>
+          <li><input type="checkbox" id="s2"><label for="s2"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Technical audit — page speed &amp; Core Web Vitals on campaign landing page<em class="item-note">Use PageSpeed Insights — target LCP &lt;2.5s, CLS &lt;0.1 on mobile</em></span></label></li>
+          <li><input type="checkbox" id="s3"><label for="s3"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Internal linking audit — link from homepage &amp; related pages to event landing page<em class="item-note">Add contextual links from blog, category pages, and banners to campaign page</em></span></label></li>
+          <li><input type="checkbox" id="s4"><label for="s4"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Off-page SEO — build backlinks for the event campaign page<em class="item-note">Outreach to relevant blogs, PR mentions, partner sites; social signals from campaign posts</em></span></label></li>
+          <li><input type="checkbox" id="s5"><label for="s5"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Submit updated sitemap to Google Search Console<em class="item-note">Include campaign landing page, new collection URLs, and updated product pages</em></span></label></li>
+          <li><input type="checkbox" id="s6"><label for="s6"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Request indexing of all seasonal pages in Google Search Console<em class="item-note">Use "Inspect URL → Request Indexing" for all new campaign pages</em></span></label></li>
+          <li><input type="checkbox" id="s7"><label for="s7"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">GSC poor ranking pages — identify &amp; improve keyword-weak pages<em class="item-note">Pull pages ranking pos. 8–20 in GSC; refresh content, meta, &amp; internal links to push up</em></span></label></li>
         </ul>
       </div>
 
@@ -534,23 +428,33 @@
     </div>
   </div>
 
-  <!-- ═══ SECTION 5 — CORPORATE ACTIVITIES ═══ -->
+  <!-- ═══ SECTION 5 — CORPORATE & CROSS-BORDER ═══ -->
   <div class="section-card">
     <div class="section-header" onclick="toggleSection(this)">
       <span class="section-icon">🏢</span>
-      <span class="section-title">Corporate Activities</span>
+      <span class="section-title">Corporate &amp; Cross-Border Promotions</span>
       <span class="section-badge" id="badge-corporate">0 / 0</span>
       <span class="chevron">▼</span>
     </div>
     <div class="section-body" id="body-corporate">
 
       <div class="subsection">
-        <div class="subsection-title">🤝 B2B &amp; Corporate Gifting</div>
+        <div class="subsection-title">🤝 Corporate Promotions &amp; B2B Gifting</div>
         <ul class="checklist">
           <li><input type="checkbox" id="corp1"><label for="corp1"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Launch corporate bulk gifting campaign <span class="tag teal">B2B</span><em class="item-note">Targeted outreach to HR/Admin contacts; offer branded gift pack customisation options</em></span></label></li>
           <li><input type="checkbox" id="corp2"><label for="corp2"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Create corporate gifting landing page / inquiry form<em class="item-note">MOQ, branding options, delivery SLA, payment terms for bulk orders</em></span></label></li>
           <li><input type="checkbox" id="corp3"><label for="corp3"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Prepare corporate gift catalogue (PDF + web version)<em class="item-note">Tiered packages at multiple price points — share via email &amp; WhatsApp</em></span></label></li>
           <li><input type="checkbox" id="corp4"><label for="corp4"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Email blast to existing corporate accounts with early-bird offer<em class="item-note">Early discount for orders placed well before the event; include catalogue</em></span></label></li>
+        </ul>
+      </div>
+
+      <div class="subsection">
+        <div class="subsection-title">🌍 Cross-Border Promotions</div>
+        <ul class="checklist">
+          <li><input type="checkbox" id="cb1"><label for="cb1"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">"Send gifts from abroad" diaspora-targeted campaign <span class="tag teal">Cross-Border</span><em class="item-note">Target Sri Lankan diaspora on FB/IG/Google; geo-target key markets (AU, UK, US, AE, CA)</em></span></label></li>
+          <li><input type="checkbox" id="cb2"><label for="cb2"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Cross-border landing page — tailored for overseas buyers<em class="item-note">Highlight delivery reliability, payment in USD/GBP, same-day Colombo options</em></span></label></li>
+          <li><input type="checkbox" id="cb3"><label for="cb3"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Diaspora-specific email campaign for the event<em class="item-note">Segment overseas subscribers; tailor copy around gifting family back home</em></span></label></li>
+          <li><input type="checkbox" id="cb4"><label for="cb4"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Partner with overseas Sri Lankan community groups &amp; pages for promotion<em class="item-note">Sponsored posts or collaborations with diaspora community FB groups &amp; WhatsApp channels</em></span></label></li>
         </ul>
       </div>
 
@@ -564,19 +468,12 @@
       </div>
 
       <div class="subsection">
-        <div class="subsection-title">🏷️ Partnerships &amp; Sponsorships</div>
+        <div class="subsection-title">🏷️ Partnerships, Sponsorships &amp; Post-Campaign</div>
         <ul class="checklist">
           <li><input type="checkbox" id="corp8"><label for="corp8"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Identify &amp; secure media / event sponsorship opportunities <span class="tag blue">PR</span><em class="item-note">TV, community events, radio — negotiate Kapruka brand mention or feature</em></span></label></li>
           <li><input type="checkbox" id="corp9"><label for="corp9"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Co-promote with vendor / brand partners for seasonal bundles<em class="item-note">Cross-promotion: feature their products in Kapruka emails &amp; posts</em></span></label></li>
           <li><input type="checkbox" id="corp10"><label for="corp10"><span class="priority p-low"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Issue press release / media note for the campaign<em class="item-note">Highlight new features, delivery reach, special offers — distribute to local media</em></span></label></li>
-        </ul>
-      </div>
-
-      <div class="subsection">
-        <div class="subsection-title">📈 Post-Campaign Review</div>
-        <ul class="checklist">
           <li><input type="checkbox" id="corp11"><label for="corp11"><span class="priority p-low"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Schedule post-campaign debrief with marketing &amp; ops teams<em class="item-note">Review GMV, orders, top SKUs, ad spend vs revenue — document learnings</em></span></label></li>
-          <li><input type="checkbox" id="corp12"><label for="corp12"><span class="priority p-low"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Archive all campaign assets in organised folder structure<em class="item-note">Categorise by type (video, static, email, ads) in Drive/Notion for future reuse</em></span></label></li>
         </ul>
       </div>
 
