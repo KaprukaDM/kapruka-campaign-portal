@@ -231,7 +231,7 @@ def search_run():
         try:
             products = search(keyword, top_n, min_price, min_rating)
             if products:
-                html_path = save_html(products, keyword, top_n)
+                html_path = save_html(products, keyword, top_n, min_price, min_rating)
                 save_csv(products, keyword, top_n)
                 _search_state["last_report"] = f"/report/{html_path.name}"
                 _search_state["last_run"]    = datetime.now().strftime("%b %d, %Y  %I:%M %p")
