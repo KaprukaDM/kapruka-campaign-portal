@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product Search — Daraz Portal</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="page-container">
+
+    <!-- Header -->
+    <div class="page-header">
+      <div class="header-left">
+        <span class="header-emoji">🔍</span>
+        <div>
+          <h1>Product Search</h1>
+          <p>Search any keyword and get top selling products on Daraz.lk</p>
+        </div>
+      </div>
+      <a href="/" class="back-btn">← Back</a>
+    </div>
+
+    <!-- Status bar -->
+    <div class="status-bar" id="statusBar">
+      <div class="status-dot" id="statusDot"></div>
+      <span class="status-text" id="statusText">Starting...</span>
+    </div>
+
+    <!-- Report banner (shown when done) -->
+    <div class="report-banner" id="reportBanner">
+      <div class="report-banner-text">
+        <h3>✅ Report Ready!</h3>
+        <p id="reportBannerSub">Your search report has been generated.</p>
+      </div>
+      <a href="#" id="reportBannerLink" class="btn-open-report" target="_blank">Open Report →</a>
+    </div>
+
+    <!-- Live log -->
+    <div class="log-box" id="logBox"></div>
+
+    <!-- Config card -->
+    <div class="card" id="configCard">
+      <h2>🔍 Search Configuration</h2>
+
+      <div class="chips">
+        <span class="chip">Local sellers only</span>
+        <span class="chip">Sorted by popularity</span>
+        <span class="chip">Ranked by sold · reviews · rating</span>
+        <span class="chip">HTML + CSV export</span>
+      </div>
+
+      <div class="form-group">
+        <label for="keyword">Search Keyword <span class="required">*</span></label>
+        <input type="text" id="keyword" placeholder="e.g. wireless earbuds, gaming mouse, rice cooker…">
+      </div>
+
+      <div class="form-group">
+        <label for="topN">Number of products to return</label>
+        <select id="topN">
+          <option value="50" selected>Top 50 &nbsp;(3 pages)</option>
+          <option value="100">Top 100 &nbsp;(4 pages)</option>
+          <option value="200">Top 200 &nbsp;(7 pages)</option>
+          <option value="300">Top 300 &nbsp;(10 pages)</option>
+          <option value="500">Top 500 &nbsp;(15 pages)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="minPrice">Minimum price (Rs.)</label>
+        <input type="number" id="minPrice" value="3000" min="0" step="500">
+      </div>
+
+      <div class="form-group">
+        <label for="minRating">Minimum rating</label>
+        <select id="minRating">
+          <option value="4" selected>4★ and above</option>
+          <option value="3">3★ and above</option>
+          <option value="0">Any rating</option>
+        </select>
+      </div>
+
+      <button class="btn btn-primary" id="runBtn" onclick="runSearch()">
+        ▶ Run Search
+      </button>
+    </div>
+
+    <!-- Past reports card -->
+    <div class="card">
+      <h2>📁 Past Search Reports</h2>
+      {% if search_reports %}
+        {% for r in search_reports %}
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid #f0f0f0;">
+          <div>
+            <div style="font-weight:500; color:#1d1d1f; font-size:14px;">{{ r.name }}</div>
+            <div style="color:#6e6e73; font-size:12px; margin-top:2px;">{{ r.mtime }}</div>
+          </div>
+          <a href="/report/{{ r.name }}" target="_blank" class="back-btn" style="font-size:13px; padding:7px 16px;">Open →</a>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p style="color:#6e6e73; font-size:14px;">No search reports yet. Run a search above to generate your first report.</p>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <!-- Loading overlay -->
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loadingText">Running Search…</div>
+  </div>
+
+  <script>
+    let polling = false;
+
+    function runSearch() {
+      const keyword = document.getElementById('keyword').value.trim();
+      if (!keyword) {
+        alert('Please enter a search keyword.');
+        document.getElementById('keyword').focus();
+        return;
+      }
+
+      const btn = document.getElementById('runBtn');
+      const topN = document.getElementById('topN').value;
+      const minPrice = document.getElementById('minPrice').value;
+      const minRating = document.getElementById('minRating').value;
+
+      btn.disabled = true;
+      btn.textContent = '⏳ Searching…';
+
+      showStatus('running', 'Starting search for "' + keyword + '"…');
+      document.getElementById('logBox').classList.add('show');
+      document.getElementById('logBox').innerHTML = '';
+      document.getElementById('reportBanner').classList.remove('show');
+      document.getElementById('loading').classList.add('show');
+      document.getElementById('loadingText').textContent = 'Searching Daraz for "' + keyword + '"…';
+
+      fetch('/search/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          keyword:    keyword,
+          top_n:      parseInt(topN),
+          min_price:  parseInt(minPrice),
+          min_rating: parseInt(minRating)
+        })
+      })
+      .then(r => r.json())
+      .then(d => {
+        if (d.started) {
+          pollStatus();
+        } else {
+          document.getElementById('loading').classList.remove('show');
+          showStatus('error', d.message || 'Could not start search.');
+          btn.disabled = false;
+          btn.textContent = '▶ Run Search';
+        }
+      })
+      .catch(e => {
+        document.getElementById('loading').classList.remove('show');
+        showStatus('error', 'Network error: ' + e.message);
+        btn.disabled = false;
+        btn.textContent = '▶ Run Search';
+      });
+    }
+
+    function pollStatus() {
+      if (polling) return;
+      polling = true;
+      (function tick() {
+        fetch('/search/status')
+          .then(r => r.json())
+          .then(d => {
+            // Update log
+            if (d.log_lines && d.log_lines.length) {
+              const box = document.getElementById('logBox');
+              box.innerHTML = d.log_lines.map(l => {
+                let cls = 'log-line';
+                if (l.includes('[INFO]'))    cls += ' info';
+                else if (l.includes('[WARNING]')) cls += ' warn';
+                else if (l.includes('[ERROR]'))   cls += ' error';
+                else if (l.includes('DONE!') || l.includes('saved')) cls += ' done';
+                return `<div class="${cls}">${escHtml(l)}</div>`;
+              }).join('');
+              box.scrollTop = box.scrollHeight;
+            }
+
+            if (d.running) {
+              showStatus('running', d.status_msg || 'Searching…');
+              document.getElementById('loadingText').textContent = d.status_msg || 'Searching Daraz…';
+              setTimeout(tick, 2000);
+            } else {
+              polling = false;
+              const btn = document.getElementById('runBtn');
+              btn.disabled = false;
+              btn.textContent = '▶ Run Search';
+              document.getElementById('loading').classList.remove('show');
+
+              if (d.last_report) {
+                showStatus('done', 'Done! Report generated successfully.');
+                showReportBanner(d.last_report, d.last_run);
+              } else if (d.error) {
+                showStatus('error', 'Error: ' + d.error);
+              } else {
+                showStatus('done', 'Completed.');
+              }
+            }
+          })
+          .catch(() => { setTimeout(tick, 3000); });
+      })();
+    }
+
+    function showStatus(state, msg) {
+      const bar  = document.getElementById('statusBar');
+      const dot  = document.getElementById('statusDot');
+      const text = document.getElementById('statusText');
+      bar.classList.add('show');
+      dot.className  = 'status-dot ' + state;
+      text.textContent = msg;
+    }
+
+    function showReportBanner(url, time) {
+      const banner = document.getElementById('reportBanner');
+      document.getElementById('reportBannerSub').textContent = 'Generated at ' + (time || '');
+      document.getElementById('reportBannerLink').href = url;
+      banner.classList.add('show');
+      banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function escHtml(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+  </script>
+</body>
+</html>
