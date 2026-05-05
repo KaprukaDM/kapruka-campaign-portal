@@ -249,7 +249,7 @@ def save_csv(products: list[dict], keyword: str, top_n: int) -> Path:
     return path
 
 # ─── SAVE HTML ─────────────────────────────────────────────────────────────────
-def save_html(products: list[dict], keyword: str, top_n: int) -> Path:
+def save_html(products: list[dict], keyword: str, top_n: int, min_price: int = MIN_PRICE, min_rating: int = MIN_RATING) -> Path:
     REPORTS_DIR.mkdir(exist_ok=True)
     ts   = datetime.now().strftime("%Y%m%d_%H%M%S")
     slug = re.sub(r"[^\w]+", "_", keyword.lower().strip())
@@ -323,7 +323,7 @@ def save_html(products: list[dict], keyword: str, top_n: int) -> Path:
 <body>
   <header>
     <h1>Daraz Search: "{keyword}"</h1>
-    <p>Top {top_n} products — local sellers, Rs.{MIN_PRICE:,}+, {min_rating}★+, ranked by popularity</p>
+    <p>Top {top_n} products — local sellers, Rs.{min_price:,}+, {min_rating}★+, ranked by popularity</p>
     <div class="badges">
       <span class="badge">{datetime.now().strftime('%B %d, %Y  •  %I:%M %p')}</span>
       <span class="badge">{len(products)} results</span>
