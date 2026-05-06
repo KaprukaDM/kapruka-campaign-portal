@@ -58,11 +58,11 @@
       <div class="form-group">
         <label for="topN">Number of products to return</label>
         <select id="topN">
-          <option value="50" selected>Top 50 &nbsp;(3 pages)</option>
-          <option value="100">Top 100 &nbsp;(4 pages)</option>
-          <option value="200">Top 200 &nbsp;(7 pages)</option>
-          <option value="300">Top 300 &nbsp;(10 pages)</option>
-          <option value="500">Top 500 &nbsp;(15 pages)</option>
+          <option value="50" selected>Top 50 &nbsp;(8 pages)</option>
+          <option value="100">Top 100 &nbsp;(15 pages)</option>
+          <option value="200">Top 200 &nbsp;(25 pages)</option>
+          <option value="300">Top 300 &nbsp;(38 pages)</option>
+          <option value="500">Top 500 &nbsp;(60 pages)</option>
         </select>
       </div>
 
@@ -78,6 +78,11 @@
           <option value="3">3★ and above</option>
           <option value="0">Any rating</option>
         </select>
+      </div>
+
+      <div class="form-group">
+        <label for="minSold">Minimum sold count</label>
+        <input type="number" id="minSold" value="100" min="0" step="10">
       </div>
 
       <button class="btn btn-primary" id="runBtn" onclick="runSearch()">
@@ -126,6 +131,7 @@
       const topN = document.getElementById('topN').value;
       const minPrice = document.getElementById('minPrice').value;
       const minRating = document.getElementById('minRating').value;
+      const minSold = document.getElementById('minSold').value;
 
       btn.disabled = true;
       btn.textContent = '⏳ Searching…';
@@ -144,7 +150,8 @@
           keyword:    keyword,
           top_n:      parseInt(topN),
           min_price:  parseInt(minPrice),
-          min_rating: parseInt(minRating)
+          min_rating: parseInt(minRating),
+          min_sold:   parseInt(minSold)
         })
       })
       .then(r => r.json())
