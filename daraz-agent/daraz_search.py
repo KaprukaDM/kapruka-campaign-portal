@@ -3,7 +3,7 @@
 Daraz Product Search Agent
 - Enter any keyword → builds Daraz AJAX search URL
 - Scrapes multiple pages (auto-scales to hit your target count)
-- Filters: Local sellers, configurable min price, min rating
+- Filters: Local sellers, configurable min price, min rating, min sold
 - Ranks by sold count + reviews + rating
 - Supports Top 50 / 100 / 200 / 300 / 500
 - Saves HTML report + CSV
@@ -26,18 +26,21 @@ import requests
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
 MIN_PRICE     = 3000          # minimum price in Rs.
 MIN_RATING    = 4             # minimum star rating (0 = any)
+MIN_SOLD      = 100           # ✅ FIX: minimum sold quantity
 DELAY         = 0.8           # seconds between requests
 REPORTS_DIR   = Path(__file__).parent / "reports"
 LOG_FILE      = str(Path(__file__).parent / "daraz_search.log")
 
 # ── Top-N presets ──────────────────────────────────────────────────────────────
-# Products per page on Daraz is ~40. Pages needed = ceil(TOP_N / 40) + buffer
+# ✅ FIX: Increased page counts significantly to account for filtered-out products.
+# With min_sold=100 and other filters, many raw products get dropped.
+# We need a much larger raw pool to reliably hit the target Top-N.
 TOP_N_OPTIONS = {
-    50:  3,    # 3 pages  (~120 raw products)
-    100: 4,    # 4 pages  (~160 raw products)
-    200: 7,    # 7 pages  (~280 raw products)
-    300: 10,   # 10 pages (~400 raw products)
-    500: 15,   # 15 pages (~600 raw products)
+    50:  5,    #  5 pages  (~200 raw products)
+    100: 8,    #  8 pages  (~320 raw products)
+    200: 14,   # 14 pages  (~560 raw products)
+    300: 20,   # 20 pages  (~800 raw products)
+    500: 32,   # 32 pages  (~1280 raw products)
 }
 
 BASE_URL = (
@@ -149,7 +152,7 @@ def fetch_page(keyword: str, page: int, min_price: int, min_rating: int) -> dict
     return None
 
 # ─── PARSE ─────────────────────────────────────────────────────────────────────
-def parse_items(data: dict, min_price: int) -> list[dict]:
+def parse_items(data: dict, min_price: int, min_sold: int) -> list[dict]:   # ✅ FIX: added min_sold param
     if not data:
         return []
     mods  = data.get("mods") or data.get("mainInfo") or {}
@@ -180,6 +183,8 @@ def parse_items(data: dict, min_price: int) -> list[dict]:
                 continue
             if not name or price < min_price:
                 continue
+            if sold < min_sold:                 # ✅ FIX: skip products with too few sales
+                continue
 
             products.append({
                 "title":   name,
@@ -196,30 +201,49 @@ def parse_items(data: dict, min_price: int) -> list[dict]:
     return products
 
 # ─── SEARCH ────────────────────────────────────────────────────────────────────
-def search(keyword: str, top_n: int, min_price: int = MIN_PRICE, min_rating: int = MIN_RATING) -> list[dict]:
+def search(keyword: str, top_n: int, min_price: int = MIN_PRICE, min_rating: int = MIN_RATING, min_sold: int = MIN_SOLD) -> list[dict]:   # ✅ FIX: added min_sold param
     pages_needed = TOP_N_OPTIONS.get(top_n, max(TOP_N_OPTIONS.values()))
-    log.info(f"Searching '{keyword}' | Top {top_n} | Pages: {pages_needed} | Min Rs.{min_price} | Min {min_rating}★")
+    log.info(f"Searching '{keyword}' | Top {top_n} | Pages: {pages_needed} | Min Rs.{min_price} | Min {min_rating}★ | Min {min_sold} sold")
 
     all_products = []
+    consecutive_empty = 0   # ✅ FIX: track consecutive empty pages before stopping
+
     for page in range(1, pages_needed + 1):
         data  = fetch_page(keyword, page, min_price, min_rating)
-        items = parse_items(data, min_price)
+        items = parse_items(data, min_price, min_sold)
         all_products.extend(items)
         log.info(f"    Page {page}: +{len(items)} products (total raw: {len(all_products)})")
+
         if not items:
-            log.info("    Empty page — stopping early.")
-            break
+            consecutive_empty += 1
+            # ✅ FIX: only stop after 3 consecutive empty pages, not the first one.
+            # A single empty page can be a Daraz blip, not necessarily end of results.
+            if consecutive_empty >= 3:
+                log.info("    3 consecutive empty pages — stopping early.")
+                break
+        else:
+            consecutive_empty = 0   # reset counter if we got results
+
         time.sleep(DELAY + random.uniform(0, 0.5))
 
-    # Deduplicate by title (keep highest scored duplicate)
+    # ✅ FIX: Use full title for dedup key (not truncated to 60 chars).
+    # Truncating caused distinct products with similar long names to be collapsed into one.
     unique = {}
     for p in all_products:
-        key = p["title"].lower()[:60]
+        key = p["url"] if p["url"] else p["title"].lower()   # prefer URL as unique key
         if key not in unique or score_product(p) > score_product(unique[key]):
             unique[key] = p
 
     ranked = sorted(unique.values(), key=score_product, reverse=True)
     log.info(f"Deduped: {len(unique)} unique | Returning top {min(top_n, len(ranked))}")
+
+    # ✅ FIX: Warn if we couldn't hit the target count after all pages
+    if len(ranked) < top_n:
+        log.warning(
+            f"Only {len(ranked)} products met all filters (target was {top_n}). "
+            f"Try lowering min_price, min_rating, or min_sold."
+        )
+
     return ranked[:top_n]
 
 # ─── SAVE CSV ──────────────────────────────────────────────────────────────────
@@ -249,7 +273,7 @@ def save_csv(products: list[dict], keyword: str, top_n: int) -> Path:
     return path
 
 # ─── SAVE HTML ─────────────────────────────────────────────────────────────────
-def save_html(products: list[dict], keyword: str, top_n: int, min_price: int = MIN_PRICE, min_rating: int = MIN_RATING) -> Path:
+def save_html(products: list[dict], keyword: str, top_n: int, min_price: int = MIN_PRICE, min_rating: int = MIN_RATING, min_sold: int = MIN_SOLD) -> Path:
     REPORTS_DIR.mkdir(exist_ok=True)
     ts   = datetime.now().strftime("%Y%m%d_%H%M%S")
     slug = re.sub(r"[^\w]+", "_", keyword.lower().strip())
@@ -323,7 +347,7 @@ def save_html(products: list[dict], keyword: str, top_n: int, min_price: int = M
 <body>
   <header>
     <h1>Daraz Search: "{keyword}"</h1>
-    <p>Top {top_n} products — local sellers, Rs.{min_price:,}+, {min_rating}★+, ranked by popularity</p>
+    <p>Top {top_n} products — local sellers, Rs.{min_price:,}+, {min_rating}★+, {min_sold}+ sold, ranked by popularity</p>
     <div class="badges">
       <span class="badge">{datetime.now().strftime('%B %d, %Y  •  %I:%M %p')}</span>
       <span class="badge">{len(products)} results</span>
@@ -333,7 +357,7 @@ def save_html(products: list[dict], keyword: str, top_n: int, min_price: int = M
     <div class="section-title">Top {top_n} Results for "{keyword}"</div>
     {cards}
   </div>
-  <footer>Daraz Search Agent • Local sellers only • Min {min_rating}★ rating • Prices in Sri Lankan Rupees</footer>
+  <footer>Daraz Search Agent • Local sellers only • Min {min_rating}★ rating • Min {min_sold} sold • Prices in Sri Lankan Rupees</footer>
 </body>
 </html>"""
 
@@ -377,9 +401,15 @@ def main():
     except ValueError:
         min_rating = MIN_RATING
 
+    try:
+        ms = input(f"Min sold quantity (default {MIN_SOLD}, 0=any): ").strip()   # ✅ FIX: prompt for min_sold
+        min_sold = int(ms) if ms else MIN_SOLD
+    except ValueError:
+        min_sold = MIN_SOLD
+
     # --- Run search ---
-    print(f"\nSearching '{keyword}' | Top {top_n} | Rs.{min_price:,}+ | {min_rating}★+\n")
-    products = search(keyword, top_n, min_price, min_rating)
+    print(f"\nSearching '{keyword}' | Top {top_n} | Rs.{min_price:,}+ | {min_rating}★+ | {min_sold}+ sold\n")
+    products = search(keyword, top_n, min_price, min_rating, min_sold)
 
     if not products:
         print("No products found. Try a different keyword or lower filters.")
@@ -401,7 +431,7 @@ def main():
     print(f"{'─'*55}\n")
 
     # --- Save files ---
-    html_path = save_html(products, keyword, top_n)
+    html_path = save_html(products, keyword, top_n, min_price, min_rating, min_sold)
     csv_path  = save_csv(products, keyword, top_n)
 
     print(f"\nFiles saved:")
