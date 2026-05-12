@@ -26,7 +26,7 @@ import requests
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
 MIN_PRICE     = 3000          # minimum price in Rs.
 MIN_RATING    = 4             # minimum star rating (0 = any)
-MIN_SOLD      = 100           # minimum units sold
+MIN_SOLD      = 50           # minimum units sold
 DELAY         = 0.8           # seconds between requests
 REPORTS_DIR   = Path(__file__).parent / "reports"
 LOG_FILE      = str(Path(__file__).parent / "daraz_search.log")
