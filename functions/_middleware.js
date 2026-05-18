@@ -41,10 +41,19 @@ function isValidUser(authHeader, env) {
     const decoded = atob(encoded);
     const [username, password] = decoded.split(':');
     
-    // Test with only ONE user
     const users = {
-      'intern1': env.INTERN1_PASS,
-      'Aloka': env.ALOKA_PASS
+      'aloka': env.ALOKA_PASS,
+      'lahiru': env.LAHIRU_PASS,
+      'ruwini': env.RUWINI_PASS,
+      'iresha': env.IRESHA_PASS,
+      'ushara': env.USHARA_PASS,
+      'dinesh': env.DINESH_PASS,
+      'kaveesha': env.KAVEESHA_PASS,
+      'madara': env.MADARA_PASS,
+      'ashani': env.ASHANI_PASS,
+      'kavindya': env.KAVINDYA_PASS,
+      'piumi': env.PIUMI_PASS,
+      'sudarson': env.SUDARSON_PASS,
     };
     
     return users[username] && users[username] === password;
