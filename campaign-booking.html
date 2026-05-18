@@ -7,247 +7,182 @@
   <link rel="icon" type="image/png" href="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw">
   <link rel="stylesheet" href="css/styles.css">
   <style>
-    /* ── PAGE-SPECIFIC OVERRIDES ── */
-    body {
-      background: var(--bg);
-      padding: 40px 24px;
-    }
+    body { background: var(--bg); padding: 40px 24px; }
+    .container { max-width: 1400px; margin: 0 auto; }
 
-    .container { 
-      max-width: 1400px; 
-      margin: 0 auto; 
-    }
-
-    /* ===== HEADER ===== */
-    .header {
-      text-align: center;
-      margin-bottom: 48px;
-    }
-
+    /* HEADER */
+    .header { text-align: center; margin-bottom: 48px; }
     .kapruka-logo {
-      width: 80px;
-      height: 80px;
-      margin: 0 auto 24px;
-      border-radius: 20px;
-      overflow: hidden;
+      width: 80px; height: 80px; margin: 0 auto 24px;
+      border-radius: 20px; overflow: hidden;
       border: 1px solid var(--border-strong);
       box-shadow: 0 4px 16px rgba(0,0,0,0.08);
     }
 
-    /* ===== MONTH GRID ===== */
+    /* MONTH GRID */
     .month-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
       gap: 12px;
     }
-
     .month-btn {
-      padding: 18px 16px;
-      border: 1px solid var(--border-strong);
-      border-radius: 12px;
-      background: var(--surface);
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 14px;
-      font-family: 'DM Sans', sans-serif;
-      color: var(--text-muted);
-      text-align: center;
+      padding: 18px 16px; border: 1px solid var(--border-strong);
+      border-radius: 12px; background: var(--surface); cursor: pointer;
+      font-weight: 600; font-size: 14px; font-family: 'DM Sans', sans-serif;
+      color: var(--text-muted); text-align: center;
       transition: border-color 0.15s, transform 0.15s;
     }
+    .month-btn:hover { border-color: var(--gold-border); color: var(--text); transform: translateY(-2px); }
+    .month-btn.selected { background: var(--purple); color: white; border-color: var(--purple); }
 
-    .month-btn:hover {
-      border-color: var(--gold-border);
-      color: var(--text);
-      transform: translateY(-2px);
-    }
-
-    .month-btn.selected {
-      background: var(--purple);
-      color: white;
-      border-color: var(--purple);
-    }
-
-    /* ===== DEPT CARD ===== */
+    /* DEPT CARD */
     .dept-container { display: none; }
-
     .dept-card {
-      background: var(--surface);
-      padding: 28px;
-      border-radius: 20px;
-      margin-bottom: 20px;
-      border: 1px solid var(--border);
+      background: var(--surface); padding: 28px; border-radius: 20px;
+      margin-bottom: 20px; border: 1px solid var(--border);
       border-left: 4px solid var(--gold);
     }
-
-    .dept-card:hover {
-      border-left-color: var(--purple);
-    }
-
+    .dept-card:hover { border-left-color: var(--purple); }
     .dept-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 24px;
-      padding-bottom: 20px;
-      border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border);
     }
-
-    .dept-name {
-      font-size: 20px;
-      font-weight: 600;
-      color: var(--text);
-      letter-spacing: -0.02em;
-    }
-
+    .dept-name { font-size: 20px; font-weight: 600; color: var(--text); letter-spacing: -0.02em; }
     .dept-meta { display: flex; gap: 12px; flex-wrap: wrap; }
-
     .dept-meta > div {
-      background: var(--surface2);
-      padding: 8px 14px;
-      border-radius: 10px;
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--text-muted);
-      border: 1px solid var(--border);
+      background: var(--surface2); padding: 8px 14px; border-radius: 10px;
+      font-size: 13px; font-weight: 500; color: var(--text-muted); border: 1px solid var(--border);
     }
+    .meta-value { color: var(--purple); font-weight: 700; margin-left: 4px; }
 
-    .meta-value {
-      color: var(--purple);
-      font-weight: 700;
-      margin-left: 4px;
-    }
-
-    /* ===== SLOT GRID ===== */
+    /* SLOT GRID */
     .slot-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-      gap: 12px;
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px;
     }
-
     .slot {
-      aspect-ratio: 1;
-      border-radius: 14px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      border: 1px solid transparent;
-      transition: transform 0.15s, box-shadow 0.15s;
-      font-weight: 600;
-      padding: 8px;
+      aspect-ratio: 1; border-radius: 14px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; cursor: pointer;
+      border: 1px solid transparent; transition: transform 0.15s, box-shadow 0.15s;
+      font-weight: 600; padding: 8px;
     }
-
     .slot-num { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
     .slot-label { font-size: 9px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.06em; }
-
-    .slot.available {
-      background: var(--green-bg);
-      color: var(--green);
-      border-color: rgba(22,163,74,0.25);
-    }
-    .slot.available:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 8px 20px rgba(22,163,74,0.2);
-    }
-
-    .slot.submitted {
-      background: var(--purple-light);
-      color: var(--purple);
-      border-color: rgba(94,58,142,0.2);
-    }
-
-    .slot.working {
-      background: var(--amber-bg);
-      color: var(--amber);
-      border-color: rgba(180,83,9,0.2);
-    }
-
-    .slot.live {
-      background: #dbeafe;
-      color: #1d4ed8;
-      border-color: rgba(29,78,216,0.2);
-    }
-
-    .slot.completed {
-      background: var(--surface2);
-      color: var(--text-muted);
-      border-color: var(--border);
-    }
-
+    .slot.available { background: var(--green-bg); color: var(--green); border-color: rgba(22,163,74,0.25); }
+    .slot.available:hover { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(22,163,74,0.2); }
+    .slot.submitted { background: var(--purple-light); color: var(--purple); border-color: rgba(94,58,142,0.2); }
+    .slot.working { background: var(--amber-bg); color: var(--amber); border-color: rgba(180,83,9,0.2); }
+    .slot.live { background: #dbeafe; color: #1d4ed8; border-color: rgba(29,78,216,0.2); }
+    .slot.completed { background: var(--surface2); color: var(--text-muted); border-color: var(--border); }
     .slot.selected {
-      background: var(--gold-bg);
-      color: var(--purple);
-      border-color: var(--gold);
-      transform: scale(1.08);
-      box-shadow: 0 8px 24px rgba(201,162,39,0.35);
+      background: var(--gold-bg); color: var(--purple); border-color: var(--gold);
+      transform: scale(1.08); box-shadow: 0 8px 24px rgba(201,162,39,0.35);
     }
-
     .slot-details {
-      font-size: 9px;
-      margin-top: 4px;
-      line-height: 1.3;
-      font-weight: 500;
-      text-align: center;
-      opacity: 0.8;
-      overflow: hidden;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
+      font-size: 9px; margin-top: 4px; line-height: 1.3; font-weight: 500;
+      text-align: center; opacity: 0.8; overflow: hidden;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
     }
 
-    /* ===== FORM ===== */
+    /* FORM */
     .form-card { display: none; }
 
-    .date-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
+    /* ── GO-LIVE CALENDAR ── */
+    .golive-calendar { margin-bottom: 20px; }
+    .golive-calendar .cal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 16px;
+    }
+    .golive-calendar .cal-header h3 {
+      font-size: 16px; font-weight: 700; color: var(--text);
+    }
+    .golive-calendar .cal-nav {
+      background: var(--purple); color: white; border: none;
+      width: 32px; height: 32px; border-radius: 8px; cursor: pointer;
+      font-size: 16px; font-weight: 700; display: flex; align-items: center;
+      justify-content: center; transition: background 0.15s;
+    }
+    .golive-calendar .cal-nav:hover { background: #3d2461; }
+    .golive-calendar .cal-weekdays {
+      display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 8px;
+    }
+    .golive-calendar .cal-weekday {
+      text-align: center; font-size: 11px; font-weight: 700;
+      color: var(--text-muted); text-transform: uppercase; padding: 4px 0;
+    }
+    .golive-calendar .cal-days {
+      display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
+    }
+    .golive-calendar .cal-day {
+      aspect-ratio: 1; border-radius: 10px; display: flex; align-items: center;
+      justify-content: center; font-size: 14px; font-weight: 600;
+      cursor: pointer; border: 2px solid transparent;
+      transition: all 0.15s; position: relative;
+    }
+    .golive-calendar .cal-day.empty { cursor: default; }
+    .golive-calendar .cal-day.blocked {
+      background: #fef2f2; color: #fca5a5; cursor: not-allowed;
+      text-decoration: line-through;
+    }
+    .golive-calendar .cal-day.past {
+      background: var(--surface2); color: var(--text-muted); cursor: not-allowed;
+      opacity: 0.4;
+    }
+    .golive-calendar .cal-day.selectable {
+      background: var(--green-bg); color: var(--green);
+    }
+    .golive-calendar .cal-day.selectable:hover {
+      border-color: var(--green); transform: scale(1.1);
+      box-shadow: 0 4px 12px rgba(22,163,74,0.25);
+    }
+    .golive-calendar .cal-day.picked {
+      background: var(--purple); color: white; border-color: var(--gold);
+      transform: scale(1.12); box-shadow: 0 4px 16px rgba(94,58,142,0.35);
+    }
+    .golive-calendar .cal-day .day-badge {
+      position: absolute; top: -4px; right: -4px;
+      background: #ef4444; color: white; font-size: 7px; font-weight: 800;
+      padding: 1px 4px; border-radius: 4px; line-height: 1.2;
+    }
+    .golive-calendar .buffer-legend {
+      display: flex; gap: 16px; margin-top: 12px; flex-wrap: wrap;
+    }
+    .golive-calendar .buffer-legend span {
+      display: flex; align-items: center; gap: 6px; font-size: 12px;
+      color: var(--text-muted); font-weight: 500;
+    }
+    .golive-calendar .buffer-legend .dot {
+      width: 12px; height: 12px; border-radius: 4px; flex-shrink: 0;
+    }
+    .selected-date-display {
+      background: var(--purple-light); border: 2px solid var(--purple);
+      border-radius: 12px; padding: 14px 20px; text-align: center;
+      font-weight: 700; color: var(--purple); font-size: 15px;
+      margin-bottom: 16px; display: none;
     }
 
-    /* ===== DETAIL ROW ===== */
+    /* DETAIL ROW */
     .detail-row {
-      text-align: left;
-      padding: 12px 16px;
-      background: var(--surface2);
-      border-radius: 10px;
-      margin: 10px 0;
-      border-left: 3px solid var(--purple);
+      text-align: left; padding: 12px 16px; background: var(--surface2);
+      border-radius: 10px; margin: 10px 0; border-left: 3px solid var(--purple);
     }
-
     .detail-row strong {
-      color: var(--text-muted);
-      display: block;
-      margin-bottom: 4px;
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      font-weight: 700;
+      color: var(--text-muted); display: block; margin-bottom: 4px;
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700;
     }
 
-    /* ===== LOCK BANNER ===== */
+    /* LOCK BANNER */
     #lockBanner {
-      position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: var(--red);
-      color: white;
-      padding: 12px 28px;
-      border-radius: 12px;
-      box-shadow: 0 8px 24px rgba(220,38,38,0.3);
-      z-index: 9998;
-      font-weight: 600;
-      font-size: 14px;
-      text-align: center;
+      position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+      background: var(--red); color: white; padding: 12px 28px;
+      border-radius: 12px; box-shadow: 0 8px 24px rgba(220,38,38,0.3);
+      z-index: 9998; font-weight: 600; font-size: 14px; text-align: center;
     }
 
-    /* ===== RESPONSIVE ===== */
+    /* RESPONSIVE */
     @media (max-width: 768px) {
       body { padding: 20px 16px; }
       .dept-header { flex-direction: column; align-items: flex-start; gap: 12px; }
       .slot-grid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; }
-      .date-row { grid-template-columns: 1fr; }
       .month-grid { grid-template-columns: 1fr; }
     }
   </style>
@@ -285,13 +220,39 @@
           <label>⏱️ Duration (days)</label>
           <input type="number" id="duration" value="7" min="1" max="31" required>
         </div>
+
+        <!-- GO-LIVE DATE CALENDAR -->
         <div class="form-group">
-          <label>📅 Campaign Period</label>
-          <div class="date-row">
-            <input type="date" id="startDate" required>
-            <input type="date" id="endDate" required readonly style="background:var(--surface2);">
+          <label>📅 Select Go-Live Date <span class="required">*</span></label>
+          <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">
+            Next 4 days are blocked for preparation. Pick any available date after.
+          </p>
+          <div class="selected-date-display" id="selectedDateDisplay"></div>
+          <div class="golive-calendar" id="goliveCalendar">
+            <div class="cal-header">
+              <button type="button" class="cal-nav" id="calPrev">‹</button>
+              <h3 id="calMonthLabel"></h3>
+              <button type="button" class="cal-nav" id="calNext">›</button>
+            </div>
+            <div class="cal-weekdays">
+              <div class="cal-weekday">Mon</div>
+              <div class="cal-weekday">Tue</div>
+              <div class="cal-weekday">Wed</div>
+              <div class="cal-weekday">Thu</div>
+              <div class="cal-weekday">Fri</div>
+              <div class="cal-weekday">Sat</div>
+              <div class="cal-weekday">Sun</div>
+            </div>
+            <div class="cal-days" id="calDays"></div>
+            <div class="buffer-legend">
+              <span><span class="dot" style="background:#fef2f2;border:1px solid #fca5a5;"></span> Blocked (prep time)</span>
+              <span><span class="dot" style="background:var(--green-bg);border:1px solid rgba(22,163,74,0.4);"></span> Available</span>
+              <span><span class="dot" style="background:var(--purple);"></span> Selected</span>
+            </div>
           </div>
+          <input type="hidden" id="goLiveDate" required>
         </div>
+
         <button type="submit" class="btn btn-primary" id="submitBtn">🚀 Submit Request</button>
       </form>
     </div>
@@ -304,45 +265,125 @@
     let selectedSlot = null;
     let selectedElement = null;
 
-    function showLoading() {
-      document.getElementById('loading').classList.add('show');
-    }
+    // Calendar state
+    let calViewMonth = new Date().getMonth();
+    let calViewYear = new Date().getFullYear();
+    let pickedGoLiveDate = null;
 
-    function hideLoading() {
-      document.getElementById('loading').classList.remove('show');
-    }
+    const BUFFER_DAYS = 4; // next 4 days blocked
 
-    function calcEndDate() {
-      const start = document.getElementById('startDate').value;
-      const duration = parseInt(document.getElementById('duration').value);
-      if (start && duration) {
-        const end = new Date(start);
-        end.setDate(end.getDate() + duration);
-        document.getElementById('endDate').value = end.toISOString().split('T')[0];
+    function showLoading() { document.getElementById('loading').classList.add('show'); }
+    function hideLoading() { document.getElementById('loading').classList.remove('show'); }
+
+    // ═══════════════════════════════════════════════════════
+    // GO-LIVE CALENDAR
+    // ═══════════════════════════════════════════════════════
+    function renderGoLiveCalendar() {
+      const months = ['January','February','March','April','May','June',
+                      'July','August','September','October','November','December'];
+      document.getElementById('calMonthLabel').textContent = `${months[calViewMonth]} ${calViewYear}`;
+
+      const grid = document.getElementById('calDays');
+      grid.innerHTML = '';
+
+      const firstDay = new Date(calViewYear, calViewMonth, 1);
+      const lastDay = new Date(calViewYear, calViewMonth + 1, 0);
+      const startDow = (firstDay.getDay() + 6) % 7; // Mon=0
+
+      const today = new Date();
+      today.setHours(0,0,0,0);
+
+      // Buffer cutoff: today + BUFFER_DAYS (days 0..BUFFER_DAYS are blocked)
+      const bufferEnd = new Date(today);
+      bufferEnd.setDate(today.getDate() + BUFFER_DAYS);
+
+      // Empty cells before first day
+      for (let i = 0; i < startDow; i++) {
+        const empty = document.createElement('div');
+        empty.className = 'cal-day empty';
+        grid.appendChild(empty);
+      }
+
+      for (let day = 1; day <= lastDay.getDate(); day++) {
+        const date = new Date(calViewYear, calViewMonth, day);
+        date.setHours(0,0,0,0);
+        const dateStr = `${calViewYear}-${String(calViewMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+
+        const cell = document.createElement('div');
+        cell.className = 'cal-day';
+        cell.textContent = day;
+
+        if (date < today) {
+          // Past
+          cell.classList.add('past');
+        } else if (date <= bufferEnd) {
+          // Blocked (within buffer)
+          cell.classList.add('blocked');
+          const badge = document.createElement('span');
+          badge.className = 'day-badge';
+          badge.textContent = 'PREP';
+          cell.appendChild(badge);
+        } else {
+          // Selectable
+          cell.classList.add('selectable');
+          if (pickedGoLiveDate === dateStr) {
+            cell.classList.remove('selectable');
+            cell.classList.add('picked');
+          }
+          cell.onclick = () => pickGoLiveDate(dateStr, day, calViewMonth, calViewYear);
+        }
+
+        grid.appendChild(cell);
       }
     }
 
-    document.getElementById('startDate').addEventListener('change', calcEndDate);
-    document.getElementById('duration').addEventListener('change', calcEndDate);
+    function pickGoLiveDate(dateStr, day, month, year) {
+      pickedGoLiveDate = dateStr;
+      document.getElementById('goLiveDate').value = dateStr;
 
+      const months = ['January','February','March','April','May','June',
+                      'July','August','September','October','November','December'];
+      const dateObj = new Date(year, month, day);
+      const dayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][dateObj.getDay()];
+
+      const display = document.getElementById('selectedDateDisplay');
+      display.textContent = `🎯 Go-Live: ${dayName}, ${months[month]} ${day}, ${year}`;
+      display.style.display = 'block';
+
+      renderGoLiveCalendar(); // re-render to update picked styling
+    }
+
+    document.getElementById('calPrev').onclick = () => {
+      calViewMonth--;
+      if (calViewMonth < 0) { calViewMonth = 11; calViewYear--; }
+      renderGoLiveCalendar();
+    };
+    document.getElementById('calNext').onclick = () => {
+      calViewMonth++;
+      if (calViewMonth > 11) { calViewMonth = 0; calViewYear++; }
+      renderGoLiveCalendar();
+    };
+
+    // ═══════════════════════════════════════════════════════
+    // INITIAL DATA LOAD
+    // ═══════════════════════════════════════════════════════
     async function loadInitialData() {
       try {
         showLoading();
         const data = await getInitialData();
-
         if (data && data.months && data.months.length > 0) {
           displayMonths(data.months);
           if (data.currentMonth && data.months.includes(data.currentMonth)) {
             setTimeout(() => selectMonth(data.currentMonth), 500);
           }
         } else {
-          document.getElementById('monthGrid').innerHTML = 
+          document.getElementById('monthGrid').innerHTML =
             '<div style="text-align:center;padding:40px;color:var(--text-muted);grid-column:1/-1;">No active months yet.</div>';
         }
         hideLoading();
       } catch (error) {
         hideLoading();
-        document.getElementById('monthGrid').innerHTML = 
+        document.getElementById('monthGrid').innerHTML =
           '<div style="text-align:center;padding:40px;color:var(--red);grid-column:1/-1;">Error: ' + error.message + '</div>';
       }
     }
@@ -381,6 +422,16 @@
       }
     }
 
+    function getStatusClass(status) {
+      if (!status) return 'working';
+      const s = status.toLowerCase();
+      if (s === 'received') return 'submitted';
+      if (s === 'working') return 'working';
+      if (s.includes('approved') || s === 'live') return 'live';
+      if (s === 'posted' || s === 'completed') return 'completed';
+      return 'working';
+    }
+
     function displayDepts(depts) {
       const container = document.getElementById('deptContainer');
       container.innerHTML = '';
@@ -417,16 +468,11 @@
             div.onclick = () => pickSlot(dept.department, slot.name, div);
           } else {
             const status = slot.details.status;
-            let slotClass = 'working';
-            if (status === 'Request Submitted') slotClass = 'submitted';
-            else if (status === 'Working') slotClass = 'working';
-            else if (status === 'Live') slotClass = 'live';
-            else if (status === 'Completed') slotClass = 'completed';
-
+            const slotClass = getStatusClass(status);
             div.className = 'slot ' + slotClass;
             div.innerHTML = `
               <div class="slot-num">${slot.number}</div>
-              <div class="slot-label">${status.substring(0,10)}</div>
+              <div class="slot-label">${status.substring(0,12)}</div>
               <div class="slot-details">${slot.details.campaign.substring(0,20)}</div>
             `;
             div.onclick = () => showDetails(slot.details);
@@ -456,8 +502,17 @@
         element.classList.add('selected');
         element.querySelector('.slot-label').textContent = 'Selected';
         selectedDept = dept; selectedSlot = slotName; selectedElement = element;
+
+        // Reset calendar
+        pickedGoLiveDate = null;
+        document.getElementById('goLiveDate').value = '';
+        document.getElementById('selectedDateDisplay').style.display = 'none';
+        calViewMonth = new Date().getMonth();
+        calViewYear = new Date().getFullYear();
+        renderGoLiveCalendar();
+
         document.getElementById('formCard').style.display = 'block';
-        document.getElementById('formCard').scrollIntoView({behavior: 'smooth'});
+        document.getElementById('formCard').scrollIntoView({ behavior: 'smooth' });
       }
     }
 
@@ -465,20 +520,29 @@
       document.getElementById('modalContent').innerHTML = `
         <div class="modal-icon">📋</div>
         <h2>Slot Details</h2>
-        <p></p>
         <div class="detail-row"><strong>Request ID</strong><span>${details.requestId}</span></div>
         <div class="detail-row"><strong>Campaign</strong><span>${details.campaign}</span></div>
         <div class="detail-row"><strong>Status</strong><span>${details.status}</span></div>
         <div class="detail-row"><strong>Requestor</strong><span>${details.requestor}</span></div>
-        <div class="detail-row"><strong>Period</strong><span>${details.startDate} to ${details.endDate}</span></div>
+        <div class="detail-row"><strong>Go-Live Date</strong><span>${details.goLiveDate}</span></div>
+        <div class="detail-row"><strong>Duration</strong><span>${details.duration} days</span></div>
         <button class="modal-btn" onclick="closeModal()">Close</button>
       `;
       document.getElementById('modal').classList.add('show');
     }
 
+    // ═══════════════════════════════════════════════════════
+    // FORM SUBMIT
+    // ═══════════════════════════════════════════════════════
     document.getElementById('campaignForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!selectedDept || !selectedSlot) { alert('Please select a slot first'); return; }
+
+      const goLiveDate = document.getElementById('goLiveDate').value;
+      if (!goLiveDate) {
+        alert('Please select a go-live date from the calendar');
+        return;
+      }
 
       const btn = document.getElementById('submitBtn');
       btn.disabled = true;
@@ -492,8 +556,7 @@
           slot: selectedSlot,
           campaign: document.getElementById('campaign').value,
           duration: document.getElementById('duration').value,
-          startDate: document.getElementById('startDate').value,
-          endDate: document.getElementById('endDate').value
+          goLiveDate: goLiveDate
         };
 
         const result = await submitCampaignRequest(formData);
@@ -504,13 +567,20 @@
         document.getElementById('modalContent').innerHTML = `
           <div class="modal-icon">✓</div>
           <h2>Success!</h2>
-          <p>Campaign request submitted successfully.</p>
+          <p>Campaign request submitted and sent to Studio Calendar.</p>
           <div class="mono" style="background:var(--surface2);padding:12px;border-radius:8px;margin:16px 0;font-size:14px;">${result.requestId}</div>
+          <p style="font-size:13px;color:var(--text-muted);margin-top:8px;">
+            📅 Go-Live: <strong>${goLiveDate}</strong><br>
+            🏢 Department: <strong>${selectedDept}</strong><br>
+            Status: <strong>Received</strong> — Studio team will begin preparation.
+          </p>
           <button class="modal-btn" onclick="closeSuccess()">Close</button>
         `;
         document.getElementById('modal').classList.add('show');
         document.getElementById('campaignForm').reset();
         document.getElementById('formCard').style.display = 'none';
+        pickedGoLiveDate = null;
+        document.getElementById('selectedDateDisplay').style.display = 'none';
 
       } catch (error) {
         btn.disabled = false;
@@ -532,7 +602,9 @@
 
     window.onload = loadInitialData;
 
-    // ===== MONTHLY LOCK SYSTEM =====
+    // ═══════════════════════════════════════════════════════
+    // MONTHLY LOCK SYSTEM
+    // ═══════════════════════════════════════════════════════
     function isCurrentMonthLocked() {
       const today = new Date();
       if (today.getDate() <= 25) return false;
@@ -544,14 +616,9 @@
       const today = new Date();
       if (today.getDate() <= 25) return;
       let banner = document.getElementById('lockBanner');
-      if (!banner) {
-        banner = document.createElement('div');
-        banner.id = 'lockBanner';
-        document.body.appendChild(banner);
-      }
+      if (!banner) { banner = document.createElement('div'); banner.id = 'lockBanner'; document.body.appendChild(banner); }
       const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-      const currentMonthString = `${months[today.getMonth()]} ${today.getFullYear()}`;
-      banner.textContent = `🔒 ${currentMonthString} booking is closed — reopens on the 1st`;
+      banner.textContent = `🔒 ${months[today.getMonth()]} ${today.getFullYear()} booking is closed — reopens on the 1st`;
     }
 
     const originalPickSlot = pickSlot;
@@ -565,8 +632,7 @@
 
     document.getElementById('campaignForm').addEventListener('submit', function(e) {
       if (isCurrentMonthLocked()) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
+        e.preventDefault(); e.stopImmediatePropagation();
         alert('🔒 Booking is closed after the 25th.');
         return false;
       }
