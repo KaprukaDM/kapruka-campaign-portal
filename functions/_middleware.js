@@ -61,6 +61,7 @@ function isValidUser(authHeader, env) {
       'suresh': env.SURESH_PASS,
       'danoj': env.DANOJ_PASS,
       'kasun': env.KASUN_PASS,
+      'ishara': env.ISHARA_PASS,
       'upul': env.UPUL_PASS,
     };
     
