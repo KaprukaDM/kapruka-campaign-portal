@@ -59,6 +59,9 @@ function isValidUser(authHeader, env) {
       'himali': env.HIMALI_PASS,
       'shanaka': env.SHANAKA_PASS,
       'suresh': env.SURESH_PASS,
+      'danoj': env.DANOJ_PASS,
+      'kasun': env.KASUN_PASS,
+      'upul': env.UPUL_PASS,
     };
     
     return users[username] && users[username] === password;
