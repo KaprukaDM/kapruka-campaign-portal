@@ -1,6 +1,5 @@
 require('dotenv').config();
 const express = require('express');
-const ExcelJS = require('exceljs');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
@@ -10,14 +9,13 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ─── Auth — raw OAuth2 token refresh via fetch ──────────────────────────────
+// ─── Auth ───────────────────────────────────────────────────────────────────
 
 let cachedToken = null;
 let tokenExpiry = 0;
 
 async function getAccessToken() {
   if (cachedToken && Date.now() < tokenExpiry) return cachedToken;
-
   const res = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -28,7 +26,6 @@ async function getAccessToken() {
       grant_type: 'refresh_token'
     })
   });
-
   const data = await res.json();
   if (!data.access_token) throw new Error('Token refresh failed: ' + JSON.stringify(data));
   cachedToken = data.access_token;
@@ -40,16 +37,10 @@ async function getAccessToken() {
 
 function getDateRanges() {
   const now = new Date();
-  const currentEnd = new Date(now);
-  currentEnd.setDate(currentEnd.getDate() - 1);
-  const currentStart = new Date(currentEnd);
-  currentStart.setDate(currentStart.getDate() - 29);
-
-  const previousEnd = new Date(currentStart);
-  previousEnd.setDate(previousEnd.getDate() - 1);
-  const previousStart = new Date(previousEnd);
-  previousStart.setDate(previousStart.getDate() - 29);
-
+  const currentEnd = new Date(now); currentEnd.setDate(currentEnd.getDate() - 1);
+  const currentStart = new Date(currentEnd); currentStart.setDate(currentStart.getDate() - 29);
+  const previousEnd = new Date(currentStart); previousEnd.setDate(previousEnd.getDate() - 1);
+  const previousStart = new Date(previousEnd); previousStart.setDate(previousStart.getDate() - 29);
   const fmt = (d) => d.toISOString().split('T')[0];
   return {
     current: { start: fmt(currentStart), end: fmt(currentEnd) },
@@ -64,7 +55,6 @@ function classifyUrl(pagePath) {
   if (productMatch) {
     return { level: 'product', slug: productMatch[1], productId: productMatch[2], hierarchy: null };
   }
-
   const catMatch = pagePath.match(/^\/online\/(.+?)$/);
   if (catMatch) {
     const parts = catMatch[1].split('/');
@@ -72,38 +62,35 @@ function classifyUrl(pagePath) {
     let sub = null, subsub = null;
     if (parts[1] === 'price' && parts[2]) sub = parts[2];
     if (parts[3] === 'lanka' && parts[4]) subsub = parts[4];
-
     let level = 'root';
     if (subsub) level = 'sub_sub';
     else if (sub) level = 'sub';
-
     return { level, root, sub, subsub, hierarchy: [root, sub, subsub].filter(Boolean).join(' > ') };
   }
-
   return null;
 }
 
-// ─── GSC fetch + aggregate via raw fetch ────────────────────────────────────
+// ─── Fetch a single period into buckets ─────────────────────────────────────
 
-async function fetchGSCIntoBuckets(token, startDate, endDate, buckets) {
+async function fetchPeriod(token, startDate, endDate) {
+  const buckets = { categories: {}, products: {} };
+
+  // GSC
   let startRow = 0;
-  const rowLimit = 5000;
-  let totalRows = 0;
-
+  let gscTotal = 0;
   while (true) {
     const res = await fetch(
       `https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(process.env.GSC_SITE_URL)}/searchAnalytics/query`,
       {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ startDate, endDate, dimensions: ['page'], rowLimit, startRow, dataState: 'final' })
+        body: JSON.stringify({ startDate, endDate, dimensions: ['page'], rowLimit: 5000, startRow, dataState: 'final' })
       }
     );
-
     const data = await res.json();
     const rows = data.rows || [];
     if (rows.length === 0) break;
-    totalRows += rows.length;
+    gscTotal += rows.length;
 
     for (const row of rows) {
       let pathname;
@@ -111,28 +98,25 @@ async function fetchGSCIntoBuckets(token, startDate, endDate, buckets) {
       const c = classifyUrl(pathname);
       if (!c) continue;
 
-      const key = c.level === 'product' ? `product::${c.productId}` : `${c.level}::${c.hierarchy}`;
-      if (!buckets[key]) {
-        buckets[key] = { ...c, key, gsc_impressions: 0, gsc_clicks: 0, ga4_views: 0, ga4_engaged: 0, ga4_sessions: 0 };
+      const isProduct = c.level === 'product';
+      const store = isProduct ? buckets.products : buckets.categories;
+      const key = isProduct ? c.productId : c.hierarchy;
+
+      if (!store[key]) {
+        store[key] = { ...c, gsc_i: 0, gsc_c: 0, ga4_v: 0, ga4_e: 0, ga4_s: 0 };
       }
-      buckets[key].gsc_impressions += row.impressions || 0;
-      buckets[key].gsc_clicks += row.clicks || 0;
+      store[key].gsc_i += row.impressions || 0;
+      store[key].gsc_c += row.clicks || 0;
     }
 
-    if (rows.length < rowLimit) break;
-    startRow += rowLimit;
+    if (rows.length < 5000) break;
+    startRow += 5000;
   }
+  console.log(`  GSC: ${gscTotal} rows`);
 
-  console.log(`GSC: ${totalRows} rows aggregated`);
-}
-
-// ─── GA4 fetch + aggregate via raw fetch ────────────────────────────────────
-
-async function fetchGA4IntoBuckets(token, startDate, endDate, buckets) {
+  // GA4
   let offset = 0;
-  const limit = 10000;
-  let totalRows = 0;
-
+  let ga4Total = 0;
   while (true) {
     const res = await fetch(
       `https://analyticsdata.googleapis.com/v1beta/properties/${process.env.GA4_PROPERTY_ID}:runReport`,
@@ -142,194 +126,109 @@ async function fetchGA4IntoBuckets(token, startDate, endDate, buckets) {
         body: JSON.stringify({
           dateRanges: [{ startDate, endDate }],
           dimensions: [{ name: 'pagePath' }],
-          metrics: [
-            { name: 'screenPageViews' },
-            { name: 'engagedSessions' },
-            { name: 'sessions' }
-          ],
-          limit,
-          offset,
-          keepEmptyRows: false
+          metrics: [{ name: 'screenPageViews' }, { name: 'engagedSessions' }, { name: 'sessions' }],
+          limit: 10000, offset, keepEmptyRows: false
         })
       }
     );
-
     const data = await res.json();
     const rows = data.rows || [];
     if (rows.length === 0) break;
-    totalRows += rows.length;
+    ga4Total += rows.length;
 
     for (const row of rows) {
-      const pagePath = row.dimensionValues[0].value;
-      const c = classifyUrl(pagePath);
+      const c = classifyUrl(row.dimensionValues[0].value);
       if (!c) continue;
 
-      const key = c.level === 'product' ? `product::${c.productId}` : `${c.level}::${c.hierarchy}`;
-      if (!buckets[key]) {
-        buckets[key] = { ...c, key, gsc_impressions: 0, gsc_clicks: 0, ga4_views: 0, ga4_engaged: 0, ga4_sessions: 0 };
+      const isProduct = c.level === 'product';
+      const store = isProduct ? buckets.products : buckets.categories;
+      const key = isProduct ? c.productId : c.hierarchy;
+
+      if (!store[key]) {
+        store[key] = { ...c, gsc_i: 0, gsc_c: 0, ga4_v: 0, ga4_e: 0, ga4_s: 0 };
       }
-      buckets[key].ga4_views += parseInt(row.metricValues[0].value) || 0;
-      buckets[key].ga4_engaged += parseInt(row.metricValues[1].value) || 0;
-      buckets[key].ga4_sessions += parseInt(row.metricValues[2].value) || 0;
+      store[key].ga4_v += parseInt(row.metricValues[0].value) || 0;
+      store[key].ga4_e += parseInt(row.metricValues[1].value) || 0;
+      store[key].ga4_s += parseInt(row.metricValues[2].value) || 0;
     }
 
-    if (rows.length < limit) break;
-    offset += limit;
+    if (rows.length < 10000) break;
+    offset += 10000;
   }
+  console.log(`  GA4: ${ga4Total} rows`);
 
-  console.log(`GA4: ${totalRows} rows aggregated`);
+  // Prune products: keep top 500 by total activity
+  const prodEntries = Object.entries(buckets.products);
+  if (prodEntries.length > 500) {
+    prodEntries.sort((a, b) => (b[1].ga4_v + b[1].gsc_c) - (a[1].ga4_v + a[1].gsc_c));
+    buckets.products = {};
+    for (const [k, v] of prodEntries.slice(0, 500)) {
+      buckets.products[k] = v;
+    }
+  }
+  console.log(`  Categories: ${Object.keys(buckets.categories).length}, Products: ${Object.keys(buckets.products).length}`);
+
+  return buckets;
 }
 
-// ─── Score calculation ─────────────────────────────────────────────────────
+// ─── Score + flatten ────────────────────────────────────────────────────────
 
-function calculateScores(buckets) {
+function scoreItems(store) {
   const levels = { root: [], sub: [], sub_sub: [], product: [] };
 
-  for (const item of Object.values(buckets)) {
+  for (const item of Object.values(store)) {
     if (levels[item.level]) levels[item.level].push(item);
   }
 
-  for (const [level, items] of Object.entries(levels)) {
+  for (const items of Object.values(levels)) {
     if (items.length === 0) continue;
-
-    const maxImpressions = Math.max(...items.map(i => i.gsc_impressions), 1);
-    const maxClicks = Math.max(...items.map(i => i.gsc_clicks), 1);
-    const maxViews = Math.max(...items.map(i => i.ga4_views), 1);
+    const maxI = Math.max(...items.map(i => i.gsc_i), 1);
+    const maxC = Math.max(...items.map(i => i.gsc_c), 1);
+    const maxV = Math.max(...items.map(i => i.ga4_v), 1);
 
     for (const item of items) {
-      const normImpressions = (item.gsc_impressions / maxImpressions) * 100;
-      const normClicks = (item.gsc_clicks / maxClicks) * 100;
-      const normViews = (item.ga4_views / maxViews) * 100;
-      const engagedRatio = item.ga4_sessions > 0 ? (item.ga4_engaged / item.ga4_sessions) * 100 : 0;
-
-      item.interest_score = Math.round(
-        normImpressions * 0.30 + normClicks * 0.30 + normViews * 0.25 + engagedRatio * 0.15
-      );
-      item.norm_impressions = Math.round(normImpressions);
-      item.norm_clicks = Math.round(normClicks);
-      item.norm_views = Math.round(normViews);
-      item.engaged_ratio = Math.round(engagedRatio);
+      const nI = (item.gsc_i / maxI) * 100;
+      const nC = (item.gsc_c / maxC) * 100;
+      const nV = (item.ga4_v / maxV) * 100;
+      const eR = item.ga4_s > 0 ? (item.ga4_e / item.ga4_s) * 100 : 0;
+      item.score = Math.round(nI * 0.30 + nC * 0.30 + nV * 0.25 + eR * 0.15);
+      item.engaged_ratio = Math.round(eR);
     }
-
-    items.sort((a, b) => b.interest_score - a.interest_score);
+    items.sort((a, b) => b.score - a.score);
   }
 
   return levels;
 }
 
-// ─── Trend calculation ─────────────────────────────────────────────────────
+// ─── Merge into keyed map for trend comparison ──────────────────────────────
 
-function calculateTrends(currentLevels, previousLevels) {
-  for (const level of Object.keys(currentLevels)) {
-    const prevMap = {};
-    for (const item of (previousLevels[level] || [])) {
-      prevMap[item.key] = item;
-    }
-
-    for (const item of currentLevels[level]) {
-      const prev = prevMap[item.key];
-      if (prev && prev.interest_score > 0) {
-        item.prev_score = prev.interest_score;
-        item.score_change = item.interest_score - prev.interest_score;
-        item.score_change_pct = Math.round(((item.interest_score - prev.interest_score) / prev.interest_score) * 100);
-        item.trend = item.score_change > 2 ? '↑ Rising' : item.score_change < -2 ? '↓ Falling' : '→ Stable';
-      } else {
-        item.prev_score = prev ? prev.interest_score : 0;
-        item.score_change = item.interest_score;
-        item.score_change_pct = 0;
-        item.trend = prev ? '→ Stable' : '★ New';
-      }
+function toKeyedScores(levels) {
+  const map = {};
+  for (const items of Object.values(levels)) {
+    for (const item of items) {
+      const key = item.level === 'product' ? item.productId : item.hierarchy;
+      map[key] = item.score;
     }
   }
-  return currentLevels;
+  return map;
 }
 
-// ─── Excel export ──────────────────────────────────────────────────────────
+// ─── CSV generation (no ExcelJS needed) ─────────────────────────────────────
 
-async function generateExcel(data, dateRanges) {
-  const wb = new ExcelJS.Workbook();
+function generateCSV(levels) {
+  const rows = [['Level', 'Name', 'Interest Score', 'Trend', 'Change', 'GSC Impressions', 'GSC Clicks', 'GA4 Views', 'Engagement Rate %', 'Prev Score']];
 
-  const headerStyle = {
-    font: { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 },
-    fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1a1a2e' } },
-    alignment: { horizontal: 'center', vertical: 'middle' },
-    border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } }
-  };
-
-  // Summary sheet
-  const ss = wb.addWorksheet('Summary');
-  ss.columns = [{ header: 'Metric', key: 'metric', width: 30 }, { header: 'Value', key: 'value', width: 20 }];
-  ss.addRow({ metric: 'Current Period', value: `${dateRanges.current.start} to ${dateRanges.current.end}` });
-  ss.addRow({ metric: 'Previous Period', value: `${dateRanges.previous.start} to ${dateRanges.previous.end}` });
-  ss.addRow({});
-  ss.addRow({ metric: 'Root Categories', value: data.root.length });
-  ss.addRow({ metric: 'Sub Categories', value: data.sub.length });
-  ss.addRow({ metric: 'Sub-Sub Categories', value: data.sub_sub.length });
-  ss.addRow({ metric: 'Products', value: data.product.length });
-  ss.addRow({});
-  ss.addRow({ metric: 'Weights: GSC Impressions', value: '30%' });
-  ss.addRow({ metric: 'Weights: GSC Clicks', value: '30%' });
-  ss.addRow({ metric: 'Weights: GA4 Page Views', value: '25%' });
-  ss.addRow({ metric: 'Weights: GA4 Engagement Rate', value: '15%' });
-
-  const configs = [
-    { key: 'root', title: 'Root Categories', nameCol: 'Category' },
-    { key: 'sub', title: 'Sub Categories', nameCol: 'Sub Category' },
-    { key: 'sub_sub', title: 'Sub-Sub Categories', nameCol: 'Sub-Sub Category' },
-    { key: 'product', title: 'Products', nameCol: 'Product' }
-  ];
-
-  for (const cfg of configs) {
-    const items = data[cfg.key];
-    if (items.length === 0) continue;
-
-    const ws = wb.addWorksheet(cfg.title);
-    const headers = [
-      cfg.nameCol, 'Interest Score', 'Trend', 'Score Change',
-      'GSC Impressions', 'GSC Clicks', 'GA4 Views', 'GA4 Engaged', 'GA4 Sessions',
-      'Engagement Rate %', 'Prev Score'
-    ];
-    if (cfg.key === 'sub') headers.unshift('Parent (Root)');
-    if (cfg.key === 'sub_sub') { headers.unshift('Parent (Sub)'); headers.unshift('Parent (Root)'); }
-
-    ws.addRow(headers);
-    ws.getRow(1).eachCell(c => Object.assign(c, headerStyle));
-
+  for (const [level, items] of Object.entries(levels)) {
     for (const item of items) {
       const name = item.level === 'product' ? (item.slug || item.productId) : (item.hierarchy || '');
-      const row = [
-        name, item.interest_score, item.trend, item.score_change,
-        item.gsc_impressions, item.gsc_clicks, item.ga4_views, item.ga4_engaged, item.ga4_sessions,
-        item.engaged_ratio, item.prev_score
-      ];
-      if (cfg.key === 'sub') row.unshift(item.root || '');
-      if (cfg.key === 'sub_sub') { row.unshift(item.sub || ''); row.unshift(item.root || ''); }
-      ws.addRow(row);
-    }
-
-    ws.columns.forEach(col => { col.width = Math.max(col.width || 10, 14); });
-
-    // Color score column
-    const scoreColIdx = cfg.key === 'sub_sub' ? 4 : cfg.key === 'sub' ? 3 : 2;
-    for (let r = 2; r <= items.length + 1; r++) {
-      const cell = ws.getRow(r).getCell(scoreColIdx);
-      const score = cell.value || 0;
-      if (score >= 70) {
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF27ae60' } };
-        cell.font = { color: { argb: 'FFFFFFFF' }, bold: true };
-      } else if (score >= 40) {
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFf39c12' } };
-        cell.font = { bold: true };
-      } else {
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFe74c3c' } };
-        cell.font = { color: { argb: 'FFFFFFFF' } };
-      }
+      rows.push([
+        level, `"${name}"`, item.score, item.trend || '', item.score_change || 0,
+        item.gsc_i, item.gsc_c, item.ga4_v, item.engaged_ratio, item.prev_score || 0
+      ]);
     }
   }
 
-  const outputPath = path.join('/tmp', `kapruka-interest-${Date.now()}.xlsx`);
-  await wb.xlsx.writeFile(outputPath);
-  return outputPath;
+  return rows.map(r => r.join(',')).join('\n');
 }
 
 // ─── Main endpoint ─────────────────────────────────────────────────────────
@@ -339,39 +238,54 @@ app.get('/analyze', async (req, res) => {
     console.log('Starting analysis...');
     const token = await getAccessToken();
     const dateRanges = getDateRanges();
-    console.log(`Current: ${dateRanges.current.start} to ${dateRanges.current.end}`);
-    console.log(`Previous: ${dateRanges.previous.start} to ${dateRanges.previous.end}`);
+    console.log(`Current: ${dateRanges.current.start} → ${dateRanges.current.end}`);
+    console.log(`Previous: ${dateRanges.previous.start} → ${dateRanges.previous.end}`);
 
     // Current period
-    console.log('Fetching current period...');
-    let currentBuckets = {};
-    await fetchGSCIntoBuckets(token, dateRanges.current.start, dateRanges.current.end, currentBuckets);
-    await fetchGA4IntoBuckets(token, dateRanges.current.start, dateRanges.current.end, currentBuckets);
-    const currentLevels = calculateScores(currentBuckets);
-    currentBuckets = null;
-    if (global.gc) global.gc();
+    console.log('Current period:');
+    const curBuckets = await fetchPeriod(token, dateRanges.current.start, dateRanges.current.end);
+    const allCurrent = { ...curBuckets.categories, ...curBuckets.products };
+    const currentLevels = scoreItems(allCurrent);
 
     // Previous period
-    console.log('Fetching previous period...');
-    let previousBuckets = {};
-    await fetchGSCIntoBuckets(token, dateRanges.previous.start, dateRanges.previous.end, previousBuckets);
-    await fetchGA4IntoBuckets(token, dateRanges.previous.start, dateRanges.previous.end, previousBuckets);
-    const previousLevels = calculateScores(previousBuckets);
-    previousBuckets = null;
-    if (global.gc) global.gc();
+    console.log('Previous period:');
+    const prevBuckets = await fetchPeriod(token, dateRanges.previous.start, dateRanges.previous.end);
+    const allPrevious = { ...prevBuckets.categories, ...prevBuckets.products };
+    const previousLevels = scoreItems(allPrevious);
+    const prevScores = toKeyedScores(previousLevels);
 
-    const finalData = calculateTrends(currentLevels, previousLevels);
-    const excelPath = await generateExcel(finalData, dateRanges);
+    // Add trends to current
+    for (const items of Object.values(currentLevels)) {
+      for (const item of items) {
+        const key = item.level === 'product' ? item.productId : item.hierarchy;
+        const prev = prevScores[key];
+        if (prev !== undefined && prev > 0) {
+          item.prev_score = prev;
+          item.score_change = item.score - prev;
+          item.trend = item.score_change > 2 ? '↑ Rising' : item.score_change < -2 ? '↓ Falling' : '→ Stable';
+        } else {
+          item.prev_score = prev || 0;
+          item.score_change = 0;
+          item.trend = prev !== undefined ? '→ Stable' : '★ New';
+        }
+      }
+    }
 
+    // Generate CSV download
+    const csv = generateCSV(currentLevels);
+    const csvPath = path.join('/tmp', `kapruka-interest-${Date.now()}.csv`);
+    fs.writeFileSync(csvPath, csv);
+
+    // Flatten for frontend
     const flatten = (items) => items.map(i => ({
       name: i.level === 'product' ? (i.slug || i.productId) : (i.hierarchy || ''),
       level: i.level,
-      interest_score: i.interest_score,
+      interest_score: i.score,
       trend: i.trend,
       score_change: i.score_change || 0,
-      gsc_impressions: i.gsc_impressions,
-      gsc_clicks: i.gsc_clicks,
-      ga4_views: i.ga4_views,
+      gsc_impressions: i.gsc_i,
+      gsc_clicks: i.gsc_c,
+      ga4_views: i.ga4_v,
       engaged_ratio: i.engaged_ratio,
       prev_score: i.prev_score || 0
     }));
@@ -380,18 +294,19 @@ app.get('/analyze', async (req, res) => {
       success: true,
       dateRanges,
       summary: {
-        root_categories: finalData.root.length,
-        sub_categories: finalData.sub.length,
-        sub_sub_categories: finalData.sub_sub.length,
-        products: finalData.product.length,
-        total_items: Object.values(finalData).flat().length
+        root_categories: currentLevels.root.length,
+        sub_categories: currentLevels.sub.length,
+        sub_sub_categories: currentLevels.sub_sub.length,
+        products: currentLevels.product.length,
+        total_items: Object.values(currentLevels).flat().length
       },
-      all_root: flatten(finalData.root),
-      all_sub: flatten(finalData.sub),
-      all_sub_sub: flatten(finalData.sub_sub),
-      all_product: flatten(finalData.product),
-      download: `/download/${path.basename(excelPath)}`
+      all_root: flatten(currentLevels.root),
+      all_sub: flatten(currentLevels.sub),
+      all_sub_sub: flatten(currentLevels.sub_sub),
+      all_product: flatten(currentLevels.product),
+      download: `/download/${path.basename(csvPath)}`
     });
+
     console.log('Analysis complete.');
   } catch (err) {
     console.error('Analysis error:', err);
@@ -405,9 +320,7 @@ app.get('/download/:filename', (req, res) => {
   res.download(filePath);
 });
 
-app.get('/health', (req, res) => {
-  res.json({ status: 'running' });
-});
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Running on port ${PORT}`));
