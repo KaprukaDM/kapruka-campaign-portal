@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Category Interest — Kapruka</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --white: #ffffff;
+      --bg: #fbfbfd;
+      --text-primary: #1d1d1f;
+      --text-secondary: #6e6e73;
+      --text-tertiary: #86868b;
+      --border: #e8e8ed;
+      --border-light: #f2f2f7;
+      --accent: #0071e3;
+      --accent-hover: #0077ed;
+      --green: #30d158;
+      --green-bg: #f0faf2;
+      --orange: #ff9f0a;
+      --orange-bg: #fff8ed;
+      --red: #ff3b30;
+      --red-bg: #fef2f1;
+      --blue-bg: #f0f5ff;
+      --radius: 14px;
+      --radius-sm: 10px;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 20px rgba(0,0,0,0.06);
+      --shadow-lg: 0 8px 40px rgba(0,0,0,0.08);
+      --transition: 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+    }
+
+    body {
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text-primary);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      line-height: 1.5;
+    }
+
+    /* ─── Layout ─────────────────────────────────── */
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ─── Header ─────────────────────────────────── */
+
+    header {
+      padding: 48px 0 40px;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 40px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    header p {
+      font-size: 17px;
+      color: var(--text-secondary);
+      font-weight: 400;
+    }
+
+    /* ─── Action bar ─────────────────────────────── */
+
+    .action-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 48px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 28px;
+      border-radius: 980px;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      transition: all var(--transition);
+      letter-spacing: -0.01em;
+    }
+
+    .btn-primary {
+      background: var(--text-primary);
+      color: var(--white);
+    }
+
+    .btn-primary:hover {
+      background: #000;
+      transform: scale(1.02);
+    }
+
+    .btn-primary:active { transform: scale(0.98); }
+
+    .btn-secondary {
+      background: var(--white);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--text-tertiary);
+      background: var(--bg);
+    }
+
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    .btn svg { width: 16px; height: 16px; }
+
+    /* ─── Loading state ──────────────────────────── */
+
+    .loading-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(251,251,253,0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .loading-overlay.active { display: flex; }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--text-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-text {
+      font-size: 17px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    /* ─── Stats row ──────────────────────────────── */
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 40px;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: all 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+    }
+
+    .stats-row.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .stat-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 24px;
+      border: 1px solid var(--border-light);
+      transition: all var(--transition);
+    }
+
+    .stat-card:hover {
+      box-shadow: var(--shadow-md);
+      border-color: var(--border);
+    }
+
+    .stat-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 34px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--text-primary);
+    }
+
+    /* ─── Period badge ────────────────────────────── */
+
+    .period-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 980px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      font-weight: 500;
+      margin-bottom: 32px;
+    }
+
+    .period-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+
+    /* ─── Section ─────────────────────────────────── */
+
+    .section {
+      margin-bottom: 48px;
+      opacity: 0;
+      transform: translateY(16px);
+      transition: all 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+    }
+
+    .section.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .section-count {
+      font-size: 14px;
+      color: var(--text-tertiary);
+      font-weight: 500;
+    }
+
+    /* ─── Tabs ────────────────────────────────────── */
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 24px;
+      background: var(--border-light);
+      padding: 3px;
+      border-radius: 10px;
+      width: fit-content;
+    }
+
+    .tab {
+      padding: 8px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      font-family: inherit;
+      transition: all var(--transition);
+    }
+
+    .tab.active {
+      background: var(--white);
+      color: var(--text-primary);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+
+    .tab:hover:not(.active) { color: var(--text-primary); }
+
+    /* ─── Table ───────────────────────────────────── */
+
+    .table-wrap {
+      background: var(--white);
+      border-radius: var(--radius);
+      border: 1px solid var(--border-light);
+      overflow: hidden;
+    }
+
+    .table-wrap:hover {
+      border-color: var(--border);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead th {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 14px 20px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-light);
+      background: var(--bg);
+      position: sticky;
+      top: 0;
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: none;
+      transition: color var(--transition);
+    }
+
+    thead th:hover { color: var(--text-primary); }
+
+    thead th.sorted { color: var(--text-primary); }
+
+    thead th .sort-arrow {
+      display: inline-block;
+      margin-left: 4px;
+      opacity: 0;
+      transition: opacity var(--transition);
+      font-size: 10px;
+    }
+
+    thead th.sorted .sort-arrow { opacity: 1; }
+
+    tbody td {
+      padding: 14px 20px;
+      font-size: 14px;
+      border-bottom: 1px solid var(--border-light);
+      color: var(--text-primary);
+      white-space: nowrap;
+    }
+
+    tbody tr { transition: background var(--transition); }
+    tbody tr:hover { background: rgba(0,0,0,0.015); }
+    tbody tr:last-child td { border-bottom: none; }
+
+    .name-cell {
+      font-weight: 600;
+      max-width: 280px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .num-cell { text-align: right; font-variant-numeric: tabular-nums; }
+    thead th.num-cell { text-align: right; }
+
+    /* ─── Score pill ──────────────────────────────── */
+
+    .score-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 42px;
+      padding: 4px 12px;
+      border-radius: 980px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .score-high { background: var(--green-bg); color: #1b8a36; }
+    .score-mid { background: var(--orange-bg); color: #b36b00; }
+    .score-low { background: var(--red-bg); color: #c72a20; }
+
+    /* ─── Trend badge ─────────────────────────────── */
+
+    .trend-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .trend-up { color: #1b8a36; }
+    .trend-down { color: #c72a20; }
+    .trend-stable { color: var(--text-tertiary); }
+    .trend-new { color: var(--accent); }
+
+    /* ─── Search ──────────────────────────────────── */
+
+    .search-bar {
+      position: relative;
+      margin-bottom: 20px;
+      max-width: 320px;
+    }
+
+    .search-bar input {
+      width: 100%;
+      padding: 10px 16px 10px 40px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      font-size: 14px;
+      font-family: inherit;
+      color: var(--text-primary);
+      background: var(--white);
+      outline: none;
+      transition: all var(--transition);
+    }
+
+    .search-bar input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0,113,227,0.1);
+    }
+
+    .search-bar input::placeholder { color: var(--text-tertiary); }
+
+    .search-bar svg {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      color: var(--text-tertiary);
+    }
+
+    /* ─── Empty state ─────────────────────────────── */
+
+    .empty-state {
+      text-align: center;
+      padding: 80px 24px;
+      color: var(--text-tertiary);
+    }
+
+    .empty-state h2 {
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .empty-state p { font-size: 15px; }
+
+    /* ─── Error toast ─────────────────────────────── */
+
+    .toast {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--text-primary);
+      color: var(--white);
+      padding: 14px 24px;
+      border-radius: var(--radius);
+      font-size: 14px;
+      font-weight: 500;
+      z-index: 200;
+      opacity: 0;
+      transition: all 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
+      max-width: 480px;
+    }
+
+    .toast.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ─── Footer ──────────────────────────────────── */
+
+    footer {
+      text-align: center;
+      padding: 40px 0 48px;
+      font-size: 13px;
+      color: var(--text-tertiary);
+    }
+
+    /* ─── Responsive ──────────────────────────────── */
+
+    @media (max-width: 768px) {
+      header h1 { font-size: 28px; }
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      .stat-value { font-size: 26px; }
+      .table-wrap { overflow-x: auto; }
+      table { min-width: 700px; }
+      .tabs { overflow-x: auto; }
+    }
+
+    @media (max-width: 480px) {
+      .stats-row { grid-template-columns: 1fr; }
+      .action-bar { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>Category Interest</h1>
+      <p>Search demand & engagement across your product taxonomy</p>
+    </header>
+
+    <div class="action-bar">
+      <button class="btn btn-primary" id="runBtn" onclick="runAnalysis()">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>
+        Run Analysis
+      </button>
+      <button class="btn btn-secondary" id="downloadBtn" onclick="downloadExcel()" disabled>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+        Download Excel
+      </button>
+    </div>
+
+    <div id="results" style="display:none">
+      <div style="text-align:center">
+        <div class="period-badge" id="periodBadge">
+          <span class="period-dot"></span>
+          <span id="periodText"></span>
+        </div>
+      </div>
+
+      <div class="stats-row" id="statsRow">
+        <div class="stat-card">
+          <div class="stat-label">Root Categories</div>
+          <div class="stat-value" id="statRoot">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Sub Categories</div>
+          <div class="stat-value" id="statSub">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Sub-Sub Categories</div>
+          <div class="stat-value" id="statSubSub">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Products</div>
+          <div class="stat-value" id="statProducts">—</div>
+        </div>
+      </div>
+
+      <div class="section" id="sectionTabs">
+        <div class="tabs" id="levelTabs">
+          <button class="tab active" data-level="root">Root</button>
+          <button class="tab" data-level="sub">Sub</button>
+          <button class="tab" data-level="sub_sub">Sub-Sub</button>
+          <button class="tab" data-level="product">Products</button>
+          <button class="tab" data-level="movers">Top Movers</button>
+        </div>
+
+        <div class="search-bar">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+          <input type="text" id="searchInput" placeholder="Filter by name…" oninput="filterTable()">
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead id="tableHead"></thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="empty-state" id="emptyState">
+      <h2>No data yet</h2>
+      <p>Hit "Run Analysis" to pull data from GA4 and Search Console</p>
+    </div>
+  </div>
+
+  <div class="loading-overlay" id="loading">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loadingText">Fetching data…</div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <footer>
+    <div class="container">Kapruka Category Interest Analyzer</div>
+  </footer>
+
+<script>
+  // ─── Config ────────────────────────────────────
+  const API_BASE = window.location.origin;
+  let analysisData = null;
+  let currentLevel = 'root';
+  let currentSort = { col: 'interest_score', dir: 'desc' };
+  let downloadUrl = null;
+
+  // ─── Loading messages ──────────────────────────
+  const loadingMessages = [
+    'Connecting to Search Console…',
+    'Pulling GSC impressions & clicks…',
+    'Fetching GA4 engagement data…',
+    'Classifying URLs into categories…',
+    'Calculating interest scores…',
+    'Comparing with previous period…',
+    'Building your report…'
+  ];
+
+  // ─── Tab setup ─────────────────────────────────
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      currentLevel = tab.dataset.level;
+      currentSort = { col: 'interest_score', dir: 'desc' };
+      document.getElementById('searchInput').value = '';
+      renderTable();
+    });
+  });
+
+  // ─── Run Analysis ──────────────────────────────
+  async function runAnalysis() {
+    const btn = document.getElementById('runBtn');
+    const loading = document.getElementById('loading');
+    btn.disabled = true;
+
+    loading.classList.add('active');
+    let msgIndex = 0;
+    const msgInterval = setInterval(() => {
+      msgIndex = (msgIndex + 1) % loadingMessages.length;
+      document.getElementById('loadingText').textContent = loadingMessages[msgIndex];
+    }, 2500);
+
+    try {
+      const res = await fetch(`${API_BASE}/analyze`);
+      if (!res.ok) throw new Error(`Server returned ${res.status}`);
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || 'Analysis failed');
+      analysisData = json;
+      downloadUrl = json.download;
+      renderResults();
+    } catch (err) {
+      showToast(`Error: ${err.message}`);
+    } finally {
+      clearInterval(msgInterval);
+      loading.classList.remove('active');
+      btn.disabled = false;
+    }
+  }
+
+  // ─── Render Results ────────────────────────────
+  function renderResults() {
+    const d = analysisData;
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('results').style.display = 'block';
+
+    document.getElementById('periodText').textContent =
+      `${d.dateRanges.current.start} → ${d.dateRanges.current.end}`;
+
+    document.getElementById('statRoot').textContent = d.summary.root_categories.toLocaleString();
+    document.getElementById('statSub').textContent = d.summary.sub_categories.toLocaleString();
+    document.getElementById('statSubSub').textContent = d.summary.sub_sub_categories.toLocaleString();
+    document.getElementById('statProducts').textContent = d.summary.products.toLocaleString();
+
+    document.getElementById('downloadBtn').disabled = false;
+
+    // Animate in
+    requestAnimationFrame(() => {
+      document.getElementById('statsRow').classList.add('visible');
+      setTimeout(() => document.getElementById('sectionTabs').classList.add('visible'), 150);
+    });
+
+    renderTable();
+  }
+
+  // ─── Render Table ──────────────────────────────
+  function renderTable() {
+    if (!analysisData) return;
+    const level = currentLevel;
+    let items;
+
+    if (level === 'movers') {
+      const all = [
+        ...(analysisData.all_root || []),
+        ...(analysisData.all_sub || []),
+        ...(analysisData.all_sub_sub || []),
+        ...(analysisData.all_product || [])
+      ];
+      items = all.sort((a, b) => Math.abs(b.score_change || 0) - Math.abs(a.score_change || 0));
+    } else {
+      items = analysisData[`all_${level}`] || [];
+    }
+
+    // Search filter
+    const query = document.getElementById('searchInput').value.toLowerCase();
+    if (query) {
+      items = items.filter(i => (i.name || '').toLowerCase().includes(query));
+    }
+
+    // Sort
+    items = [...items].sort((a, b) => {
+      let av = a[currentSort.col], bv = b[currentSort.col];
+      if (typeof av === 'string') {
+        return currentSort.dir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+      }
+      return currentSort.dir === 'asc' ? av - bv : bv - av;
+    });
+
+    const columns = [
+      { key: 'name', label: 'Name', cls: 'name-cell' },
+      { key: 'interest_score', label: 'Score', cls: 'num-cell' },
+      { key: 'trend', label: 'Trend', cls: '' },
+      { key: 'score_change', label: 'Change', cls: 'num-cell' },
+      { key: 'gsc_impressions', label: 'Impressions', cls: 'num-cell' },
+      { key: 'gsc_clicks', label: 'Clicks', cls: 'num-cell' },
+      { key: 'ga4_views', label: 'Views', cls: 'num-cell' },
+      { key: 'engaged_ratio', label: 'Eng. Rate', cls: 'num-cell' }
+    ];
+
+    if (level === 'movers') {
+      columns.splice(1, 0, { key: 'level', label: 'Level', cls: '' });
+    }
+
+    // Header
+    const thead = document.getElementById('tableHead');
+    thead.innerHTML = '<tr>' + columns.map(c => {
+      const sorted = currentSort.col === c.key;
+      const arrow = sorted ? (currentSort.dir === 'asc' ? '▲' : '▼') : '▲';
+      return `<th class="${c.cls} ${sorted ? 'sorted' : ''}" onclick="sortBy('${c.key}')">${c.label}<span class="sort-arrow">${arrow}</span></th>`;
+    }).join('') + '</tr>';
+
+    // Body
+    const tbody = document.getElementById('tableBody');
+    if (items.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="${columns.length}" style="text-align:center;padding:40px;color:var(--text-tertiary)">No results</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = items.slice(0, 200).map(item => {
+      return '<tr>' + columns.map(c => {
+        const v = item[c.key];
+        if (c.key === 'interest_score') {
+          const cls = v >= 70 ? 'score-high' : v >= 40 ? 'score-mid' : 'score-low';
+          return `<td class="num-cell"><span class="score-pill ${cls}">${v}</span></td>`;
+        }
+        if (c.key === 'trend') {
+          const cls = (v || '').includes('Rising') ? 'trend-up' : (v || '').includes('Falling') ? 'trend-down' : (v || '').includes('New') ? 'trend-new' : 'trend-stable';
+          return `<td><span class="trend-badge ${cls}">${v || '—'}</span></td>`;
+        }
+        if (c.key === 'score_change') {
+          const prefix = v > 0 ? '+' : '';
+          return `<td class="num-cell">${prefix}${v || 0}</td>`;
+        }
+        if (c.key === 'name') {
+          return `<td class="name-cell" title="${v || ''}">${v || '—'}</td>`;
+        }
+        if (c.key === 'engaged_ratio') {
+          return `<td class="num-cell">${v || 0}%</td>`;
+        }
+        if (c.cls === 'num-cell') {
+          return `<td class="num-cell">${(v || 0).toLocaleString()}</td>`;
+        }
+        return `<td>${v || '—'}</td>`;
+      }).join('') + '</tr>';
+    }).join('');
+  }
+
+  // ─── Sort ──────────────────────────────────────
+  function sortBy(col) {
+    if (currentSort.col === col) {
+      currentSort.dir = currentSort.dir === 'desc' ? 'asc' : 'desc';
+    } else {
+      currentSort = { col, dir: 'desc' };
+    }
+    renderTable();
+  }
+
+  // ─── Filter ────────────────────────────────────
+  function filterTable() { renderTable(); }
+
+  // ─── Download ──────────────────────────────────
+  function downloadExcel() {
+    if (!downloadUrl) return;
+    window.open(`${API_BASE}${downloadUrl}`, '_blank');
+  }
+
+  // ─── Toast ─────────────────────────────────────
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('visible');
+    setTimeout(() => t.classList.remove('visible'), 4000);
+  }
+</script>
+
+</body>
+</html>
