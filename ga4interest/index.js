@@ -86,31 +86,43 @@ function classifyUrl(pagePath) {
   return null; // not a category or product page
 }
 
-// ─── GSC data fetch ────────────────────────────────────────────────────────
+// ─── GSC data fetch — aggregate on the fly ─────────────────────────────────
 
-async function fetchGSCData(auth, startDate, endDate) {
+async function fetchGSCIntoBuckets(auth, startDate, endDate, buckets) {
   const webmasters = google.searchconsole({ version: 'v1', auth });
-  let allRows = [];
   let startRow = 0;
-  const rowLimit = 25000;
+  const rowLimit = 5000; // smaller batches = less peak memory
+  let totalRows = 0;
 
   while (true) {
     try {
       const res = await webmasters.searchanalytics.query({
         siteUrl: process.env.GSC_SITE_URL,
-        requestBody: {
-          startDate,
-          endDate,
-          dimensions: ['page'],
-          rowLimit,
-          startRow,
-          dataState: 'final'
-        }
+        requestBody: { startDate, endDate, dimensions: ['page'], rowLimit, startRow, dataState: 'final' }
       });
 
       const rows = res.data.rows || [];
       if (rows.length === 0) break;
-      allRows = allRows.concat(rows);
+      totalRows += rows.length;
+
+      // Aggregate immediately, don't store raw rows
+      for (const row of rows) {
+        let pathname;
+        try { pathname = new URL(row.keys[0]).pathname; } catch { continue; }
+        const classified = classifyUrl(pathname);
+        if (!classified) continue;
+
+        const key = classified.level === 'product'
+          ? `product::${classified.productId}`
+          : `${classified.level}::${classified.hierarchy}`;
+
+        if (!buckets[key]) {
+          buckets[key] = { ...classified, key, gsc_impressions: 0, gsc_clicks: 0, ga4_views: 0, ga4_engaged: 0, ga4_sessions: 0 };
+        }
+        buckets[key].gsc_impressions += row.impressions || 0;
+        buckets[key].gsc_clicks += row.clicks || 0;
+      }
+
       if (rows.length < rowLimit) break;
       startRow += rowLimit;
     } catch (err) {
@@ -119,16 +131,17 @@ async function fetchGSCData(auth, startDate, endDate) {
     }
   }
 
-  return allRows;
+  console.log(`GSC: ${totalRows} rows aggregated`);
+  return buckets;
 }
 
-// ─── GA4 data fetch ────────────────────────────────────────────────────────
+// ─── GA4 data fetch — aggregate on the fly ─────────────────────────────────
 
-async function fetchGA4Data(auth, startDate, endDate) {
+async function fetchGA4IntoBuckets(auth, startDate, endDate, buckets) {
   const analyticsData = google.analyticsdata({ version: 'v1beta', auth });
-  let allRows = [];
   let offset = 0;
   const limit = 10000;
+  let totalRows = 0;
 
   while (true) {
     try {
@@ -150,7 +163,26 @@ async function fetchGA4Data(auth, startDate, endDate) {
 
       const rows = res.data.rows || [];
       if (rows.length === 0) break;
-      allRows = allRows.concat(rows);
+      totalRows += rows.length;
+
+      // Aggregate immediately
+      for (const row of rows) {
+        const pagePath = row.dimensionValues[0].value;
+        const classified = classifyUrl(pagePath);
+        if (!classified) continue;
+
+        const key = classified.level === 'product'
+          ? `product::${classified.productId}`
+          : `${classified.level}::${classified.hierarchy}`;
+
+        if (!buckets[key]) {
+          buckets[key] = { ...classified, key, gsc_impressions: 0, gsc_clicks: 0, ga4_views: 0, ga4_engaged: 0, ga4_sessions: 0 };
+        }
+        buckets[key].ga4_views += parseInt(row.metricValues[0].value) || 0;
+        buckets[key].ga4_engaged += parseInt(row.metricValues[1].value) || 0;
+        buckets[key].ga4_sessions += parseInt(row.metricValues[2].value) || 0;
+      }
+
       if (rows.length < limit) break;
       offset += limit;
     } catch (err) {
@@ -159,67 +191,11 @@ async function fetchGA4Data(auth, startDate, endDate) {
     }
   }
 
-  return allRows;
-}
-
-// ─── Aggregate data by level ───────────────────────────────────────────────
-
-function aggregateData(gscRows, ga4Rows) {
-  const buckets = {}; // key => { gsc_impressions, gsc_clicks, ga4_views, ga4_engaged, ga4_sessions, level, ... }
-
-  // Process GSC
-  for (const row of gscRows) {
-    const url = new URL(row.keys[0]);
-    const classified = classifyUrl(url.pathname);
-    if (!classified) continue;
-
-    let key;
-    if (classified.level === 'product') {
-      key = `product::${classified.productId}`;
-    } else {
-      key = `${classified.level}::${classified.hierarchy}`;
-    }
-
-    if (!buckets[key]) {
-      buckets[key] = {
-        ...classified,
-        key,
-        gsc_impressions: 0, gsc_clicks: 0,
-        ga4_views: 0, ga4_engaged: 0, ga4_sessions: 0
-      };
-    }
-    buckets[key].gsc_impressions += row.impressions || 0;
-    buckets[key].gsc_clicks += row.clicks || 0;
-  }
-
-  // Process GA4
-  for (const row of ga4Rows) {
-    const pagePath = row.dimensionValues[0].value;
-    const classified = classifyUrl(pagePath);
-    if (!classified) continue;
-
-    let key;
-    if (classified.level === 'product') {
-      key = `product::${classified.productId}`;
-    } else {
-      key = `${classified.level}::${classified.hierarchy}`;
-    }
-
-    if (!buckets[key]) {
-      buckets[key] = {
-        ...classified,
-        key,
-        gsc_impressions: 0, gsc_clicks: 0,
-        ga4_views: 0, ga4_engaged: 0, ga4_sessions: 0
-      };
-    }
-    buckets[key].ga4_views += parseInt(row.metricValues[0].value) || 0;
-    buckets[key].ga4_engaged += parseInt(row.metricValues[1].value) || 0;
-    buckets[key].ga4_sessions += parseInt(row.metricValues[2].value) || 0;
-  }
-
+  console.log(`GA4: ${totalRows} rows aggregated`);
   return buckets;
 }
+
+// aggregateData removed — aggregation now happens during fetch
 
 // ─── Score calculation ─────────────────────────────────────────────────────
 
@@ -447,31 +423,21 @@ app.get('/analyze', async (req, res) => {
     console.log(`Current: ${dateRanges.current.start} to ${dateRanges.current.end}`);
     console.log(`Previous: ${dateRanges.previous.start} to ${dateRanges.previous.end}`);
 
-    // Fetch current period
-    console.log('Fetching GSC data (current)...');
-    const gscCurrent = await fetchGSCData(auth, dateRanges.current.start, dateRanges.current.end);
-    console.log(`GSC current: ${gscCurrent.length} rows`);
-
-    console.log('Fetching GA4 data (current)...');
-    const ga4Current = await fetchGA4Data(auth, dateRanges.current.start, dateRanges.current.end);
-    console.log(`GA4 current: ${ga4Current.length} rows`);
-
-    // Fetch previous period
-    console.log('Fetching GSC data (previous)...');
-    const gscPrevious = await fetchGSCData(auth, dateRanges.previous.start, dateRanges.previous.end);
-    console.log(`GSC previous: ${gscPrevious.length} rows`);
-
-    console.log('Fetching GA4 data (previous)...');
-    const ga4Previous = await fetchGA4Data(auth, dateRanges.previous.start, dateRanges.previous.end);
-    console.log(`GA4 previous: ${ga4Previous.length} rows`);
-
-    // Aggregate
-    const currentBuckets = aggregateData(gscCurrent, ga4Current);
-    const previousBuckets = aggregateData(gscPrevious, ga4Previous);
-
-    // Score
+    // Current period — aggregate directly into buckets
+    console.log('Fetching current period...');
+    let currentBuckets = {};
+    await fetchGSCIntoBuckets(auth, dateRanges.current.start, dateRanges.current.end, currentBuckets);
+    await fetchGA4IntoBuckets(auth, dateRanges.current.start, dateRanges.current.end, currentBuckets);
     const currentLevels = calculateScores(currentBuckets);
+    currentBuckets = null; // free memory
+
+    // Previous period
+    console.log('Fetching previous period...');
+    let previousBuckets = {};
+    await fetchGSCIntoBuckets(auth, dateRanges.previous.start, dateRanges.previous.end, previousBuckets);
+    await fetchGA4IntoBuckets(auth, dateRanges.previous.start, dateRanges.previous.end, previousBuckets);
     const previousLevels = calculateScores(previousBuckets);
+    previousBuckets = null; // free memory
 
     // Trends
     const finalData = calculateTrends(currentLevels, previousLevels);
