@@ -1,18 +1,14 @@
 {
   "name": "category-interest",
   "version": "1.0.0",
-  "description": "Kapruka Category Interest Analyzer",
   "main": "index.js",
   "scripts": {
-    "start": "node --expose-gc --max-old-space-size=450 index.js"
+    "start": "node --max-old-space-size=450 index.js"
   },
-  "engines": {
-    "node": ">=18.0.0"
-  },
+  "engines": { "node": ">=18.0.0" },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "exceljs": "^4.4.0",
     "express": "^4.21.0"
   }
 }
