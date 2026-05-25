@@ -1451,6 +1451,14 @@
                 <option value="TikTok Video">TikTok Video</option>
               </select>
             </div>
+            <div class="filter-group">
+              <label>Scheduled From</label>
+              <input type="date" id="filterDmDateFrom" onchange="applyDmFilters()" style="padding:10px 12px;border:2px solid #e8e8e8;border-radius:8px;font-size:14px;width:100%;">
+            </div>
+            <div class="filter-group">
+              <label>Scheduled To</label>
+              <input type="date" id="filterDmDateTo" onchange="applyDmFilters()" style="padding:10px 12px;border:2px solid #e8e8e8;border-radius:8px;font-size:14px;width:100%;">
+            </div>
           </div>
 
           <div id="dmApprovalsContainer"></div>
@@ -3343,6 +3351,8 @@
       const status = document.getElementById('filterDmStatus').value.toLowerCase();
       const source = document.getElementById('filterDmSource').value.toLowerCase();
       const page = document.getElementById('filterDmPage').value.toLowerCase();
+      const dateFrom = document.getElementById('filterDmDateFrom').value;
+      const dateTo = document.getElementById('filterDmDateTo').value;
 
       // Only show Head Approved items from May 2025 onwards
       const MAY_2025 = new Date('2025-05-01');
@@ -3352,13 +3362,25 @@
         const matchSource = !source || dm.source_type.toLowerCase() === source;
         const matchPage = !page || (dm.page_name && dm.page_name.toLowerCase() === page);
 
+        // Date range filter on scheduled_live_date
+        let matchDate = true;
+        if (dateFrom || dateTo) {
+          const schedDate = dm.scheduled_live_date ? dm.scheduled_live_date.substring(0, 10) : null;
+          if (!schedDate) {
+            matchDate = false;
+          } else {
+            if (dateFrom && schedDate < dateFrom) matchDate = false;
+            if (dateTo && schedDate > dateTo) matchDate = false;
+          }
+        }
+
         // For Head Approved items, only show from May 2025 onwards
         if (dm.dm_status === 'Approved') {
           const itemDate = dm.approved_at ? new Date(dm.approved_at) : (dm.scheduled_live_date ? new Date(dm.scheduled_live_date) : null);
           if (itemDate && itemDate < MAY_2025) return false;
         }
 
-        return matchStatus && matchSource && matchPage;
+        return matchStatus && matchSource && matchPage && matchDate;
       });
 
       renderDmApprovals(filtered);
