@@ -3021,7 +3021,7 @@
           </div>`
         : '';
 
-      const statusOptions = ['Received', 'Working', 'Submitted for Review', 'Approved', 'Rejected by Head', 'Hold'].map(status => 
+      const statusOptions = ['Received', 'Working', 'Submitted for Review', 'Approved', 'Rejected by Head', 'DM Rejected', 'Hold'].map(status => 
         `<option value="${status}" ${slotData.studio_status === status ? 'selected' : ''}>${status}</option>`
       ).join('');
 
@@ -3120,6 +3120,10 @@
             <label>Reason for Hold *</label>
             <textarea id="holdReason" rows="3" placeholder="Explain why this content is on hold...">${slotData.hold_reason || ''}</textarea>
           </div>
+          <div class="form-group" id="dmRejectionReasonGroup" style="display:none;">
+            <label>DM Rejection Reason *</label>
+            <textarea id="dmRejectionReason" rows="3" placeholder="Explain why Digital Marketing is rejecting this content..."></textarea>
+          </div>
           <button type="submit" class="btn btn-primary" style="width:100%;">Update Status</button>
         </form>
       `;
@@ -3133,6 +3137,7 @@
       const rejectionReasonGroup = document.getElementById('rejectionReasonGroup');
       const assignedToGroup = document.getElementById('assignedToGroup'); // ✅ NEW
       const holdReasonGroup = document.getElementById('holdReasonGroup');
+      const dmRejectionReasonGroup = document.getElementById('dmRejectionReasonGroup');
 
       statusSelect.addEventListener('change', () => {
         contentLinkGroup.style.display = 'none';
@@ -3141,6 +3146,7 @@
         rejectionReasonGroup.style.display = 'none';
         assignedToGroup.style.display = 'none'; // ✅ NEW
         holdReasonGroup.style.display = 'none';
+        dmRejectionReasonGroup.style.display = 'none';
 
         // ✅ NEW: Show assigned_to when status = Working
         if (statusSelect.value === 'Working') {
@@ -3157,6 +3163,8 @@
         } else if (statusSelect.value === 'Rejected by Head') {
           rejectionGroup.style.display = 'block';
           rejectionReasonGroup.style.display = 'block';
+        } else if (statusSelect.value === 'DM Rejected') {
+          dmRejectionReasonGroup.style.display = 'block';
         }
       });
 
@@ -3172,6 +3180,13 @@
         const rejectionReason = document.getElementById('rejectionReason')?.value;
           const holdReason = document.getElementById('holdReason')?.value;
         const assignedTo = document.getElementById('assignedTo')?.value || null; // ✅ NEW
+        const dmRejectionReason = document.getElementById('dmRejectionReason')?.value;
+
+        // Validate DM Rejected requires a reason
+        if (newStatus === 'DM Rejected' && !dmRejectionReason?.trim()) {
+          alert('Please provide a reason for the DM rejection.');
+          return;
+        }
 
         try {
           showLoading();
@@ -3180,6 +3195,7 @@
             content_link: contentLink || null,
             password: password || rejectionPassword || null,
             rejection_reason: rejectionReason || null,
+            dm_rejection_reason: dmRejectionReason || null,
             hold_reason: holdReason || null,
             approved_by: 'Content Head',
             date: slotData.date,
