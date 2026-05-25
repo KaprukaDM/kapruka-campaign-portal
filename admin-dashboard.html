@@ -1779,8 +1779,11 @@
     // LOGIN & NAVIGATION
     // ═══════════════════════════════════════════════════════════
     window.addEventListener('DOMContentLoaded', function() {
-      const loggedIn = sessionStorage.getItem('adminLoggedIn');
-      const role = sessionStorage.getItem('adminRole');
+      let loggedIn = null, role = null;
+      try {
+        loggedIn = sessionStorage.getItem('adminLoggedIn');
+        role = sessionStorage.getItem('adminRole');
+      } catch(e) { /* sessionStorage blocked in sandboxed iframe - ignore */ }
 
       if (loggedIn === 'true') {
         isLoggedIn = true;
@@ -1815,8 +1818,7 @@
       if (verifySuperAdminPassword(password)) {
         isLoggedIn = true;
         isSuperAdmin = true;
-        sessionStorage.setItem('adminLoggedIn', 'true');
-        sessionStorage.setItem('adminRole', 'superadmin');
+        try { sessionStorage.setItem('adminLoggedIn', 'true'); sessionStorage.setItem('adminRole', 'superadmin'); } catch(e) {}
 
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('adminContent').style.display = 'block';
@@ -1827,8 +1829,7 @@
       } else if (verifyAdminPassword(password)) {
         isLoggedIn = true;
         isSuperAdmin = false;
-        sessionStorage.setItem('adminLoggedIn', 'true');
-        sessionStorage.setItem('adminRole', 'admin');
+        try { sessionStorage.setItem('adminLoggedIn', 'true'); sessionStorage.setItem('adminRole', 'admin'); } catch(e) {}
 
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('adminContent').style.display = 'block';
@@ -1842,8 +1843,7 @@
     function logout() {
       isLoggedIn = false;
       isSuperAdmin = false;
-      sessionStorage.removeItem('adminLoggedIn');
-      sessionStorage.removeItem('adminRole');
+      try { sessionStorage.removeItem('adminLoggedIn'); sessionStorage.removeItem('adminRole'); } catch(e) {}
       document.getElementById('loginScreen').style.display = 'block';
       document.getElementById('adminContent').style.display = 'none';
       document.getElementById('adminPassword').value = '';
