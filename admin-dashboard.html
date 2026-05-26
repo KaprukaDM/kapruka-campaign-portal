@@ -3021,7 +3021,7 @@
           </div>`
         : '';
 
-      const statusOptions = ['Received', 'Working', 'Submitted for Review', 'Approved by Head', 'Rejected by Head', 'DM Rejected', 'Hold'].map(status => 
+      const statusOptions = ['Received', 'Working', 'Submitted for Review', 'Approved by Head', 'Rejected by Head', 'DM Rejected', 'Hold', 'Posted'].map(status =>
         `<option value="${status}" ${(slotData.studio_status === status || (status === 'Approved by Head' && slotData.studio_status === 'Approved')) ? 'selected' : ''}>${status}</option>`
       ).join('');
 
@@ -3125,6 +3125,20 @@
             <label>DM Rejection Reason *</label>
             <textarea id="dmRejectionReason" rows="3" placeholder="Explain why Digital Marketing is rejecting this content..."></textarea>
           </div>
+          <div id="postedFieldsGroup" style="display:none;">
+            <div class="form-group">
+              <label>🔗 Post Link / URL</label>
+              <input type="url" id="postedLink" placeholder="https://www.facebook.com/..." value="${slotData.post_link || ''}">
+            </div>
+            <div class="form-group">
+              <label>📝 Posted Notes</label>
+              <textarea id="postedNotes" rows="3" placeholder="Describe what was posted, on which page, any notes...">${slotData.posted_update || ''}</textarea>
+            </div>
+            <div class="form-group">
+              <label>📅 Posted Date</label>
+              <input type="date" id="postedDate" value="${slotData.posted_date || new Date().toISOString().split('T')[0]}">
+            </div>
+          </div>
           <button type="submit" class="btn btn-primary" style="width:100%;">Update Status</button>
         </form>
       `;
@@ -3166,6 +3180,8 @@
           rejectionReasonGroup.style.display = 'block';
         } else if (statusSelect.value === 'DM Rejected') {
           dmRejectionReasonGroup.style.display = 'block';
+        } else if (statusSelect.value === 'Posted') {
+          document.getElementById('postedFieldsGroup').style.display = 'block';
         }
       });
 
@@ -3182,6 +3198,9 @@
           const holdReason = document.getElementById('holdReason')?.value;
         const assignedTo = document.getElementById('assignedTo')?.value || null; // ✅ NEW
         const dmRejectionReason = document.getElementById('dmRejectionReason')?.value;
+        const postedLink = document.getElementById('postedLink')?.value || null;
+        const postedNotes = document.getElementById('postedNotes')?.value || null;
+        const postedDate = document.getElementById('postedDate')?.value || null;
 
         // Validate DM Rejected requires a reason
         if (newStatus === 'DM Rejected' && !dmRejectionReason?.trim()) {
@@ -3201,7 +3220,10 @@
             approved_by: 'Content Head',
             date: slotData.date,
             page_name: slotData.page_name,
-            assigned_to: assignedTo // ✅ NEW: Save assigned person
+            assigned_to: assignedTo,
+            posted_update: postedNotes,
+            post_link: postedLink,
+            posted_date: postedDate
           });
           
           closeModal();
