@@ -2767,7 +2767,7 @@
             if (filterValue === 'working') return item.studio_status === 'Working';
             if (filterValue === 'submitted') return item.studio_status === 'Submitted for Review';
             if (filterValue === 'resubmitted') return item.approval_status === 'Resubmitted for Review'; // NEW
-            if (filterValue === 'approved') return item.head_approved === true;
+            if (filterValue === 'approved') return item.head_approved === true || item.studio_status === 'Approved by Head' || item.studio_status === 'Approved';
             if (filterValue === 'rejectedhead') return item.approval_status === 'Rejected by Head'; // NEW
             if (filterValue === 'approveddm') return item.approval_status === 'Approved by DM'; // NEW
             if (filterValue === 'rejecteddm') return item.approval_status === 'Rejected by DM' || item.studio_status === 'DM Rejected'; // NEW
@@ -2913,7 +2913,7 @@
                 statusBadge = '<span class="slot-status status-review">Resubmitted</span>';
               } else if (slotData.studio_status === 'Hold' || slotData.studio_status === 'On Hold') {
                 statusBadge = '<span class="slot-status status-hold">HOLD</span>';
-              } else if (slotData.head_approved) {
+              } else if (slotData.head_approved || slotData.studio_status === 'Approved by Head' || slotData.studio_status === 'Approved') {
                 statusBadge = '<span class="slot-status status-approved">✓ Head Approved</span>';
               } else if (slotData.studio_status === 'Submitted for Review') {
                 statusBadge = '<span class="slot-status status-review">Review</span>';
@@ -2961,7 +2961,7 @@
               statusBadge = '<span class="slot-status status-review">Resubmitted</span>';
             } else if (item.studio_status === 'Hold' || item.studio_status === 'On Hold') {
               statusBadge = '<span class="slot-status status-hold">HOLD</span>';
-            } else if (item.head_approved) {
+            } else if (item.head_approved || item.studio_status === 'Approved by Head' || item.studio_status === 'Approved') {
               statusBadge = '<span class="slot-status status-approved">✓ Head Approved</span>';
             } else if (item.studio_status === 'Submitted for Review') {
               statusBadge = '<span class="slot-status status-review">Review</span>';
@@ -2977,7 +2977,7 @@
               displayText = item.department;
             }
             // PRIORITY 2: If approved, show category + product code
-            else if (item.head_approved) {
+            else if (item.head_approved || item.studio_status === 'Approved by Head' || item.studio_status === 'Approved') {
               const category = item.content_details?.split('-')[1]?.trim() || '';
               displayText = `${category}${item.product_code ? ' • ' + item.product_code : ''}`;
             }
