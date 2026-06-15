@@ -833,7 +833,8 @@ async function getCalendarData(month, year) {
     const themes = await supabaseQuery(`theme_config?start_date=lte.${endDate}&end_date=gte.${startDate}`);
     const monthYear = `${year}-${String(month).padStart(2,'0')}`;
     const categorySlots = await supabaseQuery(`category_slots?month_year=eq.${monthYear}`);
-    const bookings = await supabaseQuery(`content_calendar?date=gte.${startDate}&date=lte.${endDate}`);
+    // ── FIX: use the view that joins studio_status from studio_calendar ──
+    const bookings = await supabaseQuery(`content_calendar_with_status?date=gte.${startDate}&date=lte.${endDate}`);
     return { themes, categorySlots, bookings };
   } catch (error) {
     console.error('getCalendarData error:', error);
