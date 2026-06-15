@@ -32,6 +32,13 @@
       --amber-bg:      #fef3c7;
       --red:           #dc2626;
       --red-bg:        #fee2e2;
+      /* Studio status colours */
+      --studio-progress-bg:  #fff7ed;
+      --studio-progress-col: #c2410c;
+      --studio-ready-bg:     #f0fdf4;
+      --studio-ready-col:    #15803d;
+      --studio-posted-bg:    #ede9fe;
+      --studio-posted-col:   #6d28d9;
     }
 
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -213,6 +220,27 @@
       font-size: 8px; font-weight: 500;
       margin-top: 2px; display: block;
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
+    }
+
+    /* ── STUDIO STATUS INLINE BADGE ─────────────────────────── */
+    .studio-badge {
+      display: inline-block;
+      font-size: 7px; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 1px 5px; border-radius: 3px;
+      margin-top: 2px; vertical-align: middle;
+    }
+    .studio-badge.progress {
+      background: var(--studio-progress-bg);
+      color: var(--studio-progress-col);
+    }
+    .studio-badge.ready {
+      background: var(--studio-ready-bg);
+      color: var(--studio-ready-col);
+    }
+    .studio-badge.posted {
+      background: var(--studio-posted-bg);
+      color: var(--studio-posted-col);
     }
 
     /* ── LOADING ─────────────────────────────────────────────── */
@@ -443,6 +471,43 @@
     let selectedDate = null;
     let selectedSlot = null;
 
+    // ── STUDIO STATUS HELPERS ────────────────────────────────
+    // Maps the full internal studio_status to a simplified public label + badge class
+    function getSimplifiedStudioStatus(studioStatus) {
+      if (!studioStatus) return null;
+      const s = studioStatus.toLowerCase();
+      if (s === 'posted') {
+        return { label: 'Posted', cls: 'posted', icon: '✦' };
+      }
+      if (s === 'approveddm' || s === 'approved by dm') {
+        return { label: 'Ready', cls: 'ready', icon: '✓' };
+      }
+      if (s === 'approved' || s === 'approvedhead' || s === 'approved by head') {
+        return { label: 'Ready', cls: 'ready', icon: '✓' };
+      }
+      // Everything else still in pipeline = In Progress
+      return { label: 'In Progress', cls: 'progress', icon: '◎' };
+    }
+
+    // Human-readable label for the full internal studio status (shown in popup)
+    function getFullStudioStatusLabel(studioStatus) {
+      if (!studioStatus) return null;
+      const map = {
+        'received':        'Not Started',
+        'working':         'Working',
+        'submitted':       'Submitted for Review',
+        'resubmitted':     'Resubmitted for Review',
+        'approved':        'Approved by Head',
+        'approvedhead':    'Approved by Head',
+        'rejectedhead':    'Rejected by Head',
+        'approveddm':      'Approved by DM',
+        'posted':          'Posted',
+        'rejecteddm':      'Rejected by DM'
+      };
+      return map[studioStatus.toLowerCase()] || studioStatus;
+    }
+
+    // ── CALENDAR FUNCTIONS (unchanged) ──────────────────────
     function showLoading() {
       document.getElementById('loading').style.display = 'flex';
     }
@@ -587,12 +652,19 @@
           const categoryShort = booking.category.length > 15 ? booking.category.substring(0, 15) + '...' : booking.category;
           const productCodeShort = truncateCode(booking.product_code, 10);
 
+          // ── STUDIO STATUS BADGE (inline) ──────────────────
+          const simplified = getSimplifiedStudioStatus(booking.studio_status);
+          const studioBadgeHTML = simplified
+            ? `<span class="studio-badge ${simplified.cls}">${simplified.icon} ${simplified.label}</span>`
+            : '';
+
           slotDiv.innerHTML = `
             <div style="display:flex;justify-content:space-between;align-items:center;width:100%;">
               <span title="${booking.category}">${categoryShort}</span>
               <span>${statusIcon}</span>
             </div>
             ${booking.product_code ? `<span class="slot-code" title="${booking.product_code}">📦 ${productCodeShort}</span>` : ''}
+            ${studioBadgeHTML}
           `;
 
           slotDiv.style.cursor = 'pointer';
@@ -661,6 +733,31 @@
         statusBadge = '<span style="background:var(--red-bg);color:var(--red);padding:4px 12px;border-radius:6px;font-size:11px;font-weight:700;">✗ Rejected</span>';
       }
 
+      // ── STUDIO STATUS SECTION (popup) ───────────────────────
+      const simplified = getSimplifiedStudioStatus(booking.studio_status);
+      const fullLabel = getFullStudioStatusLabel(booking.studio_status);
+
+      let studioStatusSection = '';
+      if (simplified) {
+        const badgeStyle = simplified.cls === 'posted'
+          ? 'background:var(--studio-posted-bg);color:var(--studio-posted-col);'
+          : simplified.cls === 'ready'
+          ? 'background:var(--studio-ready-bg);color:var(--studio-ready-col);'
+          : 'background:var(--studio-progress-bg);color:var(--studio-progress-col);';
+
+        studioStatusSection = `
+          <div style="margin-bottom:12px;">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.09em;color:var(--text-muted);margin-bottom:7px;">🎬 Content Production Status</div>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+              <span style="${badgeStyle}padding:5px 14px;border-radius:6px;font-size:12px;font-weight:700;letter-spacing:0.03em;">
+                ${simplified.icon} ${simplified.label}
+              </span>
+              ${fullLabel ? `<span style="font-size:12px;color:var(--text-muted);">(${fullLabel})</span>` : ''}
+            </div>
+          </div>
+        `;
+      }
+
       content.innerHTML = `
         <div class="modal-header">
           <h2>Booking Details</h2>
@@ -677,6 +774,8 @@
             <h3 style="color:var(--text);font-size:14px;font-weight:600;">Slot ${booking.slot_number}</h3>
             ${statusBadge}
           </div>
+
+          ${studioStatusSection}
 
           <div style="margin-bottom:12px;">
             <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.09em;color:var(--text-muted);margin-bottom:5px;">Category</div>
