@@ -214,6 +214,7 @@
     .slot-preview.booked  { background: var(--green-bg);  color: var(--green);  border-left: 2px solid var(--green); }
     .slot-preview.pending { background: var(--amber-bg);  color: var(--amber);  border-left: 2px solid var(--amber); }
     .slot-preview.rejected{ background: var(--red-bg);    color: var(--red);    border-left: 2px solid var(--red); text-decoration: line-through; opacity: 0.6; }
+    .slot-preview.posted  { background: var(--studio-posted-bg); color: var(--studio-posted-col); border-left: 2px solid var(--studio-posted-col); }
 
     .slot-code {
       font-family: 'DM Mono', monospace;
@@ -405,6 +406,7 @@
     .legend-dot.available { background: var(--surface2); border: 1.5px solid var(--border-strong); }
     .legend-dot.booked    { background: var(--green); }
     .legend-dot.pending   { background: var(--amber); }
+    .legend-dot.posted    { background: var(--studio-posted-col); }
     .legend-dot.seasonal  { background: #ec4899; }
 
     /* ── RESPONSIVE ──────────────────────────────────────────── */
@@ -458,6 +460,7 @@
         <div class="legend-item"><div class="legend-dot available"></div> Available</div>
         <div class="legend-item"><div class="legend-dot booked"></div> Booked</div>
         <div class="legend-item"><div class="legend-dot pending"></div> Pending</div>
+        <div class="legend-item"><div class="legend-dot posted"></div> Posted</div>
         <div class="legend-item"><div class="legend-dot seasonal"></div> Seasonal</div>
       </div>
     </div>
@@ -507,7 +510,7 @@
       return map[studioStatus.toLowerCase()] || studioStatus;
     }
 
-    // ── CALENDAR FUNCTIONS (unchanged) ──────────────────────
+    // ── CALENDAR FUNCTIONS ──────────────────────────────────
     function showLoading() {
       document.getElementById('loading').style.display = 'flex';
     }
@@ -618,7 +621,8 @@
       `;
 
       const availableSlots = calendarData.categorySlots.filter(s => s.date === dateStr);
-      const activeBookings = dayBookings.filter(b => b.status === 'Approved' || b.status === 'Pending');
+      // FIX: include 'Posted' in activeBookings so posted slots are counted as filled
+      const activeBookings = dayBookings.filter(b => b.status === 'Approved' || b.status === 'Pending' || b.status === 'Posted');
 
       const allSlotsFilled = availableSlots.length > 0 && 
         availableSlots.every(slot => 
@@ -638,7 +642,9 @@
           const slotDiv = document.createElement('div');
           slotDiv.className = 'slot-preview';
 
-          if (booking.status === 'Approved') {
+          if (booking.status === 'Posted') {
+            slotDiv.classList.add('posted');
+          } else if (booking.status === 'Approved') {
             slotDiv.classList.add('booked');
           } else if (booking.status === 'Pending') {
             slotDiv.classList.add('pending');
@@ -646,8 +652,10 @@
             slotDiv.classList.add('rejected');
           }
 
-          const statusIcon = booking.status === 'Approved' ? '\u2713' : 
-                            booking.status === 'Pending' ? '\u23f3' : '\u2717';
+          // FIX: correct status icon — Posted shows ✦, not ⏳
+          const statusIcon = booking.status === 'Posted'   ? '\u2726' :
+                            booking.status === 'Approved' ? '\u2713' :
+                            booking.status === 'Pending'  ? '\u23f3' : '\u2717';
 
           const categoryShort = booking.category.length > 15 ? booking.category.substring(0, 15) + '...' : booking.category;
           const productCodeShort = truncateCode(booking.product_code, 10);
@@ -725,7 +733,9 @@
         : themes.theme_name || 'No Theme';
 
       let statusBadge;
-      if (booking.status === 'Approved') {
+      if (booking.status === 'Posted') {
+        statusBadge = '<span style="background:var(--studio-posted-bg);color:var(--studio-posted-col);padding:4px 12px;border-radius:6px;font-size:11px;font-weight:700;">✦ Posted</span>';
+      } else if (booking.status === 'Approved') {
         statusBadge = '<span style="background:var(--green-bg);color:var(--green);padding:4px 12px;border-radius:6px;font-size:11px;font-weight:700;">✓ Approved</span>';
       } else if (booking.status === 'Pending') {
         statusBadge = '<span style="background:var(--amber-bg);color:var(--amber);padding:4px 12px;border-radius:6px;font-size:11px;font-weight:700;">⏳ Pending</span>';
@@ -879,7 +889,8 @@
 
       slots.forEach(slot => {
         const existingBooking = bookings.find(b => b.slot_number === slot.slot_number);
-        const isBooked = existingBooking && (existingBooking.status === 'Approved' || existingBooking.status === 'Pending');
+        // FIX: treat Posted as occupied so it can't be re-booked
+        const isBooked = existingBooking && (existingBooking.status === 'Approved' || existingBooking.status === 'Pending' || existingBooking.status === 'Posted');
 
         if (!isBooked) hasAvailableSlots = true;
 
