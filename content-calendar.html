@@ -812,6 +812,15 @@
           </div>
           ` : ''}
 
+          ${booking.booking_note ? `
+          <div style="margin-bottom:12px;">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.09em;color:var(--text-muted);margin-bottom:5px;">Booking Note</div>
+            <div style="padding:10px 12px;background:#f5f0ff;border-left:3px solid var(--purple);border-radius:8px;color:#333;font-size:13px;line-height:1.5;white-space:pre-line;">
+              📝 ${booking.booking_note}
+            </div>
+          </div>
+          ` : ''}
+
           ${booking.rejection_reason ? `
           <div style="margin-bottom:12px;">
             <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.09em;color:var(--red);margin-bottom:5px;">❌ Rejection Reason</div>
