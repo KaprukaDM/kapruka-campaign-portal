@@ -42,7 +42,6 @@ function isValidUser(authHeader, env) {
     const [username, password] = decoded.split(':');
     
     const users = {
-      'corporate': env.CORPORATE_PASS,
       'lahiru': env.LAHIRU_PASS,
       'ruwini': env.RUWINI_PASS,
       'iresha': env.IRESHA_PASS,
