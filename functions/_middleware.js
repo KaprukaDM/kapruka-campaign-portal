@@ -62,6 +62,7 @@ function isValidUser(authHeader, env) {
       'kasun': env.KASUN_PASS,
       'ishara': env.ISHARA_PASS,
       'upul': env.UPUL_PASS,
+      'corporate': env.CORPORATE_PASS,
     };
     
     return users[username] && users[username] === password;
