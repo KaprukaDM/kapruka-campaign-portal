@@ -1016,39 +1016,85 @@ async function refreshCategorySlotsForMonth(month, year) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// HOT PRODUCTS API
+// HOT PRODUCTS API  (weekly suggestion board)
+//   Research pastes ~5 product links per week. Product dept lists each on
+//   Kapruka and pastes the Kapruka link — a Kapruka link means "listed".
+//   Rows: week_start (Monday) · product_link · listed · kapruka_link
 // ═══════════════════════════════════════════════════════════════
 
-async function getHotProductsByCategory(category) {
-  return await supabaseQuery(`hot_products?category=eq.${encodeURIComponent(category)}&order=created_at.desc`);
+// Soft target: how many products research aims to suggest each week.
+const WEEKLY_TARGET = 5;
+
+// A "week" is identified by the date of its Monday, as 'YYYY-MM-DD', so every
+// product in the same week shares one comparable value.
+function mondayOf(date) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  const day = d.getDay();                  // 0 = Sun … 6 = Sat
+  d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day));
+  return d;
 }
 
+function currentWeekStart() {
+  const d = mondayOf(new Date());
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${m}-${day}`;
+}
+
+// Human label for a week, e.g. "Jun 22 – 28, 2026".
+function weekLabel(weekStart) {
+  const start = new Date(weekStart + 'T00:00:00');
+  const end = new Date(start);
+  end.setDate(end.getDate() + 6);
+  const mon = (d) => d.toLocaleDateString('en-US', { month: 'short' });
+  const sameMonth = start.getMonth() === end.getMonth();
+  const right = sameMonth ? `${end.getDate()}` : `${mon(end)} ${end.getDate()}`;
+  return `${mon(start)} ${start.getDate()} – ${right}, ${end.getFullYear()}`;
+}
+
+// Pull a readable name out of a product URL's last path segment.
+function productNameFromLink(url) {
+  try {
+    const parts = new URL(url).pathname.split('/').filter(Boolean);
+    const slug = parts[parts.length - 1] || new URL(url).hostname;
+    return slug.replace(/[-_]/g, ' ').replace(/\.html?$/i, '').slice(0, 70);
+  } catch {
+    return url;
+  }
+}
+
+// Every suggestion, newest week first (then oldest-added first within a week).
 async function getAllHotProducts() {
-  return await supabaseQuery('hot_products?order=created_at.desc');
+  return await supabaseQuery('hot_products?order=week_start.desc,created_at.asc');
 }
 
+// Add a weekly suggestion. Accepts { product_link } or { productLink };
+// week_start defaults to the current week's Monday.
 async function addHotProduct(productData) {
   const data = {
-    category: productData.category,
-    product_link: productData.productLink,
-    sales_count: parseInt(productData.salesCount) || 0,
-    listed: false, kapruka_link: null
+    week_start: productData.week_start || productData.weekStart || currentWeekStart(),
+    product_link: productData.product_link || productData.productLink,
+    listed: false,
+    kapruka_link: null
   };
   const result = await supabaseQuery('hot_products', 'POST', data);
-  return { success: true, productId: result[0].id };
+  return result[0];
+}
+
+// Patch a row. Accepts snake_case (listed, kapruka_link) or camelCase
+// (kaprukaLink). Passing a kapruka_link auto-marks the product as listed.
+async function updateHotProduct(productId, updateData) {
+  const data = {};
+  if (updateData.listed !== undefined) data.listed = updateData.listed;
+  if (updateData.kapruka_link !== undefined) data.kapruka_link = updateData.kapruka_link || null;
+  else if (updateData.kaprukaLink !== undefined) data.kapruka_link = updateData.kaprukaLink || null;
+  await supabaseQuery(`hot_products?id=eq.${productId}`, 'PATCH', data);
+  return { success: true };
 }
 
 async function deleteHotProduct(id) {
   await supabaseQuery(`hot_products?id=eq.${id}`, 'DELETE');
-  return { success: true };
-}
-
-async function updateHotProduct(productId, updateData) {
-  const data = {};
-  if (updateData.listed !== undefined) data.listed = updateData.listed;
-  if (updateData.kaprukaLink !== undefined) data.kapruka_link = updateData.kaprukaLink || null;
-  if (updateData.salesCount !== undefined) data.sales_count = parseInt(updateData.salesCount) || 0;
-  await supabaseQuery(`hot_products?id=eq.${productId}`, 'PATCH', data);
   return { success: true };
 }
 
