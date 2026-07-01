@@ -3296,9 +3296,15 @@
       return slotData.assigned_to ? `<div style="font-size:9px;margin-top:3px;color:#1976D2;">👤 ${slotData.assigned_to}</div>` : '';
     }
 
+    function saveStudioMonth() {
+      try {
+        localStorage.setItem('studioCalendarMonth', JSON.stringify({ month: currentStudioMonth, year: currentStudioYear }));
+      } catch (e) {}
+    }
+
     function changeStudioMonth(delta) {
       currentStudioMonth += delta;
-      
+
       if (currentStudioMonth > 12) {
         currentStudioMonth = 1;
         currentStudioYear++;
@@ -3306,7 +3312,8 @@
         currentStudioMonth = 12;
         currentStudioYear--;
       }
-      
+
+      saveStudioMonth();
       loadStudioCalendar();
     }
 
@@ -3317,6 +3324,7 @@
       const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
       currentStudioMonth = months.indexOf(month) + 1;
       currentStudioYear = parseInt(year, 10);
+      saveStudioMonth();
       loadStudioCalendar();
     }
 
@@ -3359,6 +3367,7 @@
                 <option value="">Select Format</option>
                 <option value="Video">Video</option>
                 <option value="Post">Post</option>
+                <option value="TikTok Video">TikTok Video</option>
                 <option value="Cover Photo">Cover Photo</option>
                 <option value="Carousel">Carousel</option>
                 <option value="Album">Album</option>
@@ -3837,9 +3846,21 @@
       }
     }
 
-    // Initialize
-    currentStudioMonth = 1;
-    currentStudioYear = 2026;
-  </script>
+    // Initialize — restore the last viewed studio month so a refresh stays put,
+    // otherwise default to the current month (not a hard-coded January).
+    (function initStudioMonth() {
+      try {
+        const saved = JSON.parse(localStorage.getItem('studioCalendarMonth') || 'null');
+        if (saved && saved.month >= 1 && saved.month <= 12 && saved.year) {
+          currentStudioMonth = saved.month;
+          currentStudioYear = saved.year;
+          return;
+        }
+      } catch (e) {}
+      const now = new Date();
+      currentStudioMonth = now.getMonth() + 1;
+      currentStudioYear = now.getFullYear();
+    })();
+</script>
 </body>
 </html>
