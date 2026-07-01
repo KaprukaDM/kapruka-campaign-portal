@@ -3061,8 +3061,18 @@
               <span>${slotData.product_code || '-'}</span>
             </div>
             <div>
-              <strong style="color:#5e3a8e;">Content:</strong> 
-              <span>${slotData.content_details || '-'}</span>
+              <strong style="color:#5e3a8e;">Content:</strong>
+              <span id="contentDisplay">${slotData.content_details || '-'}</span>
+              <button type="button" id="editContentBtn" style="margin-left:8px;font-size:11px;padding:2px 8px;border:1px solid #5e3a8e;background:#fff;color:#5e3a8e;border-radius:6px;cursor:pointer;">✏️ Edit</button>
+              <div id="editContentGroup" style="display:none;margin-top:8px;">
+                <textarea id="editContentText" rows="4" style="width:100%;">${(slotData.content_details || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
+                <input type="password" id="editContentPassword" placeholder="Password to save" style="margin-top:6px;width:100%;">
+                <div style="display:flex;gap:8px;margin-top:6px;">
+                  <button type="button" id="saveContentBtn" class="btn btn-primary" style="padding:6px 14px;">Save</button>
+                  <button type="button" id="cancelContentBtn" class="btn" style="padding:6px 14px;background:#eee;color:#333;">Cancel</button>
+                </div>
+                <div id="editContentMsg" style="color:#d32f2f;font-size:12px;margin-top:4px;"></div>
+              </div>
             </div>
             ${slotData.booking_note ? `<div style="margin-top:6px;padding:10px 12px;background:#f5f0ff;border-left:3px solid #5e3a8e;border-radius:6px;"><strong style="color:#5e3a8e;">📝 Booking Note:</strong><div style="margin-top:4px;color:#333;font-size:13px;line-height:1.5;white-space:pre-line;">${slotData.booking_note}</div></div>` : ''}
             <div>
@@ -3146,6 +3156,39 @@
       `;
 
       showModal(content);
+
+      // ── Password-protected inline edit of the content description ──
+      const editContentBtn = document.getElementById('editContentBtn');
+      if (editContentBtn) {
+        editContentBtn.addEventListener('click', () => {
+          document.getElementById('editContentGroup').style.display = 'block';
+          editContentBtn.style.display = 'none';
+        });
+        document.getElementById('cancelContentBtn').addEventListener('click', () => {
+          document.getElementById('editContentGroup').style.display = 'none';
+          document.getElementById('editContentMsg').textContent = '';
+          document.getElementById('editContentPassword').value = '';
+          editContentBtn.style.display = '';
+        });
+        document.getElementById('saveContentBtn').addEventListener('click', async () => {
+          const msg = document.getElementById('editContentMsg');
+          const newText = document.getElementById('editContentText').value.trim();
+          const pwd = document.getElementById('editContentPassword').value;
+          if (!newText) { msg.textContent = 'Content cannot be empty.'; return; }
+          try {
+            showLoading();
+            await updateSlotContentDetails(slotData.id, newText, pwd);
+            hideLoading();
+            closeModal();
+            alert('✅ Content description updated!');
+            studioCalendarData = [];
+            await loadStudioCalendar();
+          } catch (err) {
+            hideLoading();
+            msg.textContent = err.message === 'Incorrect password' ? 'Incorrect password.' : ('Error: ' + err.message);
+          }
+        });
+      }
 
       const statusSelect = document.getElementById('studioStatus');
       const contentLinkGroup = document.getElementById('contentLinkGroup');

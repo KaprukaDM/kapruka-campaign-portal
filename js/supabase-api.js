@@ -210,6 +210,28 @@ async function getStudioCalendarItem(id) {
   return rows.length ? rows[0] : null;
 }
 
+// Password-protected inline edit of the content description shown on the admin
+// studio calendar. For extra_content the description maps 1:1, so mirror it back
+// to the source row; content_calendar's content_details is a composed string, so
+// we only update the studio_calendar copy there.
+const CONTENT_EDIT_PASSWORD = 'daraz';
+
+async function updateSlotContentDetails(id, contentDetails, password) {
+  if (password !== CONTENT_EDIT_PASSWORD) throw new Error('Incorrect password');
+  const rows = await supabaseQuery(`studio_calendar?id=eq.${id}`);
+  const slot = rows.length ? rows[0] : null;
+
+  await supabaseQuery(`studio_calendar?id=eq.${id}`, 'PATCH', {
+    content_details: contentDetails,
+    updated_at: new Date().toISOString()
+  });
+
+  if (slot && slot.source_id && slot.source_type === 'extra_content') {
+    await supabaseQuery(`extra_content?id=eq.${slot.source_id}`, 'PATCH', { content_details: contentDetails });
+  }
+  return { success: true };
+}
+
 // ═══════════════════════════════════════════════════════════════
 // DM APPROVAL HELPERS
 // ═══════════════════════════════════════════════════════════════
