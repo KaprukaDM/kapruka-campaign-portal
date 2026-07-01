@@ -368,23 +368,27 @@ let detailKey   = null;
 let codeTimer   = null;
 
 // ─── PROXY FALLBACK CHAIN ─────────────────────────────────────
-// If Kapruka blocks one proxy's IP range, the next is tried automatically.
+// Kapruka blocks cross-origin browser fetches, so the product page is routed
+// through a reader/proxy that adds CORS headers, then we scrape og:image.
+// Jina AI Reader is primary (reliable + fast, returns raw HTML with the
+// X-Return-Format header). The free CORS proxies — which frequently go down or
+// start rate-limiting — are kept only as fallbacks.
 const PROXIES = [
-  url => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url),
-  url => 'https://corsproxy.io/?' + encodeURIComponent(url),
-  url => 'https://thingproxy.freeboard.io/fetch/' + url,
-  url => 'https://api.codetabs.com/v1/proxy?quest=' + url,
+  { url: u => 'https://r.jina.ai/' + u, headers: { 'X-Return-Format': 'html' } },
+  { url: u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u) },
+  { url: u => 'https://corsproxy.io/?url=' + encodeURIComponent(u) },
+  { url: u => 'https://api.codetabs.com/v1/proxy?quest=' + u },
 ];
 
 async function fetchProductImage(code) {
   if (code in imageCache) return imageCache[code];
   const pageUrl = KAPRUKA_BASE + encodeURIComponent(code);
 
-  for (const makeProxy of PROXIES) {
+  for (const proxy of PROXIES) {
     try {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 8000);
-      const res = await fetch(makeProxy(pageUrl), { signal: controller.signal });
+      const timer = setTimeout(() => controller.abort(), 12000);
+      const res = await fetch(proxy.url(pageUrl), { signal: controller.signal, headers: proxy.headers || {} });
       clearTimeout(timer);
       if (!res.ok) continue;                          // 403/429 etc → try next proxy
       const html = await res.text();
