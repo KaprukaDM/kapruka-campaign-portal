@@ -821,11 +821,20 @@
           </div>
           ` : ''}
 
-          ${booking.rejection_reason ? `
+          ${(booking.dm_rejection_reason || booking.head_rejection_reason || booking.rejection_reason) ? `
           <div style="margin-bottom:12px;">
-            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.09em;color:var(--red);margin-bottom:5px;">❌ Rejection Reason</div>
-            <div style="background:var(--red-bg);color:var(--red);padding:10px 12px;border-radius:6px;font-size:13px;">
-              ${booking.rejection_reason}
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.09em;color:var(--red);margin-bottom:5px;">❌ ${booking.dm_rejection_reason ? 'DM Rejection Reason' : booking.head_rejection_reason ? 'Head Rejection Reason' : 'Rejection Reason'}</div>
+            <div style="background:var(--red-bg);color:var(--red);padding:10px 12px;border-radius:6px;font-size:13px;white-space:pre-line;">
+              ${booking.dm_rejection_reason || booking.head_rejection_reason || booking.rejection_reason}
+            </div>
+          </div>
+          ` : ''}
+
+          ${booking.hold_reason ? `
+          <div style="margin-bottom:12px;">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.09em;color:var(--studio-progress-col);margin-bottom:5px;">⏸ Hold Reason</div>
+            <div style="background:var(--studio-progress-bg);color:var(--studio-progress-col);padding:10px 12px;border-radius:6px;font-size:13px;white-space:pre-line;">
+              ${booking.hold_reason}
             </div>
           </div>
           ` : ''}
@@ -891,7 +900,7 @@
           </div>
           <div class="form-group">
             <label>📝 Booking Note / Description (Optional)</label>
-            <textarea id="bookingNote" rows="3" placeholder="Add any notes, special instructions, or content description for the studio team..."></textarea>
+            <textarea id="bookingNote" rows="7" style="min-height:150px;resize:vertical;" placeholder="Add any notes, special instructions, or content description for the studio team..."></textarea>
           </div>
           <button class="btn-submit" onclick="submitBooking()">🚀 Submit Booking</button>
         </div>
@@ -931,7 +940,7 @@
             </div>
             <div style="margin-top:8px;padding:8px 10px;background:var(--red-bg);border-radius:6px;font-size:12px;color:var(--red);">
               <span class="rejection-badge">REJECTED</span>
-              <div style="margin-top:4px;font-style:italic;opacity:0.8;">${existingBooking.rejection_reason || 'Previously rejected'}</div>
+              <div style="margin-top:4px;font-style:italic;opacity:0.8;">${existingBooking.dm_rejection_reason || existingBooking.head_rejection_reason || existingBooking.rejection_reason || 'Previously rejected'}</div>
               <div style="margin-top:6px;font-weight:600;color:var(--purple);">\u2728 Available for new booking</div>
             </div>
           `;
@@ -1014,12 +1023,8 @@
       selectedSlot = null;
     }
 
-    window.onclick = function(event) {
-      const modal = document.getElementById('modal');
-      if (event.target === modal) {
-        closeModal();
-      }
-    }
+    // Intentionally NOT closing on backdrop click — clicking outside the box
+    // was closing the popup by accident. Use the × button or Cancel to close.
 
     window.onload = loadCalendar;
   </script>

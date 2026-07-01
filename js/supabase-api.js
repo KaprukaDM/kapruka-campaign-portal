@@ -352,6 +352,13 @@ async function updateStudioStatus(id, statusData) {
     payload.head_rejected_at = new Date().toISOString();
   }
 
+  if (statusData.studio_status === 'DM Rejected') {
+    if (!statusData.dm_rejection_reason) throw new Error('DM rejection reason is required');
+    payload.approval_status = 'Rejected by DM';
+    payload.dm_rejection_reason = statusData.dm_rejection_reason;
+    payload.dm_rejected_at = new Date().toISOString();
+  }
+
   if (statusData.studio_status === 'Hold') {
     if (!statusData.hold_reason) throw new Error('Hold reason is required when setting status to Hold');
     payload.approval_status = 'On Hold';
@@ -836,6 +843,27 @@ async function getCalendarData(month, year) {
     const categorySlots = await supabaseQuery(`category_slots?month_year=eq.${monthYear}`);
     // ── FIX: use the view that joins studio_status from studio_calendar ──
     const bookings = await supabaseQuery(`content_calendar_with_status?date=gte.${startDate}&date=lte.${endDate}`);
+
+    // The view doesn't expose the studio rejection/hold reasons, so pull them
+    // from studio_calendar and merge in by source_id (= content_calendar id).
+    // Without this, a DM/Head rejection reason never shows on the calendar card.
+    try {
+      const studioRows = await supabaseQuery(
+        `studio_calendar?source_type=eq.content_calendar&date=gte.${startDate}&date=lte.${endDate}` +
+        `&select=source_id,dm_rejection_reason,head_rejection_reason,hold_reason`
+      );
+      const reasonById = {};
+      studioRows.forEach(s => { if (s.source_id != null) reasonById[s.source_id] = s; });
+      bookings.forEach(b => {
+        const s = reasonById[b.id];
+        if (s) {
+          b.dm_rejection_reason   = s.dm_rejection_reason;
+          b.head_rejection_reason = s.head_rejection_reason;
+          b.hold_reason           = s.hold_reason;
+        }
+      });
+    } catch (e) { console.warn('Could not merge studio rejection reasons:', e); }
+
     return { themes, categorySlots, bookings };
   } catch (error) {
     console.error('getCalendarData error:', error);

@@ -1711,11 +1711,8 @@
       if (focusTarget) focusTarget.focus();
       else modal.querySelector('#modalContent').focus();
 
-      // click outside to close
-      _modalClickHandler = (e) => {
-        if (e.target === modal) closeModal();
-      };
-      modal.addEventListener('click', _modalClickHandler);
+      // Intentionally NOT closing on backdrop click — accidental outside clicks
+      // were dismissing the popup. Use the × / Cancel button or ESC to close.
 
       // ESC to close
       _modalKeydownHandler = (e) => {
@@ -3124,7 +3121,7 @@
           </div>
           <div class="form-group" id="dmRejectionReasonGroup" style="display:none;">
             <label>DM Rejection Reason *</label>
-            <textarea id="dmRejectionReason" rows="3" placeholder="Explain why Digital Marketing is rejecting this content..."></textarea>
+            <textarea id="dmRejectionReason" rows="3" placeholder="Explain why Digital Marketing is rejecting this content...">${slotData.dm_rejection_reason || ''}</textarea>
           </div>
           <div id="postedFieldsGroup" style="display:none;">
             <div class="form-group">
