@@ -363,6 +363,18 @@ const SECTIONS = [
 
 let bookings    = {};
 let imageCache  = {};
+// Persist resolved images across reloads so we scrape each product only ONCE, ever.
+// Failed codes are kept memory-only (not persisted) so a transient proxy failure
+// isn't cached forever — they retry on the next reload.
+const IMG_CACHE_KEY = 'kapruka_img_cache_v1';
+try { imageCache = JSON.parse(localStorage.getItem(IMG_CACHE_KEY)) || {}; } catch(e) { imageCache = {}; }
+function persistImageCache() {
+  try {
+    const ok = {};
+    for (const k in imageCache) if (imageCache[k]) ok[k] = imageCache[k];
+    localStorage.setItem(IMG_CACHE_KEY, JSON.stringify(ok));
+  } catch(e) {}
+}
 let pendingSlot = null;
 let detailKey   = null;
 let codeTimer   = null;
@@ -387,7 +399,7 @@ async function fetchProductImage(code) {
   for (const proxy of PROXIES) {
     try {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 12000);
+      const timer = setTimeout(() => controller.abort(), 8000);
       const res = await fetch(proxy.url(pageUrl), { signal: controller.signal, headers: proxy.headers || {} });
       clearTimeout(timer);
       if (!res.ok) continue;                          // 403/429 etc → try next proxy
@@ -396,6 +408,7 @@ async function fetchProductImage(code) {
                   || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
       if (match && match[1]) {
         imageCache[code] = match[1];
+        persistImageCache();                          // survive reloads → scrape once
         return match[1];
       }
       // Valid response but no og:image tag — no point trying other proxies
@@ -408,6 +421,37 @@ async function fetchProductImage(code) {
 
   imageCache[code] = null;
   return null;
+}
+
+// Load images with limited concurrency + throttled re-render + retry rounds.
+// The proxies rate-limit under burst, so a first attempt can fail for some products
+// ("some load, some don't"). We fetch gently (3 at a time), then RETRY whatever came
+// back empty, clearing its memory-null first so it actually re-attempts, with a
+// cool-off between rounds. Successful URLs are persisted; genuinely-imageless codes
+// give up after MAX_ROUNDS. Cached images render immediately.
+async function loadImagesThrottled(codes) {
+  renderAll();                                        // cached images show instantly
+  const CONCURRENCY = 3;
+  const MAX_ROUNDS  = 3;
+  let todo = [...new Set(codes)].filter(c => !imageCache[c]);   // no truthy URL yet
+
+  for (let round = 0; round < MAX_ROUNDS && todo.length; round++) {
+    todo.forEach(c => { if (!imageCache[c]) delete imageCache[c]; }); // clear null → allow retry
+    let idx = 0, dirty = false;
+    const timer = setInterval(() => { if (dirty) { dirty = false; renderAll(); } }, 400);
+    async function worker() {
+      while (idx < todo.length) {
+        const code = todo[idx++];
+        try { await fetchProductImage(code); } catch(e) {}
+        dirty = true;
+      }
+    }
+    await Promise.all(Array.from({ length: CONCURRENCY }, worker));
+    clearInterval(timer);
+    renderAll();
+    todo = todo.filter(c => !imageCache[c]);           // still empty → retry next round
+    if (todo.length && round < MAX_ROUNDS - 1) await new Promise(r => setTimeout(r, 1500));
+  }
 }
 
 // ─── SUPABASE ─────────────────────────────────────────────────
@@ -447,7 +491,7 @@ async function loadBookings() {
     });
     setSync('synced', 'Synced');
     renderAll();
-    Object.values(bookings).forEach(b => fetchProductImage(b.code).then(() => renderAll()));
+    loadImagesThrottled(Object.values(bookings).map(b => b.code));
   } catch(e) {
     console.error('Load error:', e);
     setSync('error', 'Load failed');
