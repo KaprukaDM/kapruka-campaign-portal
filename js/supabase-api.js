@@ -36,14 +36,10 @@ const VALID_STATUSES = [
 
 const STUDIO_STATUSES = ['Received', 'Working', 'Submitted for Review', 'Approved', 'Rejected by Head', 'Hold', 'Posted'];
 
+// Retired the daily Kapruka FB / Electronic / Social Mart / Fashion / Toys /
+// Handbag lead-form slots — only TikTok Video (Sunday) remains scheduled.
 const PAGE_SCHEDULE = {
-  0: { page: 'TikTok Video', slots: 1 },
-  1: { page: 'Kapruka FB', slots: 3 },
-  2: { page: 'Electronic Factory', slots: 3 },
-  3: { page: 'Social Mart', slots: 3 },
-  4: { page: 'Fashion Factory', slots: 3 },
-  5: { page: 'Toys Factory', slots: 3 },
-  6: { page: 'Handbag Factory', slots: 3 }
+  0: { page: 'TikTok Video', slots: 1 }
 };
 
 // ═══════════════════════════════════════════════════════════════
