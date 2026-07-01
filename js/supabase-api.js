@@ -36,11 +36,14 @@ const VALID_STATUSES = [
 
 const STUDIO_STATUSES = ['Received', 'Working', 'Submitted for Review', 'Approved', 'Rejected by Head', 'Hold', 'Posted'];
 
-// Retired the daily Kapruka FB / Electronic / Social Mart / Fashion / Toys /
-// Handbag lead-form slots — only TikTok Video (Sunday) remains scheduled.
-const PAGE_SCHEDULE = {
-  0: { page: 'TikTok Video', slots: 1 }
-};
+// Pages available for selection when booking/assigning content.
+const PAGE_OPTIONS = ['Kapruka FB', 'Global Shop'];
+
+// Weekday auto-schedule for prefilled EMPTY lead-form slots. Intentionally
+// empty: we no longer prefill page slots on any specific day. Pages are chosen
+// per booking (see PAGE_OPTIONS); the calendar only shows real content
+// (content-calendar posts, extra content, and booked lead-form items).
+const PAGE_SCHEDULE = {};
 
 // ═══════════════════════════════════════════════════════════════
 // HELPER FUNCTIONS
@@ -96,23 +99,16 @@ function getMinGoLiveDate() {
 
 async function getAvailableSlotsForPage(pageName) {
   try {
-    let dayOfWeek = null;
-    let slotsPerDay = 3;
-    for (const [day, config] of Object.entries(PAGE_SCHEDULE)) {
-      if (config.page === pageName) {
-        dayOfWeek = parseInt(day);
-        slotsPerDay = config.slots;
-        break;
-      }
-    }
-    if (dayOfWeek === null) throw new Error('Invalid page name');
+    // Pages are no longer tied to a specific weekday — offer the next 2 weeks
+    // (any day) with a fixed number of slots per day.
+    const slotsPerDay = 3;
 
     const availableDates = [];
     const today = new Date();
-    for (let i = 0; i < 21; i++) {
+    for (let i = 0; i < 14; i++) {
       const checkDate = new Date(today);
       checkDate.setDate(today.getDate() + i);
-      if (checkDate.getDay() === dayOfWeek) availableDates.push(checkDate.toISOString().split('T')[0]);
+      availableDates.push(checkDate.toISOString().split('T')[0]);
     }
 
     const todayStr = today.toISOString().split('T')[0];

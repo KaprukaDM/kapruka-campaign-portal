@@ -1443,12 +1443,7 @@
               <select id="filterDmPage" onchange="applyDmFilters()">
                 <option value="">All Pages</option>
                 <option value="Kapruka FB">Kapruka FB</option>
-                <option value="Electronic Factory">Electronic Factory</option>
-                <option value="Social Mart">Social Mart</option>
-                <option value="Fashion Factory">Fashion Factory</option>
-                <option value="Toys Factory">Toys Factory</option>
-                <option value="Handbag Factory">Handbag Factory</option>
-                <option value="TikTok Video">TikTok Video</option>
+                <option value="Global Shop">Global Shop</option>
               </select>
             </div>
             <div class="filter-group">
@@ -2214,17 +2209,17 @@
         }
 
         let selectedPage = null;
-        for (const [day, config] of Object.entries(PAGE_SCHEDULE)) {
-          if (product.category && config.page.toLowerCase().includes(product.category.toLowerCase())) {
-            selectedPage = config.page;
+        for (const pg of PAGE_OPTIONS) {
+          if (product.category && pg.toLowerCase().includes(product.category.toLowerCase())) {
+            selectedPage = pg;
             break;
           }
         }
 
-        const pageOptions = Object.values(PAGE_SCHEDULE).map(config => `
+        const pageOptions = PAGE_OPTIONS.map(pg => `
           <label class="radio-label">
-            <input type="radio" name="pageName" value="${config.page}" ${config.page === selectedPage ? 'checked' : ''} required>
-            <span>${config.page}</span>
+            <input type="radio" name="pageName" value="${pg}" ${pg === selectedPage ? 'checked' : ''} required>
+            <span>${pg}</span>
           </label>
         `).join('');
 
@@ -2364,10 +2359,10 @@
         return;
       }
 
-      const pageOptions = Object.values(PAGE_SCHEDULE).map(config => `
+      const pageOptions = PAGE_OPTIONS.map(pg => `
         <label class="radio-label">
-          <input type="radio" name="editPageName" value="${config.page}" ${config.page === product.assignedPage ? 'checked' : ''} required>
-          <span>${config.page}</span>
+          <input type="radio" name="editPageName" value="${pg}" ${pg === product.assignedPage ? 'checked' : ''} required>
+          <span>${pg}</span>
         </label>
       `).join('');
 
@@ -2877,16 +2872,24 @@
 
         const dayData = data.filter(d => d.date === dateStr);
         const schedule = PAGE_SCHEDULE[dayOfWeek];
-        
-        if (schedule) {
-          const expectedSlots = schedule.slots;
-          
-          for (let slotNum = 1; slotNum <= expectedSlots; slotNum++) {
-            const slotData = dayData.find(d => 
-              d.slot_type === 'lead_form' && 
-              d.slot_number === slotNum
-            );
 
+        // Build the lead-form slots to show: the scheduled placeholder slots
+        // (e.g. TikTok on Sunday) PLUS any booked lead-form content that lives
+        // outside the current schedule (e.g. retired pages that still hold real
+        // content) so nothing gets hidden.
+        const leadSlots = [];
+        if (schedule) {
+          for (let slotNum = 1; slotNum <= schedule.slots; slotNum++) {
+            const slotData = dayData.find(d => d.slot_type === 'lead_form' && d.slot_number === slotNum);
+            leadSlots.push({ slotNum, slotData, page: schedule.page });
+          }
+        }
+        dayData
+          .filter(d => d.slot_type === 'lead_form' && d.booking_status === 'booked'
+            && !leadSlots.some(ls => ls.slotData && ls.slotData.id === d.id))
+          .forEach(d => leadSlots.push({ slotNum: d.slot_number, slotData: d, page: d.page_name }));
+
+        leadSlots.forEach(({ slotNum, slotData, page }) => {
             const slotDiv = document.createElement('div');
             
             if (slotData) {
@@ -2923,24 +2926,26 @@
               slotDiv.innerHTML = `
               <span class="slot-number">S${slotNum}</span>
               ${statusBadge}
-              <span class="slot-page">${slotData.page_name || schedule.page}</span>
+              <span class="slot-page">${slotData.page_name || page}</span>
               ${getAssignedPersonDisplay(slotData)}
               `;
-              
+
               slotDiv.onclick = () => showSlotDetails(slotData, dateStr);
             } else {
               slotDiv.className = 'slot-item lead-form empty';
               slotDiv.innerHTML = `
                 <span class="slot-number">S${slotNum}</span>
                 <span class="slot-status status-empty">Empty</span>
-                <span class="slot-page">${schedule.page}</span>
+                <span class="slot-page">${page}</span>
               `;
             }
-            
-            slotsContainer.appendChild(slotDiv);
-          }
 
-          const contentItems = dayData.filter(d => d.slot_type === 'content_calendar');
+            slotsContainer.appendChild(slotDiv);
+        });
+
+        // Content-calendar daily posts ALWAYS render, regardless of the
+        // lead-form page schedule for the day.
+        const contentItems = dayData.filter(d => d.slot_type === 'content_calendar');
           contentItems.forEach(item => {
             const slotDiv = document.createElement('div');
             slotDiv.className = 'slot-item content-calendar';
@@ -2994,7 +2999,6 @@
             slotDiv.onclick = () => showSlotDetails(item, dateStr);
             slotsContainer.appendChild(slotDiv);
           });
-        }
 
         dayDiv.appendChild(slotsContainer);
         grid.appendChild(dayDiv);
@@ -3274,8 +3278,8 @@
     }
 
     function openAddExtraContentModal(prefillDate = null) {
-      const pageOptions = Object.values(PAGE_SCHEDULE).map(config => `
-        <option value="${config.page}">${config.page}</option>
+      const pageOptions = PAGE_OPTIONS.map(pg => `
+        <option value="${pg}">${pg}</option>
       `).join('');
 
       const content = `
