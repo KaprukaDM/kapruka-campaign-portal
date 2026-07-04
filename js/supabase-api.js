@@ -187,7 +187,10 @@ async function upsertStudioCalendarEntry(entry) {
   }
 
   const result = await supabaseQuery('studio_calendar', 'POST', payload);
-  return result[0].id;
+  const newId = result[0].id;
+  const label = entry.content_details || entry.page_name || entry.product_code || entry.slot_type || 'slot';
+  await logStudioActivity(newId, 'created', `Slot created — ${label}`, entry.department || 'System');
+  return newId;
 }
 
 async function getStudioCalendarForMonth(year, month) {
@@ -210,6 +213,31 @@ async function getStudioCalendarItem(id) {
   return rows.length ? rows[0] : null;
 }
 
+// ── STUDIO ACTIVITY LOG (audit trail) ──────────────────────────────
+// Append-only history for a slot. Never throws — logging must not break the
+// action it records (e.g. if the studio_activity_log table isn't created yet).
+async function logStudioActivity(slotId, eventType, detail, actor) {
+  if (!slotId) return;
+  try {
+    await supabaseQuery('studio_activity_log', 'POST', {
+      slot_id: slotId,
+      event_type: eventType,
+      detail: detail || null,
+      actor: actor || 'System'
+    });
+  } catch (e) {
+    console.warn('activity log skipped:', e.message);
+  }
+}
+
+async function getStudioActivityLog(slotId) {
+  try {
+    return await supabaseQuery(`studio_activity_log?slot_id=eq.${slotId}&order=created_at.asc,id.asc`);
+  } catch (e) {
+    return [];
+  }
+}
+
 // Password-protected inline edit of the content description shown on the admin
 // studio calendar. For extra_content the description maps 1:1, so mirror it back
 // to the source row; content_calendar's content_details is a composed string, so
@@ -229,6 +257,9 @@ async function updateSlotContentDetails(id, contentDetails, password) {
   if (slot && slot.source_id && slot.source_type === 'extra_content') {
     await supabaseQuery(`extra_content?id=eq.${slot.source_id}`, 'PATCH', { content_details: contentDetails });
   }
+
+  const oldText = (slot && slot.content_details) || '(empty)';
+  await logStudioActivity(id, 'content_edited', `Content description edited\n  From: ${oldText}\n  To: ${contentDetails}`, 'Admin');
   return { success: true };
 }
 
@@ -258,6 +289,7 @@ async function updateDmApproval(id, data) {
       });
       // SYNC: update request_log too
       await syncStudioStatusToRequest(dmRecord[0].content_id, 'Approved by DM');
+      await logStudioActivity(dmRecord[0].content_id, 'status_changed', 'Approved by Digital Marketing', 'Digital Marketing');
     }
   } else if (data.dm_status === 'Rejected') {
     payload.dm_rejection_reason = data.rejection_reason || '';
@@ -269,6 +301,8 @@ async function updateDmApproval(id, data) {
       });
       // SYNC: update request_log too
       await syncStudioStatusToRequest(dmRecord[0].content_id, 'Rejected by DM');
+      await logStudioActivity(dmRecord[0].content_id, 'rejected',
+        `Rejected by Digital Marketing — Reason: ${data.rejection_reason || '(none)'}`, 'Digital Marketing');
     }
   }
 
@@ -314,6 +348,10 @@ async function syncStudioStatusToRequest(studioCalendarId, newStatus) {
 // ═══════════════════════════════════════════════════════════════
 
 async function updateStudioStatus(id, statusData) {
+  // Snapshot the current state so the activity log can record what changed.
+  const beforeRows = await supabaseQuery(`studio_calendar?id=eq.${id}`);
+  const before = beforeRows.length ? beforeRows[0] : {};
+
   const payload = {
     studio_status: statusData.studio_status
   };
@@ -387,6 +425,38 @@ async function updateStudioStatus(id, statusData) {
   // ── SYNC STATUS BACK TO REQUEST_LOG ──
   const syncStatus = payload.approval_status || statusData.studio_status;
   await syncStudioStatusToRequest(id, syncStatus);
+
+  // ── ACTIVITY LOG ──
+  {
+    const ns = statusData.studio_status;
+    let actor = 'Studio';
+    let evt = 'status_changed';
+    let detail;
+    if (ns === 'Approved') {
+      actor = 'Content Head'; detail = 'Approved by Head';
+    } else if (ns === 'Rejected by Head') {
+      actor = 'Content Head'; evt = 'rejected';
+      detail = `Rejected by Studio Head — Reason: ${statusData.rejection_reason || '(none)'}`;
+    } else if (ns === 'DM Rejected') {
+      actor = 'Digital Marketing'; evt = 'rejected';
+      detail = `Rejected by Digital Marketing — Reason: ${statusData.dm_rejection_reason || '(none)'}`;
+    } else if (ns === 'Hold') {
+      actor = 'Content Head'; evt = 'hold';
+      detail = `Put on Hold — Reason: ${statusData.hold_reason || '(none)'}`;
+    } else if (ns === 'Posted') {
+      detail = 'Marked as Posted' + (statusData.post_link ? ` — ${statusData.post_link}` : '');
+    } else {
+      detail = `Status → ${payload.approval_status || ns}`;
+    }
+    if (before.studio_status && before.studio_status !== ns) detail += ` (was ${before.studio_status})`;
+    await logStudioActivity(id, evt, detail, actor);
+
+    // Assignment change (separate entry)
+    if (statusData.assigned_to !== undefined && (statusData.assigned_to || null) !== (before.assigned_to || null)) {
+      await logStudioActivity(id, 'assigned',
+        statusData.assigned_to ? `Assigned to ${statusData.assigned_to}` : 'Unassigned', actor);
+    }
+  }
 
   // If Head approved, create or reset DM approval record
   if (statusData.studio_status === 'Approved') {

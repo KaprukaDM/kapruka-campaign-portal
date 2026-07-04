@@ -1775,6 +1775,12 @@
       return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     }
 
+    // Escapes text for safe insertion into innerHTML while keeping it as literal text
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
     // ═══════════════════════════════════════════════════════════
     // LOGIN & NAVIGATION
     // ═══════════════════════════════════════════════════════════
@@ -3005,6 +3011,35 @@
       }
     }
 
+    // Fetch + render the slot's activity log timeline into the popup.
+    async function renderActivityLog(slotId) {
+      const body = document.getElementById('activityLogBody');
+      if (!body) return;
+      let entries = [];
+      try { entries = await getStudioActivityLog(slotId); } catch (e) { entries = []; }
+
+      if (!entries || entries.length === 0) {
+        body.innerHTML = '<span style="color:#999;">No activity recorded yet. (New events will appear here.)</span>';
+        return;
+      }
+
+      const icon = { created:'🆕', status_changed:'🔄', rejected:'❌', hold:'⏸', assigned:'👤', content_edited:'✏️' };
+      const esc = s => String(s ?? '').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+      const rows = entries.map(e => {
+        const when = e.created_at ? new Date(e.created_at).toLocaleString() : '';
+        const isReject = e.event_type === 'rejected';
+        return `
+          <div style="display:flex;gap:8px;padding:8px 0;border-bottom:1px solid #eee;">
+            <div style="flex-shrink:0;">${icon[e.event_type] || '•'}</div>
+            <div style="flex:1;">
+              <div style="white-space:pre-line;color:${isReject ? '#D32F2F' : '#333'};font-weight:${isReject ? '600' : '400'};">${esc(e.detail || e.event_type)}</div>
+              <div style="color:#999;font-size:11px;margin-top:2px;">${esc(e.actor || 'System')} · ${esc(when)}</div>
+            </div>
+          </div>`;
+      }).join('');
+      body.innerHTML = `<div style="background:#faf9fc;border:1px solid #eee;border-radius:8px;padding:4px 12px;max-height:260px;overflow-y:auto;">${rows}</div>`;
+    }
+
     // UPDATED: Added rejection reason display
     function showSlotDetails(slotData, dateStr) {
       // NEW: Show rejection reasons if they exist
@@ -3062,10 +3097,10 @@
             </div>
             <div>
               <strong style="color:#5e3a8e;">Content:</strong>
-              <span id="contentDisplay">${slotData.content_details || '-'}</span>
               <button type="button" id="editContentBtn" style="margin-left:8px;font-size:11px;padding:2px 8px;border:1px solid #5e3a8e;background:#fff;color:#5e3a8e;border-radius:6px;cursor:pointer;">✏️ Edit</button>
+              <div id="contentDisplay" style="white-space:pre-wrap;word-break:break-word;margin-top:6px;">${escapeHtml(slotData.content_details) || '-'}</div>
               <div id="editContentGroup" style="display:none;margin-top:8px;">
-                <textarea id="editContentText" rows="4" style="width:100%;">${(slotData.content_details || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
+                <textarea id="editContentText" rows="4" style="width:100%;">${escapeHtml(slotData.content_details)}</textarea>
                 <input type="password" id="editContentPassword" placeholder="Password to save" style="margin-top:6px;width:100%;">
                 <div style="display:flex;gap:8px;margin-top:6px;">
                   <button type="button" id="saveContentBtn" class="btn btn-primary" style="padding:6px 14px;">Save</button>
@@ -3097,6 +3132,11 @@
         </div>
 
         ${rejectionInfo}${holdInfo}
+
+        <div id="activityLogSection" style="margin-bottom:20px;">
+          <div style="font-weight:700;color:#5e3a8e;margin-bottom:8px;">🕘 Activity Log</div>
+          <div id="activityLogBody" style="font-size:12px;color:#666;">Loading history…</div>
+        </div>
 
         <form id="updateStatusForm">
           <div class="form-group">
@@ -3156,6 +3196,9 @@
       `;
 
       showModal(content);
+
+      // ── Render the per-slot activity log (audit trail) ──
+      renderActivityLog(slotData.id);
 
       // ── Password-protected inline edit of the content description ──
       const editContentBtn = document.getElementById('editContentBtn');
