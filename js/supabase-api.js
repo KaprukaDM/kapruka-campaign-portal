@@ -1178,6 +1178,14 @@ function shiftMonthYear(monthYear, delta) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
+// First/last calendar day of a 'YYYY-MM' string, for constraining a date picker
+// to the month a request board is currently showing.
+function monthYearRange(monthYear) {
+  const [y, m] = monthYear.split('-').map(Number);
+  const lastDay = new Date(y, m, 0).getDate();
+  return { min: `${monthYear}-01`, max: `${monthYear}-${String(lastDay).padStart(2, '0')}` };
+}
+
 async function getAdRequestsForMonth(monthYear) {
   const requests = await supabaseQuery(`ad_requests?month_year=eq.${monthYear}&order=created_at.asc`);
   if (requests.length === 0) return requests;
@@ -1202,13 +1210,14 @@ async function submitAdRequest(data) {
     message: data.message || '',
     reference_link: data.referenceLink || '',
     submitted_by: data.submittedBy || 'Marketing',
-    status: 'Received'
+    status: 'Received',
+    go_live_date: data.goLiveDate || null
   };
   const result = await supabaseQuery('ad_requests', 'POST', payload);
   const saved = result[0];
 
   await upsertStudioCalendarEntry({
-    date: `${data.monthYear}-01`,
+    date: data.goLiveDate || `${data.monthYear}-01`,
     department: data.category,
     source_type: 'ad_request',
     source_id: saved.id,

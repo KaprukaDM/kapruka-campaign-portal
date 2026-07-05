@@ -13,8 +13,13 @@ create table if not exists ad_requests (
   message        text,                   -- ad copy / caption
   reference_link text,
   submitted_by   text,
-  status         text not null default 'Received'
+  status         text not null default 'Received',
+  go_live_date   date                    -- optional: specific day within month_year to post
 );
+
+-- Fresh installs already have the column; this only matters for re-runs
+-- against a table created before go_live_date existed.
+alter table ad_requests add column if not exists go_live_date date;
 
 create index if not exists idx_ad_requests_month on ad_requests (month_year, category);
 

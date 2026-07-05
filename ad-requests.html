@@ -314,7 +314,7 @@
     function renderProgress(totalFilled) {
       const totalQuota = AD_REQUEST_CATEGORIES.reduce((sum, c) => sum + c.quota, 0);
       const pct = Math.min(100, Math.round((totalFilled / totalQuota) * 100));
-      document.getElementById('progressLabel').textContent = `${totalFilled} / ${totalQuota} filled`;
+      document.getElementById('progressLabel').textContent = `${totalFilled} / ${totalQuota} ideas filled`;
       document.getElementById('progressFill').style.width = pct + '%';
     }
 
@@ -355,9 +355,10 @@
 
       const chips = filled.map(r => {
         const s = getSimplifiedStudioStatus(r.studio_status);
+        const dateTag = r.go_live_date ? ` · ${r.go_live_date}` : '';
         return `
           <div class="request-chip" onclick='showRequestDetails(${r.id})'>
-            <span class="chip-angle" title="${(r.angle || '').replace(/"/g, '&quot;')}">${r.angle || '(no angle set)'}</span>
+            <span class="chip-angle" title="${(r.angle || '').replace(/"/g, '&quot;')}">${r.angle || '(no angle set)'}${dateTag}</span>
             <span class="studio-badge ${s.cls}">${s.icon} ${s.label}</span>
           </div>
         `;
@@ -366,7 +367,7 @@
       card.innerHTML = `
         <div class="category-card-head">
           <div class="category-name">${cat.category}</div>
-          <div class="quota-badge ${badgeClass}">${filled.length}/${cat.quota}</div>
+          <div class="quota-badge ${badgeClass}">${filled.length}/${cat.quota} ideas</div>
         </div>
         ${chips}
         <button class="add-request-btn" onclick='openAddModal(${JSON.stringify(cat.category)}, ${JSON.stringify(cat.group)})'>+ Add Request</button>
@@ -378,6 +379,7 @@
       activeCategory = { category, categoryGroup };
       const modal = document.getElementById('modal');
       const content = document.getElementById('modalContent');
+      const range = monthYearRange(currentMonthYear);
 
       content.innerHTML = `
         <div class="modal-header">
@@ -401,6 +403,10 @@
           <input type="url" id="reqReference" placeholder="https://...">
         </div>
         <div class="form-group">
+          <label>📅 Go-Live Date (Optional)</label>
+          <input type="date" id="reqGoLiveDate" min="${range.min}" max="${range.max}">
+        </div>
+        <div class="form-group">
           <label>👤 Submitted By</label>
           <input type="text" id="reqSubmittedBy" placeholder="Your name" value="Marketing">
         </div>
@@ -422,6 +428,7 @@
           angle,
           message: document.getElementById('reqMessage').value.trim(),
           referenceLink: document.getElementById('reqReference').value.trim(),
+          goLiveDate: document.getElementById('reqGoLiveDate').value || null,
           submittedBy: document.getElementById('reqSubmittedBy').value.trim()
         });
         hideLoading();
@@ -468,6 +475,11 @@
           <div class="detail-label">Message / Ad Copy</div>
           <div class="detail-value">${found.message || '-'}</div>
         </div>
+        ${found.go_live_date ? `
+        <div class="detail-row">
+          <div class="detail-label">Go-Live Date</div>
+          <div class="detail-value">📅 ${found.go_live_date}</div>
+        </div>` : ''}
         ${found.reference_link ? `
         <div class="detail-row">
           <div class="detail-label">Reference Link</div>
