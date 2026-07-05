@@ -325,6 +325,15 @@ async function syncStudioStatusToRequest(studioCalendarId, newStatus) {
     if (!studioRow.length) return;
 
     const row = studioRow[0];
+
+    if (row.source_type === 'ad_request' && row.source_id) {
+      await supabaseQuery(`ad_requests?id=eq.${row.source_id}`, 'PATCH', {
+        status: newStatus,
+        updated_at: new Date().toISOString()
+      });
+      return;
+    }
+
     // Only sync if this studio entry was created from a campaign booking
     if (row.source_type !== 'campaign_booking') return;
     if (!row.source_id) return;
@@ -1125,6 +1134,94 @@ async function refreshCategorySlotsForMonth(month, year) {
     }
     return { success: true };
   } catch (error) { throw error; }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// AD REQUESTS API — fixed monthly ad-creative request quota, synced
+// into the shared studio_calendar production pipeline (source_type='ad_request')
+// ═══════════════════════════════════════════════════════════════
+
+// Recurring monthly slate. Quota is a soft target shown in the UI — submitting
+// beyond it is still allowed, it just stops showing as "needed".
+const AD_REQUEST_CATEGORIES = [
+  { group: 'Persona Based',   category: 'Girlfriend to Boyfriend',    quota: 2 },
+  { group: 'Persona Based',   category: 'Boyfriend to Girlfriend',    quota: 2 },
+  { group: 'Diaspora',        category: 'Diaspora to Home',           quota: 2 },
+  { group: 'Occasion Based',  category: 'Birthday - General',         quota: 2 },
+  { group: 'Occasion Based',  category: 'Anniversary - General',      quota: 2 },
+  { group: 'Occasion Based',  category: 'Romantic Partner Birthday',  quota: 2 },
+  { group: 'Occasion Based',  category: 'Parents Birthday',           quota: 2 },
+  { group: 'Occasion Based',  category: 'Kids Birthday',              quota: 2 },
+  { group: 'Gifting',         category: 'General Gifting',            quota: 2 },
+  { group: 'Ecommerce',       category: 'General Ecommerce',          quota: 2 },
+  { group: 'Corporate',       category: 'Corporate',                  quota: 2 },
+  { group: 'Global Shop',     category: 'Global Shop',                quota: 1 },
+  { group: 'Service Central', category: 'Service Central',            quota: 1 }
+];
+
+function getNextMonthYear() {
+  const d = new Date();
+  d.setDate(1);
+  d.setMonth(d.getMonth() + 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function monthYearLabel(monthYear) {
+  const [y, m] = monthYear.split('-').map(Number);
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  return `${months[m - 1]} ${y}`;
+}
+
+function shiftMonthYear(monthYear, delta) {
+  const [y, m] = monthYear.split('-').map(Number);
+  const d = new Date(y, m - 1 + delta, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+async function getAdRequestsForMonth(monthYear) {
+  const requests = await supabaseQuery(`ad_requests?month_year=eq.${monthYear}&order=created_at.asc`);
+  if (requests.length === 0) return requests;
+
+  const ids = requests.map(r => r.id);
+  const studioRows = await supabaseQuery(
+    `studio_calendar?source_type=eq.ad_request&source_id=in.(${ids.join(',')})` +
+    `&select=source_id,studio_status,content_link,dm_rejection_reason,head_rejection_reason,hold_reason`
+  );
+  const byId = {};
+  studioRows.forEach(s => { byId[s.source_id] = s; });
+
+  return requests.map(r => ({ ...r, ...(byId[r.id] || {}) }));
+}
+
+async function submitAdRequest(data) {
+  const payload = {
+    month_year: data.monthYear,
+    category_group: data.categoryGroup,
+    category: data.category,
+    angle: data.angle || '',
+    message: data.message || '',
+    reference_link: data.referenceLink || '',
+    submitted_by: data.submittedBy || 'Marketing',
+    status: 'Received'
+  };
+  const result = await supabaseQuery('ad_requests', 'POST', payload);
+  const saved = result[0];
+
+  await upsertStudioCalendarEntry({
+    date: `${data.monthYear}-01`,
+    department: data.category,
+    source_type: 'ad_request',
+    source_id: saved.id,
+    product_code: null,
+    page_name: null,
+    format: `Ad Request - ${data.categoryGroup}`,
+    content_details: `${data.category}${data.angle ? ' — ' + data.angle : ''}${data.message ? '\n\n' + data.message : ''}`,
+    reference_links: data.referenceLink || '',
+    slot_type: 'content_calendar',
+    booking_status: 'booked'
+  });
+
+  return { success: true, id: saved.id };
 }
 
 // ═══════════════════════════════════════════════════════════════

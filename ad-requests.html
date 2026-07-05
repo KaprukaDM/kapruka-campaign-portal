@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ad Requests — Kapruka</title>
+  <link rel="icon" type="image/png" href="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:            #f5f4f0;
+      --surface:       #fffffe;
+      --surface2:      #f0ede8;
+      --border:        rgba(0,0,0,0.07);
+      --border-strong: rgba(0,0,0,0.16);
+      --text:          #111;
+      --text-muted:    #888;
+      --text-faint:    #bbb;
+      --purple:        #5e3a8e;
+      --purple-dark:   #4a2d70;
+      --purple-light:  #f3eeff;
+      --purple-mid:    rgba(94,58,142,0.08);
+      --gold:          #c9a227;
+      --gold-bg:       #fef9ec;
+      --gold-border:   rgba(201,162,39,0.35);
+      --green:         #16a34a;
+      --green-bg:      #dcfce7;
+      --amber:         #b45309;
+      --amber-bg:      #fef3c7;
+      --red:           #dc2626;
+      --red-bg:        #fee2e2;
+      --studio-progress-bg:  #fff7ed;
+      --studio-progress-col: #c2410c;
+      --studio-ready-bg:     #f0fdf4;
+      --studio-ready-col:    #15803d;
+      --studio-posted-bg:    #ede9fe;
+      --studio-posted-col:   #6d28d9;
+    }
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 40px 20px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container { max-width: 1200px; margin: 0 auto; }
+
+    .header {
+      background: var(--surface);
+      padding: 20px 28px;
+      border-radius: 16px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header-left { display: flex; align-items: center; gap: 16px; }
+    .kapruka-logo { width: 40px; height: 40px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); flex-shrink: 0; }
+    .kapruka-logo img { width: 100%; height: 100%; object-fit: cover; }
+    h1 { font-size: 20px; font-weight: 600; color: var(--text); letter-spacing: -0.02em; }
+    .subtitle { font-size: 11px; font-weight: 700; letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-muted); margin-top: 3px; }
+    .back-btn {
+      padding: 8px 20px; background: var(--purple); color: white; border: none;
+      border-radius: 10px; cursor: pointer; font-weight: 500; font-size: 13px;
+      font-family: 'DM Sans', sans-serif; text-decoration: none; display: inline-block;
+      transition: opacity 0.15s; white-space: nowrap;
+    }
+    .back-btn:hover { opacity: 0.85; }
+
+    .controls { display: flex; justify-content: center; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+    .month-selector { display: flex; align-items: center; gap: 12px; background: var(--surface); padding: 12px 20px; border-radius: 14px; border: 1px solid var(--border); }
+    .month-selector button {
+      background: var(--purple); color: white; border: none; width: 34px; height: 34px;
+      border-radius: 8px; font-size: 16px; cursor: pointer; transition: opacity 0.15s;
+      display: flex; align-items: center; justify-content: center; font-family: 'DM Sans', sans-serif;
+    }
+    .month-selector button:hover { opacity: 0.85; }
+    .month-display { font-size: 16px; font-weight: 600; color: var(--text); min-width: 160px; text-align: center; letter-spacing: -0.01em; }
+
+    .deadline-banner {
+      background: var(--purple-light); border: 1px solid rgba(94,58,142,0.15);
+      color: var(--purple); padding: 12px 20px; border-radius: 12px;
+      margin-bottom: 20px; text-align: center; font-size: 13px; font-weight: 600;
+    }
+    .deadline-banner.overdue { background: var(--amber-bg); color: var(--amber); border-color: var(--amber-border, rgba(180,83,9,0.25)); }
+
+    .progress-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+      padding: 18px 24px; margin-bottom: 20px; display: flex; align-items: center; gap: 18px;
+    }
+    .progress-track { flex: 1; height: 10px; background: var(--surface2); border-radius: 6px; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--purple); border-radius: 6px; transition: width 0.2s; }
+    .progress-label { font-size: 13px; font-weight: 700; color: var(--text-muted); white-space: nowrap; }
+
+    .group-section { margin-bottom: 24px; }
+    .group-title {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.10em; text-transform: uppercase;
+      color: var(--text-muted); margin-bottom: 10px; padding-left: 2px;
+    }
+    .category-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+
+    .category-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+      padding: 16px 18px;
+    }
+    .category-card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 10px; }
+    .category-name { font-size: 14px; font-weight: 600; color: var(--text); }
+    .quota-badge {
+      font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 6px; white-space: nowrap;
+      background: var(--surface2); color: var(--text-muted);
+    }
+    .quota-badge.partial { background: var(--amber-bg); color: var(--amber); }
+    .quota-badge.full { background: var(--green-bg); color: var(--green); }
+
+    .request-chip {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      background: var(--purple-light); color: var(--purple); border-radius: 8px;
+      padding: 6px 10px; margin-bottom: 6px; font-size: 12px; font-weight: 500;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .request-chip:hover { background: rgba(94,58,142,0.15); }
+    .request-chip .chip-angle { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .studio-badge {
+      display: inline-block; font-size: 7px; font-weight: 700; letter-spacing: 0.05em;
+      text-transform: uppercase; padding: 1px 5px; border-radius: 3px; flex-shrink: 0;
+    }
+    .studio-badge.progress { background: var(--studio-progress-bg); color: var(--studio-progress-col); }
+    .studio-badge.ready { background: var(--studio-ready-bg); color: var(--studio-ready-col); }
+    .studio-badge.posted { background: var(--studio-posted-bg); color: var(--studio-posted-col); }
+
+    .add-request-btn {
+      width: 100%; padding: 9px; margin-top: 4px; background: var(--surface2);
+      color: var(--purple); border: 1px dashed var(--border-strong); border-radius: 8px;
+      font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .add-request-btn:hover { background: var(--purple-light); border-color: var(--purple); }
+
+    .loading {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(245,244,240,0.85);
+      backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 9999;
+    }
+    .spinner { width: 36px; height: 36px; border: 3px solid var(--border-strong); border-top-color: var(--purple); border-radius: 50%; animation: spin 0.75s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .modal {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4);
+      backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 10000;
+    }
+    .modal-content { background: var(--surface); padding: 32px; border-radius: 20px; max-width: 560px; max-height: 90vh; overflow-y: auto; width: 90%; border: 1px solid var(--border); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .modal h2 { font-size: 18px; font-weight: 600; color: var(--text); letter-spacing: -0.02em; }
+    .close-btn { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--text-muted); transition: color 0.15s; line-height: 1; }
+    .close-btn:hover { color: var(--text); }
+
+    .category-info {
+      background: var(--purple-light); border: 1px solid rgba(94,58,142,0.15); color: var(--purple);
+      padding: 14px 18px; border-radius: 10px; margin-bottom: 18px; text-align: center; font-weight: 600; font-size: 14px;
+    }
+    .category-info div { font-weight: 400; font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+
+    .form-group { margin-bottom: 16px; }
+    label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; color: var(--text-muted); margin-bottom: 6px; }
+    input, textarea {
+      width: 100%; padding: 10px 14px; border: 1px solid var(--border-strong); border-radius: 8px;
+      font-size: 14px; font-family: 'DM Sans', sans-serif; background: var(--surface); color: var(--text);
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    input:focus, textarea:focus { outline: none; border-color: var(--purple); box-shadow: 0 0 0 3px var(--purple-mid); }
+    input::placeholder, textarea::placeholder { color: var(--text-faint); }
+
+    .btn-submit {
+      width: 100%; padding: 12px; background: var(--purple); color: white; border: none; border-radius: 10px;
+      font-size: 14px; font-weight: 600; font-family: 'DM Sans', sans-serif; cursor: pointer;
+      transition: opacity 0.15s, transform 0.15s; letter-spacing: 0.02em;
+    }
+    .btn-submit:hover:not(:disabled) { opacity: 0.88; transform: translateY(-1px); }
+    .btn-submit:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    .detail-row { margin-bottom: 12px; }
+    .detail-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; color: var(--text-muted); margin-bottom: 5px; }
+    .detail-value { color: var(--text); font-size: 13px; white-space: pre-line; }
+
+    @media (max-width: 768px) {
+      body { padding: 20px 16px; }
+      .header { flex-direction: column; align-items: flex-start; gap: 12px; }
+      .category-grid { grid-template-columns: 1fr; }
+      .modal-content { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="loading" id="loading"><div class="spinner"></div></div>
+  <div class="modal" id="modal"><div class="modal-content" id="modalContent"></div></div>
+
+  <div class="container">
+    <div class="header">
+      <div class="header-left">
+        <div class="kapruka-logo">
+          <img src="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw" alt="Kapruka">
+        </div>
+        <div>
+          <h1>Ad Requests</h1>
+          <div class="subtitle">Monthly Ad Creative Request Board</div>
+        </div>
+      </div>
+      <a href="index.html" class="back-btn">← Back</a>
+    </div>
+
+    <div class="controls">
+      <div class="month-selector">
+        <button onclick="changeMonth(-1)">←</button>
+        <div class="month-display" id="monthDisplay">Loading...</div>
+        <button onclick="changeMonth(1)">→</button>
+      </div>
+    </div>
+
+    <div class="deadline-banner" id="deadlineBanner"></div>
+
+    <div class="progress-card">
+      <div class="progress-label" id="progressLabel">0 / 0 filled</div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    </div>
+
+    <div id="groupsContainer">
+      <div style="text-align:center;padding:40px;color:var(--text-muted);">Loading requests...</div>
+    </div>
+  </div>
+
+  <script src="js/supabase-api.js"></script>
+  <script>
+    let currentMonthYear = getNextMonthYear();
+    let requestsByCategory = {};
+    let activeCategory = null;
+
+    function getSimplifiedStudioStatus(studioStatus) {
+      if (!studioStatus) return { label: 'Received', cls: 'progress', icon: '◎' };
+      const s = studioStatus.toLowerCase();
+      if (s === 'posted') return { label: 'Posted', cls: 'posted', icon: '✦' };
+      if (s === 'approveddm' || s === 'approved by dm' || s === 'approved' || s === 'approvedhead' || s === 'approved by head') {
+        return { label: 'Ready', cls: 'ready', icon: '✓' };
+      }
+      return { label: 'In Progress', cls: 'progress', icon: '◎' };
+    }
+
+    function getFullStudioStatusLabel(studioStatus) {
+      if (!studioStatus) return 'Not Started';
+      const map = {
+        'received': 'Not Started', 'working': 'Working',
+        'submitted for review': 'Submitted for Review', 'resubmitted for review': 'Resubmitted for Review',
+        'approved': 'Approved by Head', 'approvedhead': 'Approved by Head',
+        'rejectedhead': 'Rejected by Head', 'rejected by head': 'Rejected by Head',
+        'approveddm': 'Approved by DM', 'approved by dm': 'Approved by DM',
+        'posted': 'Posted', 'rejecteddm': 'Rejected by DM', 'rejected by dm': 'Rejected by DM',
+        'hold': 'On Hold'
+      };
+      return map[studioStatus.toLowerCase()] || studioStatus;
+    }
+
+    function showLoading() { document.getElementById('loading').style.display = 'flex'; }
+    function hideLoading() { document.getElementById('loading').style.display = 'none'; }
+    function closeModal() { document.getElementById('modal').style.display = 'none'; }
+
+    function changeMonth(delta) {
+      currentMonthYear = shiftMonthYear(currentMonthYear, delta);
+      loadRequests();
+    }
+
+    function updateDeadlineBanner() {
+      const banner = document.getElementById('deadlineBanner');
+      const today = new Date();
+      const day = today.getDate();
+      const nextMonthLabel = monthYearLabel(getNextMonthYear());
+      if (day <= 15) {
+        banner.className = 'deadline-banner';
+        banner.textContent = `📌 Fill out ${nextMonthLabel}'s ad requests by the 15th of this month.`;
+      } else {
+        banner.className = 'deadline-banner overdue';
+        banner.textContent = `⚠️ Past the 15th — get ${nextMonthLabel}'s ad requests in as soon as possible.`;
+      }
+    }
+
+    async function loadRequests() {
+      try {
+        showLoading();
+        document.getElementById('monthDisplay').textContent = monthYearLabel(currentMonthYear);
+        updateDeadlineBanner();
+
+        const requests = await getAdRequestsForMonth(currentMonthYear);
+        requestsByCategory = {};
+        requests.forEach(r => {
+          if (!requestsByCategory[r.category]) requestsByCategory[r.category] = [];
+          requestsByCategory[r.category].push(r);
+        });
+
+        renderGroups();
+        renderProgress(requests.length);
+        hideLoading();
+      } catch (error) {
+        hideLoading();
+        console.error('Load error:', error);
+        alert('Error loading ad requests: ' + error.message);
+      }
+    }
+
+    function renderProgress(totalFilled) {
+      const totalQuota = AD_REQUEST_CATEGORIES.reduce((sum, c) => sum + c.quota, 0);
+      const pct = Math.min(100, Math.round((totalFilled / totalQuota) * 100));
+      document.getElementById('progressLabel').textContent = `${totalFilled} / ${totalQuota} filled`;
+      document.getElementById('progressFill').style.width = pct + '%';
+    }
+
+    function renderGroups() {
+      const container = document.getElementById('groupsContainer');
+      container.innerHTML = '';
+
+      const groups = [...new Set(AD_REQUEST_CATEGORIES.map(c => c.group))];
+      groups.forEach(group => {
+        const section = document.createElement('div');
+        section.className = 'group-section';
+
+        const title = document.createElement('div');
+        title.className = 'group-title';
+        title.textContent = group;
+        section.appendChild(title);
+
+        const grid = document.createElement('div');
+        grid.className = 'category-grid';
+
+        AD_REQUEST_CATEGORIES.filter(c => c.group === group).forEach(cat => {
+          grid.appendChild(createCategoryCard(cat));
+        });
+
+        section.appendChild(grid);
+        container.appendChild(section);
+      });
+    }
+
+    function createCategoryCard(cat) {
+      const filled = requestsByCategory[cat.category] || [];
+      const card = document.createElement('div');
+      card.className = 'category-card';
+
+      let badgeClass = '';
+      if (filled.length >= cat.quota) badgeClass = 'full';
+      else if (filled.length > 0) badgeClass = 'partial';
+
+      const chips = filled.map(r => {
+        const s = getSimplifiedStudioStatus(r.studio_status);
+        return `
+          <div class="request-chip" onclick='showRequestDetails(${r.id})'>
+            <span class="chip-angle" title="${(r.angle || '').replace(/"/g, '&quot;')}">${r.angle || '(no angle set)'}</span>
+            <span class="studio-badge ${s.cls}">${s.icon} ${s.label}</span>
+          </div>
+        `;
+      }).join('');
+
+      card.innerHTML = `
+        <div class="category-card-head">
+          <div class="category-name">${cat.category}</div>
+          <div class="quota-badge ${badgeClass}">${filled.length}/${cat.quota}</div>
+        </div>
+        ${chips}
+        <button class="add-request-btn" onclick='openAddModal(${JSON.stringify(cat.category)}, ${JSON.stringify(cat.group)})'>+ Add Request</button>
+      `;
+      return card;
+    }
+
+    function openAddModal(category, categoryGroup) {
+      activeCategory = { category, categoryGroup };
+      const modal = document.getElementById('modal');
+      const content = document.getElementById('modalContent');
+
+      content.innerHTML = `
+        <div class="modal-header">
+          <h2>New Ad Request</h2>
+          <button class="close-btn" onclick="closeModal()">×</button>
+        </div>
+        <div class="category-info">
+          <strong>${category}</strong>
+          <div>${categoryGroup} · ${monthYearLabel(currentMonthYear)}</div>
+        </div>
+        <div class="form-group">
+          <label>🎯 Angle *</label>
+          <input type="text" id="reqAngle" placeholder="e.g. long-distance surprise, last-minute gift...">
+        </div>
+        <div class="form-group">
+          <label>📝 Message / Ad Copy</label>
+          <textarea id="reqMessage" rows="5" style="min-height:110px;resize:vertical;" placeholder="The caption or copy the ad should carry..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>🔗 Reference Link (Optional)</label>
+          <input type="url" id="reqReference" placeholder="https://...">
+        </div>
+        <div class="form-group">
+          <label>👤 Submitted By</label>
+          <input type="text" id="reqSubmittedBy" placeholder="Your name" value="Marketing">
+        </div>
+        <button class="btn-submit" onclick="submitNewRequest()">🚀 Submit Request</button>
+      `;
+      modal.style.display = 'flex';
+    }
+
+    async function submitNewRequest() {
+      const angle = document.getElementById('reqAngle').value.trim();
+      if (!angle) { alert('Please enter an angle'); return; }
+
+      try {
+        showLoading();
+        await submitAdRequest({
+          monthYear: currentMonthYear,
+          category: activeCategory.category,
+          categoryGroup: activeCategory.categoryGroup,
+          angle,
+          message: document.getElementById('reqMessage').value.trim(),
+          referenceLink: document.getElementById('reqReference').value.trim(),
+          submittedBy: document.getElementById('reqSubmittedBy').value.trim()
+        });
+        hideLoading();
+        closeModal();
+        loadRequests();
+      } catch (error) {
+        hideLoading();
+        console.error('Submit error:', error);
+        alert('Error: ' + error.message);
+      }
+    }
+
+    function showRequestDetails(id) {
+      let found = null;
+      for (const cat in requestsByCategory) {
+        const match = requestsByCategory[cat].find(r => r.id === id);
+        if (match) { found = match; break; }
+      }
+      if (!found) return;
+
+      const s = getSimplifiedStudioStatus(found.studio_status);
+      const fullLabel = getFullStudioStatusLabel(found.studio_status);
+
+      const modal = document.getElementById('modal');
+      const content = document.getElementById('modalContent');
+      content.innerHTML = `
+        <div class="modal-header">
+          <h2>Request Details</h2>
+          <button class="close-btn" onclick="closeModal()">×</button>
+        </div>
+        <div class="category-info">
+          <strong>${found.category}</strong>
+          <div>${found.category_group} · ${monthYearLabel(found.month_year)}</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-label">🎬 Production Status</div>
+          <div class="detail-value"><span class="studio-badge ${s.cls}">${s.icon} ${s.label}</span> <span style="color:var(--text-muted);font-size:12px;">(${fullLabel})</span></div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-label">Angle</div>
+          <div class="detail-value">${found.angle || '-'}</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-label">Message / Ad Copy</div>
+          <div class="detail-value">${found.message || '-'}</div>
+        </div>
+        ${found.reference_link ? `
+        <div class="detail-row">
+          <div class="detail-label">Reference Link</div>
+          <div class="detail-value"><a href="${found.reference_link}" target="_blank" style="color:var(--purple);word-break:break-all;">🔗 ${found.reference_link}</a></div>
+        </div>` : ''}
+        ${(found.dm_rejection_reason || found.head_rejection_reason) ? `
+        <div class="detail-row">
+          <div class="detail-label" style="color:var(--red);">❌ Rejection Reason</div>
+          <div class="detail-value" style="background:var(--red-bg);color:var(--red);padding:10px 12px;border-radius:6px;">${found.dm_rejection_reason || found.head_rejection_reason}</div>
+        </div>` : ''}
+        ${found.hold_reason ? `
+        <div class="detail-row">
+          <div class="detail-label" style="color:var(--studio-progress-col);">⏸ Hold Reason</div>
+          <div class="detail-value" style="background:var(--studio-progress-bg);color:var(--studio-progress-col);padding:10px 12px;border-radius:6px;">${found.hold_reason}</div>
+        </div>` : ''}
+        <div class="detail-row">
+          <div class="detail-label">Submitted By</div>
+          <div class="detail-value">👤 ${found.submitted_by || 'Unknown'}</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-label">Submitted On</div>
+          <div class="detail-value">📅 ${found.created_at ? new Date(found.created_at).toLocaleString() : 'N/A'}</div>
+        </div>
+        <button class="btn-submit" onclick="closeModal()" style="background:var(--surface2);color:var(--text);border:1px solid var(--border-strong);">Close</button>
+      `;
+      modal.style.display = 'flex';
+    }
+
+    window.onload = loadRequests;
+  </script>
+</body>
+</html>
