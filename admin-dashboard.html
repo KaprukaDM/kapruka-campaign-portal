@@ -3068,12 +3068,24 @@
 
       const content = `
         <button class="close-modal" onclick="closeModal()">×</button>
-        <h3>📝 Slot Details - ${dateStr}</h3>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+          <h3 style="margin-bottom:0;">📝 Slot Details - ${dateStr}</h3>
+          <button type="button" id="deleteSlotBtn" style="flex-shrink:0;font-size:11px;padding:6px 12px;border:1px solid #d32f2f;background:#fff;color:#d32f2f;border-radius:6px;cursor:pointer;font-weight:600;white-space:nowrap;">🗑️ Delete Submission</button>
+        </div>
+        <div id="deleteSlotGroup" style="display:none;background:#FFEBEE;border:1px solid #EF9A9A;padding:15px;border-radius:10px;margin:12px 0 20px;">
+          <p style="color:#B71C1C;font-size:13px;margin-bottom:10px;font-weight:600;">⚠️ This permanently removes this submission from the Studio Calendar. This cannot be undone.</p>
+          <input type="password" id="deleteSlotPassword" placeholder="Password to confirm deletion" style="width:100%;">
+          <div style="display:flex;gap:8px;margin-top:10px;">
+            <button type="button" id="confirmDeleteSlotBtn" class="btn btn-danger" style="padding:6px 14px;">Delete Permanently</button>
+            <button type="button" id="cancelDeleteSlotBtn" class="btn" style="padding:6px 14px;background:#eee;color:#333;">Cancel</button>
+          </div>
+          <div id="deleteSlotMsg" style="color:#d32f2f;font-size:12px;margin-top:6px;"></div>
+        </div>
         <div style="background:#f9f9f9;padding:20px;border-radius:12px;margin-bottom:20px;">
           <div style="display:grid;gap:15px;">
 
            <div>
-           <strong style="color:#5e3a8e">Slot ID:</strong> 
+           <strong style="color:#5e3a8e">Slot ID:</strong>
            <code style="background:#E3F2FD;padding:5px 10px;border-radius:6px;font-family:monospace;font-size:13px">${slotData.id}
            </code>
            </div>
@@ -3224,6 +3236,38 @@
             hideLoading();
             closeModal();
             alert('✅ Content description updated!');
+            studioCalendarData = [];
+            await loadStudioCalendar();
+          } catch (err) {
+            hideLoading();
+            msg.textContent = err.message === 'Incorrect password' ? 'Incorrect password.' : ('Error: ' + err.message);
+          }
+        });
+      }
+
+      // ── Password-protected deletion of the entire slot ──
+      const deleteSlotBtn = document.getElementById('deleteSlotBtn');
+      if (deleteSlotBtn) {
+        deleteSlotBtn.addEventListener('click', () => {
+          document.getElementById('deleteSlotGroup').style.display = 'block';
+          deleteSlotBtn.style.display = 'none';
+        });
+        document.getElementById('cancelDeleteSlotBtn').addEventListener('click', () => {
+          document.getElementById('deleteSlotGroup').style.display = 'none';
+          document.getElementById('deleteSlotMsg').textContent = '';
+          document.getElementById('deleteSlotPassword').value = '';
+          deleteSlotBtn.style.display = '';
+        });
+        document.getElementById('confirmDeleteSlotBtn').addEventListener('click', async () => {
+          const msg = document.getElementById('deleteSlotMsg');
+          const pwd = document.getElementById('deleteSlotPassword').value;
+          if (!confirm('Are you sure you want to permanently delete this submission? This cannot be undone.')) return;
+          try {
+            showLoading();
+            await deleteStudioSlot(slotData.id, pwd);
+            hideLoading();
+            closeModal();
+            alert('🗑️ Submission deleted!');
             studioCalendarData = [];
             await loadStudioCalendar();
           } catch (err) {

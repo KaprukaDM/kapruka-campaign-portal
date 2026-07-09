@@ -263,6 +263,32 @@ async function updateSlotContentDetails(id, contentDetails, password) {
   return { success: true };
 }
 
+// Password-protected permanent removal of a studio calendar slot. Mirrors the
+// content-edit password so admins don't need a second credential. If the slot
+// came from 'extra_content' (the only source table that exists solely for the
+// calendar), that row is removed too so it doesn't linger elsewhere; other
+// source types (content_calendar, product_suggestion, campaign_booking) keep
+// their original approval-trail record and only lose their calendar entry.
+async function deleteStudioSlot(id, password) {
+  if (password !== CONTENT_EDIT_PASSWORD) throw new Error('Incorrect password');
+
+  const rows = await supabaseQuery(`studio_calendar?id=eq.${id}`);
+  const slot = rows.length ? rows[0] : null;
+  if (!slot) throw new Error('Slot not found');
+
+  const label = slot.content_details || slot.page_name || slot.product_code || 'slot';
+  await logStudioActivity(id, 'deleted', `Slot deleted — ${label}`, 'Admin');
+
+  await supabaseQuery(`studio_calendar?id=eq.${id}`, 'DELETE');
+  await supabaseQuery(`dm_approvals?content_id=eq.${id}&source_type=eq.studio`, 'DELETE');
+
+  if (slot.source_id && slot.source_type === 'extra_content') {
+    await supabaseQuery(`extra_content?id=eq.${slot.source_id}`, 'DELETE');
+  }
+
+  return { success: true };
+}
+
 // ═══════════════════════════════════════════════════════════════
 // DM APPROVAL HELPERS
 // ═══════════════════════════════════════════════════════════════
