@@ -289,6 +289,39 @@ async function deleteStudioSlot(id, password) {
   return { success: true };
 }
 
+// Password-protected inline edit of the slot's date. Every source type keeps
+// its own date column as the source of truth (content_calendar.date,
+// extra_content.date, ad_requests.go_live_date, request_log.go_live_date,
+// product_suggestions.slot_date), so mirror the change back there too —
+// otherwise that page keeps showing the slot under the old day.
+const DATE_MIRROR = {
+  content_calendar:  { table: 'content_calendar',    column: 'date' },
+  extra_content:      { table: 'extra_content',       column: 'date' },
+  ad_request:         { table: 'ad_requests',         column: 'go_live_date' },
+  campaign_booking:   { table: 'request_log',         column: 'go_live_date' },
+  product_suggestion: { table: 'product_suggestions', column: 'slot_date' }
+};
+
+async function updateSlotDate(id, newDate, password) {
+  if (password !== CONTENT_EDIT_PASSWORD) throw new Error('Incorrect password');
+  const rows = await supabaseQuery(`studio_calendar?id=eq.${id}`);
+  const slot = rows.length ? rows[0] : null;
+
+  await supabaseQuery(`studio_calendar?id=eq.${id}`, 'PATCH', {
+    date: newDate,
+    updated_at: new Date().toISOString()
+  });
+
+  const mirror = slot && slot.source_id && DATE_MIRROR[slot.source_type];
+  if (mirror) {
+    await supabaseQuery(`${mirror.table}?id=eq.${slot.source_id}`, 'PATCH', { [mirror.column]: newDate });
+  }
+
+  const oldDate = (slot && slot.date) || '(unset)';
+  await logStudioActivity(id, 'date_edited', `Date changed\n  From: ${oldDate}\n  To: ${newDate}`, 'Admin');
+  return { success: true };
+}
+
 // ═══════════════════════════════════════════════════════════════
 // DM APPROVAL HELPERS
 // ═══════════════════════════════════════════════════════════════

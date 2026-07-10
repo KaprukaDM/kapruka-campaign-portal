@@ -3023,7 +3023,7 @@
         return;
       }
 
-      const icon = { created:'🆕', status_changed:'🔄', rejected:'❌', hold:'⏸', assigned:'👤', content_edited:'✏️' };
+      const icon = { created:'🆕', status_changed:'🔄', rejected:'❌', hold:'⏸', assigned:'👤', content_edited:'✏️', date_edited:'📅' };
       const esc = s => String(s ?? '').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
       const rows = entries.map(e => {
         const when = e.created_at ? new Date(e.created_at).toLocaleString() : '';
@@ -3090,9 +3090,24 @@
            </code>
            </div>
 
-          
+           <div>
+             <strong style="color:#5e3a8e;">Date:</strong>
+             <button type="button" id="editDateBtn" style="margin-left:8px;font-size:11px;padding:2px 8px;border:1px solid #5e3a8e;background:#fff;color:#5e3a8e;border-radius:6px;cursor:pointer;">✏️ Edit</button>
+             <div id="dateDisplay" style="margin-top:4px;">${dateStr}</div>
+             <div id="editDateGroup" style="display:none;margin-top:8px;">
+               <input type="date" id="editDateInput" value="${slotData.date || ''}" style="width:100%;">
+               <input type="password" id="editDatePassword" placeholder="Password to save" style="margin-top:6px;width:100%;">
+               <div style="display:flex;gap:8px;margin-top:6px;">
+                 <button type="button" id="saveDateBtn" class="btn btn-primary" style="padding:6px 14px;">Save</button>
+                 <button type="button" id="cancelDateBtn" class="btn" style="padding:6px 14px;background:#eee;color:#333;">Cancel</button>
+               </div>
+               <div id="editDateMsg" style="color:#d32f2f;font-size:12px;margin-top:4px;"></div>
+             </div>
+           </div>
+
+
             <div>
-              <strong style="color:#5e3a8e;">Type:</strong> 
+              <strong style="color:#5e3a8e;">Type:</strong>
               <span>${slotData.slot_type === 'lead_form' ? '🔵 Lead Form' : '🟢 Content Calendar'}</span>
             </div>
             <div>
@@ -3268,6 +3283,39 @@
             hideLoading();
             closeModal();
             alert('🗑️ Submission deleted!');
+            studioCalendarData = [];
+            await loadStudioCalendar();
+          } catch (err) {
+            hideLoading();
+            msg.textContent = err.message === 'Incorrect password' ? 'Incorrect password.' : ('Error: ' + err.message);
+          }
+        });
+      }
+
+      // ── Password-protected inline edit of the slot's date ──
+      const editDateBtn = document.getElementById('editDateBtn');
+      if (editDateBtn) {
+        editDateBtn.addEventListener('click', () => {
+          document.getElementById('editDateGroup').style.display = 'block';
+          editDateBtn.style.display = 'none';
+        });
+        document.getElementById('cancelDateBtn').addEventListener('click', () => {
+          document.getElementById('editDateGroup').style.display = 'none';
+          document.getElementById('editDateMsg').textContent = '';
+          document.getElementById('editDatePassword').value = '';
+          editDateBtn.style.display = '';
+        });
+        document.getElementById('saveDateBtn').addEventListener('click', async () => {
+          const msg = document.getElementById('editDateMsg');
+          const newDate = document.getElementById('editDateInput').value;
+          const pwd = document.getElementById('editDatePassword').value;
+          if (!newDate) { msg.textContent = 'Please pick a date.'; return; }
+          try {
+            showLoading();
+            await updateSlotDate(slotData.id, newDate, pwd);
+            hideLoading();
+            closeModal();
+            alert('✅ Date updated!');
             studioCalendarData = [];
             await loadStudioCalendar();
           } catch (err) {
