@@ -703,10 +703,10 @@
         !activeBookings.some(b => b.slot_number === slot.slot_number)
       );
 
-      if (themes.length > 0 && hasAvailableSlots) {
+      if (hasAvailableSlots) {
         cell.style.cursor = 'pointer';
         cell.onclick = () => openBookingModal(dateStr, themes, availableSlots, dayBookings);
-      } else if (themes.length === 0 || availableSlots.length === 0 || allSlotsFilled) {
+      } else if (availableSlots.length === 0 || allSlotsFilled) {
         cell.style.cursor = 'default';
         if (!allSlotsFilled) {
           cell.style.opacity = '0.7';
