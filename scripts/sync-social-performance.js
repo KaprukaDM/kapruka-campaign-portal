@@ -54,10 +54,16 @@ async function graphGet(path, params) {
 // Ordered richest → safest. Meta periodically retires post-insight metrics,
 // so if the full set 400s we retry with a smaller set instead of failing
 // the whole sync over one bad metric name.
+// post_impressions/post_impressions_unique were fully deprecated by Meta on
+// 2025-11-15 (return "invalid metric" on every API version, not just newer
+// ones) — replaced by post_media_view / post_total_media_view_unique, which
+// is what Meta itself now calls "Views" in Business Suite. Mapped onto the
+// same `impressions`/`reach` DB columns; the dashboard labels them "Views".
 const FB_METRIC_FALLBACKS = [
-  'post_impressions,post_impressions_unique,post_engaged_users,post_clicks,post_reactions_by_type_total',
-  'post_impressions,post_impressions_unique,post_engaged_users',
-  'post_impressions,post_impressions_unique',
+  'post_media_view,post_total_media_view_unique,post_engaged_users,post_clicks,post_reactions_by_type_total',
+  'post_media_view,post_total_media_view_unique,post_engaged_users',
+  'post_media_view,post_total_media_view_unique',
+  'post_media_view',
 ];
 
 async function fetchFacebookPosts() {
@@ -118,8 +124,8 @@ async function buildFacebookRows() {
       permalink_url: post.permalink_url || null,
       post_type: fbPostType(post),
       created_time: post.created_time || null,
-      impressions: insights.post_impressions ?? null,
-      reach: insights.post_impressions_unique ?? null,
+      impressions: insights.post_media_view ?? null,
+      reach: insights.post_total_media_view_unique ?? null,
       engaged_users: insights.post_engaged_users ?? null,
       clicks: insights.post_clicks ?? null,
       reactions_total: fbReactionsTotal(insights.post_reactions_by_type_total, post),
