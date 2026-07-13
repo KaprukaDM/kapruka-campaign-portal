@@ -179,6 +179,9 @@
       border-color: rgba(22,163,74,0.3);
       border-width: 2px;
     }
+    .day-cell.blocked-day {
+      background: repeating-linear-gradient(135deg, var(--surface2), var(--surface2) 8px, rgba(0,0,0,0.03) 8px, rgba(0,0,0,0.03) 16px);
+    }
 
     .fully-booked-badge {
       position: absolute; top: 5px; right: 5px;
@@ -186,6 +189,23 @@
       font-size: 7px; font-weight: 700;
       letter-spacing: 0.06em; text-transform: uppercase;
       padding: 2px 6px; border-radius: 4px;
+    }
+
+    .blocked-badge {
+      position: absolute; top: 5px; right: 5px;
+      background: var(--text-muted); color: white;
+      font-size: 7px; font-weight: 700;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      padding: 2px 6px; border-radius: 4px;
+    }
+
+    .blocked-note {
+      font-size: 8px; font-weight: 600;
+      color: var(--text-muted);
+      background: var(--surface);
+      border: 1px dashed var(--border-strong);
+      padding: 3px 5px; border-radius: 4px;
+      margin: 2px 0; text-align: center;
     }
 
     .day-number {
@@ -408,6 +428,7 @@
     .legend-dot.pending   { background: var(--amber); }
     .legend-dot.posted    { background: var(--studio-posted-col); }
     .legend-dot.seasonal  { background: #ec4899; }
+    .legend-dot.blocked   { background: var(--text-muted); }
 
     /* ── RESPONSIVE ──────────────────────────────────────────── */
     @media (max-width: 768px) {
@@ -462,6 +483,7 @@
         <div class="legend-item"><div class="legend-dot pending"></div> Pending</div>
         <div class="legend-item"><div class="legend-dot posted"></div> Posted</div>
         <div class="legend-item"><div class="legend-dot seasonal"></div> Seasonal</div>
+        <div class="legend-item"><div class="legend-dot blocked"></div> Studio Prep (blocked)</div>
       </div>
     </div>
   </div>
@@ -473,6 +495,21 @@
     let calendarData = null;
     let selectedDate = null;
     let selectedSlot = null;
+
+    // ── STUDIO PREP-TIME BLOCK ────────────────────────────────
+    // The 4 days starting today are blocked from new bookings so the
+    // studio has enough lead time to produce content.
+    const BLOCKED_DAYS = 4;
+    function dateStrFromOffset(offset) {
+      const d = new Date();
+      d.setDate(d.getDate() + offset);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+    const TODAY_STR = dateStrFromOffset(0);
+    const BLOCKED_UNTIL_STR = dateStrFromOffset(BLOCKED_DAYS - 1);
+    function isDateBlocked(dateStr) {
+      return dateStr >= TODAY_STR && dateStr <= BLOCKED_UNTIL_STR;
+    }
 
     // ── STUDIO STATUS HELPERS ────────────────────────────────
     // Maps the full internal studio_status to a simplified public label + badge class
@@ -601,6 +638,11 @@
       const cell = document.createElement('div');
       cell.className = 'day-cell';
 
+      const isBlocked = isDateBlocked(dateStr);
+      if (isBlocked) {
+        cell.classList.add('blocked-day');
+      }
+
       const themes = calendarData.themes.filter(t => dateStr >= t.start_date && dateStr <= t.end_date);
 
       const hasSeasonal = themes.some(t => t.is_seasonal);
@@ -634,6 +676,11 @@
         const badge = document.createElement('div');
         badge.className = 'fully-booked-badge';
         badge.textContent = 'FULL';
+        cell.appendChild(badge);
+      } else if (isBlocked) {
+        const badge = document.createElement('div');
+        badge.className = 'blocked-badge';
+        badge.textContent = '🔒 PREP';
         cell.appendChild(badge);
       }
 
@@ -685,7 +732,7 @@
         });
       }
 
-      if (availableSlots.length > 0) {
+      if (availableSlots.length > 0 && !isBlocked) {
         availableSlots.forEach(slot => {
           const isSlotBooked = activeBookings.some(b => b.slot_number === slot.slot_number);
 
@@ -697,18 +744,23 @@
             cell.appendChild(slotDiv);
           }
         });
+      } else if (availableSlots.length > 0 && isBlocked) {
+        const note = document.createElement('div');
+        note.className = 'blocked-note';
+        note.textContent = 'Studio prep time';
+        cell.appendChild(note);
       }
 
-      const hasAvailableSlots = availableSlots.some(slot => 
+      const hasAvailableSlots = !isBlocked && availableSlots.some(slot =>
         !activeBookings.some(b => b.slot_number === slot.slot_number)
       );
 
       if (hasAvailableSlots) {
         cell.style.cursor = 'pointer';
         cell.onclick = () => openBookingModal(dateStr, themes, availableSlots, dayBookings);
-      } else if (availableSlots.length === 0 || allSlotsFilled) {
+      } else if (availableSlots.length === 0 || allSlotsFilled || isBlocked) {
         cell.style.cursor = 'default';
-        if (!allSlotsFilled) {
+        if (!allSlotsFilled && !isBlocked) {
           cell.style.opacity = '0.7';
         }
       }
