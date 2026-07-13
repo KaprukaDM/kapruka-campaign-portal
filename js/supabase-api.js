@@ -323,6 +323,22 @@ async function updateSlotDate(id, newDate, password) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// FACEBOOK ORGANIC POST PERFORMANCE
+// Read-only here — rows are written by scripts/sync-facebook-performance.js,
+// run on a schedule via .github/workflows/facebook-sync.yml. The browser
+// never talks to the Facebook Graph API or holds a Page Access Token.
+// ═══════════════════════════════════════════════════════════════
+
+async function getFacebookPostPerformance(limit = 50) {
+  try {
+    return await supabaseQuery(`facebook_post_performance?order=created_time.desc&limit=${limit}`);
+  } catch (error) {
+    console.error('getFacebookPostPerformance error:', error);
+    return [];
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
 // DM APPROVAL HELPERS
 // ═══════════════════════════════════════════════════════════════
 
