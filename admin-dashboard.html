@@ -1413,10 +1413,10 @@
           </div>
         </div>
 
-        <!-- Facebook Organic Post Performance (synced via GitHub Actions from the Graph API) -->
+        <!-- Organic Social Performance: Facebook + Instagram, synced via GitHub Actions from the Graph API -->
         <div class="card">
           <div class="calendar-header">
-            <h2 style="margin:0;">📈 Facebook Organic Post Performance</h2>
+            <h2 style="margin:0;">📈 Organic Social Performance (Facebook + Instagram)</h2>
             <button class="btn btn-primary" onclick="loadFacebookPerformance()">🔄 Refresh</button>
           </div>
           <div style="font-size:12px;color:#666;margin-bottom:16px;" id="fbLastSynced"></div>
@@ -1444,6 +1444,7 @@
             <table>
               <thead>
                 <tr>
+                  <th>Platform</th>
                   <th>Date</th>
                   <th>Post</th>
                   <th>Impressions</th>
@@ -1455,7 +1456,7 @@
                 </tr>
               </thead>
               <tbody id="fbPerfTable">
-                <tr><td colspan="8" style="text-align:center;padding:40px;">Loading...</td></tr>
+                <tr><td colspan="9" style="text-align:center;padding:40px;">Loading...</td></tr>
               </tbody>
             </table>
           </div>
@@ -3490,13 +3491,18 @@
       return (n === null || n === undefined) ? '-' : Number(n).toLocaleString();
     }
 
+    const PLATFORM_BADGE = {
+      facebook: '<span class="badge" style="background:#E3F2FD;color:#1565C0;">📘 Facebook</span>',
+      instagram: '<span class="badge" style="background:#FCE4EC;color:#AD1457;">📷 Instagram</span>',
+    };
+
     async function loadFacebookPerformance() {
       try {
         const posts = await getFacebookPostPerformance(50);
         renderFacebookPerformance(posts);
       } catch (error) {
         document.getElementById('fbPerfTable').innerHTML =
-          '<tr><td colspan="8" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
+          '<tr><td colspan="9" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
       }
     }
 
@@ -3505,7 +3511,7 @@
       const lastSynced = document.getElementById('fbLastSynced');
 
       if (!posts || posts.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;">No posts synced yet. The sync job runs automatically every 6 hours.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;">No posts synced yet. The sync job runs automatically every 6 hours.</td></tr>';
         document.getElementById('fbStatPosts').textContent = '0';
         document.getElementById('fbStatImpressions').textContent = '0';
         document.getElementById('fbStatReach').textContent = '0';
@@ -3531,6 +3537,7 @@
           : excerpt;
         return `
           <tr>
+            <td>${PLATFORM_BADGE[p.platform] || p.platform || '-'}</td>
             <td>${p.created_time ? new Date(p.created_time).toLocaleDateString() : '-'}</td>
             <td style="max-width:280px;">${postCell}</td>
             <td>${fmtNum(p.impressions)}</td>

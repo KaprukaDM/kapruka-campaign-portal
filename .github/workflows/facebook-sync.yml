@@ -1,4 +1,4 @@
-name: Sync Facebook Post Performance
+name: Sync Social Post Performance
 
 on:
   schedule:
@@ -15,8 +15,9 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Run Facebook → Supabase sync
+      - name: Run Facebook + Instagram → Supabase sync
         env:
           META_PAGE_ACCESS_TOKEN: ${{ secrets.META_PAGE_ACCESS_TOKEN }}
           META_PAGE_ID: ${{ secrets.META_PAGE_ID }}
-        run: node scripts/sync-facebook-performance.js
+          META_IG_USER_ID: ${{ secrets.META_IG_USER_ID }}
+        run: node scripts/sync-social-performance.js

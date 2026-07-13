@@ -323,10 +323,10 @@ async function updateSlotDate(id, newDate, password) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// FACEBOOK ORGANIC POST PERFORMANCE
-// Read-only here — rows are written by scripts/sync-facebook-performance.js,
+// ORGANIC SOCIAL PERFORMANCE (Facebook + Instagram)
+// Read-only here — rows are written by scripts/sync-social-performance.js,
 // run on a schedule via .github/workflows/facebook-sync.yml. The browser
-// never talks to the Facebook Graph API or holds a Page Access Token.
+// never talks to the Facebook/Instagram Graph API or holds an access token.
 // ═══════════════════════════════════════════════════════════════
 
 async function getFacebookPostPerformance(limit = 50) {
