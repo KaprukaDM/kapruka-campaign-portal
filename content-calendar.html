@@ -525,6 +525,9 @@
       if (s === 'approved' || s === 'approvedhead' || s === 'approved by head') {
         return { label: 'Ready', cls: 'ready', icon: '✓' };
       }
+      if (s === 'good to go') {
+        return { label: 'Ready', cls: 'ready', icon: '✓' };
+      }
       // Everything else still in pipeline = In Progress
       return { label: 'In Progress', cls: 'progress', icon: '◎' };
     }
@@ -542,7 +545,8 @@
         'rejectedhead':    'Rejected by Head',
         'approveddm':      'Approved by DM',
         'posted':          'Posted',
-        'rejecteddm':      'Rejected by DM'
+        'rejecteddm':      'Rejected by DM',
+        'good to go':      'Good to Go'
       };
       return map[studioStatus.toLowerCase()] || studioStatus;
     }

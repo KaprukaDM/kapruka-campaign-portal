@@ -3200,16 +3200,16 @@
             <div>
               <strong style="color:#5e3a8e;">Current Status:</strong> 
               <span class="badge ${
-                slotData.head_approved ? 'badge-approved' :
-                slotData.studio_status === 'Working' ? 'badge-working' :
-                slotData.studio_status === 'Submitted for Review' ? 'badge-review' :
                 slotData.studio_status === 'Good to Go' ? 'badge-goodtogo' :
-                (slotData.studio_status === 'Hold' || slotData.studio_status === 'On Hold') ? 'badge-hold' :
                 slotData.studio_status === 'Posted' ? 'badge-posted' :
+                (slotData.studio_status === 'Hold' || slotData.studio_status === 'On Hold') ? 'badge-hold' :
                 (slotData.approval_status === 'Rejected by Head' || slotData.studio_status === 'Rejected by Head') ? 'badge-rejected' :
                 (slotData.approval_status === 'Rejected by DM' || slotData.studio_status === 'DM Rejected') ? 'badge-rejected' :
+                slotData.studio_status === 'Working' ? 'badge-working' :
+                slotData.studio_status === 'Submitted for Review' ? 'badge-review' :
+                slotData.head_approved ? 'badge-approved' :
                 'badge-received'
-              }">${slotData.approval_status || slotData.studio_status}</span>
+              }">${slotData.studio_status === 'Good to Go' ? 'Good to Go' : (slotData.approval_status || slotData.studio_status)}</span>
             </div>
           </div>
         </div>

@@ -461,6 +461,8 @@ async function updateStudioStatus(id, statusData) {
     payload.approval_status = 'Received';
   } else if (statusData.studio_status === 'Posted') {
     payload.approval_status = 'Posted';
+  } else if (statusData.studio_status === 'Good to Go') {
+    payload.approval_status = 'Good to Go';
   }
 
   if (statusData.studio_status === 'Submitted for Review') {
