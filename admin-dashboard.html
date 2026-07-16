@@ -400,6 +400,7 @@
     .badge-review { background: #FFF3E0; color: #E65100; }
     .badge-hold { background: #FFE082; color: #F57F00; }
     .badge-posted { background: #B39DDB; color: #311B92; }
+    .badge-goodtogo { background: #AED581; color: #33691E; }
     .status-hold { background: #FFE082; color: #F57F00; }
     .status-posted { background: #B39DDB; color: #311B92; }
 
@@ -884,6 +885,7 @@
     .status-working { background: #FFB74D; color: #E65100; }
     .status-review { background: #FFD54F; color: #F57F00; }
     .status-approved { background: #66BB6A; color: #1B5E20; }
+    .status-goodtogo { background: #AED581; color: #33691E; }
 
     .slot-page {
       display: block;
@@ -1358,6 +1360,7 @@
                   <option value="submitted">Submitted for Review</option>
                   <option value="resubmitted">Resubmitted for Review</option>
                   <option value="approved">Approved by Head</option>
+                  <option value="goodtogo">Good to Go</option>
                   <option value="rejectedhead">Rejected by Head</option>
                   <option value="approveddm">Approved by DM</option>
                   <option value="posted">Posted</option>
@@ -2813,6 +2816,7 @@
             if (filterValue === 'submitted') return item.studio_status === 'Submitted for Review';
             if (filterValue === 'resubmitted') return item.approval_status === 'Resubmitted for Review'; // NEW
             if (filterValue === 'approved') return item.head_approved === true || item.studio_status === 'Approved by Head' || item.studio_status === 'Approved';
+            if (filterValue === 'goodtogo') return item.studio_status === 'Good to Go';
             if (filterValue === 'rejectedhead') return item.approval_status === 'Rejected by Head'; // NEW
             if (filterValue === 'approveddm') return item.approval_status === 'Approved by DM'; // NEW
             if (filterValue === 'rejecteddm') return item.approval_status === 'Rejected by DM' || item.studio_status === 'DM Rejected'; // NEW
@@ -2964,6 +2968,8 @@
                 statusBadge = '<span class="slot-status" style="background:#FF9800;color:white;">✗ Head Rejected</span>';
               } else if (slotData.approval_status === 'Resubmitted for Review') {
                 statusBadge = '<span class="slot-status status-review">Resubmitted</span>';
+              } else if (slotData.studio_status === 'Good to Go') {
+                statusBadge = '<span class="slot-status status-goodtogo">Good to Go</span>';
               } else if (slotData.studio_status === 'Hold' || slotData.studio_status === 'On Hold') {
                 statusBadge = '<span class="slot-status status-hold">HOLD</span>';
               } else if (slotData.head_approved || slotData.studio_status === 'Approved by Head' || slotData.studio_status === 'Approved') {
@@ -3014,6 +3020,8 @@
               statusBadge = '<span class="slot-status" style="background:#FF9800;color:white;">✗ Head Rejected</span>';
             } else if (item.approval_status === 'Resubmitted for Review') {
               statusBadge = '<span class="slot-status status-review">Resubmitted</span>';
+            } else if (item.studio_status === 'Good to Go') {
+              statusBadge = '<span class="slot-status status-goodtogo">Good to Go</span>';
             } else if (item.studio_status === 'Hold' || item.studio_status === 'On Hold') {
               statusBadge = '<span class="slot-status status-hold">HOLD</span>';
             } else if (item.head_approved || item.studio_status === 'Approved by Head' || item.studio_status === 'Approved') {
@@ -3104,7 +3112,7 @@
           </div>`
         : '';
 
-      const statusOptions = ['Received', 'Working', 'Submitted for Review', 'Approved by Head', 'Rejected by Head', 'DM Rejected', 'Hold', 'Posted'].map(status =>
+      const statusOptions = ['Received', 'Working', 'Submitted for Review', 'Approved by Head', 'Good to Go', 'Rejected by Head', 'DM Rejected', 'Hold', 'Posted'].map(status =>
         `<option value="${status}" ${(slotData.studio_status === status || (status === 'Approved by Head' && slotData.studio_status === 'Approved')) ? 'selected' : ''}>${status}</option>`
       ).join('');
 
@@ -3195,6 +3203,7 @@
                 slotData.head_approved ? 'badge-approved' :
                 slotData.studio_status === 'Working' ? 'badge-working' :
                 slotData.studio_status === 'Submitted for Review' ? 'badge-review' :
+                slotData.studio_status === 'Good to Go' ? 'badge-goodtogo' :
                 (slotData.studio_status === 'Hold' || slotData.studio_status === 'On Hold') ? 'badge-hold' :
                 slotData.studio_status === 'Posted' ? 'badge-posted' :
                 (slotData.approval_status === 'Rejected by Head' || slotData.studio_status === 'Rejected by Head') ? 'badge-rejected' :
