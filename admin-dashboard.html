@@ -220,6 +220,16 @@
       color: #333;
     }
 
+    #studioSearch {
+      background: #fff;
+      font-weight: 600;
+      color: #333;
+    }
+    #studioSearch:focus {
+      outline: none;
+      border-color: var(--primary-purple);
+    }
+
     .filter-help {
       font-size: 12px;
       color: #666;
@@ -1352,8 +1362,20 @@
 
               <!-- Filters -->
               <div class="calendar-filters" style="margin-bottom:20px;">
+                <!-- Search: matches content details, product code, page, department, notes, person -->
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+                  <label for="studioSearch" style="color:#5e3a8e;font-weight:600;">🔍 Search:</label>
+                  <div style="position:relative;flex:1;min-width:240px;max-width:420px;">
+                    <input type="search" id="studioSearch" oninput="onStudioSearchInput()" placeholder="Search by content or product code…"
+                           aria-label="Search studio calendar by content or product code"
+                           style="width:100%;padding:10px 34px 10px 12px;border-radius:8px;border:2px solid #e8e8e8;font-size:14px;">
+                    <button type="button" id="studioSearchClear" onclick="clearStudioSearch()" title="Clear search"
+                            style="display:none;position:absolute;right:6px;top:50%;transform:translateY(-50%);border:none;background:transparent;font-size:16px;color:#999;cursor:pointer;line-height:1;padding:4px;">✕</button>
+                  </div>
+                  <span id="studioSearchCount" style="font-size:13px;color:#5e3a8e;font-weight:600;"></span>
+                </div>
                 <label style="color:#5e3a8e;font-weight:600;margin-right:10px;">Filter by Status:</label>
-                <select id="studioFilter" onchange="loadStudioCalendar()" style="padding:10px;border-radius:8px;border:2px solid #e8e8e8;font-size:14px;">
+                <select id="studioFilter" onchange="applyStudioFilters()" style="padding:10px;border-radius:8px;border:2px solid #e8e8e8;font-size:14px;">
                   <option value="all">All Content</option>
                   <option value="received">Not Started (Received)</option>
                   <option value="working">Working</option>
@@ -1367,7 +1389,7 @@
                   <option value="rejecteddm">Rejected by DM</option>
                 </select>
                 <label style="color:#5e3a8e;font-weight:600;margin-right:10px;margin-left:20px;">Filter by Person:</label>
-                <select id="studioPersonFilter" onchange="loadStudioCalendar()" style="padding:10px;border-radius:8px;border:2px solid #e8e8e8;font-size:14px;" aria-label="Filter by person">
+                <select id="studioPersonFilter" onchange="applyStudioFilters()" style="padding:10px;border-radius:8px;border:2px solid #e8e8e8;font-size:14px;" aria-label="Filter by person">
                   <option value="all">All Team Members</option>
                   <option value="Ashani">Ashani</option>
                   <option value="Kasun">Kasun</option>
@@ -1674,6 +1696,12 @@
     let currentStudioMonth = 1;
     let currentStudioYear = 2026;
     let studioCalendarData = [];
+    // Unfiltered month data + themes, cached so status/person/search filters
+    // can re-render instantly without re-fetching.
+    let studioMonthRawData = [];
+    let studioMonthThemes = [];
+    let studioSearchTerm = '';
+    let studioSearchTimer = null;
 
     // Store original data for filtering
     let allRequests = [];
@@ -2806,8 +2834,66 @@
 
         await generateEmptySlotsForMonth(currentStudioYear, currentStudioMonth);
 
-        let data = await getStudioCalendarForMonth(currentStudioYear, currentStudioMonth);
-        
+        studioMonthRawData = await getStudioCalendarForMonth(currentStudioYear, currentStudioMonth);
+
+        const startDate = `${currentStudioYear}-${String(currentStudioMonth).padStart(2, '0')}-01`;
+        const lastDay = new Date(currentStudioYear, currentStudioMonth, 0).getDate();
+        const endDate = `${currentStudioYear}-${String(currentStudioMonth).padStart(2, '0')}-${lastDay}`;
+        const themes = await getAllThemes();
+        studioMonthThemes = themes.filter(t => t.start_date <= endDate && t.end_date >= startDate);
+
+        applyStudioFilters();
+
+        hideLoading();
+      } catch (error) {
+        hideLoading();
+        console.error('loadStudioCalendar error:', error);
+        alert('Error loading studio calendar: ' + error.message);
+      }
+    }
+
+    // Debounced handler for the search box (no server round-trip per keystroke).
+    function onStudioSearchInput() {
+      const input = document.getElementById('studioSearch');
+      const clearBtn = document.getElementById('studioSearchClear');
+      if (clearBtn) clearBtn.style.display = input && input.value ? 'block' : 'none';
+      clearTimeout(studioSearchTimer);
+      studioSearchTimer = setTimeout(applyStudioFilters, 200);
+    }
+
+    function clearStudioSearch() {
+      const input = document.getElementById('studioSearch');
+      if (input) input.value = '';
+      const clearBtn = document.getElementById('studioSearchClear');
+      if (clearBtn) clearBtn.style.display = 'none';
+      applyStudioFilters();
+    }
+
+    // Does this slot match the free-text search? Looks across the fields a
+    // person would realistically type: content, product code, page, dept, notes.
+    function studioSlotMatchesSearch(item, term) {
+      if (!term) return true;
+      const haystack = [
+        item.content_details,
+        item.product_code,
+        item.page_name,
+        item.department,
+        item.booking_note,
+        item.reference_links,
+        item.assigned_to,
+        item.caption,
+        item.studio_status,
+        item.approval_status
+      ].filter(Boolean).join(' ').toLowerCase();
+      // every whitespace-separated token must appear somewhere
+      return term.split(/\s+/).filter(Boolean).every(tok => haystack.includes(tok));
+    }
+
+    // Applies status + person + search filters to the cached month data and re-renders.
+    function applyStudioFilters() {
+      let data = studioMonthRawData || [];
+
+      try {
         const filterValue = document.getElementById('studioFilter')?.value || 'all';
         if (filterValue !== 'all') {
           data = data.filter(item => {
@@ -2835,23 +2921,26 @@
             return item.assigned_to === personFilter;
           });
         }
-        
+
+        // ✅ SEARCH (content / product code / page / department / notes)
+        studioSearchTerm = (document.getElementById('studioSearch')?.value || '').trim().toLowerCase();
+        if (studioSearchTerm) {
+          data = data.filter(item => studioSlotMatchesSearch(item, studioSearchTerm));
+        }
+
+        const countEl = document.getElementById('studioSearchCount');
+        if (countEl) {
+          countEl.textContent = studioSearchTerm
+            ? `${data.length} match${data.length === 1 ? '' : 'es'}`
+            : '';
+        }
+
         studioCalendarData = data;
 
-        const startDate = `${currentStudioYear}-${String(currentStudioMonth).padStart(2, '0')}-01`;
-        const lastDay = new Date(currentStudioYear, currentStudioMonth, 0).getDate();
-        const endDate = `${currentStudioYear}-${String(currentStudioMonth).padStart(2, '0')}-${lastDay}`;
-        const themes = await getAllThemes();
-        const monthThemes = themes.filter(t => t.start_date <= endDate && t.end_date >= startDate);
-
         updateDashboardStats(data);
-        renderCalendarGrid(data, monthThemes);
-        
-        hideLoading();
+        renderCalendarGrid(data, studioMonthThemes);
       } catch (error) {
-        hideLoading();
-        console.error('loadStudioCalendar error:', error);
-        alert('Error loading studio calendar: ' + error.message);
+        console.error('applyStudioFilters error:', error);
       }
     }
 
@@ -2934,8 +3023,10 @@
         // (e.g. TikTok on Sunday) PLUS any booked lead-form content that lives
         // outside the current schedule (e.g. retired pages that still hold real
         // content) so nothing gets hidden.
+        // While searching, don't pad the day with empty placeholder slots —
+        // only real matching content should show.
         const leadSlots = [];
-        if (schedule) {
+        if (schedule && !studioSearchTerm) {
           for (let slotNum = 1; slotNum <= schedule.slots; slotNum++) {
             const slotData = dayData.find(d => d.slot_type === 'lead_form' && d.slot_number === slotNum);
             leadSlots.push({ slotNum, slotData, page: schedule.page });
@@ -3049,7 +3140,12 @@
               const category = item.content_details?.split('-')[1]?.trim() || '';
               displayText = item.page_name || 'Daily Post';
             }
-            
+
+            // While searching, always surface the product code so hits are obvious.
+            if (studioSearchTerm && item.product_code && !displayText.includes(item.product_code)) {
+              displayText = `${displayText} • ${item.product_code}`;
+            }
+
             slotDiv.innerHTML = `
               <span class="slot-number">📅</span>
               ${statusBadge}
@@ -3060,6 +3156,11 @@
             slotDiv.onclick = () => showSlotDetails(item, dateStr);
             slotsContainer.appendChild(slotDiv);
           });
+
+        // Fade days with no search hits so matches stand out.
+        if (studioSearchTerm && slotsContainer.children.length === 0) {
+          dayDiv.style.opacity = '0.35';
+        }
 
         dayDiv.appendChild(slotsContainer);
         grid.appendChild(dayDiv);
