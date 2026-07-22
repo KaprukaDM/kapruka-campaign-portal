@@ -133,6 +133,43 @@
       text-align: center; letter-spacing: -0.01em;
     }
 
+    /* ── SEARCH ─────────────────────────────────────────────── */
+    .search-box {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--surface);
+      padding: 10px 16px; border-radius: 14px;
+      border: 1px solid var(--border);
+    }
+    .search-box input {
+      border: none; outline: none; background: transparent;
+      font-family: 'DM Sans', sans-serif; font-size: 14px;
+      color: var(--text); width: 220px; padding: 0;
+    }
+    .search-box input::placeholder { color: var(--text-faint); }
+    .search-box .search-clear {
+      background: var(--surface2); color: var(--text-muted);
+      border: none; border-radius: 8px; cursor: pointer;
+      width: 26px; height: 26px; font-size: 15px; line-height: 1;
+      display: none; align-items: center; justify-content: center;
+    }
+    .search-box .search-clear.show { display: flex; }
+    .search-count {
+      font-size: 12px; font-weight: 600; color: var(--purple);
+      min-width: 70px; text-align: center;
+    }
+
+    /* Search match highlighting on the calendar grid */
+    .day-cell.search-dimmed { opacity: 0.2; }
+    .day-cell.search-hit {
+      border-color: var(--gold) !important;
+      border-width: 2px !important;
+      box-shadow: 0 4px 14px rgba(201,162,39,0.28);
+    }
+    .slot-preview.search-match {
+      outline: 2px solid var(--gold);
+      outline-offset: -1px;
+    }
+
     /* ── CALENDAR CARD ───────────────────────────────────────── */
     .calendar-card {
       background: var(--surface);
@@ -471,6 +508,14 @@
         <div class="month-display" id="monthDisplay">Loading...</div>
         <button onclick="changeMonth(1)">→</button>
       </div>
+      <div class="search-box">
+        <span>🔍</span>
+        <input type="search" id="calendarSearch" placeholder="Search product code, category, note…"
+               oninput="onCalendarSearchInput()" aria-label="Search content calendar bookings">
+        <button type="button" class="search-clear" id="calendarSearchClear" title="Clear search"
+                onclick="clearCalendarSearch()">×</button>
+        <span class="search-count" id="calendarSearchCount"></span>
+      </div>
     </div>
 
     <div class="calendar-card">
@@ -495,6 +540,7 @@
     let calendarData = null;
     let selectedDate = null;
     let selectedSlot = null;
+    let calendarSearchTerm = '';
 
     // ── STUDIO PREP-TIME BLOCK ────────────────────────────────
     // The 2 days starting today (today + tomorrow) are blocked from new
@@ -630,6 +676,57 @@
         const cell = createDayCell(day, dateStr, dayBookings);
         grid.appendChild(cell);
       }
+
+      // Re-apply any active search to the freshly rendered grid.
+      applyCalendarSearch();
+    }
+
+    // ── SEARCH ──────────────────────────────────────────────
+    function onCalendarSearchInput() {
+      calendarSearchTerm = document.getElementById('calendarSearch').value.trim().toLowerCase();
+      document.getElementById('calendarSearchClear').classList.toggle('show', calendarSearchTerm.length > 0);
+      applyCalendarSearch();
+    }
+
+    function clearCalendarSearch() {
+      document.getElementById('calendarSearch').value = '';
+      calendarSearchTerm = '';
+      document.getElementById('calendarSearchClear').classList.remove('show');
+      applyCalendarSearch();
+    }
+
+    function applyCalendarSearch() {
+      const term = calendarSearchTerm;
+      const cells = document.querySelectorAll('#calendarGrid .day-cell');
+      const countEl = document.getElementById('calendarSearchCount');
+      let hits = 0;
+
+      cells.forEach(cell => {
+        cell.classList.remove('search-hit', 'search-dimmed');
+        cell.querySelectorAll('.slot-preview.search-match')
+          .forEach(s => s.classList.remove('search-match'));
+
+        if (!term) return;
+
+        // Never surface padding cells from the previous/next month.
+        if (cell.classList.contains('other-month')) {
+          cell.classList.add('search-dimmed');
+          return;
+        }
+
+        const haystack = cell.dataset.search || '';
+        if (haystack.includes(term)) {
+          cell.classList.add('search-hit');
+          hits++;
+          cell.querySelectorAll('.slot-preview').forEach(s => {
+            if ((s.dataset.search || '').includes(term)) s.classList.add('search-match');
+          });
+        } else {
+          cell.classList.add('search-dimmed');
+        }
+      });
+
+      countEl.textContent = term ? `${hits} day${hits === 1 ? '' : 's'}` : '';
     }
 
     function truncateCode(code, maxLength = 12) {
@@ -641,6 +738,12 @@
     function createDayCell(day, dateStr, dayBookings) {
       const cell = document.createElement('div');
       cell.className = 'day-cell';
+
+      // Aggregate searchable text for this day (product code, category, note).
+      cell.dataset.search = dayBookings
+        .map(b => [b.product_code, b.category, b.booking_note].filter(Boolean).join(' '))
+        .join(' ')
+        .toLowerCase();
 
       const isBlocked = isDateBlocked(dateStr);
       if (isBlocked) {
@@ -692,6 +795,8 @@
         dayBookings.forEach(booking => {
           const slotDiv = document.createElement('div');
           slotDiv.className = 'slot-preview';
+          slotDiv.dataset.search = [booking.product_code, booking.category, booking.booking_note]
+            .filter(Boolean).join(' ').toLowerCase();
 
           if (booking.status === 'Posted') {
             slotDiv.classList.add('posted');

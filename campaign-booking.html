@@ -83,6 +83,26 @@
       display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
     }
 
+    /* SEARCH */
+    .campaign-search { display: flex; align-items: center; gap: 12px; }
+    .campaign-search input {
+      flex: 1; border: 1px solid var(--border-strong); border-radius: 10px;
+      padding: 12px 14px; font-size: 14px; font-family: 'DM Sans', sans-serif;
+      background: var(--surface); color: var(--text); outline: none;
+      transition: border-color 0.15s;
+    }
+    .campaign-search input:focus { border-color: var(--purple); }
+    .campaign-search .search-clear {
+      background: var(--surface2); color: var(--text-muted);
+      border: none; border-radius: 8px; cursor: pointer;
+      width: 34px; height: 34px; font-size: 18px; line-height: 1; flex-shrink: 0;
+    }
+    .campaign-search .search-count {
+      font-size: 13px; font-weight: 600; color: var(--purple);
+      white-space: nowrap; min-width: 70px; text-align: right;
+    }
+    .dept-card.search-hidden, .slot.search-hidden { display: none !important; }
+
     /* FORM */
     .form-card { display: none; }
 
@@ -207,6 +227,17 @@
       </div>
     </div>
 
+    <div class="card" id="campaignSearchCard" style="display:none;">
+      <div class="campaign-search">
+        <span>🔍</span>
+        <input type="search" id="campaignSearch" placeholder="Search department, slot, status, or campaign…"
+               oninput="onCampaignSearchInput()" aria-label="Search campaign slots">
+        <button type="button" class="search-clear" id="campaignSearchClear" title="Clear search"
+                onclick="clearCampaignSearch()" style="display:none;">×</button>
+        <span class="search-count" id="campaignSearchCount"></span>
+      </div>
+    </div>
+
     <div class="dept-container" id="deptContainer"></div>
 
     <div class="card form-card" id="formCard">
@@ -264,6 +295,7 @@
     let selectedDept = null;
     let selectedSlot = null;
     let selectedElement = null;
+    let campaignSearchTerm = '';
 
     // Calendar state
     let calViewMonth = new Date().getMonth();
@@ -436,6 +468,9 @@
       const container = document.getElementById('deptContainer');
       container.innerHTML = '';
 
+      document.getElementById('campaignSearchCard').style.display =
+        (depts && depts.length > 0) ? 'block' : 'none';
+
       if (!depts || depts.length === 0) {
         container.innerHTML = '<div class="card"><p style="text-align:center;padding:40px;color:var(--text-muted);">No departments for this month.</p></div>';
         container.style.display = 'block';
@@ -446,6 +481,7 @@
         const available = dept.slots.filter(s => s.available).length;
         const card = document.createElement('div');
         card.className = 'dept-card';
+        card.dataset.dept = dept.department.toLowerCase();
         card.innerHTML = `
           <div class="dept-header">
             <div class="dept-name">${dept.department}</div>
@@ -465,6 +501,7 @@
           if (slot.available) {
             div.className = 'slot available';
             div.innerHTML = `<div class="slot-num">${slot.number}</div><div class="slot-label">Available</div>`;
+            div.dataset.search = `${dept.department} slot ${slot.number} available`.toLowerCase();
             div.onclick = () => pickSlot(dept.department, slot.name, div);
           } else {
             const status = slot.details.status;
@@ -475,6 +512,8 @@
               <div class="slot-label">${status.substring(0,12)}</div>
               <div class="slot-details">${slot.details.campaign.substring(0,20)}</div>
             `;
+            div.dataset.search = [dept.department, 'slot ' + slot.number, status,
+              slot.details.campaign, slot.details.requestor].filter(Boolean).join(' ').toLowerCase();
             div.onclick = () => showDetails(slot.details);
           }
           grid.appendChild(div);
@@ -482,6 +521,45 @@
       });
 
       container.style.display = 'block';
+      applyCampaignSearch();
+    }
+
+    // ── SEARCH ──────────────────────────────────────────────
+    function onCampaignSearchInput() {
+      campaignSearchTerm = document.getElementById('campaignSearch').value.trim().toLowerCase();
+      document.getElementById('campaignSearchClear').style.display = campaignSearchTerm ? 'block' : 'none';
+      applyCampaignSearch();
+    }
+
+    function clearCampaignSearch() {
+      document.getElementById('campaignSearch').value = '';
+      campaignSearchTerm = '';
+      document.getElementById('campaignSearchClear').style.display = 'none';
+      applyCampaignSearch();
+    }
+
+    function applyCampaignSearch() {
+      const term = campaignSearchTerm;
+      const cards = document.querySelectorAll('#deptContainer .dept-card');
+      const countEl = document.getElementById('campaignSearchCount');
+      let total = 0;
+
+      cards.forEach(card => {
+        const slots = card.querySelectorAll('.slot');
+        let matches = 0;
+
+        slots.forEach(s => {
+          // Department name matches surface the whole card's slots.
+          const hit = !term || (card.dataset.dept || '').includes(term) || (s.dataset.search || '').includes(term);
+          s.classList.toggle('search-hidden', !hit);
+          if (hit) matches++;
+        });
+
+        card.classList.toggle('search-hidden', term && matches === 0);
+        if (term) total += matches;
+      });
+
+      countEl.textContent = term ? `${total} slot${total === 1 ? '' : 's'}` : '';
     }
 
     function pickSlot(dept, slotName, element) {
