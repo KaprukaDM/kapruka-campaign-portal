@@ -497,9 +497,9 @@
     let selectedSlot = null;
 
     // ── STUDIO PREP-TIME BLOCK ────────────────────────────────
-    // The 4 days starting today are blocked from new bookings so the
-    // studio has enough lead time to produce content.
-    const BLOCKED_DAYS = 4;
+    // The 2 days starting today (today + tomorrow) are blocked from new
+    // bookings so the studio has enough lead time to produce content.
+    const BLOCKED_DAYS = 2;
     function dateStrFromOffset(offset) {
       const d = new Date();
       d.setDate(d.getDate() + offset);
