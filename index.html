@@ -111,6 +111,24 @@
     .password-error.active { display: block; animation: shake 0.5s; }
     @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
 
+    /* ── Country Picker Modal (International Gifting) ── */
+    .country-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); z-index: 10000; justify-content: center; align-items: center; }
+    .country-modal.active { display: flex; }
+    .country-box { background: linear-gradient(135deg, #1a0b2e 0%, #2d1b4e 100%); padding: 40px; border-radius: 20px; box-shadow: 0 20px 60px rgba(94,58,142,0.4); border: 2px solid rgba(94,58,142,0.3); text-align: center; max-width: 400px; width: 90%; }
+    .country-box h2 { color: #b892ff; margin-bottom: 10px; font-size: 24px; }
+    .country-box p { color: #ccc; margin-bottom: 25px; font-size: 14px; }
+    .country-list { display: flex; flex-direction: column; gap: 10px; }
+    .country-option {
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      padding: 14px 20px; border: 2px solid rgba(94,58,142,0.3); border-radius: 12px;
+      background: rgba(255,255,255,0.05); color: white; font-weight: 700; font-size: 15px;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .country-option:hover { border-color: #b892ff; background: rgba(94,58,142,0.25); transform: translateY(-2px); }
+    .country-option-more { color: #888; font-size: 12.5px; margin-top: 16px; }
+    .country-cancel { margin-top: 20px; padding: 10px 24px; border: none; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; background: rgba(255,255,255,0.1); color: white; width: 100%; }
+    .country-cancel:hover { background: rgba(255,255,255,0.2); }
+
     /* ── Daraz card lock badge ── */
     .lock-badge {
       display: inline-flex; align-items: center; gap: 5px;
@@ -205,7 +223,7 @@
         </div>
       </a>
 
-      <a href="https://kaprukadm.github.io/kapruka-price-tools/" target="_blank" rel="noopener" class="option-card">
+      <div class="option-card" onclick="openCountryModal()" style="cursor:pointer;">
         <div class="option-title">🌍 International Gifting Price Checker</div>
         <div class="option-desc">Kapruka's international gifts catalog vs. the local market leader in each country — live FX conversion, auto-matched by product name. UAE live now, more countries coming.</div>
         <div class="option-features">
@@ -213,7 +231,7 @@
           <div class="feature-item"><div class="feature-icon">✓</div><span>Auto-matches products by name, refreshable</span></div>
           <div class="feature-item"><div class="feature-icon">✓</div><span>Flags anything priced under the market</span></div>
         </div>
-      </a>
+      </div>
 
       <a href="product-performance.html" class="option-card">
         <div class="option-title">📊 Product Performance</div>
@@ -307,6 +325,17 @@
     <span class="label">COD Confirmation</span>
   </div>
 
+  <!-- Country Picker Modal (International Gifting Price Checker) -->
+  <div class="country-modal" id="countryModal">
+    <div class="country-box">
+      <h2>🌍 International Gifting</h2>
+      <p>Choose a country to view its price comparison</p>
+      <div class="country-list" id="countryList"></div>
+      <div class="country-option-more">More countries coming soon</div>
+      <button class="country-cancel" onclick="closeCountryModal()">Cancel</button>
+    </div>
+  </div>
+
   <!-- Shared Password Modal -->
   <div class="password-modal" id="passwordModal">
     <div class="password-box">
@@ -337,6 +366,33 @@
       avurudhu: 'https://kaprukadm.github.io/kapruka-campaign-portal/season_checklist.html',
       goals:    'kapruka_v4.html'
     };
+
+    // Add another entry here when a new country goes live — see
+    // src/uae-compare/countries.js in the Price Analysis repo.
+    const INTL_GIFT_COUNTRIES = [
+      { code: 'UAE', label: '🇦🇪 UAE' },
+    ];
+    const INTL_GIFT_BASE_URL = 'https://kaprukadm.github.io/kapruka-price-tools/';
+
+    function openCountryModal() {
+      document.getElementById('countryList').innerHTML = INTL_GIFT_COUNTRIES.map(
+        (c) => `<div class="country-option" onclick="goToIntlGifts('${c.code}')">${c.label}</div>`
+      ).join('');
+      document.getElementById('countryModal').classList.add('active');
+    }
+
+    function closeCountryModal() {
+      document.getElementById('countryModal').classList.remove('active');
+    }
+
+    function goToIntlGifts(countryCode) {
+      window.open(`${INTL_GIFT_BASE_URL}?country=${encodeURIComponent(countryCode)}`, '_blank', 'noopener');
+      closeCountryModal();
+    }
+
+    document.getElementById('countryModal').addEventListener('click', function(event) {
+      if (event.target === this) closeCountryModal();
+    });
 
     let currentSection = '';
 
