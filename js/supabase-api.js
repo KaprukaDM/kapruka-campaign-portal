@@ -175,6 +175,10 @@ async function upsertStudioCalendarEntry(entry) {
     booking_note: entry.booking_note || null
   };
 
+  // Only touch priority when explicitly provided, so unrelated re-upserts
+  // (e.g. content edits) don't wipe an existing High/Low label.
+  if (entry.priority !== undefined) payload.priority = entry.priority;
+
   if (entry.source_id) {
     const existing = await supabaseQuery(
       `studio_calendar?source_type=eq.${encodeURIComponent(entry.source_type)}&source_id=eq.${entry.source_id}`
@@ -629,7 +633,7 @@ async function addExtraContent(extra) {
     source_id: saved.id, product_code: null, page_name: saved.page_name,
     format: saved.format, content_details: saved.content_details,
     reference_links: saved.reference_links, slot_type: 'content_calendar',
-    booking_status: 'booked'
+    booking_status: 'booked', priority: extra.priority || 'Low'
   });
   return saved;
 }

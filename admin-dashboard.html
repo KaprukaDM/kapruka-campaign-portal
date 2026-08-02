@@ -3146,13 +3146,18 @@
               displayText = `${displayText} • ${item.product_code}`;
             }
 
+            const priorityBadge = item.priority
+              ? `<span class="slot-status" style="background:${item.priority === 'High' ? '#E53935' : '#78909C'};color:#fff;">${item.priority === 'High' ? '🔴 High' : 'Low'}</span>`
+              : '';
+
             slotDiv.innerHTML = `
               <span class="slot-number">📅</span>
               ${statusBadge}
+              ${priorityBadge}
               <span class="slot-page">${displayText}</span>
               ${getAssignedPersonDisplay(item)}
             `;
-            
+
             slotDiv.onclick = () => showSlotDetails(item, dateStr);
             slotsContainer.appendChild(slotDiv);
           });
@@ -3737,6 +3742,13 @@
                 <option value="Other">Other</option>
               </select>
             </div>
+            <div class="form-group">
+              <label>Priority *</label>
+              <select id="extraPriority" required>
+                <option value="Low">Low</option>
+                <option value="High">High</option>
+              </select>
+            </div>
           </div>
           <div class="form-group">
             <label>Content Details *</label>
@@ -3769,6 +3781,7 @@
           department: document.getElementById('extraDepartment').value,
           page_name: document.getElementById('extraPage').value,
           format: document.getElementById('extraFormat').value,
+          priority: document.getElementById('extraPriority').value,
           content_details: document.getElementById('extraDetails').value,
           reference_links: document.getElementById('extraLinks').value,
           created_by: 'Admin'
