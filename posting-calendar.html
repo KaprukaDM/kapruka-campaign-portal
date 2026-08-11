@@ -73,6 +73,7 @@
   .badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 100px; text-transform: uppercase; letter-spacing: .04em; }
   .badge.Image { background: var(--purple-light); color: var(--purple-dark); }
   .badge.Video { background: var(--amber-bg); color: var(--amber); }
+  .badge.Folder { background: #dcfce7; color: #137333; }
   .post-card .page { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
   .post-card .snippet {
     margin-top: 6px; font-size: 12.5px; color: #333; line-height: 1.4;
@@ -118,10 +119,43 @@
   .msg.err { background: var(--red-bg); color: var(--red); }
 
   .placeholder { color: var(--text-faint); font-size: 13px; text-align: center; padding: 60px 20px; }
+
+  .login-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg); }
+  .login-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 32px; width: 320px; }
+  .login-box input[type=password] { width: 100%; }
+  #loginMsg .msg { margin-top: 12px; }
+
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 14px; }
+  .cal-dow { font-size: 11px; font-weight: 700; color: var(--text-muted); text-align: center; padding-bottom: 4px; }
+  .cal-day {
+    min-height: 56px; border: 1px solid var(--border); border-radius: 8px; padding: 6px;
+    font-size: 11px; cursor: pointer; transition: border-color .12s;
+  }
+  .cal-day:hover { border-color: var(--purple); }
+  .cal-day.blank { border: none; cursor: default; }
+  .cal-day.blank:hover { border-color: transparent; }
+  .cal-day .num { font-weight: 700; color: var(--text); }
+  .cal-day.past { opacity: .45; }
+  .cal-pill { display: inline-block; margin-top: 4px; padding: 1px 7px; border-radius: 100px; font-size: 10px; font-weight: 700; }
+  .cal-pill.free { background: var(--green-bg); color: #137333; }
+  .cal-pill.partial { background: var(--amber-bg); color: var(--amber); }
+  .cal-pill.full { background: var(--red-bg); color: var(--red); }
 </style>
 </head>
 <body>
-<div class="container">
+
+<div id="loginScreen" class="login-screen">
+  <form id="loginForm" class="login-box">
+    <div class="kapruka-logo" style="width:56px;height:56px;margin:0 auto 16px;"><img src="kapruka_com_logo.jpg" alt="Kapruka"></div>
+    <h1 style="text-align:center;font-size:18px;">Posting Calendar</h1>
+    <p class="subtitle" style="text-align:center;margin-bottom:20px;">Enter password to continue</p>
+    <input type="password" id="loginPassword" placeholder="Password" autofocus>
+    <button type="submit" class="save-btn" style="margin-top:12px;">Unlock</button>
+    <div id="loginMsg"></div>
+  </form>
+</div>
+
+<div class="container" id="pcalApp" style="display:none;">
 
   <div class="header">
     <div class="header-left">
@@ -132,6 +166,18 @@
       </div>
     </div>
     <a href="index.html" class="back-btn">← Back to Portal</a>
+  </div>
+
+  <div class="panel" style="margin-bottom:20px;">
+    <h2>
+      <span id="calMonthLabel">Schedule Overview</span>
+      <span style="float:right;">
+        <span class="refresh-link" onclick="shiftCalMonth(-1)">‹ Prev</span>
+        &nbsp;&nbsp;
+        <span class="refresh-link" onclick="shiftCalMonth(1)">Next ›</span>
+      </span>
+    </h2>
+    <div id="calGrid" class="cal-grid"><div class="empty">Loading…</div></div>
   </div>
 
   <div class="layout">
@@ -242,7 +288,6 @@
     const msg = document.getElementById('msg');
     if (!selected || !selected.studioId) { msg.innerHTML = '<div class="msg err">No post selected — click Refresh and pick a post again.</div>'; return; }
     if (!d) { msg.innerHTML = '<div class="msg err">Pick a date.</div>'; return; }
-    if (!text.trim()) { msg.innerHTML = '<div class="msg err">Primary text can\\'t be empty.</div>'; return; }
 
     const btn = document.getElementById('saveBtn');
     btn.disabled = true;
@@ -258,6 +303,7 @@
       msg.innerHTML = `<div class="msg ok">Scheduled for ${result.date} @ ${result.slot}${result.stacked ? ' (stacked)' : ''}.${warn}</div>`;
       selected = null;
       await loadPosts();
+      await loadCalendar();
       document.getElementById('rightPanel').innerHTML = '<div class="placeholder">Select a Good-to-Go post on the left to schedule it.</div>';
     } catch (e) {
       btn.disabled = false;
@@ -273,7 +319,97 @@
     return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
-  loadPosts();
+  // ── Calendar overview ──────────────────────────────────────────
+  const today = new Date();
+  let calYear = today.getFullYear();
+  let calMonth = today.getMonth() + 1; // 1-12
+
+  function shiftCalMonth(delta) {
+    calMonth += delta;
+    if (calMonth > 12) { calMonth = 1; calYear++; }
+    if (calMonth < 1) { calMonth = 12; calYear--; }
+    loadCalendar();
+  }
+
+  async function loadCalendar() {
+    const grid = document.getElementById('calGrid');
+    const monthStr = calYear + '-' + String(calMonth).padStart(2, '0');
+    const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    document.getElementById('calMonthLabel').textContent = monthNames[calMonth - 1] + ' ' + calYear;
+    try {
+      const res = await fetch('/api/posting-calendar?month=' + monthStr);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      renderCalendar(data.days, data.slotsPerDay);
+    } catch (e) {
+      grid.innerHTML = `<div class="empty">Failed to load calendar: ${escapeHtml(e.message)}</div>`;
+    }
+  }
+
+  function renderCalendar(days, slotsPerDay) {
+    const byDate = {};
+    days.forEach(d => { byDate[d.date] = d; });
+
+    const firstOfMonth = new Date(calYear, calMonth - 1, 1);
+    const startWeekday = firstOfMonth.getDay(); // 0=Sun
+    const daysInMonth = new Date(calYear, calMonth, 0).getDate();
+    const todayKey = todayStr();
+
+    let html = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => `<div class="cal-dow">${d}</div>`).join('');
+    for (let i = 0; i < startWeekday; i++) html += '<div class="cal-day blank"></div>';
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = calYear + '-' + String(calMonth).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+      const info = byDate[dateStr];
+      const isPast = dateStr < todayKey;
+      let pill = '';
+      if (info) {
+        const cls = info.occupied >= slotsPerDay ? 'full' : (info.occupied >= 3 ? 'partial' : 'free');
+        pill = `<div class="cal-pill ${cls}">${info.occupied}/${slotsPerDay}</div>`;
+      }
+      const title = info ? info.items.map(it => `${it.contentId} (${it.page}${it.posted ? ', posted' : ''})`).join('\n') : '';
+      html += `<div class="cal-day${isPast ? ' past' : ''}" title="${escapeHtml(title)}" onclick="pickCalDate('${dateStr}')">
+        <div class="num">${day}</div>${pill}
+      </div>`;
+    }
+
+    document.getElementById('calGrid').innerHTML = html;
+  }
+
+  // Clicking a day fills the date field if a post is currently selected.
+  function pickCalDate(dateStr) {
+    const input = document.getElementById('dateInput');
+    if (!input) return;
+    input.value = dateStr;
+    loadSlots();
+  }
+
+  // ── Password gate ──────────────────────────────────────────────
+  const PCAL_PASSWORD = 'cham';
+
+  function unlockApp() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('pcalApp').style.display = 'block';
+    loadPosts();
+    loadCalendar();
+  }
+
+  document.getElementById('loginForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const pw = document.getElementById('loginPassword').value;
+    if (pw === PCAL_PASSWORD) {
+      try { sessionStorage.setItem('pcalAuth', 'true'); } catch (err) {}
+      unlockApp();
+    } else {
+      document.getElementById('loginMsg').innerHTML = '<div class="msg err">Wrong password.</div>';
+    }
+  });
+
+  (function initAuth() {
+    let authed = false;
+    try { authed = sessionStorage.getItem('pcalAuth') === 'true'; } catch (err) {}
+    if (authed) unlockApp();
+  })();
 </script>
 </body>
 </html>

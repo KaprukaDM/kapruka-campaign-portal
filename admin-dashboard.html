@@ -1691,6 +1691,7 @@
           .pcal-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 100px; text-transform: uppercase; }
           .pcal-badge.Image { background: #f3eeff; color: var(--primary-purple-dark); }
           .pcal-badge.Video { background: #fef3c7; color: #b45309; }
+          .pcal-badge.Folder { background: #dcfce7; color: #137333; }
           .pcal-snippet {
             margin-top: 6px; font-size: 12.5px; color: #333; line-height: 1.4;
             display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
@@ -1714,7 +1715,30 @@
           .pcal-msg.ok { background: #dcfce7; color: #137333; }
           .pcal-msg.err { background: #fee2e2; color: #dc2626; }
           .pcal-placeholder { color: #bbb; font-size: 13px; text-align: center; padding: 60px 20px; }
+          .pcal-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 14px; }
+          .pcal-cal-dow { font-size: 11px; font-weight: 700; color: #888; text-align: center; padding-bottom: 4px; }
+          .pcal-cal-day { min-height: 56px; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; padding: 6px; font-size: 11px; cursor: pointer; }
+          .pcal-cal-day:hover { border-color: var(--primary-purple); }
+          .pcal-cal-day.blank { border: none; cursor: default; }
+          .pcal-cal-day .num { font-weight: 700; color: #111; }
+          .pcal-cal-day.past { opacity: .45; }
+          .pcal-cal-pill { display: inline-block; margin-top: 4px; padding: 1px 7px; border-radius: 100px; font-size: 10px; font-weight: 700; }
+          .pcal-cal-pill.free { background: #dcfce7; color: #137333; }
+          .pcal-cal-pill.partial { background: #fef3c7; color: #b45309; }
+          .pcal-cal-pill.full { background: #fee2e2; color: #dc2626; }
         </style>
+
+        <div class="card" style="margin-bottom:20px;">
+          <h2 style="display:flex;justify-content:space-between;align-items:center;">
+            <span id="pcalCalMonthLabel">Schedule Overview</span>
+            <span>
+              <span style="font-size:12px;font-weight:500;color:var(--primary-purple);cursor:pointer;" onclick="shiftPcalCalMonth(-1)">‹ Prev</span>
+              &nbsp;&nbsp;
+              <span style="font-size:12px;font-weight:500;color:var(--primary-purple);cursor:pointer;" onclick="shiftPcalCalMonth(1)">Next ›</span>
+            </span>
+          </h2>
+          <div id="pcalCalGrid" class="pcal-cal-grid"><div class="pcal-empty">Loading…</div></div>
+        </div>
 
         <div class="pcal-layout">
           <div class="card">
@@ -2052,6 +2076,7 @@
         loadDmApprovals();
       } else if (tab === 'postingcal') {
         loadPostingCalendar();
+        loadPcalCalendar();
       }
     }
     
@@ -4412,7 +4437,6 @@
       const msg = document.getElementById('pcalMsg');
       if (!pcalSelected || !pcalSelected.studioId) { msg.innerHTML = '<div class="pcal-msg err">No post selected — click Refresh and pick a post again.</div>'; return; }
       if (!d) { msg.innerHTML = '<div class="pcal-msg err">Pick a date.</div>'; return; }
-      if (!text.trim()) { msg.innerHTML = '<div class="pcal-msg err">Primary text can\'t be empty.</div>'; return; }
 
       const btn = document.getElementById('pcalSaveBtn');
       btn.disabled = true;
@@ -4428,11 +4452,81 @@
         msg.innerHTML = `<div class="pcal-msg ok">Scheduled for ${result.date} @ ${result.slot}${result.stacked ? ' (stacked)' : ''}.${warn}</div>`;
         pcalSelected = null;
         await loadPostingCalendar();
+        await loadPcalCalendar();
         document.getElementById('pcalRightPanel').innerHTML = '<div class="pcal-placeholder">Select a Good-to-Go post on the left to schedule it.</div>';
       } catch (error) {
         btn.disabled = false;
         msg.innerHTML = `<div class="pcal-msg err">${pcalEscapeHtml(error.message)}</div>`;
       }
+    }
+
+    // ── Posting Calendar: schedule overview grid ─────────────────
+    const pcalToday = new Date();
+    let pcalCalYear = pcalToday.getFullYear();
+    let pcalCalMonth = pcalToday.getMonth() + 1; // 1-12
+
+    function shiftPcalCalMonth(delta) {
+      pcalCalMonth += delta;
+      if (pcalCalMonth > 12) { pcalCalMonth = 1; pcalCalYear++; }
+      if (pcalCalMonth < 1) { pcalCalMonth = 12; pcalCalYear--; }
+      loadPcalCalendar();
+    }
+
+    async function loadPcalCalendar() {
+      const grid = document.getElementById('pcalCalGrid');
+      const monthStr = pcalCalYear + '-' + String(pcalCalMonth).padStart(2, '0');
+      const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      document.getElementById('pcalCalMonthLabel').textContent = monthNames[pcalCalMonth - 1] + ' ' + pcalCalYear;
+      try {
+        const res = await fetch('/api/posting-calendar?month=' + monthStr);
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        renderPcalCalendar(data.days, data.slotsPerDay);
+      } catch (error) {
+        grid.innerHTML = `<div class="pcal-empty">Failed to load calendar: ${pcalEscapeHtml(error.message)}</div>`;
+      }
+    }
+
+    function pcalTodayStr() {
+      const d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+
+    function renderPcalCalendar(days, slotsPerDay) {
+      const byDate = {};
+      days.forEach(d => { byDate[d.date] = d; });
+
+      const firstOfMonth = new Date(pcalCalYear, pcalCalMonth - 1, 1);
+      const startWeekday = firstOfMonth.getDay();
+      const daysInMonth = new Date(pcalCalYear, pcalCalMonth, 0).getDate();
+      const todayKey = pcalTodayStr();
+
+      let html = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => `<div class="pcal-cal-dow">${d}</div>`).join('');
+      for (let i = 0; i < startWeekday; i++) html += '<div class="pcal-cal-day blank"></div>';
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = pcalCalYear + '-' + String(pcalCalMonth).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+        const info = byDate[dateStr];
+        const isPast = dateStr < todayKey;
+        let pill = '';
+        if (info) {
+          const cls = info.occupied >= slotsPerDay ? 'full' : (info.occupied >= 3 ? 'partial' : 'free');
+          pill = `<div class="pcal-cal-pill ${cls}">${info.occupied}/${slotsPerDay}</div>`;
+        }
+        const title = info ? info.items.map(it => `${it.contentId} (${it.page}${it.posted ? ', posted' : ''})`).join('\n') : '';
+        html += `<div class="pcal-cal-day${isPast ? ' past' : ''}" title="${pcalEscapeHtml(title)}" onclick="pickPcalCalDate('${dateStr}')">
+          <div class="num">${day}</div>${pill}
+        </div>`;
+      }
+
+      document.getElementById('pcalCalGrid').innerHTML = html;
+    }
+
+    function pickPcalCalDate(dateStr) {
+      const input = document.getElementById('pcalDateInput');
+      if (!input) return;
+      input.value = dateStr;
+      loadPcalSlots();
     }
 </script>
 </body>

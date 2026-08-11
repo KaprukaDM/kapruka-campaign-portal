@@ -19,6 +19,13 @@
 //    GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GOOGLE_REFRESH_TOKEN
 //    CONTENT_SHEET_ID   1CNSZqL5MCbTaj5fF4L_e95oJECVMpOZMUAz-b9r9Bpk
 //
+//  GOOGLE_REFRESH_TOKEN must be scoped to BOTH:
+//    https://www.googleapis.com/auth/spreadsheets
+//    https://www.googleapis.com/auth/drive.readonly   (for the rare
+//      Drive-folder-of-images case — expandDriveFolder() below)
+//  If it's only scoped to spreadsheets, folder items fail with a 401/403
+//  from the Drive API at save time — everything else still works fine.
+//
 //  Sheet columns (1-based, "Content Approval List" tab — must match Content.gs COL):
 //    A ContentID  B Platform  C MediaType  D MediaURL  E PrimaryText
 //    F Page  G ScheduleDate  H Status  I..O Links  P TT_RESULT
@@ -54,6 +61,26 @@ const PAGE_MAP = {
 function normalizePage(pageName) {
   const key = String(pageName || '').trim().toLowerCase();
   return PAGE_MAP[key] || 'Kapruka';
+}
+
+// ── Drive folder expansion (rare case: media link is a whole folder) ───────
+// Requires the https://www.googleapis.com/auth/drive.readonly scope on the
+// refresh token — same client_id/secret, just re-consent with the wider scope.
+const DRIVE_API = 'https://www.googleapis.com/drive/v3';
+const IG_CAROUSEL_MAX = 10;
+
+function driveFolderId(url) {
+  const m = String(url || '').match(/drive\.google\.com\/drive\/folders\/([^\/\?&]+)/);
+  return m ? m[1] : null;
+}
+
+async function expandDriveFolder(token, folderId) {
+  const q = encodeURIComponent(`'${folderId}' in parents and trashed = false and mimeType contains 'image/'`);
+  const url = `${DRIVE_API}/files?q=${q}&fields=files(id,name)&orderBy=name&pageSize=${IG_CAROUSEL_MAX}`;
+  const res = await fetch(url, { headers: { Authorization: 'Bearer ' + token } });
+  const body = await res.json();
+  if (!res.ok) throw new Error('Drive folder read failed: ' + JSON.stringify(body));
+  return (body.files || []).map(f => `https://drive.google.com/uc?export=download&id=${f.id}`);
 }
 
 // ── Supabase ─────────────────────────────────────────────────────────────
@@ -143,6 +170,28 @@ function computeOccupiedSlots(rows, targetKey) {
   return count;
 }
 
+// Per-day occupancy for a whole month, for the calendar grid view.
+function monthOccupancy(rows, year, month) {
+  const byDate = {};
+  rows.forEach(row => {
+    const st = String(row[COL.STATUS] || '').trim();
+    const occupies = (st === 'Approved' || st.indexOf('Posted') === 0);
+    if (!occupies) return;
+    const d = serialToDate(row[COL.SCHEDULE_DATE]);
+    if (!d) return;
+    if (d.getFullYear() !== year || d.getMonth() !== month - 1) return;
+    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    if (!byDate[dateStr]) byDate[dateStr] = { date: dateStr, occupied: 0, items: [] };
+    byDate[dateStr].occupied++;
+    byDate[dateStr].items.push({
+      contentId: String(row[COL.CONTENT_ID] || '').trim(),
+      page: String(row[COL.PAGE] || '').trim(),
+      posted: st.indexOf('Posted') === 0
+    });
+  });
+  return Object.values(byDate);
+}
+
 function slotAvailability(rows, dateStr) {
   const [y, m, d] = dateStr.split('-').map(Number);
   const targetKey = y + '-' + (m - 1) + '-' + d;
@@ -169,6 +218,12 @@ export async function onRequestGet(context) {
       return json(slotAvailability(sheetRows, slotsFor));
     }
 
+    const monthParam = url.searchParams.get('month'); // "YYYY-MM"
+    if (monthParam) {
+      const [y, m] = monthParam.split('-').map(Number);
+      return json({ days: monthOccupancy(sheetRows, y, m), slotsPerDay: POSTING_SLOTS.length });
+    }
+
     const studioItems = await supabaseQuery(
       `studio_calendar?studio_status=eq.${encodeURIComponent('Good to Go')}&order=date.asc`
     );
@@ -182,13 +237,15 @@ export async function onRequestGet(context) {
     const posts = studioItems
       .map(item => {
         const mediaUrl = item.content_link || item.reference_links || '';
+        const isFolder = !!driveFolderId(mediaUrl);
         return {
           contentId: `STU-${item.id}`,
           studioId: item.id,
-          contentType: detectContentType(item.content_details, mediaUrl),
+          contentType: isFolder ? 'Folder' : detectContentType(item.content_details, mediaUrl),
           page: normalizePage(item.page_name),
           primaryText: item.content_details || '',
           mediaUrl,
+          isFolder,
           productCode: item.product_code || ''
         };
       })
@@ -204,8 +261,8 @@ export async function onRequestPost(context) {
   const { env, request } = context;
   try {
     const { studioId, date, primaryText } = await request.json();
-    if (!studioId || !date || !primaryText || !String(primaryText).trim()) {
-      return json({ error: 'studioId, date, and primaryText are all required' }, 400);
+    if (!studioId || !date) {
+      return json({ error: 'studioId and date are required' }, 400);
     }
 
     const items = await supabaseQuery(`studio_calendar?id=eq.${encodeURIComponent(studioId)}`);
@@ -226,13 +283,21 @@ export async function onRequestPost(context) {
     const avail = slotAvailability(sheetRows, date);
     const slotLabel = SLOT_LABELS[avail.nextAvailableIndex];
 
-    const mediaUrl = item.content_link || item.reference_links || '';
-    const mediaType = detectContentType(item.content_details, mediaUrl);
+    let mediaUrl = item.content_link || item.reference_links || '';
     const page = normalizePage(item.page_name);
+    let mediaType = detectContentType(item.content_details, mediaUrl);
+
+    const folderId = driveFolderId(mediaUrl);
+    if (folderId) {
+      const images = await expandDriveFolder(token, folderId);
+      if (!images.length) return json({ error: 'That folder has no images in it (or Drive access failed) — nothing to post.' }, 422);
+      mediaUrl = images.join(',');
+      mediaType = 'Image';
+    }
 
     // A ContentID, B Platform, C MediaType, D MediaURL, E PrimaryText, F Page, G ScheduleDate, H Status
     await sheetsAppend(env, token, `${SHEET_NAME}!A:H`, [
-      contentId, '', mediaType, mediaUrl, String(primaryText).trim(), page, date, 'Approved'
+      contentId, '', mediaType, mediaUrl, String(primaryText || '').trim(), page, date, 'Approved'
     ]);
 
     // Sheet append is the critical step (it's what the posting bot reads) — if this
