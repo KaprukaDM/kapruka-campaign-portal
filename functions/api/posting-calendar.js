@@ -1,22 +1,27 @@
 // functions/api/posting-calendar.js
 // ============================================================================
-//  POSTING CALENDAR API — talks directly to the "Content Approval List"
-//  Google Sheet via an OAuth refresh token (no Apps Script involved).
+//  POSTING CALENDAR API
 //
-//  Env vars required (set as Cloudflare Pages secrets — see README setup notes):
-//    GOOGLE_CLIENT_ID       from the Desktop OAuth client JSON
-//    GOOGLE_CLIENT_SECRET   from the Desktop OAuth client JSON
-//    GOOGLE_REFRESH_TOKEN   obtained once via a consent flow (OAuth Playground),
-//                           scoped to https://www.googleapis.com/auth/spreadsheets,
-//                           authorized as the Google account that can edit the sheet
-//    CONTENT_SHEET_ID       1CNSZqL5MCbTaj5fF4L_e95oJECVMpOZMUAz-b9r9Bpk
+//  SOURCE  → Supabase `studio_calendar` table, rows where studio_status =
+//            "Good to Go" (the Studio Calendar tab is where production marks
+//            content ready). Uses the same public anon key already shipped
+//            client-side in js/supabase-api.js — not a new secret.
+//
+//  DEST    → Google Sheet "Content Approval List" (the sheet Content.gs's
+//            processContent() bot actually posts from). Scheduling a post
+//            APPENDS a new row there with STATUS="Approved", it does NOT
+//            touch the Studio Calendar item's status — "already scheduled"
+//            items are recognized by looking for a "STU-<id>" Content ID
+//            already present in the sheet, so nothing in the existing
+//            Studio/DM-approval sync logic gets touched.
+//
+//  Env vars required (Cloudflare Pages secrets):
+//    GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GOOGLE_REFRESH_TOKEN
+//    CONTENT_SHEET_ID   1CNSZqL5MCbTaj5fF4L_e95oJECVMpOZMUAz-b9r9Bpk
 //
 //  Sheet columns (1-based, "Content Approval List" tab — must match Content.gs COL):
 //    A ContentID  B Platform  C MediaType  D MediaURL  E PrimaryText
 //    F Page  G ScheduleDate  H Status  I..O Links  P TT_RESULT
-//
-//  STATUS must include "Good to Go" as a valid dropdown value — run
-//  setupStatusValidation() once in the Apps Script project (see PostingCalendar.gs).
 // ============================================================================
 
 const SHEET_NAME = 'Content Approval List';
@@ -31,6 +36,42 @@ const POSTING_SLOTS = [
 const SLOT_LABELS = ['10:00 AM', '12:00 PM', '3:00 PM', '6:00 PM', '9:00 PM'];
 const SHEETS_API = 'https://sheets.googleapis.com/v4/spreadsheets';
 const EXCEL_EPOCH_MS = Date.UTC(1899, 11, 30);
+
+// Same public anon key already embedded in js/supabase-api.js — read-only
+// on studio_calendar for this app's usage pattern, not a secret we're adding.
+const SUPABASE_URL = 'https://ivllhheqqiseagmctfyp.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml2bGxoaGVxcWlzZWFnbWN0ZnlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1NzQzMzksImV4cCI6MjA4NDE1MDMzOX0.OnkYNACtdknKDY2KqLfiGN0ORXpKaW906fD0TtSJlIk';
+
+// Studio page_name values ("Kapruka FB", "Global Shop", ...) don't match the
+// posting bot's PAGES keys — normalize known ones, default everything else
+// to "Kapruka" per the agreed content default.
+const PAGE_MAP = {
+  'kapruka': 'Kapruka', 'kapruka fb': 'Kapruka', 'global shop': 'Kapruka',
+  'electronic factory': 'Electronic Factory', 'fashion factory': 'Fashion Factory',
+  'handbag factory': 'Handbag Factory', 'toys factory': 'Toys Factory',
+  'social mart': 'Social Mart'
+};
+function normalizePage(pageName) {
+  const key = String(pageName || '').trim().toLowerCase();
+  return PAGE_MAP[key] || 'Kapruka';
+}
+
+// ── Supabase ─────────────────────────────────────────────────────────────
+async function supabaseQuery(endpoint, method = 'GET', body = null) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}`, {
+    method,
+    headers: {
+      apikey: SUPABASE_KEY,
+      Authorization: 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json',
+      Prefer: 'return=representation'
+    },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error('Supabase error: ' + text);
+  return text ? JSON.parse(text) : [];
+}
 
 // ── Google OAuth refresh-token → access-token exchange ──────────────────────
 async function getAccessToken(env) {
@@ -58,15 +99,15 @@ async function sheetsGet(env, token, range) {
   return body.values || [];
 }
 
-async function sheetsUpdate(env, token, range, values) {
-  const url = `${SHEETS_API}/${env.CONTENT_SHEET_ID}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`;
+async function sheetsAppend(env, token, range, values) {
+  const url = `${SHEETS_API}/${env.CONTENT_SHEET_ID}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
   const res = await fetch(url, {
-    method: 'PUT',
+    method: 'POST',
     headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
     body: JSON.stringify({ range, values: [values] })
   });
   const body = await res.json();
-  if (!res.ok) throw new Error('Sheets write failed: ' + JSON.stringify(body));
+  if (!res.ok) throw new Error('Sheets append failed: ' + JSON.stringify(body));
   return body;
 }
 
@@ -80,12 +121,13 @@ function isVideoUrl(url) {
   return ['.mp4', '.mov', '.avi', '.mkv', '.wmv', '.flv', '.webm', '.m4v', '.mpeg', '.3gp']
     .some(ext => String(url).toLowerCase().includes(ext));
 }
-function detectContentType(mediaTypeRaw, mediaUrlRaw) {
-  const t = String(mediaTypeRaw || '').trim().toLowerCase();
+// "the content details box will sometimes have whether its a post or video" —
+// check the free-text production note first, fall back to the media URL extension.
+function detectContentType(contentDetails, mediaUrl) {
+  const t = String(contentDetails || '').toLowerCase();
   if (t.includes('video')) return 'Video';
   if (t.includes('image') || t.includes('photo') || t.includes('post')) return 'Image';
-  const firstUrl = String(mediaUrlRaw || '').split(',')[0].trim();
-  return isVideoUrl(firstUrl) ? 'Video' : 'Image';
+  return isVideoUrl(mediaUrl) ? 'Video' : 'Image';
 }
 
 function computeOccupiedSlots(rows, targetKey) {
@@ -120,25 +162,37 @@ export async function onRequestGet(context) {
   try {
     const url = new URL(request.url);
     const token = await getAccessToken(env);
-    const rows = await sheetsGet(env, token, `${SHEET_NAME}!A2:H`);
+    const sheetRows = await sheetsGet(env, token, `${SHEET_NAME}!A2:H`);
 
     const slotsFor = url.searchParams.get('slotsFor');
     if (slotsFor) {
-      return json(slotAvailability(rows, slotsFor));
+      return json(slotAvailability(sheetRows, slotsFor));
     }
 
-    const posts = rows
-      .map((row, i) => ({ row, rowIndex: i + 2 }))
-      .filter(({ row }) => String(row[COL.STATUS] || '').trim() === 'Good to Go')
-      .map(({ row, rowIndex }) => ({
-        contentId: String(row[COL.CONTENT_ID] || '').trim(),
-        rowIndex,
-        contentType: detectContentType(row[COL.MEDIA_TYPE], row[COL.MEDIA_URL]),
-        page: String(row[COL.PAGE] || '').trim() || 'Kapruka',
-        primaryText: String(row[COL.PRIMARY_TEXT] || ''),
-        mediaUrl: String(row[COL.MEDIA_URL] || '')
-      }))
-      .filter(p => p.contentId);
+    const studioItems = await supabaseQuery(
+      `studio_calendar?studio_status=eq.${encodeURIComponent('Good to Go')}&order=date.asc`
+    );
+
+    // Already-scheduled items leave a "STU-<id>" Content ID in the sheet —
+    // filter those back out instead of writing anything to Supabase.
+    const alreadyScheduled = new Set(
+      sheetRows.map(r => String(r[COL.CONTENT_ID] || '').trim()).filter(id => id.startsWith('STU-'))
+    );
+
+    const posts = studioItems
+      .map(item => {
+        const mediaUrl = item.content_link || item.reference_links || '';
+        return {
+          contentId: `STU-${item.id}`,
+          studioId: item.id,
+          contentType: detectContentType(item.content_details, mediaUrl),
+          page: normalizePage(item.page_name),
+          primaryText: item.content_details || '',
+          mediaUrl,
+          productCode: item.product_code || ''
+        };
+      })
+      .filter(p => !alreadyScheduled.has(p.contentId));
 
     return json({ posts });
   } catch (e) {
@@ -149,29 +203,37 @@ export async function onRequestGet(context) {
 export async function onRequestPost(context) {
   const { env, request } = context;
   try {
-    const { contentId, date, primaryText } = await request.json();
-    if (!contentId || !date || !primaryText || !String(primaryText).trim()) {
-      return json({ error: 'contentId, date, and primaryText are all required' }, 400);
+    const { studioId, date, primaryText } = await request.json();
+    if (!studioId || !date || !primaryText || !String(primaryText).trim()) {
+      return json({ error: 'studioId, date, and primaryText are all required' }, 400);
+    }
+
+    const items = await supabaseQuery(`studio_calendar?id=eq.${encodeURIComponent(studioId)}`);
+    if (!items.length) return json({ error: 'Studio Calendar item not found: ' + studioId }, 404);
+    const item = items[0];
+    if (String(item.studio_status || '').trim() !== 'Good to Go') {
+      return json({ error: `This item is no longer Good to Go (current status: "${item.studio_status}"). Refresh and try again.` }, 409);
     }
 
     const token = await getAccessToken(env);
-    const rows = await sheetsGet(env, token, `${SHEET_NAME}!A2:H`);
+    const sheetRows = await sheetsGet(env, token, `${SHEET_NAME}!A2:H`);
 
-    const idx = rows.findIndex(row => String(row[COL.CONTENT_ID] || '').trim() === String(contentId).trim());
-    if (idx === -1) return json({ error: 'Content ID not found: ' + contentId }, 404);
-    const rowIndex = idx + 2;
-    const currentStatus = String(rows[idx][COL.STATUS] || '').trim();
-    if (currentStatus !== 'Good to Go') {
-      return json({ error: `This post is no longer Good to Go (current status: "${currentStatus}"). Refresh and try again.` }, 409);
+    const contentId = `STU-${item.id}`;
+    if (sheetRows.some(r => String(r[COL.CONTENT_ID] || '').trim() === contentId)) {
+      return json({ error: 'This item has already been scheduled.' }, 409);
     }
 
-    const avail = slotAvailability(rows, date);
+    const avail = slotAvailability(sheetRows, date);
     const slotLabel = SLOT_LABELS[avail.nextAvailableIndex];
 
-    // E = Primary Text, G = Schedule Date, H = Status — write in one row-scoped call each
-    await sheetsUpdate(env, token, `${SHEET_NAME}!E${rowIndex}`, [String(primaryText).trim()]);
-    await sheetsUpdate(env, token, `${SHEET_NAME}!G${rowIndex}`, [date]);
-    await sheetsUpdate(env, token, `${SHEET_NAME}!H${rowIndex}`, ['Approved']);
+    const mediaUrl = item.content_link || item.reference_links || '';
+    const mediaType = detectContentType(item.content_details, mediaUrl);
+    const page = normalizePage(item.page_name);
+
+    // A ContentID, B Platform, C MediaType, D MediaURL, E PrimaryText, F Page, G ScheduleDate, H Status
+    await sheetsAppend(env, token, `${SHEET_NAME}!A:H`, [
+      contentId, '', mediaType, mediaUrl, String(primaryText).trim(), page, date, 'Approved'
+    ]);
 
     return json({ ok: true, date, slot: slotLabel, stacked: avail.stacking });
   } catch (e) {

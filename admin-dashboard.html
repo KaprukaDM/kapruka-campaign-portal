@@ -4396,7 +4396,7 @@
       try {
         const res = await fetch('/api/posting-calendar', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contentId: pcalSelected.contentId, date: d, primaryText: text })
+          body: JSON.stringify({ studioId: pcalSelected.studioId, date: d, primaryText: text })
         });
         const result = await res.json();
         if (!res.ok || result.error) throw new Error(result.error || 'Save failed');
