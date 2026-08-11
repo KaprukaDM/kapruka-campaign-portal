@@ -242,6 +242,58 @@ async function getStudioActivityLog(slotId) {
   }
 }
 
+// ── STUDIO BRAND GUIDELINES CHECKLIST ──────────────────────────────
+// Shared by both the Head of Studio review and the Digital Marketing
+// review — same items, saved against the same studio_calendar.id under a
+// different `stage` so each review's history is kept separately but lines
+// up on the same post. Informational only: it never blocks approve/reject,
+// it just gives reviewers a structured guideline check and pre-fills the
+// rejection reason with whatever failed.
+const CHECKLIST_ITEMS = [
+  { key: 'product_info',   label: 'Product name, quantity and price are shown' },
+  { key: 'brand_colors',   label: 'Uses Kapruka brand colors' },
+  { key: 'logo_placement', label: 'If a second logo is present, Kapruka logo stays top-left/top-right (not beside it) and the 2nd logo is inside the content' },
+  { key: 'no_repeat_idea', label: 'No repeated idea/concept from previous posts' },
+  { key: 'logo_clearspace',label: 'Clear space maintained around the Kapruka logo' },
+  { key: 'logo_top_110',   label: 'Logo placed within 110px from the top (when on top)' },
+  { key: 'fair_margins',   label: 'Fair margins maintained' },
+  { key: 'consistency',    label: 'Consistent with other Kapruka content' },
+  { key: 'empty_space',    label: '25–30% of canvas left as intentional empty space' }
+];
+
+async function getLatestChecklist(slotId, stage) {
+  try {
+    const rows = await supabaseQuery(`studio_checklist_results?slot_id=eq.${slotId}&stage=eq.${stage}&order=created_at.desc&limit=1`);
+    return rows.length ? rows[0] : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function saveChecklistResults(slotId, stage, results, reviewer) {
+  const passedCount = results.filter(r => r.passed).length;
+  const failedCount = results.length - passedCount;
+
+  await supabaseQuery('studio_checklist_results', 'POST', {
+    slot_id: slotId,
+    stage,
+    results,
+    passed_count: passedCount,
+    failed_count: failedCount,
+    reviewer: reviewer || null
+  });
+
+  const stageLabel = stage === 'head' ? 'Head of Studio' : 'Digital Marketing';
+  const summary = failedCount === 0
+    ? `${stageLabel} checklist: all ${results.length} guideline checks passed`
+    : `${stageLabel} checklist: ${passedCount}/${results.length} passed. Failed:\n` +
+      results.filter(r => !r.passed).map(r => `  - ${r.label}`).join('\n');
+
+  await logStudioActivity(slotId, 'checklist_reviewed', summary, reviewer || stageLabel);
+
+  return { success: true, passedCount, failedCount };
+}
+
 // Password-protected inline edit of the content description shown on the admin
 // studio calendar. For extra_content the description maps 1:1, so mirror it back
 // to the source row; content_calendar's content_details is a composed string, so

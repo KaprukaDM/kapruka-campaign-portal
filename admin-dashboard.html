@@ -3266,6 +3266,108 @@
     }
 
     // Fetch + render the slot's activity log timeline into the popup.
+    // ── KAPRUKA BRAND GUIDELINES CHECKLIST (shared by Head + DM review) ──
+    // window._checklistFailedCache holds the failed-item labels from whatever
+    // was last saved/ticked for a given "stage:slotId" key, so the reject
+    // flows can offer them as a starting rejection reason.
+    window._checklistFailedCache = window._checklistFailedCache || {};
+
+    function renderChecklistBlock(slotId, stage) {
+      const rows = CHECKLIST_ITEMS.map(item => `
+        <label style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;font-size:13px;color:#333;cursor:pointer;">
+          <input type="checkbox" class="checklist-item" data-key="${item.key}" data-label="${escapeHtml(item.label)}" id="chk_${stage}_${slotId}_${item.key}" style="margin-top:3px;flex-shrink:0;">
+          <span>${item.label}</span>
+        </label>
+      `).join('');
+
+      return `
+        <div id="checklistSection_${stage}_${slotId}" style="background:#F5F0FF;border:1px solid #E0D4F7;border-radius:10px;padding:15px;margin-bottom:20px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <strong style="color:#5e3a8e;">📋 Kapruka Brand Guidelines Checklist</strong>
+            <span id="checklistCounter_${stage}_${slotId}" style="font-size:12px;font-weight:600;color:#5e3a8e;background:#fff;padding:3px 10px;border-radius:12px;">0 / ${CHECKLIST_ITEMS.length}</span>
+          </div>
+          <div id="checklistItems_${stage}_${slotId}">${rows}</div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:10px;">
+            <button type="button" id="saveChecklist_${stage}_${slotId}" class="btn" style="background:#5e3a8e;color:#fff;padding:6px 14px;font-size:12px;">💾 Save Checklist</button>
+            <span id="checklistSavedMsg_${stage}_${slotId}" style="font-size:12px;color:#2e7d32;"></span>
+          </div>
+        </div>
+      `;
+    }
+
+    function updateChecklistCounter(slotId, stage) {
+      const section = document.getElementById(`checklistSection_${stage}_${slotId}`);
+      const counter = document.getElementById(`checklistCounter_${stage}_${slotId}`);
+      if (!section || !counter) return;
+      const boxes = section.querySelectorAll('.checklist-item');
+      const passed = Array.from(boxes).filter(b => b.checked).length;
+      counter.textContent = `${passed} / ${boxes.length}`;
+    }
+
+    function collectChecklistResults(slotId, stage) {
+      const section = document.getElementById(`checklistSection_${stage}_${slotId}`);
+      if (!section) return [];
+      return Array.from(section.querySelectorAll('.checklist-item')).map(b => ({
+        key: b.dataset.key,
+        label: b.dataset.label,
+        passed: b.checked
+      }));
+    }
+
+    async function loadAndWireChecklistBlock(slotId, stage, getReviewerName) {
+      const section = document.getElementById(`checklistSection_${stage}_${slotId}`);
+      if (!section) return;
+
+      // Pre-tick from the last saved state for this slot+stage, if any.
+      try {
+        const latest = await getLatestChecklist(slotId, stage);
+        if (latest && Array.isArray(latest.results)) {
+          latest.results.forEach(r => {
+            const box = document.getElementById(`chk_${stage}_${slotId}_${r.key}`);
+            if (box) box.checked = !!r.passed;
+          });
+          window._checklistFailedCache[`${stage}:${slotId}`] =
+            latest.results.filter(r => !r.passed).map(r => r.label);
+        }
+      } catch (e) { /* non-fatal */ }
+
+      updateChecklistCounter(slotId, stage);
+
+      section.querySelectorAll('.checklist-item').forEach(box => {
+        box.addEventListener('change', () => updateChecklistCounter(slotId, stage));
+      });
+
+      const saveBtn = document.getElementById(`saveChecklist_${stage}_${slotId}`);
+      const savedMsg = document.getElementById(`checklistSavedMsg_${stage}_${slotId}`);
+      if (saveBtn) {
+        saveBtn.addEventListener('click', async () => {
+          const results = collectChecklistResults(slotId, stage);
+          const reviewer = (typeof getReviewerName === 'function') ? getReviewerName() : getReviewerName;
+          if (!reviewer) return;
+          try {
+            saveBtn.disabled = true;
+            await saveChecklistResults(slotId, stage, results, reviewer);
+            window._checklistFailedCache[`${stage}:${slotId}`] =
+              results.filter(r => !r.passed).map(r => r.label);
+            if (savedMsg) {
+              savedMsg.textContent = '✅ Saved';
+              setTimeout(() => { savedMsg.textContent = ''; }, 3000);
+            }
+          } catch (err) {
+            if (savedMsg) savedMsg.textContent = 'Error: ' + err.message;
+          } finally {
+            saveBtn.disabled = false;
+          }
+        });
+      }
+    }
+
+    function checklistRejectionPrefill(stage, slotId) {
+      const failed = window._checklistFailedCache[`${stage}:${slotId}`];
+      if (!failed || failed.length === 0) return '';
+      return 'Does not meet Kapruka guidelines:\n' + failed.map(l => `- ${l}`).join('\n');
+    }
+
     async function renderActivityLog(slotId) {
       const body = document.getElementById('activityLogBody');
       if (!body) return;
@@ -3277,7 +3379,7 @@
         return;
       }
 
-      const icon = { created:'🆕', status_changed:'🔄', rejected:'❌', hold:'⏸', assigned:'👤', content_edited:'✏️', date_edited:'📅' };
+      const icon = { created:'🆕', status_changed:'🔄', rejected:'❌', hold:'⏸', assigned:'👤', content_edited:'✏️', date_edited:'📅', checklist_reviewed:'📋' };
       const esc = s => String(s ?? '').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
       const rows = entries.map(e => {
         const when = e.created_at ? new Date(e.created_at).toLocaleString() : '';
@@ -3421,6 +3523,8 @@
           <div id="activityLogBody" style="font-size:12px;color:#666;">Loading history…</div>
         </div>
 
+        ${renderChecklistBlock(slotData.id, 'head')}
+
         <form id="updateStatusForm">
           <div class="form-group">
             <label>Update Status</label>
@@ -3482,6 +3586,9 @@
 
       // ── Render the per-slot activity log (audit trail) ──
       renderActivityLog(slotData.id);
+
+      // ── Render the Kapruka brand guidelines checklist (Head of Studio stage) ──
+      loadAndWireChecklistBlock(slotData.id, 'head', () => 'Content Head');
 
       // ── Password-protected inline edit of the content description ──
       const editContentBtn = document.getElementById('editContentBtn');
@@ -3614,8 +3721,18 @@
         } else if (statusSelect.value === 'Rejected by Head') {
           rejectionGroup.style.display = 'block';
           rejectionReasonGroup.style.display = 'block';
+          const reasonBox = document.getElementById('rejectionReason');
+          if (reasonBox && !reasonBox.value.trim()) {
+            const prefill = checklistRejectionPrefill('head', slotData.id);
+            if (prefill) reasonBox.value = prefill;
+          }
         } else if (statusSelect.value === 'DM Rejected') {
           dmRejectionReasonGroup.style.display = 'block';
+          const dmReasonBox = document.getElementById('dmRejectionReason');
+          if (dmReasonBox && !dmReasonBox.value.trim()) {
+            const prefill = checklistRejectionPrefill('dm', slotData.id);
+            if (prefill) dmReasonBox.value = prefill;
+          }
         } else if (statusSelect.value === 'Posted') {
           document.getElementById('postedFieldsGroup').style.display = 'block';
         }
@@ -4017,11 +4134,12 @@
                 ` : ''}
                 ${rejectionHtml}
                 ${postedUpdateHtml}
+                ${dm.content_id ? renderChecklistBlock(dm.content_id, 'dm') : ''}
               </div>
               <div class="dm-approval-actions">
                 ${dm.dm_status === 'Pending' ? `
                   <button class="btn btn-success" onclick="approveDmContent(${dm.id})">\u2705 Approve</button>
-                  <button class="btn btn-danger" onclick="rejectDmContent(${dm.id})">\u274C Reject</button>
+                  <button class="btn btn-danger" onclick="rejectDmContent(${dm.id}, ${dm.content_id})">\u274C Reject</button>
                 ` : ''}
                 ${dm.dm_status === 'Approved' && !dm.posted_update ? `
                   <button class="btn" onclick="openPostUpdateModal(${dm.id}, '${(dm.approved_by || 'DM').replace(/'/g, "\'")}')" style="background:#7B1FA2;color:#fff;font-size:13px;padding:8px 14px;border-radius:8px;">\uD83D\uDCE2 Add Posted Update</button>
@@ -4031,6 +4149,12 @@
           </div>
         `;
       }).join('');
+
+      // \u2500\u2500 Wire up each card's checklist block (pre-tick from last save, live counter, Save button) \u2500\u2500
+      approvals.forEach(dm => {
+        if (!dm.content_id) return;
+        loadAndWireChecklistBlock(dm.content_id, 'dm', () => prompt('Enter your name (for the checklist review record):'));
+      });
     }
 
     async function approveDmContent(id) {
@@ -4115,14 +4239,15 @@
       });
     }
 
-    function rejectDmContent(id) {
+    function rejectDmContent(id, contentId) {
+      const prefill = contentId ? checklistRejectionPrefill('dm', contentId) : '';
       const content = `
         <button class="close-modal" onclick="closeModal()">×</button>
         <h3>❌ Reject Content</h3>
         <form id="rejectDmForm">
           <div class="form-group">
             <label>Rejection Reason *</label>
-            <textarea id="dmRejectionReason" required rows="4" placeholder="Explain why this content is being rejected..."></textarea>
+            <textarea id="dmRejectionReason" required rows="4" placeholder="Explain why this content is being rejected...">${escapeHtml(prefill)}</textarea>
           </div>
           <button type="submit" class="btn btn-danger" style="width:100%;">Reject Content</button>
         </form>
