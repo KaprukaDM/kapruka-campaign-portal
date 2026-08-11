@@ -1027,6 +1027,111 @@
     ::-webkit-scrollbar-thumb:hover {
       background: var(--primary-purple-dark);
     }
+
+    /* ── Kapruka Brand Guidelines Checklist (Studio / DM review) ── */
+    .checklist-box {
+      background: #FAF8FF;
+      border: 1px solid #E0D4F7;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+    .checklist-box-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+    .checklist-box-title {
+      color: var(--primary-purple-dark, #5e3a8e);
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .checklist-box-hint {
+      font-size: 11px;
+      color: #8b7fa8;
+      margin-bottom: 10px;
+    }
+    .checklist-counter {
+      font-size: 12px;
+      font-weight: 700;
+      color: #5e3a8e;
+      background: #fff;
+      border: 1px solid #E0D4F7;
+      padding: 3px 12px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+    .checklist-progress-track {
+      height: 6px;
+      background: #E9E1F9;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+    .checklist-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: #5e3a8e;
+      border-radius: 4px;
+      transition: width 0.2s ease;
+    }
+    .checklist-items {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .checklist-row {
+      display: flex !important;
+      align-items: flex-start;
+      gap: 10px;
+      background: #fff;
+      border: 1px solid #EDE7F9;
+      border-radius: 8px;
+      padding: 9px 12px;
+      cursor: pointer;
+      text-transform: none !important;
+      letter-spacing: normal !important;
+      margin-bottom: 0 !important;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .checklist-row:hover {
+      border-color: #C7B3EA;
+    }
+    .checklist-row.is-checked {
+      background: #EEF8EF;
+      border-color: #BFE3C2;
+    }
+    .checklist-row input[type="checkbox"] {
+      width: 17px !important;
+      height: 17px !important;
+      min-width: 17px;
+      padding: 0 !important;
+      margin: 1px 0 0 !important;
+      border: 1.5px solid #B39DDB !important;
+      border-radius: 4px !important;
+      accent-color: #5e3a8e;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .checklist-row-label {
+      font-size: 13px;
+      font-weight: 400;
+      color: #3a3448;
+      line-height: 1.45;
+    }
+    .checklist-box-footer {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .checklist-saved-msg {
+      font-size: 12px;
+      color: #2e7d32;
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
@@ -3291,22 +3396,24 @@
 
     function renderChecklistBlock(slotId, stage) {
       const rows = CHECKLIST_ITEMS.map(item => `
-        <label style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;font-size:13px;color:#333;cursor:pointer;">
-          <input type="checkbox" class="checklist-item" data-key="${item.key}" data-label="${escapeHtml(item.label)}" id="chk_${stage}_${slotId}_${item.key}" style="margin-top:3px;flex-shrink:0;">
-          <span>${item.label}</span>
+        <label class="checklist-row" id="chkRow_${stage}_${slotId}_${item.key}" for="chk_${stage}_${slotId}_${item.key}">
+          <input type="checkbox" class="checklist-item" data-key="${item.key}" data-label="${escapeHtml(item.label)}" id="chk_${stage}_${slotId}_${item.key}">
+          <span class="checklist-row-label">${item.label}</span>
         </label>
       `).join('');
 
       return `
-        <div id="checklistSection_${stage}_${slotId}" style="background:#F5F0FF;border:1px solid #E0D4F7;border-radius:10px;padding:15px;margin-bottom:20px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-            <strong style="color:#5e3a8e;">📋 Kapruka Brand Guidelines Checklist</strong>
-            <span id="checklistCounter_${stage}_${slotId}" style="font-size:12px;font-weight:600;color:#5e3a8e;background:#fff;padding:3px 10px;border-radius:12px;">0 / ${CHECKLIST_ITEMS.length}</span>
+        <div id="checklistSection_${stage}_${slotId}" class="checklist-box">
+          <div class="checklist-box-header">
+            <span class="checklist-box-title">📋 Kapruka Brand Guidelines Checklist</span>
+            <span id="checklistCounter_${stage}_${slotId}" class="checklist-counter">0 / ${CHECKLIST_ITEMS.length} passed</span>
           </div>
-          <div id="checklistItems_${stage}_${slotId}">${rows}</div>
-          <div style="display:flex;align-items:center;gap:10px;margin-top:10px;">
-            <button type="button" id="saveChecklist_${stage}_${slotId}" class="btn" style="background:#5e3a8e;color:#fff;padding:6px 14px;font-size:12px;">💾 Save Checklist</button>
-            <span id="checklistSavedMsg_${stage}_${slotId}" style="font-size:12px;color:#2e7d32;"></span>
+          <div class="checklist-box-hint">Guides this review — doesn't block approval. Save to record it in the activity log.</div>
+          <div class="checklist-progress-track"><div id="checklistProgress_${stage}_${slotId}" class="checklist-progress-fill"></div></div>
+          <div id="checklistItems_${stage}_${slotId}" class="checklist-items">${rows}</div>
+          <div class="checklist-box-footer">
+            <button type="button" id="saveChecklist_${stage}_${slotId}" class="btn" style="background:#5e3a8e;color:#fff;padding:7px 16px;font-size:12px;">💾 Save Checklist</button>
+            <span id="checklistSavedMsg_${stage}_${slotId}" class="checklist-saved-msg"></span>
           </div>
         </div>
       `;
@@ -3315,10 +3422,16 @@
     function updateChecklistCounter(slotId, stage) {
       const section = document.getElementById(`checklistSection_${stage}_${slotId}`);
       const counter = document.getElementById(`checklistCounter_${stage}_${slotId}`);
+      const progress = document.getElementById(`checklistProgress_${stage}_${slotId}`);
       if (!section || !counter) return;
-      const boxes = section.querySelectorAll('.checklist-item');
-      const passed = Array.from(boxes).filter(b => b.checked).length;
-      counter.textContent = `${passed} / ${boxes.length}`;
+      const boxes = Array.from(section.querySelectorAll('.checklist-item'));
+      const passed = boxes.filter(b => b.checked).length;
+      counter.textContent = `${passed} / ${boxes.length} passed`;
+      if (progress) progress.style.width = `${boxes.length ? (passed / boxes.length) * 100 : 0}%`;
+      boxes.forEach(b => {
+        const row = document.getElementById(`chkRow_${stage}_${slotId}_${b.dataset.key}`);
+        if (row) row.classList.toggle('is-checked', b.checked);
+      });
     }
 
     function collectChecklistResults(slotId, stage) {
@@ -4151,7 +4264,6 @@
                 ` : ''}
                 ${rejectionHtml}
                 ${postedUpdateHtml}
-                ${dm.content_id ? renderChecklistBlock(dm.content_id, 'dm') : ''}
               </div>
               <div class="dm-approval-actions">
                 ${dm.dm_status === 'Pending' ? `
@@ -4163,6 +4275,7 @@
                 ` : ''}
               </div>
             </div>
+            ${dm.content_id ? renderChecklistBlock(dm.content_id, 'dm') : ''}
           </div>
         `;
       }).join('');
