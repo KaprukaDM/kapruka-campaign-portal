@@ -1062,6 +1062,7 @@
         <button class="tab-btn" onclick="switchTab('studio')">🎬 Studio Calendar</button>
         <button class="tab-btn" onclick="switchTab('hotproducts')">🔥 Hot Products</button>
         <button class="tab-btn" onclick="switchTab('departments')">🏢 Department Config</button>
+        <button class="tab-btn" onclick="switchTab('postingcal')">🗓️ Posting Calendar</button>
         <button class="tab-btn" style="margin-left:auto;background:#d32f2f;" onclick="logout()">Logout</button>
       </div>
 
@@ -1670,6 +1671,54 @@
           </div>
         </div>
       </div>
+
+      <!-- POSTING CALENDAR TAB -->
+      <div id="tab-postingcal" class="tab-content">
+        <style>
+          .pcal-layout { display: grid; grid-template-columns: 380px 1fr; gap: 20px; align-items: start; }
+          @media (max-width: 900px) { .pcal-layout { grid-template-columns: 1fr; } }
+          .pcal-list { display: flex; flex-direction: column; gap: 10px; max-height: 65vh; overflow-y: auto; }
+          .pcal-post {
+            border: 1px solid rgba(0,0,0,0.1); border-radius: 10px; padding: 12px 14px; cursor: pointer;
+            transition: border-color .12s, background .12s;
+          }
+          .pcal-post:hover { border-color: var(--primary-purple); }
+          .pcal-post.selected { border-color: var(--primary-purple); background: rgba(94,58,142,0.07); }
+          .pcal-post .pcal-row1 { display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 700; }
+          .pcal-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 100px; text-transform: uppercase; }
+          .pcal-badge.Image { background: #f3eeff; color: var(--primary-purple-dark); }
+          .pcal-badge.Video { background: #fef3c7; color: #b45309; }
+          .pcal-snippet {
+            margin-top: 6px; font-size: 12.5px; color: #333; line-height: 1.4;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+          }
+          .pcal-empty { color: #888; font-size: 13px; padding: 20px 0; text-align: center; }
+          .pcal-slots { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+          .pcal-slot { border: 1px solid rgba(0,0,0,0.16); border-radius: 100px; padding: 5px 12px; font-size: 12px; font-weight: 600; }
+          .pcal-slot.free { background: #dcfce7; border-color: transparent; color: #137333; }
+          .pcal-slot.taken { background: #fee2e2; border-color: transparent; color: #dc2626; text-decoration: line-through; }
+          .pcal-slot.next { box-shadow: 0 0 0 2px var(--primary-purple); }
+          .pcal-hint { font-size: 12px; color: #888; margin-top: 8px; }
+          .pcal-msg { margin-top: 12px; padding: 10px 12px; border-radius: 10px; font-size: 13px; font-weight: 500; }
+          .pcal-msg.ok { background: #dcfce7; color: #137333; }
+          .pcal-msg.err { background: #fee2e2; color: #dc2626; }
+          .pcal-placeholder { color: #bbb; font-size: 13px; text-align: center; padding: 60px 20px; }
+        </style>
+
+        <div class="pcal-layout">
+          <div class="card">
+            <h2 style="display:flex;justify-content:space-between;align-items:center;">
+              🟢 Good to Go
+              <span style="font-size:12px;font-weight:500;color:var(--primary-purple);cursor:pointer;" onclick="loadPostingCalendar()">↻ Refresh</span>
+            </h2>
+            <div id="pcalList" class="pcal-list"><div class="pcal-empty">Loading…</div></div>
+          </div>
+
+          <div class="card" id="pcalRightPanel">
+            <div class="pcal-placeholder">Select a Good-to-Go post on the left to schedule it.</div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1883,7 +1932,7 @@
 
           setTimeout(() => {
             const hash = window.location.hash.substring(1);
-            if (hash && ['requests', 'products', 'content', 'studio', 'dmapprovals', 'hotproducts', 'departments'].includes(hash)) {
+            if (hash && ['requests', 'products', 'content', 'studio', 'dmapprovals', 'hotproducts', 'departments', 'postingcal'].includes(hash)) {
               switchTab(hash);
             }
           }, 300);
@@ -1968,10 +2017,11 @@
       const tabBtns = document.querySelectorAll('.tab-btn');
       tabBtns.forEach(btn => {
         const btnText = btn.textContent.toLowerCase();
-        if (btnText.includes(tab) || 
-            (tab === 'hotproducts' && btnText.includes('hot')) || 
+        if (btnText.includes(tab) ||
+            (tab === 'hotproducts' && btnText.includes('hot')) ||
             (tab === 'departments' && btnText.includes('department')) ||
-            (tab === 'dmapprovals' && btnText.includes('dm'))) {
+            (tab === 'dmapprovals' && btnText.includes('dm')) ||
+            (tab === 'postingcal' && btnText.includes('posting'))) {
           btn.classList.add('active');
         }
       });
@@ -1989,6 +2039,8 @@
         loadDepartments();
       } else if (tab === 'dmapprovals') { // NEW
         loadDmApprovals();
+      } else if (tab === 'postingcal') {
+        loadPostingCalendar();
       }
     }
     
@@ -4238,6 +4290,125 @@
       currentStudioMonth = now.getMonth() + 1;
       currentStudioYear = now.getFullYear();
     })();
+
+    // ═══════════════════════════════════════════════════════════
+    // POSTING CALENDAR — schedules Good-to-Go posts from the
+    // Content Approval List sheet (via functions/api/posting-calendar.js)
+    // ═══════════════════════════════════════════════════════════
+    let pcalPosts = [];
+    let pcalSelected = null;
+
+    function pcalEscapeHtml(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    async function loadPostingCalendar() {
+      const list = document.getElementById('pcalList');
+      list.innerHTML = '<div class="pcal-empty">Loading…</div>';
+      try {
+        const res = await fetch('/api/posting-calendar');
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        pcalPosts = data.posts;
+        renderPcalList();
+      } catch (error) {
+        list.innerHTML = `<div class="pcal-empty">Failed to load: ${pcalEscapeHtml(error.message)}</div>`;
+      }
+    }
+
+    function renderPcalList() {
+      const list = document.getElementById('pcalList');
+      if (!pcalPosts.length) {
+        list.innerHTML = '<div class="pcal-empty">No Good to Go posts right now.</div>';
+        return;
+      }
+      list.innerHTML = pcalPosts.map(p => `
+        <div class="pcal-post${pcalSelected && pcalSelected.contentId === p.contentId ? ' selected' : ''}" onclick="selectPcalPost('${p.contentId}')">
+          <div class="pcal-row1">
+            <span>#${pcalEscapeHtml(p.contentId)} · ${pcalEscapeHtml(p.page)}</span>
+            <span class="pcal-badge ${p.contentType}">${p.contentType}</span>
+          </div>
+          <div class="pcal-snippet">${pcalEscapeHtml(p.primaryText)}</div>
+        </div>`).join('');
+    }
+
+    function selectPcalPost(id) {
+      pcalSelected = pcalPosts.find(p => p.contentId === id);
+      renderPcalList();
+      renderPcalForm();
+    }
+
+    function renderPcalForm() {
+      const today = new Date();
+      const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+      const panel = document.getElementById('pcalRightPanel');
+      panel.innerHTML = `
+        <h2>#${pcalEscapeHtml(pcalSelected.contentId)} — ${pcalEscapeHtml(pcalSelected.page)}
+          <span class="pcal-badge ${pcalSelected.contentType}">${pcalSelected.contentType}</span>
+        </h2>
+        <div class="form-group" style="margin-top:16px;">
+          <label>Schedule date</label>
+          <input type="date" id="pcalDateInput" min="${todayStr}">
+          <div id="pcalSlotInfo"></div>
+        </div>
+        <div class="form-group">
+          <label>Primary text</label>
+          <textarea id="pcalPrimaryText" rows="6" style="width:100%;">${pcalEscapeHtml(pcalSelected.primaryText)}</textarea>
+        </div>
+        <button class="btn btn-primary" id="pcalSaveBtn" onclick="savePcalSchedule()">Save schedule</button>
+        <div id="pcalMsg"></div>`;
+      document.getElementById('pcalDateInput').addEventListener('change', loadPcalSlots);
+    }
+
+    async function loadPcalSlots() {
+      const d = document.getElementById('pcalDateInput').value;
+      const slotInfo = document.getElementById('pcalSlotInfo');
+      if (!d) { slotInfo.innerHTML = ''; return; }
+      slotInfo.innerHTML = '<div class="pcal-hint">Checking availability…</div>';
+      try {
+        const res = await fetch('/api/posting-calendar?slotsFor=' + encodeURIComponent(d));
+        const info = await res.json();
+        if (info.error) throw new Error(info.error);
+        const html = info.slots.map((s, i) => {
+          const cls = s.available ? 'free' : 'taken';
+          const next = i === info.nextAvailableIndex ? ' next' : '';
+          return `<span class="pcal-slot ${cls}${next}">${s.time}</span>`;
+        }).join('');
+        const hint = info.stacking
+          ? 'All 5 slots taken that day — this will stack on the 9:00 PM slot.'
+          : `${info.freeCount} of ${info.slots.length} slots free. Saving lands it in the highlighted slot.`;
+        slotInfo.innerHTML = `<div class="pcal-slots">${html}</div><div class="pcal-hint">${hint}</div>`;
+      } catch (error) {
+        slotInfo.innerHTML = `<div class="pcal-hint">Couldn't check availability: ${pcalEscapeHtml(error.message)}</div>`;
+      }
+    }
+
+    async function savePcalSchedule() {
+      const d = document.getElementById('pcalDateInput').value;
+      const text = document.getElementById('pcalPrimaryText').value;
+      const msg = document.getElementById('pcalMsg');
+      if (!d) { msg.innerHTML = '<div class="pcal-msg err">Pick a date.</div>'; return; }
+      if (!text.trim()) { msg.innerHTML = '<div class="pcal-msg err">Primary text can\'t be empty.</div>'; return; }
+
+      const btn = document.getElementById('pcalSaveBtn');
+      btn.disabled = true;
+      msg.innerHTML = '<div class="pcal-hint">Saving…</div>';
+      try {
+        const res = await fetch('/api/posting-calendar', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contentId: pcalSelected.contentId, date: d, primaryText: text })
+        });
+        const result = await res.json();
+        if (!res.ok || result.error) throw new Error(result.error || 'Save failed');
+        msg.innerHTML = `<div class="pcal-msg ok">Scheduled for ${result.date} @ ${result.slot}${result.stacked ? ' (stacked)' : ''}.</div>`;
+        pcalSelected = null;
+        await loadPostingCalendar();
+        document.getElementById('pcalRightPanel').innerHTML = '<div class="pcal-placeholder">Select a Good-to-Go post on the left to schedule it.</div>';
+      } catch (error) {
+        btn.disabled = false;
+        msg.innerHTML = `<div class="pcal-msg err">${pcalEscapeHtml(error.message)}</div>`;
+      }
+    }
 </script>
 </body>
 </html>
