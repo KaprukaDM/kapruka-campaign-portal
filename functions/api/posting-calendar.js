@@ -74,13 +74,17 @@ function driveFolderId(url) {
   return m ? m[1] : null;
 }
 
-async function expandDriveFolder(token, folderId) {
+// Returns [{id, name}] for a folder's images, alphabetical — the natural/default order.
+async function listDriveFolderImages(token, folderId) {
   const q = encodeURIComponent(`'${folderId}' in parents and trashed = false and mimeType contains 'image/'`);
   const url = `${DRIVE_API}/files?q=${q}&fields=files(id,name)&orderBy=name&pageSize=${IG_CAROUSEL_MAX}`;
   const res = await fetch(url, { headers: { Authorization: 'Bearer ' + token } });
   const body = await res.json();
   if (!res.ok) throw new Error('Drive folder read failed: ' + JSON.stringify(body));
-  return (body.files || []).map(f => `https://drive.google.com/uc?export=download&id=${f.id}`);
+  return body.files || [];
+}
+function driveIdsToUrls(ids) {
+  return ids.map(id => `https://drive.google.com/uc?export=download&id=${id}`);
 }
 
 // ── Supabase ─────────────────────────────────────────────────────────────
@@ -211,6 +215,14 @@ export async function onRequestGet(context) {
   try {
     const url = new URL(request.url);
     const token = await getAccessToken(env);
+
+    // Browse a folder's images (for the manual reorder picker) — no sheet read needed.
+    const folderId = url.searchParams.get('folderId');
+    if (folderId) {
+      const files = await listDriveFolderImages(token, folderId);
+      return json({ images: files.map(f => ({ id: f.id, name: f.name })) });
+    }
+
     const sheetRows = await sheetsGet(env, token, `${SHEET_NAME}!A2:H`);
 
     const slotsFor = url.searchParams.get('slotsFor');
@@ -260,7 +272,7 @@ export async function onRequestGet(context) {
 export async function onRequestPost(context) {
   const { env, request } = context;
   try {
-    const { studioId, date, primaryText } = await request.json();
+    const { studioId, date, primaryText, mediaOrder } = await request.json();
     if (!studioId || !date) {
       return json({ error: 'studioId and date are required' }, 400);
     }
@@ -289,9 +301,15 @@ export async function onRequestPost(context) {
 
     const folderId = driveFolderId(mediaUrl);
     if (folderId) {
-      const images = await expandDriveFolder(token, folderId);
-      if (!images.length) return json({ error: 'That folder has no images in it (or Drive access failed) — nothing to post.' }, 422);
-      mediaUrl = images.join(',');
+      let orderedIds;
+      if (Array.isArray(mediaOrder) && mediaOrder.length) {
+        // Chamudhi picked a manual order in the UI — trust it, just cap/dedupe.
+        orderedIds = [...new Set(mediaOrder.map(String))].slice(0, IG_CAROUSEL_MAX);
+      } else {
+        orderedIds = (await listDriveFolderImages(token, folderId)).map(f => f.id);
+      }
+      if (!orderedIds.length) return json({ error: 'That folder has no images in it (or Drive access failed) — nothing to post.' }, 422);
+      mediaUrl = driveIdsToUrls(orderedIds).join(',');
       mediaType = 'Image';
     }
 

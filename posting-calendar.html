@@ -75,8 +75,10 @@
   .badge.Video { background: var(--amber-bg); color: var(--amber); }
   .badge.Folder { background: #dcfce7; color: #137333; }
   .post-card .page { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+  .post-card .row2 { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+  .post-card .thumb { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; flex-shrink: 0; background: var(--surface2); border: 1px solid var(--border); }
   .post-card .snippet {
-    margin-top: 6px; font-size: 12.5px; color: #333; line-height: 1.4;
+    font-size: 12.5px; color: #333; line-height: 1.4;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
   }
   .empty { color: var(--text-muted); font-size: 13px; padding: 20px 0; text-align: center; }
@@ -88,6 +90,23 @@
   .media-link { color: var(--purple); font-weight: 600; text-decoration: none; }
   .media-link:hover { text-decoration: underline; }
   .media-missing { color: var(--red); font-size: 12px; }
+
+  .preview-box { margin: 14px 0; }
+  .preview-img {
+    width: 100%; max-height: 320px; object-fit: contain; border-radius: 12px;
+    border: 1px solid var(--border); background: var(--surface2); display: block; cursor: pointer;
+  }
+  .preview-fallback { font-size: 12px; color: var(--text-muted); text-align: center; padding: 30px; border: 1px dashed var(--border-strong); border-radius: 12px; }
+
+  .folder-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px; }
+  .folder-thumb { position: relative; border-radius: 8px; overflow: hidden; border: 2px solid transparent; cursor: pointer; aspect-ratio: 1; background: var(--surface2); }
+  .folder-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .folder-thumb.picked { border-color: var(--purple); }
+  .folder-order-badge {
+    position: absolute; top: 4px; left: 4px; background: var(--purple); color: #fff;
+    font-size: 11px; font-weight: 700; width: 20px; height: 20px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+  }
 
   .schedule-form label { display: block; font-size: 12px; font-weight: 700; margin: 16px 0 6px; }
   .schedule-form label:first-child { margin-top: 0; }
@@ -217,18 +236,42 @@
       list.innerHTML = '<div class="empty">No Good to Go posts right now.</div>';
       return;
     }
-    list.innerHTML = posts.map(p => `
+    list.innerHTML = posts.map(p => {
+      const thumbUrl = driveThumbUrl(p.mediaUrl);
+      const thumb = thumbUrl ? `<img class="thumb" src="${thumbUrl}" loading="lazy" onerror="this.style.display='none'">` : '';
+      return `
       <div class="post-card${selected && selected.contentId === p.contentId ? ' selected' : ''}" onclick="selectPost('${p.contentId}')">
         <div class="row1">
           <span>#${escapeHtml(p.contentId)} · ${escapeHtml(p.page)}</span>
           <span class="badge ${p.contentType}">${p.contentType}</span>
         </div>
-        <div class="snippet">${escapeHtml(p.primaryText)}</div>
-      </div>`).join('');
+        <div class="row2">
+          ${thumb}
+          <div class="snippet">${escapeHtml(p.primaryText)}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Drive files whose sharing is "Anyone with the link" expose a public
+  // thumbnail endpoint — no OAuth needed for this, unlike the Sheets/Drive API.
+  function driveFileId(url) {
+    if (!url) return null;
+    const m1 = url.match(/\/file\/d\/([^\/\?&]+)/);
+    if (m1) return m1[1];
+    const m2 = url.match(/[?&]id=([^&]+)/);
+    if (m2) return m2[1];
+    return null;
+  }
+  function driveThumbUrl(url, size) {
+    const id = driveFileId(url);
+    return id ? `https://drive.google.com/thumbnail?id=${id}&sz=w${size || 200}` : null;
   }
 
   function selectPost(id) {
     selected = posts.find(p => p.contentId === id);
+    folderImages = [];
+    folderOrder = [];
     renderPosts();
     renderForm();
   }
@@ -238,6 +281,15 @@
     const mediaRow = selected.mediaUrl
       ? `<a href="${escapeHtml(selected.mediaUrl)}" target="_blank" rel="noopener" class="media-link">🔗 Open media (Drive)</a>`
       : `<span class="media-missing">No media link on this item</span>`;
+    const bigThumb = driveThumbUrl(selected.mediaUrl, 700);
+    const previewHtml = selected.isFolder
+      ? `<div id="folderPicker" class="folder-grid"><div class="hint">Loading images…</div></div>
+         <div class="hint">Click images in the order you want them posted. Leave unclicked to use the default (alphabetical) order. <span class="refresh-link" onclick="folderOrder=[];renderFolderPicker();">Clear order</span></div>`
+      : bigThumb
+        ? `<img class="preview-img" src="${bigThumb}" onclick="window.open('${escapeHtml(selected.mediaUrl)}','_blank')" onerror="this.outerHTML='<div class=&quot;preview-fallback&quot;>No preview available for this link.</div>'">`
+        : selected.mediaUrl
+          ? `<div class="preview-fallback">No preview available for this link.</div>`
+          : '';
     panel.innerHTML = `
       <h2>#${escapeHtml(selected.contentId)}</h2>
       <div class="detail-grid">
@@ -245,6 +297,7 @@
         <div><span class="detail-label">Type</span><span class="detail-value"><span class="badge ${selected.contentType}">${selected.contentType}</span></span></div>
         <div><span class="detail-label">Media</span><span class="detail-value">${mediaRow}</span></div>
       </div>
+      ${previewHtml ? `<div class="preview-box">${previewHtml}</div>` : ''}
       <div class="schedule-form">
         <label>Schedule date</label>
         <input type="date" id="dateInput" min="${todayStr()}">
@@ -257,6 +310,52 @@
         <div id="msg"></div>
       </div>`;
     document.getElementById('dateInput').addEventListener('change', loadSlots);
+    if (selected.isFolder) loadFolderPicker();
+  }
+
+  // ── Folder reorder picker ──────────────────────────────────────
+  let folderImages = [];
+  let folderOrder = []; // array of Drive file ids, in the order clicked
+
+  function driveFolderIdFromUrl(url) {
+    const m = String(url || '').match(/drive\.google\.com\/drive\/folders\/([^\/\?&]+)/);
+    return m ? m[1] : null;
+  }
+
+  async function loadFolderPicker() {
+    const folderId = driveFolderIdFromUrl(selected.mediaUrl);
+    const box = document.getElementById('folderPicker');
+    if (!folderId || !box) return;
+    try {
+      const res = await fetch('/api/posting-calendar?folderId=' + encodeURIComponent(folderId));
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      folderImages = data.images;
+      renderFolderPicker();
+    } catch (e) {
+      box.innerHTML = `<div class="hint">Couldn't load folder contents: ${escapeHtml(e.message)}</div>`;
+    }
+  }
+
+  function renderFolderPicker() {
+    const box = document.getElementById('folderPicker');
+    if (!box) return;
+    if (!folderImages.length) { box.innerHTML = '<div class="hint">No images found in that folder.</div>'; return; }
+    box.innerHTML = folderImages.map(img => {
+      const orderIdx = folderOrder.indexOf(img.id);
+      const badge = orderIdx >= 0 ? `<div class="folder-order-badge">${orderIdx + 1}</div>` : '';
+      return `<div class="folder-thumb${orderIdx >= 0 ? ' picked' : ''}" onclick="toggleFolderImage('${img.id}')" title="${escapeHtml(img.name)}">
+        <img src="https://drive.google.com/thumbnail?id=${img.id}&sz=w200" loading="lazy">
+        ${badge}
+      </div>`;
+    }).join('');
+  }
+
+  function toggleFolderImage(id) {
+    const idx = folderOrder.indexOf(id);
+    if (idx >= 0) folderOrder.splice(idx, 1);
+    else folderOrder.push(id);
+    renderFolderPicker();
   }
 
   async function loadSlots() {
@@ -295,7 +394,7 @@
     try {
       const res = await fetch('/api/posting-calendar', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ studioId: selected.studioId, date: d, primaryText: text })
+        body: JSON.stringify({ studioId: selected.studioId, date: d, primaryText: text, mediaOrder: selected.isFolder ? folderOrder : undefined })
       });
       const result = await res.json();
       if (!res.ok || result.error) throw new Error(result.error || 'Save failed');
