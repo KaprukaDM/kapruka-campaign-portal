@@ -1100,8 +1100,8 @@
       border-color: #C7B3EA;
     }
     .checklist-row.is-checked {
-      background: #EEF8EF;
-      border-color: #BFE3C2;
+      background: #FDECEC;
+      border-color: #F0B4B4;
     }
     .checklist-row input[type="checkbox"] {
       width: 17px !important;
@@ -1111,9 +1111,17 @@
       margin: 1px 0 0 !important;
       border: 1.5px solid #B39DDB !important;
       border-radius: 4px !important;
-      accent-color: #5e3a8e;
+      accent-color: #D32F2F;
       flex-shrink: 0;
       cursor: pointer;
+    }
+    .checklist-counter.has-issues {
+      color: #C62828;
+      background: #FDECEC;
+      border-color: #F0B4B4;
+    }
+    .checklist-progress-fill.has-issues {
+      background: #D32F2F;
     }
     .checklist-row-label {
       font-size: 13px;
@@ -3406,9 +3414,9 @@
         <div id="checklistSection_${stage}_${slotId}" class="checklist-box">
           <div class="checklist-box-header">
             <span class="checklist-box-title">📋 Kapruka Brand Guidelines Checklist</span>
-            <span id="checklistCounter_${stage}_${slotId}" class="checklist-counter">0 / ${CHECKLIST_ITEMS.length} passed</span>
+            <span id="checklistCounter_${stage}_${slotId}" class="checklist-counter">No issues found</span>
           </div>
-          <div class="checklist-box-hint">Guides this review — doesn't block approval. Save to record it in the activity log.</div>
+          <div class="checklist-box-hint">Tick only what's missing or not followed — leave the rest unticked. Doesn't block approval. Save to record it in the activity log.</div>
           <div class="checklist-progress-track"><div id="checklistProgress_${stage}_${slotId}" class="checklist-progress-fill"></div></div>
           <div id="checklistItems_${stage}_${slotId}" class="checklist-items">${rows}</div>
           <div class="checklist-box-footer">
@@ -3419,15 +3427,21 @@
       `;
     }
 
+    // Checkbox semantics: checked = this guideline is NOT met (an issue).
+    // Unchecked = fine. So "passed" for a given item is the inverse of .checked.
     function updateChecklistCounter(slotId, stage) {
       const section = document.getElementById(`checklistSection_${stage}_${slotId}`);
       const counter = document.getElementById(`checklistCounter_${stage}_${slotId}`);
       const progress = document.getElementById(`checklistProgress_${stage}_${slotId}`);
       if (!section || !counter) return;
       const boxes = Array.from(section.querySelectorAll('.checklist-item'));
-      const passed = boxes.filter(b => b.checked).length;
-      counter.textContent = `${passed} / ${boxes.length} passed`;
-      if (progress) progress.style.width = `${boxes.length ? (passed / boxes.length) * 100 : 0}%`;
+      const issues = boxes.filter(b => b.checked).length;
+      counter.textContent = issues === 0 ? 'No issues found' : `${issues} issue${issues > 1 ? 's' : ''} found`;
+      counter.classList.toggle('has-issues', issues > 0);
+      if (progress) {
+        progress.style.width = `${boxes.length ? (issues / boxes.length) * 100 : 0}%`;
+        progress.classList.toggle('has-issues', issues > 0);
+      }
       boxes.forEach(b => {
         const row = document.getElementById(`chkRow_${stage}_${slotId}_${b.dataset.key}`);
         if (row) row.classList.toggle('is-checked', b.checked);
@@ -3437,10 +3451,11 @@
     function collectChecklistResults(slotId, stage) {
       const section = document.getElementById(`checklistSection_${stage}_${slotId}`);
       if (!section) return [];
+      // checked = flagged as an issue, so "passed" is the inverse of .checked.
       return Array.from(section.querySelectorAll('.checklist-item')).map(b => ({
         key: b.dataset.key,
         label: b.dataset.label,
-        passed: b.checked
+        passed: !b.checked
       }));
     }
 
@@ -3454,7 +3469,7 @@
         if (latest && Array.isArray(latest.results)) {
           latest.results.forEach(r => {
             const box = document.getElementById(`chk_${stage}_${slotId}_${r.key}`);
-            if (box) box.checked = !!r.passed;
+            if (box) box.checked = !r.passed;
           });
           window._checklistFailedCache[`${stage}:${slotId}`] =
             latest.results.filter(r => !r.passed).map(r => r.label);
