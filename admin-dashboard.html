@@ -1693,6 +1693,14 @@
             display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
           }
           .pcal-empty { color: #888; font-size: 13px; padding: 20px 0; text-align: center; }
+          .pcal-detail-grid { display: flex; flex-direction: column; gap: 8px; margin: 14px 0 4px; padding: 12px 14px; background: #f7f5fb; border-radius: 10px; }
+          .pcal-detail-grid > div { display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+          .pcal-detail-label { font-weight: 700; color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+          .pcal-detail-value { color: #111; font-weight: 500; }
+          .pcal-media-link { color: var(--primary-purple); font-weight: 600; text-decoration: none; }
+          .pcal-media-link:hover { text-decoration: underline; }
+          .pcal-media-missing { color: #dc2626; font-size: 12px; }
+          #tab-postingcal input[type=date] { color: #111; color-scheme: light; }
           .pcal-slots { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
           .pcal-slot { border: 1px solid rgba(0,0,0,0.16); border-radius: 100px; padding: 5px 12px; font-size: 12px; font-weight: 600; }
           .pcal-slot.free { background: #dcfce7; border-color: transparent; color: #137333; }
@@ -4342,10 +4350,16 @@
       const today = new Date();
       const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
       const panel = document.getElementById('pcalRightPanel');
+      const mediaRow = pcalSelected.mediaUrl
+        ? `<a href="${pcalEscapeHtml(pcalSelected.mediaUrl)}" target="_blank" rel="noopener" class="pcal-media-link">🔗 Open media (Drive)</a>`
+        : `<span class="pcal-media-missing">No media link on this item</span>`;
       panel.innerHTML = `
-        <h2>#${pcalEscapeHtml(pcalSelected.contentId)} — ${pcalEscapeHtml(pcalSelected.page)}
-          <span class="pcal-badge ${pcalSelected.contentType}">${pcalSelected.contentType}</span>
-        </h2>
+        <h2>#${pcalEscapeHtml(pcalSelected.contentId)}</h2>
+        <div class="pcal-detail-grid">
+          <div><span class="pcal-detail-label">Page</span><span class="pcal-detail-value">${pcalEscapeHtml(pcalSelected.page)}</span></div>
+          <div><span class="pcal-detail-label">Type</span><span class="pcal-detail-value"><span class="pcal-badge ${pcalSelected.contentType}">${pcalSelected.contentType}</span></span></div>
+          <div><span class="pcal-detail-label">Media</span><span class="pcal-detail-value">${mediaRow}</span></div>
+        </div>
         <div class="form-group" style="margin-top:16px;">
           <label>Schedule date</label>
           <input type="date" id="pcalDateInput" min="${todayStr}">
@@ -4353,7 +4367,7 @@
         </div>
         <div class="form-group">
           <label>Primary text</label>
-          <textarea id="pcalPrimaryText" rows="6" style="width:100%;">${pcalEscapeHtml(pcalSelected.primaryText)}</textarea>
+          <textarea id="pcalPrimaryText" rows="6" style="width:100%;color:#111;background:#fff;">${pcalEscapeHtml(pcalSelected.primaryText)}</textarea>
         </div>
         <button class="btn btn-primary" id="pcalSaveBtn" onclick="savePcalSchedule()">Save schedule</button>
         <div id="pcalMsg"></div>`;
@@ -4387,6 +4401,7 @@
       const d = document.getElementById('pcalDateInput').value;
       const text = document.getElementById('pcalPrimaryText').value;
       const msg = document.getElementById('pcalMsg');
+      if (!pcalSelected || !pcalSelected.studioId) { msg.innerHTML = '<div class="pcal-msg err">No post selected — click Refresh and pick a post again.</div>'; return; }
       if (!d) { msg.innerHTML = '<div class="pcal-msg err">Pick a date.</div>'; return; }
       if (!text.trim()) { msg.innerHTML = '<div class="pcal-msg err">Primary text can\'t be empty.</div>'; return; }
 

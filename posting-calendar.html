@@ -80,11 +80,20 @@
   }
   .empty { color: var(--text-muted); font-size: 13px; padding: 20px 0; text-align: center; }
 
+  .detail-grid { display: flex; flex-direction: column; gap: 8px; margin: 14px 0 18px; padding: 12px 14px; background: var(--surface2); border-radius: 10px; }
+  .detail-grid > div { display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+  .detail-label { font-weight: 700; color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+  .detail-value { color: var(--text); font-weight: 500; }
+  .media-link { color: var(--purple); font-weight: 600; text-decoration: none; }
+  .media-link:hover { text-decoration: underline; }
+  .media-missing { color: var(--red); font-size: 12px; }
+
   .schedule-form label { display: block; font-size: 12px; font-weight: 700; margin: 16px 0 6px; }
   .schedule-form label:first-child { margin-top: 0; }
   input[type=date], textarea {
     width: 100%; padding: 10px 12px; border: 1px solid var(--border-strong); border-radius: 10px;
     font-family: inherit; font-size: 13px; background: var(--surface2);
+    color: var(--text); color-scheme: light;
   }
   textarea { min-height: 140px; resize: vertical; line-height: 1.5; }
   input[type=date]:focus, textarea:focus { outline: 2px solid var(--purple-mid); border-color: var(--purple); }
@@ -180,8 +189,16 @@
 
   function renderForm() {
     const panel = document.getElementById('rightPanel');
+    const mediaRow = selected.mediaUrl
+      ? `<a href="${escapeHtml(selected.mediaUrl)}" target="_blank" rel="noopener" class="media-link">🔗 Open media (Drive)</a>`
+      : `<span class="media-missing">No media link on this item</span>`;
     panel.innerHTML = `
-      <h2>#${escapeHtml(selected.contentId)} — ${escapeHtml(selected.page)} <span class="badge ${selected.contentType}">${selected.contentType}</span></h2>
+      <h2>#${escapeHtml(selected.contentId)}</h2>
+      <div class="detail-grid">
+        <div><span class="detail-label">Page</span><span class="detail-value">${escapeHtml(selected.page)}</span></div>
+        <div><span class="detail-label">Type</span><span class="detail-value"><span class="badge ${selected.contentType}">${selected.contentType}</span></span></div>
+        <div><span class="detail-label">Media</span><span class="detail-value">${mediaRow}</span></div>
+      </div>
       <div class="schedule-form">
         <label>Schedule date</label>
         <input type="date" id="dateInput" min="${todayStr()}">
@@ -223,6 +240,7 @@
     const d = document.getElementById('dateInput').value;
     const text = document.getElementById('primaryText').value;
     const msg = document.getElementById('msg');
+    if (!selected || !selected.studioId) { msg.innerHTML = '<div class="msg err">No post selected — click Refresh and pick a post again.</div>'; return; }
     if (!d) { msg.innerHTML = '<div class="msg err">Pick a date.</div>'; return; }
     if (!text.trim()) { msg.innerHTML = '<div class="msg err">Primary text can\\'t be empty.</div>'; return; }
 
