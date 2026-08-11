@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Posting Calendar — Kapruka</title>
+<link rel="icon" type="image/png" href="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:            #f5f4f0;
+    --surface:       #fffffe;
+    --surface2:      #f0ede8;
+    --border:        rgba(0,0,0,0.07);
+    --border-strong: rgba(0,0,0,0.16);
+    --text:          #111;
+    --text-muted:    #888;
+    --text-faint:    #bbb;
+    --purple:        #5e3a8e;
+    --purple-dark:   #4a2d70;
+    --purple-light:  #f3eeff;
+    --purple-mid:    rgba(94,58,142,0.08);
+    --green:         #16a34a;
+    --green-bg:      #dcfce7;
+    --amber:         #b45309;
+    --amber-bg:      #fef3c7;
+    --red:           #dc2626;
+    --red-bg:        #fee2e2;
+  }
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg); color: var(--text); min-height: 100vh;
+    padding: 40px 20px; -webkit-font-smoothing: antialiased;
+  }
+  .container { max-width: 1100px; margin: 0 auto; }
+  .header {
+    background: var(--surface); padding: 20px 28px; border-radius: 16px;
+    margin-bottom: 20px; border: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;
+  }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .kapruka-logo { width: 40px; height: 40px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); flex-shrink: 0; }
+  .kapruka-logo img { width: 100%; height: 100%; object-fit: cover; }
+  h1 { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; }
+  .subtitle { font-size: 11px; font-weight: 700; letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-muted); margin-top: 3px; }
+  .back-btn {
+    padding: 8px 20px; background: var(--purple); color: #fff; border: none;
+    border-radius: 10px; cursor: pointer; font-weight: 500; font-size: 13px;
+    font-family: 'DM Sans', sans-serif; text-decoration: none; display: inline-block;
+    transition: opacity 0.15s;
+  }
+  .back-btn:hover { opacity: 0.85; }
+
+  .layout { display: grid; grid-template-columns: 380px 1fr; gap: 20px; align-items: start; }
+  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
+
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 22px; }
+  .panel h2 { font-size: 14px; font-weight: 700; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; }
+  .refresh-link { font-size: 12px; font-weight: 500; color: var(--purple); cursor: pointer; }
+  .refresh-link:hover { text-decoration: underline; }
+
+  .post-list { display: flex; flex-direction: column; gap: 10px; max-height: 65vh; overflow-y: auto; }
+  .post-card {
+    border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; cursor: pointer;
+    transition: border-color .12s, background .12s;
+  }
+  .post-card:hover { border-color: var(--border-strong); }
+  .post-card.selected { border-color: var(--purple); background: var(--purple-mid); }
+  .post-card .row1 { display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 700; }
+  .badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 100px; text-transform: uppercase; letter-spacing: .04em; }
+  .badge.Image { background: var(--purple-light); color: var(--purple-dark); }
+  .badge.Video { background: var(--amber-bg); color: var(--amber); }
+  .post-card .page { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+  .post-card .snippet {
+    margin-top: 6px; font-size: 12.5px; color: #333; line-height: 1.4;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .empty { color: var(--text-muted); font-size: 13px; padding: 20px 0; text-align: center; }
+
+  .schedule-form label { display: block; font-size: 12px; font-weight: 700; margin: 16px 0 6px; }
+  .schedule-form label:first-child { margin-top: 0; }
+  input[type=date], textarea {
+    width: 100%; padding: 10px 12px; border: 1px solid var(--border-strong); border-radius: 10px;
+    font-family: inherit; font-size: 13px; background: var(--surface2);
+  }
+  textarea { min-height: 140px; resize: vertical; line-height: 1.5; }
+  input[type=date]:focus, textarea:focus { outline: 2px solid var(--purple-mid); border-color: var(--purple); }
+
+  .slots { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .slot { border: 1px solid var(--border-strong); border-radius: 100px; padding: 5px 12px; font-size: 12px; font-weight: 600; }
+  .slot.free { background: var(--green-bg); border-color: transparent; color: #137333; }
+  .slot.taken { background: var(--red-bg); border-color: transparent; color: var(--red); text-decoration: line-through; }
+  .slot.next { box-shadow: 0 0 0 2px var(--purple); }
+  .hint { font-size: 12px; color: var(--text-muted); margin-top: 8px; }
+
+  .save-btn {
+    margin-top: 20px; width: 100%; padding: 12px; background: var(--purple); color: #fff;
+    border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; transition: opacity .15s;
+  }
+  .save-btn:hover { opacity: .9; }
+  .save-btn:disabled { background: var(--surface2); color: var(--text-faint); cursor: not-allowed; }
+
+  .msg { margin-top: 12px; padding: 10px 12px; border-radius: 10px; font-size: 13px; font-weight: 500; }
+  .msg.ok { background: var(--green-bg); color: #137333; }
+  .msg.err { background: var(--red-bg); color: var(--red); }
+
+  .placeholder { color: var(--text-faint); font-size: 13px; text-align: center; padding: 60px 20px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="header-left">
+      <div class="kapruka-logo"><img src="kapruka_com_logo.jpg" alt="Kapruka"></div>
+      <div>
+        <h1>Posting Calendar</h1>
+        <p class="subtitle">Schedule Good-to-Go posts</p>
+      </div>
+    </div>
+    <a href="index.html" class="back-btn">← Back to Portal</a>
+  </div>
+
+  <div class="layout">
+
+    <div class="panel">
+      <h2>Good to Go <span class="refresh-link" onclick="loadPosts()">↻ Refresh</span></h2>
+      <div id="postList" class="post-list"><div class="empty">Loading…</div></div>
+    </div>
+
+    <div class="panel" id="rightPanel">
+      <div class="placeholder">Select a Good-to-Go post on the left to schedule it.</div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  let posts = [];
+  let selected = null;
+
+  async function loadPosts() {
+    document.getElementById('postList').innerHTML = '<div class="empty">Loading…</div>';
+    try {
+      const res = await fetch('/api/posting-calendar');
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      posts = data.posts;
+      renderPosts();
+    } catch (e) {
+      document.getElementById('postList').innerHTML = `<div class="empty">Failed to load: ${escapeHtml(e.message)}</div>`;
+    }
+  }
+
+  function renderPosts() {
+    const list = document.getElementById('postList');
+    if (!posts.length) {
+      list.innerHTML = '<div class="empty">No Good to Go posts right now.</div>';
+      return;
+    }
+    list.innerHTML = posts.map(p => `
+      <div class="post-card${selected && selected.contentId === p.contentId ? ' selected' : ''}" onclick="selectPost('${p.contentId}')">
+        <div class="row1">
+          <span>#${escapeHtml(p.contentId)} · ${escapeHtml(p.page)}</span>
+          <span class="badge ${p.contentType}">${p.contentType}</span>
+        </div>
+        <div class="snippet">${escapeHtml(p.primaryText)}</div>
+      </div>`).join('');
+  }
+
+  function selectPost(id) {
+    selected = posts.find(p => p.contentId === id);
+    renderPosts();
+    renderForm();
+  }
+
+  function renderForm() {
+    const panel = document.getElementById('rightPanel');
+    panel.innerHTML = `
+      <h2>#${escapeHtml(selected.contentId)} — ${escapeHtml(selected.page)} <span class="badge ${selected.contentType}">${selected.contentType}</span></h2>
+      <div class="schedule-form">
+        <label>Schedule date</label>
+        <input type="date" id="dateInput" min="${todayStr()}">
+        <div id="slotInfo"></div>
+
+        <label>Primary text</label>
+        <textarea id="primaryText">${escapeHtml(selected.primaryText)}</textarea>
+
+        <button class="save-btn" id="saveBtn" onclick="save()">Save schedule</button>
+        <div id="msg"></div>
+      </div>`;
+    document.getElementById('dateInput').addEventListener('change', loadSlots);
+  }
+
+  async function loadSlots() {
+    const d = document.getElementById('dateInput').value;
+    const slotInfo = document.getElementById('slotInfo');
+    if (!d) { slotInfo.innerHTML = ''; return; }
+    slotInfo.innerHTML = '<div class="hint">Checking availability…</div>';
+    try {
+      const res = await fetch('/api/posting-calendar?slotsFor=' + encodeURIComponent(d));
+      const info = await res.json();
+      if (info.error) throw new Error(info.error);
+      const html = info.slots.map((s, i) => {
+        const cls = s.available ? 'free' : 'taken';
+        const next = i === info.nextAvailableIndex ? ' next' : '';
+        return `<span class="slot ${cls}${next}">${s.time}</span>`;
+      }).join('');
+      const hint = info.stacking
+        ? 'All 5 slots taken that day — this will stack on the 9:00 PM slot.'
+        : `${info.freeCount} of ${info.slots.length} slots free. Saving lands it in the highlighted slot.`;
+      slotInfo.innerHTML = `<div class="slots">${html}</div><div class="hint">${hint}</div>`;
+    } catch (e) {
+      slotInfo.innerHTML = `<div class="hint">Couldn't check availability: ${escapeHtml(e.message)}</div>`;
+    }
+  }
+
+  async function save() {
+    const d = document.getElementById('dateInput').value;
+    const text = document.getElementById('primaryText').value;
+    const msg = document.getElementById('msg');
+    if (!d) { msg.innerHTML = '<div class="msg err">Pick a date.</div>'; return; }
+    if (!text.trim()) { msg.innerHTML = '<div class="msg err">Primary text can\\'t be empty.</div>'; return; }
+
+    const btn = document.getElementById('saveBtn');
+    btn.disabled = true;
+    msg.innerHTML = '<div class="hint">Saving…</div>';
+    try {
+      const res = await fetch('/api/posting-calendar', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contentId: selected.contentId, date: d, primaryText: text })
+      });
+      const result = await res.json();
+      if (!res.ok || result.error) throw new Error(result.error || 'Save failed');
+      msg.innerHTML = `<div class="msg ok">Scheduled for ${result.date} @ ${result.slot}${result.stacked ? ' (stacked)' : ''}.</div>`;
+      selected = null;
+      await loadPosts();
+      document.getElementById('rightPanel').innerHTML = '<div class="placeholder">Select a Good-to-Go post on the left to schedule it.</div>';
+    } catch (e) {
+      btn.disabled = false;
+      msg.innerHTML = `<div class="msg err">${escapeHtml(e.message)}</div>`;
+    }
+  }
+
+  function todayStr() {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  loadPosts();
+</script>
+</body>
+</html>
