@@ -235,7 +235,16 @@ export async function onRequestPost(context) {
       contentId, '', mediaType, mediaUrl, String(primaryText).trim(), page, date, 'Approved'
     ]);
 
-    return json({ ok: true, date, slot: slotLabel, stacked: avail.stacking });
+    // Sheet append is the critical step (it's what the posting bot reads) — if this
+    // status update fails, don't fail the whole request, just flag it in the response.
+    let studioSynced = true;
+    try {
+      await supabaseQuery(`studio_calendar?id=eq.${encodeURIComponent(studioId)}`, 'PATCH', { studio_status: 'Scheduled' });
+    } catch (patchErr) {
+      studioSynced = false;
+    }
+
+    return json({ ok: true, date, slot: slotLabel, stacked: avail.stacking, studioSynced });
   } catch (e) {
     return json({ error: e.message }, 500);
   }

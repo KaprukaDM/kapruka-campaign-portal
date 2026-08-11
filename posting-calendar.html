@@ -254,7 +254,8 @@
       });
       const result = await res.json();
       if (!res.ok || result.error) throw new Error(result.error || 'Save failed');
-      msg.innerHTML = `<div class="msg ok">Scheduled for ${result.date} @ ${result.slot}${result.stacked ? ' (stacked)' : ''}.</div>`;
+      const warn = result.studioSynced === false ? '<br>(Added to the sheet, but couldn\'t update the Studio Calendar status — update it manually.)' : '';
+      msg.innerHTML = `<div class="msg ok">Scheduled for ${result.date} @ ${result.slot}${result.stacked ? ' (stacked)' : ''}.${warn}</div>`;
       selected = null;
       await loadPosts();
       document.getElementById('rightPanel').innerHTML = '<div class="placeholder">Select a Good-to-Go post on the left to schedule it.</div>';
