@@ -3967,7 +3967,7 @@
 
     async function loadFacebookPerformance() {
       try {
-        const posts = await getFacebookPostPerformance(50);
+        const posts = await getFacebookPostPerformance(100);
         renderFacebookPerformance(posts);
       } catch (error) {
         document.getElementById('fbPerfTable').innerHTML =
@@ -4032,22 +4032,28 @@
 
       const platformBadges = (platforms) => [...new Set(platforms)].map(pl => PLATFORM_BADGE[pl] || pl).join(' ');
 
-      // Winner = best Views+Reach : Reaction ratio, not raw volume. A post
-      // with huge reach but nobody reacting isn't actually "winning" —
-      // reaction rate (reactions per view+reach) is what shows real
-      // resonance. Threshold is relative to the batch average (1.5x), same
-      // reasoning as before: a hardcoded number would go stale as the page
-      // grows, a batch-relative one doesn't.
-      const combinedOf = (p) => (Number(p.impressions) || 0) + (Number(p.reach) || 0);
-      const reactionRateOf = (p) => {
-        const combined = combinedOf(p);
-        return combined > 0 ? (Number(p.reactions_total) || 0) / combined : 0;
-      };
-      const ratedPosts = groupedPosts.filter(p => combinedOf(p) > 0);
-      const avgReactionRate = ratedPosts.length
-        ? ratedPosts.reduce((total, p) => total + reactionRateOf(p), 0) / ratedPosts.length
-        : 0;
+      // Winner = best reaction-rate ratio, not raw volume. A post with huge
+      // reach but nobody reacting isn't actually "winning" — reaction rate
+      // is what shows real resonance. Two ratios are checked, either one
+      // qualifies a post as a winner:
+      //   1. Views+Reach : Reaction  (overall efficiency across both signals)
+      //   2. Reach : Reaction        (efficiency on reach alone, since some
+      //      posts have null impressions but real reach, or vice versa)
+      // Both thresholds are relative to the batch average (1.5x) rather than
+      // a hardcoded number, so they don't go stale as the page grows.
       const WINNER_MULTIPLIER = 1.5;
+      const combinedOf = (p) => (Number(p.impressions) || 0) + (Number(p.reach) || 0);
+      const rateOf = (numerator, denominator) => denominator > 0 ? numerator / denominator : 0;
+
+      const combinedRatedPosts = groupedPosts.filter(p => combinedOf(p) > 0);
+      const avgCombinedRate = combinedRatedPosts.length
+        ? combinedRatedPosts.reduce((total, p) => total + rateOf(Number(p.reactions_total) || 0, combinedOf(p)), 0) / combinedRatedPosts.length
+        : 0;
+
+      const reachRatedPosts = groupedPosts.filter(p => (Number(p.reach) || 0) > 0);
+      const avgReachRate = reachRatedPosts.length
+        ? reachRatedPosts.reduce((total, p) => total + rateOf(Number(p.reactions_total) || 0, Number(p.reach) || 0), 0) / reachRatedPosts.length
+        : 0;
 
       tbody.innerHTML = groupedPosts.map(p => {
         const rawMessage = p.message || '(no caption)';
@@ -4056,11 +4062,20 @@
           ? `<a href="${p.permalink_url}" target="_blank" style="color:#5e3a8e;">${excerpt}</a>`
           : excerpt;
         const combined = combinedOf(p);
-        const reactionRate = reactionRateOf(p);
-        const isWinner = avgReactionRate > 0 && reactionRate >= avgReactionRate * WINNER_MULTIPLIER;
-        const ratio = (combined > 0 && p.reactions_total) ? `${Math.round(combined / p.reactions_total).toLocaleString()} : 1` : '-';
+        const reactions = Number(p.reactions_total) || 0;
+        const reach = Number(p.reach) || 0;
+
+        const combinedRate = rateOf(reactions, combined);
+        const reachRate = rateOf(reactions, reach);
+        const isCombinedWinner = avgCombinedRate > 0 && combinedRate >= avgCombinedRate * WINNER_MULTIPLIER;
+        const isReachWinner = avgReachRate > 0 && reachRate >= avgReachRate * WINNER_MULTIPLIER;
+        const isWinner = isCombinedWinner || isReachWinner;
+
+        const combinedRatio = (combined > 0 && reactions) ? `Views+Reach:Reaction = ${Math.round(combined / reactions).toLocaleString()}:1` : '';
+        const reachRatio = (reach > 0 && reactions) ? `Reach:Reaction = ${Math.round(reach / reactions).toLocaleString()}:1` : '';
+        const tooltip = [combinedRatio, reachRatio].filter(Boolean).join(' | ');
         const highPerfBadge = isWinner
-          ? `<span class="badge" title="Views+Reach : Reaction = ${ratio}" style="background:#FFF3E0;color:#E65100;margin-left:6px;white-space:nowrap;">🏆 Winner</span>`
+          ? `<span class="badge" title="${tooltip}" style="background:#FFF3E0;color:#E65100;margin-left:6px;white-space:nowrap;">🏆 Winner</span>`
           : '';
         return `
           <tr>

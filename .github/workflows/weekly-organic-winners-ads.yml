@@ -1,0 +1,34 @@
+name: Weekly Organic Winners → Ads
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'   # every Monday 06:00 UTC
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (log everything, create nothing)'
+        type: boolean
+        default: false
+
+jobs:
+  push-winners:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Push last-7-days organic winners to ad set
+        env:
+          META_ADS_ACCESS_TOKEN: ${{ secrets.META_ADS_ACCESS_TOKEN }}
+          META_PAGE_ACCESS_TOKEN: ${{ secrets.META_PAGE_ACCESS_TOKEN }}
+          META_AD_ACCOUNT_ID: ${{ secrets.META_AD_ACCOUNT_ID }}
+          META_PAGE_ID: ${{ secrets.META_PAGE_ID }}
+          META_IG_USER_ID: ${{ secrets.META_IG_USER_ID }}
+          WHATSAPP_PHONE_ID: ${{ secrets.WHATSAPP_PHONE_ID }}
+          WHATSAPP_ACCESS_TOKEN: ${{ secrets.WHATSAPP_ACCESS_TOKEN }}
+          WHATSAPP_TO: ${{ secrets.WHATSAPP_TO }}
+          DRY_RUN: ${{ github.event.inputs.dry_run }}
+        run: node scripts/weekly-organic-winners-to-ads.js
