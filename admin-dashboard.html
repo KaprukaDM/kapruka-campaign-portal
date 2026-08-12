@@ -3998,12 +3998,24 @@
       const latestSync = posts.reduce((latest, p) => (p.synced_at && (!latest || p.synced_at > latest)) ? p.synced_at : latest, null);
       lastSynced.textContent = latestSync ? `Last synced: ${new Date(latestSync).toLocaleString()}` : '';
 
+      // "High performance" is relative to this batch, not a hardcoded number —
+      // a fixed threshold would go stale as reach/impressions naturally grow
+      // over time. 1.5x the batch average of Views+Reach is the bar.
+      const combinedOf = (p) => (Number(p.impressions) || 0) + (Number(p.reach) || 0);
+      const avgCombined = posts.reduce((total, p) => total + combinedOf(p), 0) / posts.length;
+      const HIGH_PERF_MULTIPLIER = 1.5;
+
       tbody.innerHTML = posts.map(p => {
         const rawMessage = p.message || '(no caption)';
         const excerpt = escapeHtml(rawMessage.slice(0, 80)) + (rawMessage.length > 80 ? '…' : '');
         const postCell = p.permalink_url
           ? `<a href="${p.permalink_url}" target="_blank" style="color:#5e3a8e;">${excerpt}</a>`
           : excerpt;
+        const combined = combinedOf(p);
+        const isHighPerformer = avgCombined > 0 && combined >= avgCombined * HIGH_PERF_MULTIPLIER;
+        const highPerfBadge = isHighPerformer
+          ? '<span class="badge" style="background:#FFF3E0;color:#E65100;margin-left:6px;white-space:nowrap;">🔥 High Performer</span>'
+          : '';
         return `
           <tr>
             <td>${PLATFORM_BADGE[p.platform] || p.platform || '-'}</td>
@@ -4011,7 +4023,7 @@
             <td style="max-width:280px;">${postCell}</td>
             <td>${fmtNum(p.impressions)}</td>
             <td>${fmtNum(p.reach)}</td>
-            <td>${fmtNum((Number(p.impressions) || 0) + (Number(p.reach) || 0))}</td>
+            <td>${fmtNum(combined)}${highPerfBadge}</td>
             <td>${fmtNum(p.engaged_users)}</td>
             <td>${fmtNum(p.reactions_total)}</td>
             <td>${fmtNum(p.comments_count)}</td>
