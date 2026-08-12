@@ -1622,6 +1622,7 @@
                   <th>Views + Reach</th>
                   <th>Reactions</th>
                   <th>Winner Reason</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody id="queuedAdsTable"></tbody>
@@ -4153,7 +4154,7 @@
 
       if (thisWeeksWinners.length === 0) {
         card.style.display = '';
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;">No winners in the last 7 days yet.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;">No winners in the last 7 days yet.</td></tr>';
         document.getElementById('queuedAdsCount').textContent = '0';
         return;
       }
@@ -4176,7 +4177,7 @@
         : '';
 
       if (queued.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;">All of this week\'s winners have already been pushed to ads.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;">All of this week\'s winners have already been pushed to ads.</td></tr>';
         return;
       }
 
@@ -4189,16 +4190,49 @@
             ? `<a href="${p.permalink_url}" target="_blank" style="color:#5e3a8e;">${excerpt}</a>`
             : excerpt;
           return `
-            <tr>
+            <tr data-group-key="${escapeHtml(p.key)}">
               <td>${PLATFORM_BADGE_LIST(p.platforms)}</td>
               <td>${p.created_time ? new Date(p.created_time).toLocaleDateString() : '-'}</td>
               <td style="max-width:320px;">${postCell}</td>
               <td>${fmtNum(p.combined)}</td>
               <td>${fmtNum(p.reactions_total)}</td>
               <td style="font-size:12px;color:#666;">${p.reasons.join(', ')}</td>
+              <td>
+                <button class="btn btn-primary" style="padding:6px 12px;font-size:12px;white-space:nowrap;"
+                        data-group-key="${escapeHtml(p.key)}" onclick="pushOrganicWinnerAd(this)">🚀 Push Now</button>
+              </td>
             </tr>
           `;
         }).join('');
+    }
+
+    async function pushOrganicWinnerAd(btn) {
+      const groupKey = btn.dataset.groupKey;
+      const row = btn.closest('tr');
+      const actionCell = btn.parentElement;
+
+      if (!confirm('This creates a LIVE ad in ad set 52816670204854 with real budget, starting immediately. Continue?')) return;
+
+      btn.disabled = true;
+      btn.textContent = '⏳ Pushing…';
+
+      try {
+        const res = await fetch('/api/push-organic-winner-ad', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ group_key: groupKey }),
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.error || `Request failed (${res.status})`);
+
+        actionCell.innerHTML = `<span class="badge" style="background:#E8F5E9;color:#1B5E20;">✅ Ad ${escapeHtml(data.adId)}</span>`;
+        document.getElementById('queuedAdsCount').textContent = String(Math.max(0, Number(document.getElementById('queuedAdsCount').textContent) - 1));
+        setTimeout(() => { row.style.transition = 'opacity 0.4s'; row.style.opacity = '0'; setTimeout(() => row.remove(), 400); }, 1500);
+      } catch (e) {
+        btn.disabled = false;
+        btn.textContent = '🚀 Push Now';
+        alert('Push failed: ' + e.message);
+      }
     }
 
     function PLATFORM_BADGE_LIST(platforms) {
