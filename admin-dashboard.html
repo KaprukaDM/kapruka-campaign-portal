@@ -3998,27 +3998,73 @@
       const latestSync = posts.reduce((latest, p) => (p.synced_at && (!latest || p.synced_at > latest)) ? p.synced_at : latest, null);
       lastSynced.textContent = latestSync ? `Last synced: ${new Date(latestSync).toLocaleString()}` : '';
 
-      // "High performance" is relative to this batch, not a hardcoded number —
-      // a fixed threshold would go stale as reach/impressions naturally grow
-      // over time. 1.5x the batch average of Views+Reach is the bar.
-      const combinedOf = (p) => (Number(p.impressions) || 0) + (Number(p.reach) || 0);
-      const avgCombined = posts.reduce((total, p) => total + combinedOf(p), 0) / posts.length;
-      const HIGH_PERF_MULTIPLIER = 1.5;
+      // Cross-posted content lands as separate FB and IG rows (different
+      // post_id per platform — there's no shared "this is the same post" key
+      // in facebook_post_performance). Group by caption + publish date so a
+      // post pushed to both platforms shows as ONE row with totals summed,
+      // instead of two partial rows that each look under-performing.
+      const SUM_KEYS = ['impressions', 'reach', 'engaged_users', 'reactions_total', 'comments_count', 'shares_count'];
+      const groupKey = (p) => {
+        const day = p.created_time ? new Date(p.created_time).toISOString().slice(0, 10) : 'unknown';
+        return `${(p.message || '').trim()}|${day}`;
+      };
 
-      tbody.innerHTML = posts.map(p => {
+      const groups = new Map();
+      posts.forEach(p => {
+        const key = groupKey(p);
+        if (!groups.has(key)) {
+          groups.set(key, {
+            platforms: [], message: p.message, permalink_url: p.permalink_url, created_time: p.created_time,
+            impressions: null, reach: null, engaged_users: null, reactions_total: null, comments_count: null, shares_count: null
+          });
+        }
+        const g = groups.get(key);
+        g.platforms.push(p.platform);
+        if (p.created_time && (!g.created_time || p.created_time < g.created_time)) g.created_time = p.created_time;
+        if (!g.permalink_url && p.permalink_url) g.permalink_url = p.permalink_url;
+        SUM_KEYS.forEach(k => {
+          if (p[k] !== null && p[k] !== undefined && !Number.isNaN(Number(p[k]))) {
+            g[k] = (g[k] || 0) + Number(p[k]);
+          }
+        });
+      });
+      const groupedPosts = Array.from(groups.values());
+
+      const platformBadges = (platforms) => [...new Set(platforms)].map(pl => PLATFORM_BADGE[pl] || pl).join(' ');
+
+      // Winner = best Views+Reach : Reaction ratio, not raw volume. A post
+      // with huge reach but nobody reacting isn't actually "winning" —
+      // reaction rate (reactions per view+reach) is what shows real
+      // resonance. Threshold is relative to the batch average (1.5x), same
+      // reasoning as before: a hardcoded number would go stale as the page
+      // grows, a batch-relative one doesn't.
+      const combinedOf = (p) => (Number(p.impressions) || 0) + (Number(p.reach) || 0);
+      const reactionRateOf = (p) => {
+        const combined = combinedOf(p);
+        return combined > 0 ? (Number(p.reactions_total) || 0) / combined : 0;
+      };
+      const ratedPosts = groupedPosts.filter(p => combinedOf(p) > 0);
+      const avgReactionRate = ratedPosts.length
+        ? ratedPosts.reduce((total, p) => total + reactionRateOf(p), 0) / ratedPosts.length
+        : 0;
+      const WINNER_MULTIPLIER = 1.5;
+
+      tbody.innerHTML = groupedPosts.map(p => {
         const rawMessage = p.message || '(no caption)';
         const excerpt = escapeHtml(rawMessage.slice(0, 80)) + (rawMessage.length > 80 ? '…' : '');
         const postCell = p.permalink_url
           ? `<a href="${p.permalink_url}" target="_blank" style="color:#5e3a8e;">${excerpt}</a>`
           : excerpt;
         const combined = combinedOf(p);
-        const isHighPerformer = avgCombined > 0 && combined >= avgCombined * HIGH_PERF_MULTIPLIER;
-        const highPerfBadge = isHighPerformer
-          ? '<span class="badge" style="background:#FFF3E0;color:#E65100;margin-left:6px;white-space:nowrap;">🔥 High Performer</span>'
+        const reactionRate = reactionRateOf(p);
+        const isWinner = avgReactionRate > 0 && reactionRate >= avgReactionRate * WINNER_MULTIPLIER;
+        const ratio = (combined > 0 && p.reactions_total) ? `${Math.round(combined / p.reactions_total).toLocaleString()} : 1` : '-';
+        const highPerfBadge = isWinner
+          ? `<span class="badge" title="Views+Reach : Reaction = ${ratio}" style="background:#FFF3E0;color:#E65100;margin-left:6px;white-space:nowrap;">🏆 Winner</span>`
           : '';
         return `
           <tr>
-            <td>${PLATFORM_BADGE[p.platform] || p.platform || '-'}</td>
+            <td>${platformBadges(p.platforms)}</td>
             <td>${p.created_time ? new Date(p.created_time).toLocaleDateString() : '-'}</td>
             <td style="max-width:280px;">${postCell}</td>
             <td>${fmtNum(p.impressions)}</td>
