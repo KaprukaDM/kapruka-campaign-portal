@@ -394,6 +394,19 @@ async function getFacebookPostPerformance(limit = 50) {
   }
 }
 
+// Rows written by scripts/weekly-organic-winners-to-ads.js each time it
+// pushes a winner into an ad — used to grey out/exclude posts that are
+// already pushed when the dashboard previews the upcoming queue.
+async function getPromotedOrganicWinnerKeys() {
+  try {
+    const rows = await supabaseQuery('organic_winner_ad_pushes?select=group_key,ad_id,pushed_at');
+    return rows;
+  } catch (error) {
+    console.error('getPromotedOrganicWinnerKeys error:', error);
+    return [];
+  }
+}
+
 // ═══════════════════════════════════════════════════════════════
 // DM APPROVAL HELPERS
 // ═══════════════════════════════════════════════════════════════

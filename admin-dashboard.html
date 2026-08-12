@@ -1601,6 +1601,33 @@
             </table>
           </div>
         </div>
+
+        <!-- Preview of scripts/weekly-organic-winners-to-ads.js's next run: this
+             week's Winners not yet pushed to an ad. -->
+        <div class="card" id="queuedAdsCard" style="display:none;">
+          <div class="calendar-header">
+            <h2 style="margin:0;">🚀 Queued for Weekly Ad Push (<span id="queuedAdsCount">0</span>)</h2>
+          </div>
+          <div style="font-size:12px;color:#666;margin-bottom:16px;">
+            This week's 🏆 Winners that the Monday automation hasn't pushed to an ad yet.
+            <span id="queuedAdsNote"></span>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Platform</th>
+                  <th>Date</th>
+                  <th>Post</th>
+                  <th>Views + Reach</th>
+                  <th>Reactions</th>
+                  <th>Winner Reason</th>
+                </tr>
+              </thead>
+              <tbody id="queuedAdsTable"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       <!-- NEW: DM APPROVALS TAB -->
@@ -4014,7 +4041,7 @@
         const key = groupKey(p);
         if (!groups.has(key)) {
           groups.set(key, {
-            platforms: [], message: p.message, permalink_url: p.permalink_url, created_time: p.created_time,
+            key, platforms: [], message: p.message, permalink_url: p.permalink_url, created_time: p.created_time,
             impressions: null, reach: null, engaged_users: null, reactions_total: null, comments_count: null, shares_count: null
           });
         }
@@ -4059,6 +4086,8 @@
         ? reachRatedPosts.reduce((total, p) => total + rateOf(Number(p.reactions_total) || 0, Number(p.reach) || 0), 0) / reachRatedPosts.length
         : 0;
 
+      const winnerGroups = [];
+
       tbody.innerHTML = groupedPosts.map(p => {
         const rawMessage = p.message || '(no caption)';
         const excerpt = escapeHtml(rawMessage.slice(0, 80)) + (rawMessage.length > 80 ? '…' : '');
@@ -4083,6 +4112,12 @@
         const highPerfBadge = isWinner
           ? `<span class="badge" title="${tooltip}" style="background:#FFF3E0;color:#E65100;margin-left:6px;white-space:nowrap;">🏆 Winner</span>`
           : '';
+
+        if (isWinner) {
+          const reasons = [isCombinedWinner && 'Views+Reach:Reaction', isReachWinner && 'Reach:Reaction', isVolumeWinner && 'Top volume'].filter(Boolean);
+          winnerGroups.push({ ...p, combined, reasons });
+        }
+
         return `
           <tr>
             <td>${platformBadges(p.platforms)}</td>
@@ -4098,6 +4133,76 @@
           </tr>
         `;
       }).join('');
+
+      renderQueuedForAds(winnerGroups);
+    }
+
+    // Preview of what scripts/weekly-organic-winners-to-ads.js will act on
+    // next Monday: this week's Winners (created in the last 7 days) that
+    // haven't already been pushed into an ad (organic_winner_ad_pushes).
+    // Sheet-matching itself isn't replicated here (the creative sheet's
+    // export endpoint doesn't allow browser-side CORS fetches) — this shows
+    // WHICH posts are queued, not which creative each will end up using.
+    async function renderQueuedForAds(winnerGroups) {
+      const card = document.getElementById('queuedAdsCard');
+      const tbody = document.getElementById('queuedAdsTable');
+      if (!card || !tbody) return;
+
+      const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+      const thisWeeksWinners = winnerGroups.filter(p => p.created_time && new Date(p.created_time).getTime() >= sevenDaysAgo);
+
+      if (thisWeeksWinners.length === 0) {
+        card.style.display = '';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;">No winners in the last 7 days yet.</td></tr>';
+        document.getElementById('queuedAdsCount').textContent = '0';
+        return;
+      }
+
+      let pushedKeys = new Set();
+      try {
+        const pushed = await getPromotedOrganicWinnerKeys();
+        pushedKeys = new Set(pushed.map(r => r.group_key));
+      } catch (e) {
+        console.warn('Could not check already-pushed ads (showing all winners as queued):', e.message);
+      }
+
+      const queued = thisWeeksWinners.filter(p => !pushedKeys.has(p.key));
+      const alreadyPushed = thisWeeksWinners.length - queued.length;
+
+      card.style.display = '';
+      document.getElementById('queuedAdsCount').textContent = queued.length;
+      document.getElementById('queuedAdsNote').textContent = alreadyPushed > 0
+        ? `${alreadyPushed} other winner(s) this week already have an ad and are excluded.`
+        : '';
+
+      if (queued.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;">All of this week\'s winners have already been pushed to ads.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = queued
+        .sort((a, b) => b.combined - a.combined)
+        .map(p => {
+          const rawMessage = p.message || '(no caption)';
+          const excerpt = escapeHtml(rawMessage.slice(0, 80)) + (rawMessage.length > 80 ? '…' : '');
+          const postCell = p.permalink_url
+            ? `<a href="${p.permalink_url}" target="_blank" style="color:#5e3a8e;">${excerpt}</a>`
+            : excerpt;
+          return `
+            <tr>
+              <td>${PLATFORM_BADGE_LIST(p.platforms)}</td>
+              <td>${p.created_time ? new Date(p.created_time).toLocaleDateString() : '-'}</td>
+              <td style="max-width:320px;">${postCell}</td>
+              <td>${fmtNum(p.combined)}</td>
+              <td>${fmtNum(p.reactions_total)}</td>
+              <td style="font-size:12px;color:#666;">${p.reasons.join(', ')}</td>
+            </tr>
+          `;
+        }).join('');
+    }
+
+    function PLATFORM_BADGE_LIST(platforms) {
+      return [...new Set(platforms)].map(pl => PLATFORM_BADGE[pl] || pl).join(' ');
     }
 
     function saveStudioMonth() {
