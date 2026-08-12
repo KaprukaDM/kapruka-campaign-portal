@@ -1588,6 +1588,7 @@
                   <th>Post</th>
                   <th>Views</th>
                   <th>Reach</th>
+                  <th>Views + Reach</th>
                   <th>Engaged</th>
                   <th>Reactions</th>
                   <th>Comments</th>
@@ -1595,7 +1596,7 @@
                 </tr>
               </thead>
               <tbody id="fbPerfTable">
-                <tr><td colspan="9" style="text-align:center;padding:40px;">Loading...</td></tr>
+                <tr><td colspan="10" style="text-align:center;padding:40px;">Loading...</td></tr>
               </tbody>
             </table>
           </div>
@@ -3970,7 +3971,7 @@
         renderFacebookPerformance(posts);
       } catch (error) {
         document.getElementById('fbPerfTable').innerHTML =
-          '<tr><td colspan="9" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
+          '<tr><td colspan="10" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
       }
     }
 
@@ -3979,7 +3980,7 @@
       const lastSynced = document.getElementById('fbLastSynced');
 
       if (!posts || posts.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;">No posts synced yet. The sync job runs automatically every 6 hours.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:40px;">No posts synced yet. The sync job runs automatically every 6 hours.</td></tr>';
         document.getElementById('fbStatPosts').textContent = '0';
         document.getElementById('fbStatImpressions').textContent = '0';
         document.getElementById('fbStatReach').textContent = '0';
@@ -4010,6 +4011,7 @@
             <td style="max-width:280px;">${postCell}</td>
             <td>${fmtNum(p.impressions)}</td>
             <td>${fmtNum(p.reach)}</td>
+            <td>${fmtNum((Number(p.impressions) || 0) + (Number(p.reach) || 0))}</td>
             <td>${fmtNum(p.engaged_users)}</td>
             <td>${fmtNum(p.reactions_total)}</td>
             <td>${fmtNum(p.comments_count)}</td>
