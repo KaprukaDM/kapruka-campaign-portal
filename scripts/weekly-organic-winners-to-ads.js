@@ -166,19 +166,27 @@ function findWinners(groupedPosts) {
   const avgCombinedRate = combinedRated.length
     ? combinedRated.reduce((t, p) => t + rateOf(Number(p.reactions_total) || 0, combinedOf(p)), 0) / combinedRated.length
     : 0;
+  const avgCombinedVolume = combinedRated.length
+    ? combinedRated.reduce((t, p) => t + combinedOf(p), 0) / combinedRated.length
+    : 0;
 
   const reachRated = groupedPosts.filter(p => (Number(p.reach) || 0) > 0);
   const avgReachRate = reachRated.length
     ? reachRated.reduce((t, p) => t + rateOf(Number(p.reactions_total) || 0, Number(p.reach) || 0), 0) / reachRated.length
     : 0;
 
+  // Three signals, any one qualifies — matches admin-dashboard.html's 🏆
+  // badge exactly: reaction-rate efficiency (combined and reach-only), plus
+  // the "usual" way of picking a winner — raw Views+Reach volume.
   return groupedPosts.filter(p => {
     const reactions = Number(p.reactions_total) || 0;
-    const combinedRate = rateOf(reactions, combinedOf(p));
+    const combined = combinedOf(p);
+    const combinedRate = rateOf(reactions, combined);
     const reachRate = rateOf(reactions, Number(p.reach) || 0);
     const isCombinedWinner = avgCombinedRate > 0 && combinedRate >= avgCombinedRate * WINNER_MULTIPLIER;
     const isReachWinner = avgReachRate > 0 && reachRate >= avgReachRate * WINNER_MULTIPLIER;
-    return isCombinedWinner || isReachWinner;
+    const isVolumeWinner = avgCombinedVolume > 0 && combined >= avgCombinedVolume * WINNER_MULTIPLIER;
+    return isCombinedWinner || isReachWinner || isVolumeWinner;
   });
 }
 

@@ -4032,15 +4032,16 @@
 
       const platformBadges = (platforms) => [...new Set(platforms)].map(pl => PLATFORM_BADGE[pl] || pl).join(' ');
 
-      // Winner = best reaction-rate ratio, not raw volume. A post with huge
-      // reach but nobody reacting isn't actually "winning" — reaction rate
-      // is what shows real resonance. Two ratios are checked, either one
-      // qualifies a post as a winner:
-      //   1. Views+Reach : Reaction  (overall efficiency across both signals)
-      //   2. Reach : Reaction        (efficiency on reach alone, since some
-      //      posts have null impressions but real reach, or vice versa)
-      // Both thresholds are relative to the batch average (1.5x) rather than
-      // a hardcoded number, so they don't go stale as the page grows.
+      // A post qualifies as a Winner if it clears the batch-average bar
+      // (1.5x) on ANY of three signals — each catches something the others
+      // miss:
+      //   1. Views+Reach : Reaction ratio — engagement efficiency overall
+      //   2. Reach : Reaction ratio       — engagement efficiency on reach
+      //      alone (some posts have null impressions but real reach)
+      //   3. Raw Views+Reach volume       — the "usual" way of picking a
+      //      winner: biggest reach, full stop, regardless of reaction rate
+      // All thresholds are relative to the batch average rather than a
+      // hardcoded number, so they don't go stale as the page grows.
       const WINNER_MULTIPLIER = 1.5;
       const combinedOf = (p) => (Number(p.impressions) || 0) + (Number(p.reach) || 0);
       const rateOf = (numerator, denominator) => denominator > 0 ? numerator / denominator : 0;
@@ -4048,6 +4049,9 @@
       const combinedRatedPosts = groupedPosts.filter(p => combinedOf(p) > 0);
       const avgCombinedRate = combinedRatedPosts.length
         ? combinedRatedPosts.reduce((total, p) => total + rateOf(Number(p.reactions_total) || 0, combinedOf(p)), 0) / combinedRatedPosts.length
+        : 0;
+      const avgCombinedVolume = combinedRatedPosts.length
+        ? combinedRatedPosts.reduce((total, p) => total + combinedOf(p), 0) / combinedRatedPosts.length
         : 0;
 
       const reachRatedPosts = groupedPosts.filter(p => (Number(p.reach) || 0) > 0);
@@ -4069,11 +4073,13 @@
         const reachRate = rateOf(reactions, reach);
         const isCombinedWinner = avgCombinedRate > 0 && combinedRate >= avgCombinedRate * WINNER_MULTIPLIER;
         const isReachWinner = avgReachRate > 0 && reachRate >= avgReachRate * WINNER_MULTIPLIER;
-        const isWinner = isCombinedWinner || isReachWinner;
+        const isVolumeWinner = avgCombinedVolume > 0 && combined >= avgCombinedVolume * WINNER_MULTIPLIER;
+        const isWinner = isCombinedWinner || isReachWinner || isVolumeWinner;
 
         const combinedRatio = (combined > 0 && reactions) ? `Views+Reach:Reaction = ${Math.round(combined / reactions).toLocaleString()}:1` : '';
         const reachRatio = (reach > 0 && reactions) ? `Reach:Reaction = ${Math.round(reach / reactions).toLocaleString()}:1` : '';
-        const tooltip = [combinedRatio, reachRatio].filter(Boolean).join(' | ');
+        const volumeNote = isVolumeWinner ? `Views+Reach = ${combined.toLocaleString()} (top volume)` : '';
+        const tooltip = [combinedRatio, reachRatio, volumeNote].filter(Boolean).join(' | ');
         const highPerfBadge = isWinner
           ? `<span class="badge" title="${tooltip}" style="background:#FFF3E0;color:#E65100;margin-left:6px;white-space:nowrap;">🏆 Winner</span>`
           : '';
