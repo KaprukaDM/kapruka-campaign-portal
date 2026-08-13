@@ -1896,6 +1896,7 @@
               <span style="font-size:12px;font-weight:500;color:var(--primary-purple);cursor:pointer;" onclick="shiftPcalCalMonth(1)">Next ›</span>
             </span>
           </h2>
+          <div id="pcalMetaSyncNote" style="font-size:11px;color:#c62828;margin-bottom:6px;"></div>
           <div id="pcalCalGrid" class="pcal-cal-grid"><div class="pcal-empty">Loading…</div></div>
           <div id="pcalCalDayDetail" style="margin-top:14px;"></div>
         </div>
@@ -5080,6 +5081,13 @@
         const data = await res.json();
         if (data.error) throw new Error(data.error);
         renderPcalCalendar(data.days, data.slotsPerDay, data.metaScheduled || []);
+
+        // Surface a failed Meta sync (bad token scope, rate limit, etc.) —
+        // silently missing blue dots with no explanation is hard to debug.
+        // Missing/unconfigured secrets are NOT an error (metaSyncError stays
+        // null in that case), so this only fires on a genuine failure.
+        const metaNote = document.getElementById('pcalMetaSyncNote');
+        if (metaNote) metaNote.textContent = data.metaSyncError ? `⚠️ Meta schedule sync failed: ${data.metaSyncError}` : '';
       } catch (error) {
         grid.innerHTML = `<div class="pcal-empty">Failed to load calendar: ${pcalEscapeHtml(error.message)}</div>`;
       }
