@@ -2224,6 +2224,12 @@
       
       document.getElementById('tab-' + tab).classList.add('active');
 
+      if (tab === 'studio') {
+        startStudioAutoRefresh();
+      } else {
+        stopStudioAutoRefresh();
+      }
+
       if (tab === 'content') {
         loadContentData();
       } else if (tab === 'hotproducts') {
@@ -3067,21 +3073,29 @@
     // ═══════════════════════════════════════════════════════════
     // STUDIO CALENDAR (UPDATED WITH NEW FILTERS)
     // ═══════════════════════════════════════════════════════════
-    async function loadStudioCalendar() {
+    let studioCalendarLoadInFlight = false; // guards against overlapping fetches resolving out of order
+
+    // silent=true is used by the background auto-refresh (see
+    // startStudioAutoRefresh below) — skips the full-screen spinner and the
+    // error alert() so a periodic poll doesn't interrupt whatever the admin
+    // is doing.
+    async function loadStudioCalendar(silent = false) {
+      if (studioCalendarLoadInFlight) return;
+      studioCalendarLoadInFlight = true;
       try {
-        showLoading();
-        
-        const months = ['January', 'February', 'March', 'April', 'May', 'June', 
+        if (!silent) showLoading();
+
+        const months = ['January', 'February', 'March', 'April', 'May', 'June',
                        'July', 'August', 'September', 'October', 'November', 'December'];
         const selector = document.getElementById('monthSelector');
         if (selector) {
           const years = [currentStudioYear];
-          selector.innerHTML = years.map(year => 
+          selector.innerHTML = years.map(year =>
             months.map((m, i) => `<option value="${m} ${year}" ${currentStudioMonth === i + 1 && year === currentStudioYear ? 'selected' : ''}>${m} ${year}</option>`).join('')
           ).join('');
         }
 
-        await generateEmptySlotsForMonth(currentStudioYear, currentStudioMonth);
+        if (!silent) await generateEmptySlotsForMonth(currentStudioYear, currentStudioMonth);
 
         studioMonthRawData = await getStudioCalendarForMonth(currentStudioYear, currentStudioMonth);
 
@@ -3093,12 +3107,34 @@
 
         applyStudioFilters();
 
-        hideLoading();
+        if (!silent) hideLoading();
       } catch (error) {
-        hideLoading();
+        if (!silent) hideLoading();
         console.error('loadStudioCalendar error:', error);
-        alert('Error loading studio calendar: ' + error.message);
+        if (!silent) alert('Error loading studio calendar: ' + error.message);
+      } finally {
+        studioCalendarLoadInFlight = false;
       }
+    }
+
+    // Keeps calendar badges live without requiring a click or manual reload
+    // — the grid has no realtime subscription, so without this, a status
+    // changed elsewhere (another admin, a DM approval) stays stale on screen
+    // until something happens to trigger a refetch. Runs only while the
+    // Studio tab is actually open.
+    let studioAutoRefreshTimer = null;
+    const STUDIO_AUTO_REFRESH_MS = 45000;
+
+    function startStudioAutoRefresh() {
+      stopStudioAutoRefresh();
+      studioAutoRefreshTimer = setInterval(() => {
+        const tab = document.getElementById('tab-studio');
+        if (tab && tab.classList.contains('active')) loadStudioCalendar(true);
+      }, STUDIO_AUTO_REFRESH_MS);
+    }
+
+    function stopStudioAutoRefresh() {
+      if (studioAutoRefreshTimer) { clearInterval(studioAutoRefreshTimer); studioAutoRefreshTimer = null; }
     }
 
     // Debounced handler for the search box (no server round-trip per keystroke).

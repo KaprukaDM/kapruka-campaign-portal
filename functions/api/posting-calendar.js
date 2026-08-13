@@ -246,8 +246,14 @@ async function fetchMetaScheduledFbPosts(env, year, month) {
   const pageId = env.META_PAGE_ID;
   if (!token || !pageId) return { items: [], configured: false };
 
+  // Meta's /feed?is_published=false edge also returns unrelated unpublished
+  // "shadow" post objects (used internally for dark/ad-only posts), which
+  // can pile up into the thousands on an active ad account and trip Meta's
+  // query-complexity limiter ("reduce the amount of data...") even at a
+  // modest row limit. Keeping this small and re-querying per month (rather
+  // than fetching everything once) is the practical way around that.
   const url = `https://graph.facebook.com/${GRAPH_VERSION}/${pageId}/feed` +
-    `?is_published=false&fields=id,message,scheduled_publish_time&limit=100&access_token=${encodeURIComponent(token)}`;
+    `?is_published=false&fields=id,message,scheduled_publish_time&limit=25&access_token=${encodeURIComponent(token)}`;
   const res = await fetch(url);
   const body = await res.json();
   if (body.error) throw new Error(`Meta scheduled posts: ${body.error.message}`);
