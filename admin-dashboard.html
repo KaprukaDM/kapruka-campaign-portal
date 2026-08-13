@@ -5118,12 +5118,21 @@
         if (data.error) throw new Error(data.error);
         renderPcalCalendar(data.days, data.slotsPerDay, data.metaScheduled || []);
 
-        // Surface a failed Meta sync (bad token scope, rate limit, etc.) —
-        // silently missing blue dots with no explanation is hard to debug.
-        // Missing/unconfigured secrets are NOT an error (metaSyncError stays
-        // null in that case), so this only fires on a genuine failure.
+        // Surface Meta sync state — otherwise "not configured" and
+        // "configured but nothing scheduled this month" look identical (no
+        // dots either way), which makes this impossible to debug remotely.
         const metaNote = document.getElementById('pcalMetaSyncNote');
-        if (metaNote) metaNote.textContent = data.metaSyncError ? `⚠️ Meta schedule sync failed: ${data.metaSyncError}` : '';
+        if (metaNote) {
+          if (data.metaSyncError) {
+            metaNote.style.color = '#c62828';
+            metaNote.textContent = `⚠️ Meta schedule sync failed: ${data.metaSyncError}`;
+          } else if (!data.metaConfigured) {
+            metaNote.style.color = '#999';
+            metaNote.textContent = 'ℹ️ Meta schedule sync not configured (META_PAGE_ACCESS_TOKEN / META_PAGE_ID not set in Cloudflare) — sheet-scheduled posts still work normally.';
+          } else {
+            metaNote.textContent = '';
+          }
+        }
       } catch (error) {
         grid.innerHTML = `<div class="pcal-empty">Failed to load calendar: ${pcalEscapeHtml(error.message)}</div>`;
       }

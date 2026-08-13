@@ -353,17 +353,20 @@ export async function onRequestGet(context) {
 
       let metaScheduled = [];
       let metaSyncError = null;
+      let metaConfigured = false;
       try {
         const result = await fetchMetaScheduledFbPosts(env, y, m);
         metaScheduled = result.items;
+        metaConfigured = result.configured;
       } catch (e) {
         // Non-fatal — the sheet-driven calendar is the source of truth;
         // Meta's own schedule is a bonus overlay, so a failure here (bad
         // token scope, rate limit, etc.) shouldn't break the whole view.
         metaSyncError = e.message;
+        metaConfigured = true; // it must have been configured to reach a real API error
       }
 
-      return json({ days: monthOccupancy(sheetRows, y, m), slotsPerDay: POSTING_SLOTS.length, metaScheduled, metaSyncError });
+      return json({ days: monthOccupancy(sheetRows, y, m), slotsPerDay: POSTING_SLOTS.length, metaScheduled, metaSyncError, metaConfigured });
     }
 
     const studioItems = await supabaseQuery(
