@@ -161,6 +161,54 @@ async function sheetsAppend(env, token, range, values) {
   return body;
 }
 
+// Single-cell/row write (e.g. rescheduling — writes the new date the same
+// way sheetsAppend originally wrote it, so USER_ENTERED lets Sheets parse a
+// plain "YYYY-MM-DD" string into a real date serial itself).
+async function sheetsUpdate(env, token, range, values) {
+  const url = `${SHEETS_API}/${env.CONTENT_SHEET_ID}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`;
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ range, values: [values] })
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error('Sheets update failed: ' + JSON.stringify(body));
+  return body;
+}
+
+// Numeric internal sheetId (gid) for a tab, needed by batchUpdate's
+// deleteDimension — the values API takes a title, but row deletion needs
+// the grid ID.
+async function getSheetGid(env, token, title) {
+  const url = `${SHEETS_API}/${env.CONTENT_SHEET_ID}?fields=sheets.properties`;
+  const res = await fetch(url, { headers: { Authorization: 'Bearer ' + token } });
+  const body = await res.json();
+  if (!res.ok) throw new Error('Sheets metadata read failed: ' + JSON.stringify(body));
+  const sheet = (body.sheets || []).find(s => s.properties.title === title);
+  if (!sheet) throw new Error(`Sheet tab "${title}" not found`);
+  return sheet.properties.sheetId;
+}
+
+// rowIndexInGrid is 0-based INCLUDING the header row (header = 0, first
+// data row = 1) — i.e. the sheetsGet(...!A2:H) array index + 1.
+async function sheetsDeleteRow(env, token, sheetGid, rowIndexInGrid) {
+  const url = `${SHEETS_API}/${env.CONTENT_SHEET_ID}:batchUpdate`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      requests: [{
+        deleteDimension: {
+          range: { sheetId: sheetGid, dimension: 'ROWS', startIndex: rowIndexInGrid, endIndex: rowIndexInGrid + 1 }
+        }
+      }]
+    })
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error('Sheets delete row failed: ' + JSON.stringify(body));
+  return body;
+}
+
 function serialToDate(serial) {
   if (typeof serial !== 'number') return null;
   return new Date(EXCEL_EPOCH_MS + serial * 86400000);
@@ -410,6 +458,78 @@ export async function onRequestPost(context) {
     }
 
     return json({ ok: true, date, slot: slotLabel, stacked: avail.stacking, studioSynced });
+  } catch (e) {
+    return json({ error: e.message }, 500);
+  }
+}
+
+// Reschedule an already-scheduled post to a new date. Blocked once the post
+// has actually gone out (STATUS starts with "Posted") — that's a published
+// record, not something to move around.
+export async function onRequestPatch(context) {
+  const { env, request } = context;
+  try {
+    const { contentId, date } = await request.json();
+    if (!contentId || !date) return json({ error: 'contentId and date are required' }, 400);
+
+    const token = await getAccessToken(env);
+    const sheetRows = await sheetsGet(env, token, `${SHEET_NAME}!A2:H`);
+    const rowIdx = sheetRows.findIndex(r => String(r[COL.CONTENT_ID] || '').trim() === contentId);
+    if (rowIdx === -1) return json({ error: 'Scheduled post not found: ' + contentId }, 404);
+
+    const status = String(sheetRows[rowIdx][COL.STATUS] || '').trim();
+    if (status.indexOf('Posted') === 0) {
+      return json({ error: "This has already been posted — can't reschedule a published post." }, 409);
+    }
+
+    const sheetRowNumber = rowIdx + 2; // +1 for header row, +1 for 1-based sheet rows
+    await sheetsUpdate(env, token, `${SHEET_NAME}!G${sheetRowNumber}`, [date]);
+
+    // Slot for the response message only — the real slot a post lands in is
+    // always recomputed from row order at read time (see monthOccupancy),
+    // this is just an informational preview.
+    const avail = slotAvailability(sheetRows, date);
+    return json({ ok: true, date, slot: SLOT_LABELS[avail.nextAvailableIndex], stacked: avail.stacking });
+  } catch (e) {
+    return json({ error: e.message }, 500);
+  }
+}
+
+// Remove an already-scheduled post entirely. Blocked once published, same
+// as reschedule. If it came from a Studio submission (STU-<id>), flips the
+// linked studio_calendar row back to "Good to Go" so it reappears in the
+// ready-to-schedule list instead of being stuck showing "Scheduled" with
+// nothing actually scheduled.
+export async function onRequestDelete(context) {
+  const { env, request } = context;
+  try {
+    const { contentId } = await request.json();
+    if (!contentId) return json({ error: 'contentId is required' }, 400);
+
+    const token = await getAccessToken(env);
+    const sheetRows = await sheetsGet(env, token, `${SHEET_NAME}!A2:H`);
+    const rowIdx = sheetRows.findIndex(r => String(r[COL.CONTENT_ID] || '').trim() === contentId);
+    if (rowIdx === -1) return json({ error: 'Scheduled post not found: ' + contentId }, 404);
+
+    const status = String(sheetRows[rowIdx][COL.STATUS] || '').trim();
+    if (status.indexOf('Posted') === 0) {
+      return json({ error: "This has already been posted — can't delete a published post from here." }, 409);
+    }
+
+    const gid = await getSheetGid(env, token, SHEET_NAME);
+    await sheetsDeleteRow(env, token, gid, rowIdx + 1); // grid rows are 0-based including header
+
+    let studioSynced = true;
+    if (contentId.startsWith('STU-')) {
+      const studioId = contentId.slice(4);
+      try {
+        await supabaseQuery(`studio_calendar?id=eq.${encodeURIComponent(studioId)}`, 'PATCH', { studio_status: 'Good to Go' });
+      } catch (patchErr) {
+        studioSynced = false;
+      }
+    }
+
+    return json({ ok: true, studioSynced });
   } catch (e) {
     return json({ error: e.message }, 500);
   }
