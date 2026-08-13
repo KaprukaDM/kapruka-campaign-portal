@@ -1897,6 +1897,7 @@
             </span>
           </h2>
           <div id="pcalCalGrid" class="pcal-cal-grid"><div class="pcal-empty">Loading…</div></div>
+          <div id="pcalCalDayDetail" style="margin-top:14px;"></div>
         </div>
 
         <div class="pcal-layout">
@@ -3584,7 +3585,18 @@
       if (slotData && slotData.id) {
         try {
           const fresh = await getStudioCalendarItem(slotData.id);
-          if (fresh) slotData = fresh;
+          if (fresh) {
+            slotData = fresh;
+            // Patch the one item in the cached month data too, and repaint
+            // the grid — otherwise the modal shows the corrected status but
+            // the badge on the calendar itself stays stale until the whole
+            // month is reloaded.
+            const idx = (studioMonthRawData || []).findIndex(r => r.id === fresh.id);
+            if (idx !== -1) {
+              studioMonthRawData[idx] = fresh;
+              if (typeof applyStudioFilters === 'function') applyStudioFilters();
+            }
+          }
         } catch (e) {
           console.warn('Could not refresh slot before opening details (showing cached data):', e.message);
         }
@@ -5078,9 +5090,12 @@
       return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
     }
 
+    let pcalCalByDate = {}; // last-loaded month's per-date items, keyed by date — used by the day-detail panel on click
+
     function renderPcalCalendar(days, slotsPerDay) {
       const byDate = {};
       days.forEach(d => { byDate[d.date] = d; });
+      pcalCalByDate = byDate;
 
       const firstOfMonth = new Date(pcalCalYear, pcalCalMonth - 1, 1);
       const startWeekday = firstOfMonth.getDay();
@@ -5099,20 +5114,45 @@
           const cls = info.occupied >= slotsPerDay ? 'full' : (info.occupied >= 3 ? 'partial' : 'free');
           pill = `<div class="pcal-cal-pill ${cls}">${info.occupied}/${slotsPerDay}</div>`;
         }
-        const title = info ? info.items.map(it => `${it.contentId} (${it.page}${it.posted ? ', posted' : ''})`).join('\n') : '';
+        const title = info ? info.items.map(it => `${it.time} — ${it.contentId} (${it.page}${it.posted ? ', posted' : ''})`).join('\n') : '';
         html += `<div class="pcal-cal-day${isPast ? ' past' : ''}" title="${pcalEscapeHtml(title)}" onclick="pickPcalCalDate('${dateStr}')">
           <div class="num">${day}</div>${pill}
         </div>`;
       }
 
       document.getElementById('pcalCalGrid').innerHTML = html;
+      document.getElementById('pcalCalDayDetail').innerHTML = '';
     }
 
     function pickPcalCalDate(dateStr) {
       const input = document.getElementById('pcalDateInput');
-      if (!input) return;
-      input.value = dateStr;
-      loadPcalSlots();
+      if (input) {
+        input.value = dateStr;
+        loadPcalSlots();
+      }
+
+      // Show what's already scheduled that day — date, time, content, page —
+      // right below the grid, since hover tooltips don't work on mobile.
+      const detail = document.getElementById('pcalCalDayDetail');
+      if (!detail) return;
+      const info = pcalCalByDate[dateStr];
+      if (!info || !info.items.length) {
+        detail.innerHTML = `<div class="pcal-hint">Nothing scheduled on ${pcalEscapeHtml(dateStr)} yet.</div>`;
+        return;
+      }
+      const rows = [...info.items]
+        .sort((a, b) => a.time.localeCompare(b.time))
+        .map(it => `
+          <div style="display:flex;gap:10px;align-items:baseline;padding:6px 0;border-bottom:1px solid #f0f0f0;">
+            <span style="font-weight:700;color:var(--primary-purple);min-width:70px;">${pcalEscapeHtml(it.time)}</span>
+            <span style="flex:1;">
+              <strong>${pcalEscapeHtml(it.contentId)}</strong> — ${pcalEscapeHtml(it.page)}
+              ${it.posted ? '<span class="badge" style="background:#E8F5E9;color:#1B5E20;margin-left:6px;">Posted</span>' : ''}
+              ${it.primaryText ? `<div style="color:#666;font-size:12px;margin-top:2px;">${pcalEscapeHtml(it.primaryText.slice(0, 100))}${it.primaryText.length > 100 ? '…' : ''}</div>` : ''}
+            </span>
+          </div>
+        `).join('');
+      detail.innerHTML = `<div style="font-weight:700;margin-bottom:6px;">📅 Scheduled on ${pcalEscapeHtml(dateStr)}</div>${rows}`;
     }
 </script>
 </body>

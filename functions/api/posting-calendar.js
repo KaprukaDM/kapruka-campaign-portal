@@ -175,6 +175,15 @@ function computeOccupiedSlots(rows, targetKey) {
 }
 
 // Per-day occupancy for a whole month, for the calendar grid view.
+//
+// The sheet has no explicit time-of-day column — a post's slot (10am, 12pm,
+// 3pm, 6pm, 9pm) is never stored, only implied at save-time by how many
+// occupying rows already existed for that date (see slotAvailability/
+// computeOccupiedSlots above, used by the POST handler). Reconstructing it
+// here the same way: since `rows` is sheet-append order and a date's
+// occupying rows keep that relative order, the Nth occupying row for a date
+// is the one that landed in the Nth slot when it was scheduled. 6th+ rows in
+// a day all stack on the last slot (9pm), matching that same save-time logic.
 function monthOccupancy(rows, year, month) {
   const byDate = {};
   rows.forEach(row => {
@@ -186,11 +195,14 @@ function monthOccupancy(rows, year, month) {
     if (d.getFullYear() !== year || d.getMonth() !== month - 1) return;
     const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     if (!byDate[dateStr]) byDate[dateStr] = { date: dateStr, occupied: 0, items: [] };
+    const slotIndex = Math.min(byDate[dateStr].occupied, POSTING_SLOTS.length - 1);
     byDate[dateStr].occupied++;
     byDate[dateStr].items.push({
       contentId: String(row[COL.CONTENT_ID] || '').trim(),
       page: String(row[COL.PAGE] || '').trim(),
-      posted: st.indexOf('Posted') === 0
+      posted: st.indexOf('Posted') === 0,
+      time: SLOT_LABELS[slotIndex],
+      primaryText: String(row[COL.PRIMARY_TEXT] || '').trim()
     });
   });
   return Object.values(byDate);
