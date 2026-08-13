@@ -3571,7 +3571,25 @@
     }
 
     // UPDATED: Added rejection reason display
-    function showSlotDetails(slotData, dateStr) {
+    async function showSlotDetails(slotData, dateStr) {
+      // The calendar grid renders from studioMonthRawData, an in-memory
+      // snapshot fetched once per loadStudioCalendar() call with no realtime
+      // sync — if the status changes in the DB after that fetch (another
+      // admin's edit, a DM approval, etc.), the grid badge and this modal
+      // were both about to render off the same stale object. Refresh from
+      // the DB right before building the modal so it always reflects the
+      // true current status, even if the grid badge underneath hasn't
+      // caught up yet. Falls back to the cached object if this fails, so a
+      // network blip doesn't block opening the modal.
+      if (slotData && slotData.id) {
+        try {
+          const fresh = await getStudioCalendarItem(slotData.id);
+          if (fresh) slotData = fresh;
+        } catch (e) {
+          console.warn('Could not refresh slot before opening details (showing cached data):', e.message);
+        }
+      }
+
       // NEW: Show rejection reasons if they exist
       const rejectionInfo = slotData.head_rejection_reason || slotData.dm_rejection_reason ? `
         <div style="background:#FFEBEE;padding:15px;border-radius:8px;margin-bottom:20px;border-left:4px solid #D32F2F;">
