@@ -514,7 +514,13 @@ async function updateStudioStatus(id, statusData) {
   }
 
   // Map studio_status → approval_status
-  if (statusData.studio_status === 'Approved') {
+  // NOTE: the studio-status dropdown's actual option value is 'Approved by
+  // Head' (see admin-dashboard.html statusOptions), not the bare 'Approved'
+  // this used to check for alone — that mismatch meant approval_status,
+  // head_approved, and the head-approval password check below all silently
+  // no-op'd on every real approval. Checking both covers any other caller
+  // still using the bare 'Approved' value.
+  if (statusData.studio_status === 'Approved' || statusData.studio_status === 'Approved by Head') {
     payload.approval_status = 'Approved by Head';
   } else if (statusData.studio_status === 'Submitted for Review') {
     const current = await supabaseQuery(`studio_calendar?id=eq.${id}`);
@@ -539,7 +545,7 @@ async function updateStudioStatus(id, statusData) {
     payload.content_link = statusData.content_link;
   }
 
-  if (statusData.studio_status === 'Approved') {
+  if (statusData.studio_status === 'Approved' || statusData.studio_status === 'Approved by Head') {
     if (!statusData.password || statusData.password !== HEAD_APPROVAL_PASSWORD) {
       throw new Error('Invalid approval password');
     }
