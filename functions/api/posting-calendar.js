@@ -29,9 +29,28 @@
 //  Sheet columns (1-based, "Content Approval List" tab — must match Content.gs COL):
 //    A ContentID  B Platform  C MediaType  D MediaURL  E PrimaryText
 //    F Page  G ScheduleDate  H Status  I..O Links  P TT_RESULT
+//
+//  META-SCHEDULED POSTS (optional, month view only):
+//  Posts scheduled directly in Meta Business Suite (not through this app)
+//  never touch the sheet, so they're otherwise invisible here and can
+//  silently double-book a day. Facebook exposes its own unpublished/
+//  scheduled Page posts via the Graph API, so those are fetched and merged
+//  into the month response as a separate `metaScheduled` list. Instagram has
+//  NO equivalent public API for posts scheduled natively in Business Suite
+//  (only for posts an app itself scheduled via the Content Publishing API,
+//  which doesn't support scheduling at all) — so this is Facebook-only by
+//  necessity, not by choice.
+//  Optional env vars (Cloudflare Pages secrets — same values already used
+//  for functions/api/push-organic-winner-ad.js, if that's set up):
+//    META_PAGE_ACCESS_TOKEN or META_ADS_ACCESS_TOKEN  — needs read access to
+//      the Page's own unpublished feed (pages_manage_posts scope)
+//    META_PAGE_ID
+//  If unset, this section is silently skipped — the rest of the calendar
+//  still works, `metaScheduled` just comes back empty.
 // ============================================================================
 
 const SHEET_NAME = 'Content Approval List';
+const GRAPH_VERSION = 'v21.0';
 const COL = {
   CONTENT_ID: 0, PLATFORM: 1, MEDIA_TYPE: 2, MEDIA_URL: 3, PRIMARY_TEXT: 4,
   PAGE: 5, SCHEDULE_DATE: 6, STATUS: 7
@@ -221,6 +240,38 @@ function slotAvailability(rows, dateStr) {
   };
 }
 
+// ── Meta Business Suite scheduled posts (Facebook only — see header note) ──
+async function fetchMetaScheduledFbPosts(env, year, month) {
+  const token = env.META_PAGE_ACCESS_TOKEN || env.META_ADS_ACCESS_TOKEN;
+  const pageId = env.META_PAGE_ID;
+  if (!token || !pageId) return { items: [], configured: false };
+
+  const url = `https://graph.facebook.com/${GRAPH_VERSION}/${pageId}/feed` +
+    `?is_published=false&fields=id,message,scheduled_publish_time&limit=100&access_token=${encodeURIComponent(token)}`;
+  const res = await fetch(url);
+  const body = await res.json();
+  if (body.error) throw new Error(`Meta scheduled posts: ${body.error.message}`);
+
+  const items = (body.data || [])
+    .filter(p => p.scheduled_publish_time)
+    .map(p => {
+      const d = new Date(p.scheduled_publish_time * 1000); // Graph API returns unix seconds
+      return {
+        id: p.id,
+        message: (p.message || '(no caption)').slice(0, 120),
+        scheduledAt: d.toISOString(),
+        dateStr: d.toISOString().slice(0, 10),
+        time: d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+      };
+    })
+    .filter(p => {
+      const [py, pm] = p.dateStr.split('-').map(Number);
+      return py === year && pm === month;
+    });
+
+  return { items, configured: true };
+}
+
 // ── HTTP handlers ────────────────────────────────────────────────────────
 export async function onRequestGet(context) {
   const { env, request } = context;
@@ -245,7 +296,20 @@ export async function onRequestGet(context) {
     const monthParam = url.searchParams.get('month'); // "YYYY-MM"
     if (monthParam) {
       const [y, m] = monthParam.split('-').map(Number);
-      return json({ days: monthOccupancy(sheetRows, y, m), slotsPerDay: POSTING_SLOTS.length });
+
+      let metaScheduled = [];
+      let metaSyncError = null;
+      try {
+        const result = await fetchMetaScheduledFbPosts(env, y, m);
+        metaScheduled = result.items;
+      } catch (e) {
+        // Non-fatal — the sheet-driven calendar is the source of truth;
+        // Meta's own schedule is a bonus overlay, so a failure here (bad
+        // token scope, rate limit, etc.) shouldn't break the whole view.
+        metaSyncError = e.message;
+      }
+
+      return json({ days: monthOccupancy(sheetRows, y, m), slotsPerDay: POSTING_SLOTS.length, metaScheduled, metaSyncError });
     }
 
     const studioItems = await supabaseQuery(
