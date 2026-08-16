@@ -1609,7 +1609,7 @@
             <h2 style="margin:0;">🚀 Queued for Weekly Ad Push (<span id="queuedAdsCount">0</span>)</h2>
           </div>
           <div style="font-size:12px;color:#666;margin-bottom:16px;">
-            This week's 🏆 Winners that the Monday automation hasn't pushed to an ad yet.
+            🏆 Winners (from the last 100 synced posts) that haven't been pushed to an ad yet — stays on this list until pushed, regardless of how much time passes.
             <span id="queuedAdsNote"></span>
           </div>
           <div class="table-container">
@@ -4216,12 +4216,14 @@
       const tbody = document.getElementById('queuedAdsTable');
       if (!card || !tbody) return;
 
-      const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-      const thisWeeksWinners = winnerGroups.filter(p => p.created_time && new Date(p.created_time).getTime() >= sevenDaysAgo);
-
-      if (thisWeeksWinners.length === 0) {
+      // No time-window filter here — a winner stays in this list until it's
+      // actually pushed, however long that takes. Scope is already bounded
+      // by the 100-post fetch in loadFacebookPerformance(), not a date cutoff,
+      // so a winner from post #37 doesn't silently vanish from the queue just
+      // because a week passed without anyone pushing it.
+      if (winnerGroups.length === 0) {
         card.style.display = '';
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;">No winners in the last 7 days yet.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;">No winners yet.</td></tr>';
         document.getElementById('queuedAdsCount').textContent = '0';
         return;
       }
@@ -4234,17 +4236,17 @@
         console.warn('Could not check already-pushed ads (showing all winners as queued):', e.message);
       }
 
-      const queued = thisWeeksWinners.filter(p => !pushedKeys.has(p.key));
-      const alreadyPushed = thisWeeksWinners.length - queued.length;
+      const queued = winnerGroups.filter(p => !pushedKeys.has(p.key));
+      const alreadyPushed = winnerGroups.length - queued.length;
 
       card.style.display = '';
       document.getElementById('queuedAdsCount').textContent = queued.length;
       document.getElementById('queuedAdsNote').textContent = alreadyPushed > 0
-        ? `${alreadyPushed} other winner(s) this week already have an ad and are excluded.`
+        ? `${alreadyPushed} other winner(s) already have an ad and are excluded.`
         : '';
 
       if (queued.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;">All of this week\'s winners have already been pushed to ads.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;">All current winners have already been pushed to ads.</td></tr>';
         return;
       }
 

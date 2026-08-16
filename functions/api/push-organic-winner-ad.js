@@ -46,7 +46,6 @@
 
 const CREATIVE_SHEET_GID = '275837150';
 const GRAPH_VERSION = 'v21.0';
-const LOOKBACK_DAYS = 7;
 const WINNER_MULTIPLIER = 1.5;
 
 const SUPABASE_URL = 'https://ivllhheqqiseagmctfyp.supabase.co';
@@ -313,11 +312,14 @@ export async function onRequestPost(context) {
     const alreadyPushed = await supabaseQuery(`organic_winner_ad_pushes?group_key=eq.${encodeURIComponent(group_key)}&select=ad_id`);
     if (alreadyPushed.length) return json({ error: 'This post has already been pushed to an ad.', adId: alreadyPushed[0].ad_id }, 409);
 
-    const since = new Date(Date.now() - LOOKBACK_DAYS * 24 * 60 * 60 * 1000).toISOString();
-    const posts = await supabaseQuery(`facebook_post_performance?created_time=gte.${encodeURIComponent(since)}&order=created_time.desc&limit=500`);
+    // Matches the dashboard's Queued-for-Ads scope exactly (see
+    // admin-dashboard.html renderQueuedForAds) — bounded by post count, not
+    // a date cutoff, so a winner the dashboard is showing (however old)
+    // never 404s here just because it fell outside a fixed day window.
+    const posts = await supabaseQuery('facebook_post_performance?order=created_time.desc&limit=100');
     const grouped = groupPosts(posts);
     const group = grouped.find(g => g.key === group_key);
-    if (!group) return json({ error: 'That post was not found in the last 7 days of synced performance data.' }, 404);
+    if (!group) return json({ error: 'That post was not found in the last 100 synced posts — it may have aged out. Refresh the dashboard and retry.' }, 404);
     if (!isWinner(group, grouped)) return json({ error: 'That post no longer qualifies as a Winner (performance data may have shifted since the page loaded — refresh and retry).' }, 409);
 
     const adsetId = env.TARGET_ADSET_ID || '52816670204854';
