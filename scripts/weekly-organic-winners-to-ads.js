@@ -395,6 +395,81 @@ async function buildCreativeFromSheetRow(row, igUserId) {
   return { source: 'sheet_match', contentId: row['Content ID'] || null, ctaLink, message, creativeId: creative.id };
 }
 
+// Rebuilds a fresh link_data ad from the post's OWN image, instead of
+// reusing the post as an object (object_story_id / source_instagram_media_id)
+// — that reuse path requires the ad account to be formally assigned the Page
+// as a Business Manager asset, which isn't set up on this account (confirmed
+// live: /act_.../promote_pages returns empty, and object_story_id fails with
+// "Post not owned by ad's Page"). Creating brand-new content that merely
+// references the Page works under a much looser permission level (confirmed
+// live, same as the Aug 12 ad that succeeded this way) — this reproduces
+// that same working shape for the "no sheet match" case instead of failing.
+async function buildCreativeFromLivePostImage(group, igUserId) {
+  const postId = group.fbPostId || group.igPostId;
+  if (!postId) return null;
+  const isIg = !group.fbPostId && !!group.igPostId;
+  const ctaLink = extractCtaLink(group.message) || KAPRUKA_HOME_URL;
+  const message = (group.message || '').slice(0, 600);
+
+  if (DRY_RUN) {
+    return { source: 'live_post_image', ctaLink, message, dryRunNote: `would fetch ${isIg ? 'IG media' : 'FB post'} ${postId}'s own image, upload it, build a fresh link_data creative` };
+  }
+
+  let imageUrl;
+  try {
+    if (isIg) {
+      const media = await graphGet(postId, { fields: 'media_url,thumbnail_url' }, PAGE_SCOPED_TOKEN);
+      imageUrl = media.media_url || media.thumbnail_url;
+    } else {
+      const post = await graphGet(postId, { fields: 'full_picture' }, PAGE_SCOPED_TOKEN);
+      imageUrl = post.full_picture;
+    }
+  } catch (e) {
+    console.log(`  Could not fetch the post's own image (${e.message}) — falling back to boosting the post directly.`);
+    return null;
+  }
+  if (!imageUrl) {
+    console.log('  Post has no image to build a creative from — falling back to boosting the post directly.');
+    return null;
+  }
+
+  const imageRes = await fetch(imageUrl);
+  if (!imageRes.ok) { console.log('  Could not download the post\'s image — falling back to boosting the post directly.'); return null; }
+  const imageBytes = Buffer.from(await imageRes.arrayBuffer());
+  const hash = await uploadAdImage(imageBytes, `${postId.replace(/[^a-zA-Z0-9]/g, '_')}.jpg`);
+
+  const linkData = {
+    message, link: ctaLink, image_hash: hash,
+    call_to_action: { type: 'SHOP_NOW', value: { link: ctaLink } },
+  };
+
+  let creative;
+  try {
+    creative = await graphPost(`${AD_ACCOUNT_ID}/adcreatives`, {
+      name: `Organic Winner (live image) - ${postId}`,
+      object_story_spec: { page_id: PAGE_ID, ...(igUserId ? { instagram_actor_id: igUserId } : {}), link_data: linkData },
+    });
+  } catch (e) {
+    if (igUserId && /instagram_actor_id/i.test(e.message)) {
+      console.log('  IG placement rejected — retrying Facebook-only.');
+      creative = await graphPost(`${AD_ACCOUNT_ID}/adcreatives`, {
+        name: `Organic Winner (live image, FB-only) - ${postId}`,
+        object_story_spec: { page_id: PAGE_ID, link_data: linkData },
+      });
+    } else {
+      throw e;
+    }
+  }
+
+  return { source: 'live_post_image', ctaLink, message, creativeId: creative.id };
+}
+
+// Last-resort fallback: reuse the post as an ad object directly. Requires
+// the ad account to be formally assigned the Page/IG account as Business
+// Manager assets — currently NOT set up on this account (see note above),
+// so this will keep failing until that's fixed on Meta's side. Kept as a
+// fallback rather than removed so it starts working automatically once the
+// Business Manager connection is actually in place, without a code change.
 async function buildCreativeFromExistingPost(group, igUserId) {
   const ctaLink = KAPRUKA_HOME_URL;
 
@@ -488,8 +563,11 @@ async function main() {
     try {
       const sheetMatch = findSheetMatch(sheetRows, group.message);
       let built = sheetMatch ? await buildCreativeFromSheetRow(sheetMatch, igUserId) : null;
+      if (!built && !sheetMatch) {
+        console.log('  No sheet match — rebuilding a fresh ad from the post\'s own image.');
+        built = await buildCreativeFromLivePostImage(group, igUserId);
+      }
       if (!built) {
-        if (!sheetMatch) console.log('  No sheet match — reusing existing organic post.');
         built = await buildCreativeFromExistingPost(group, igUserId);
       }
 

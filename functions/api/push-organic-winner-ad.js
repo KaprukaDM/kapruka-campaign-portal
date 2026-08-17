@@ -293,6 +293,72 @@ async function buildCreativeFromSheetRow(env, googleToken, row, igUserId) {
   return { source: 'sheet_match', contentId: row['Content ID'] || null, ctaLink, message, creativeId: creative.id };
 }
 
+// Rebuilds a fresh link_data ad from the post's OWN image, instead of
+// reusing the post as an object (object_story_id / source_instagram_media_id)
+// — that reuse path requires the ad account to be formally assigned the Page
+// as a Business Manager asset, which isn't set up on this account (confirmed
+// live: /act_.../promote_pages returns empty, and object_story_id fails with
+// "Post not owned by ad's Page"). Creating brand-new content that merely
+// references the Page works under a much looser permission level — this
+// reproduces that same working shape instead of failing.
+async function buildCreativeFromLivePostImage(env, group, igUserId) {
+  const postId = group.fbPostId || group.igPostId;
+  if (!postId) return null;
+  const isIg = !group.fbPostId && !!group.igPostId;
+  const ctaLink = extractCtaLink(group.message) || env.KAPRUKA_HOME_URL || 'https://www.kapruka.com';
+  const message = (group.message || '').slice(0, 600);
+
+  const pageScopedToken = env.META_PAGE_ACCESS_TOKEN || env.META_ADS_ACCESS_TOKEN;
+  let imageUrl;
+  try {
+    if (isIg) {
+      const media = await graphGet(env, postId, { fields: 'media_url,thumbnail_url' }, pageScopedToken);
+      imageUrl = media.media_url || media.thumbnail_url;
+    } else {
+      const post = await graphGet(env, postId, { fields: 'full_picture' }, pageScopedToken);
+      imageUrl = post.full_picture;
+    }
+  } catch (e) {
+    return null;
+  }
+  if (!imageUrl) return null;
+
+  const imageRes = await fetch(imageUrl);
+  if (!imageRes.ok) return null;
+  const imageBytes = await imageRes.arrayBuffer();
+  const hash = await uploadAdImage(env, imageBytes, `${postId.replace(/[^a-zA-Z0-9]/g, '_')}.jpg`);
+
+  const linkData = {
+    message, link: ctaLink, image_hash: hash,
+    call_to_action: { type: 'SHOP_NOW', value: { link: ctaLink } },
+  };
+
+  let creative;
+  try {
+    creative = await graphPost(env, `${env.META_AD_ACCOUNT_ID}/adcreatives`, {
+      name: `Organic Winner (live image) - ${postId}`,
+      object_story_spec: { page_id: env.META_PAGE_ID, ...(igUserId ? { instagram_actor_id: igUserId } : {}), link_data: linkData },
+    });
+  } catch (e) {
+    if (igUserId && /instagram_actor_id/i.test(e.message)) {
+      creative = await graphPost(env, `${env.META_AD_ACCOUNT_ID}/adcreatives`, {
+        name: `Organic Winner (live image, FB-only) - ${postId}`,
+        object_story_spec: { page_id: env.META_PAGE_ID, link_data: linkData },
+      });
+    } else {
+      throw e;
+    }
+  }
+
+  return { source: 'live_post_image', ctaLink, message, creativeId: creative.id };
+}
+
+// Last-resort fallback: reuse the post as an ad object directly. Requires
+// the ad account to be formally assigned the Page/IG account as Business
+// Manager assets — currently NOT set up (see note above), so this will keep
+// failing until that's fixed on Meta's side. Kept as a fallback rather than
+// removed so it starts working automatically once the Business Manager
+// connection is actually in place, without a code change.
 async function buildCreativeFromExistingPost(env, group, igUserId) {
   const ctaLink = env.KAPRUKA_HOME_URL || 'https://www.kapruka.com';
 
@@ -356,6 +422,7 @@ export async function onRequestPost(context) {
 
     const sheetMatch = sheetRows.find(row => row['Primary Text'] && fuzzyMatch(row['Primary Text'], group.message));
     let built = sheetMatch ? await buildCreativeFromSheetRow(env, googleToken, sheetMatch, igUserId) : null;
+    if (!built && !sheetMatch) built = await buildCreativeFromLivePostImage(env, group, igUserId);
     if (!built) built = await buildCreativeFromExistingPost(env, group, igUserId);
 
     const ad = await graphPost(env, `${env.META_AD_ACCOUNT_ID}/ads`, {
