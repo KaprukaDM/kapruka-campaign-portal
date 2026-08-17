@@ -45,10 +45,11 @@
 //     are restricted to specific accounts, the sheet-match step will fail
 //     closed (falls back to reusing the existing post) rather than crash —
 //     but you won't get the sheet-matched creative you expect.
-//   - Video rows in the sheet are NOT uploaded (video ad-creative upload is
-//     a separate chunked API this script doesn't implement yet) — a winner
-//     whose only sheet match is a video row falls back to reusing the
-//     existing organic post instead.
+//   - Video/Reel winners ARE uploaded as native video ads (via /advideos +
+//     processing-status polling, see buildVideoData below). This can add a
+//     few minutes per video to the run — fine for the weekly cron, which has
+//     no request-timeout constraint (unlike the manual "Push Now" button in
+//     push-organic-winner-ad.js, which still skips video for that reason).
 //   - Ads are created with status ACTIVE — they start spending the ad set's
 //     budget immediately, with no human approval step, per the team's
 //     explicit choice. Strongly recommend a first dry run (see --dry-run
@@ -333,18 +334,124 @@ async function uploadAdImage(imageBytes, filename) {
   return entry.hash;
 }
 
+async function uploadAdVideo(videoBytes, filename) {
+  const url = `https://graph.facebook.com/${GRAPH_VERSION}/${AD_ACCOUNT_ID}/advideos`;
+  const form = new FormData();
+  form.append('access_token', ADS_ACCESS_TOKEN);
+  form.append('source', new Blob([videoBytes]), filename);
+  const res = await fetch(url, { method: 'POST', body: form });
+  const json = await res.json();
+  if (json.error) throw new Error(`advideos upload: ${json.error.message}`);
+  if (!json.id) throw new Error('advideos upload: no video id returned');
+  return json.id;
+}
+
+const VIDEO_PROCESSING_TIMEOUT_MS = 5 * 60 * 1000;
+const VIDEO_PROCESSING_POLL_MS = 5000;
+
+async function waitForVideoReady(videoId) {
+  const start = Date.now();
+  while (Date.now() - start < VIDEO_PROCESSING_TIMEOUT_MS) {
+    const data = await graphGet(videoId, { fields: 'status' });
+    const status = data.status?.video_status;
+    if (status === 'ready') return;
+    if (status === 'error') throw new Error(`Meta rejected the uploaded video: ${JSON.stringify(data.status)}`);
+    await new Promise(r => setTimeout(r, VIDEO_PROCESSING_POLL_MS));
+  }
+  throw new Error(`video ${videoId} did not finish processing within ${VIDEO_PROCESSING_TIMEOUT_MS / 1000}s`);
+}
+
+// Uploads video bytes, waits for Meta to finish processing, and resolves a
+// thumbnail image_hash (prefers the post's own thumbnail if one was passed
+// in; falls back to a Meta-generated thumbnail for the uploaded video).
+// Returns the video_data fields shared by every video creative (video_id +
+// image_hash + CTA) — callers merge in link_description themselves.
+async function buildVideoData(videoBytes, namePrefix, ctaLink, providedThumbnailUrl) {
+  console.log(`  Uploading video (${(videoBytes.length / 1024 / 1024).toFixed(1)} MB) to ad account...`);
+  const videoId = await uploadAdVideo(videoBytes, `${namePrefix}.mp4`);
+  console.log(`  Uploaded as video ${videoId}, waiting for Meta to finish processing...`);
+  await waitForVideoReady(videoId);
+  console.log('  Video ready.');
+
+  let imageHash = null;
+  if (providedThumbnailUrl) {
+    try {
+      const thumbRes = await fetch(providedThumbnailUrl);
+      if (thumbRes.ok) imageHash = await uploadAdImage(Buffer.from(await thumbRes.arrayBuffer()), `${namePrefix}_thumb.jpg`);
+    } catch (e) {
+      console.log(`  Could not use the post's own thumbnail (${e.message}), trying a Meta-generated one instead.`);
+    }
+  }
+  if (!imageHash) {
+    const thumbs = await graphGet(`${videoId}/thumbnails`, {});
+    const picked = thumbs.data?.find(t => t.is_preferred) || thumbs.data?.[0];
+    if (picked?.uri) {
+      const thumbRes = await fetch(picked.uri);
+      if (thumbRes.ok) imageHash = await uploadAdImage(Buffer.from(await thumbRes.arrayBuffer()), `${namePrefix}_autothumb.jpg`);
+    }
+  }
+  if (!imageHash) throw new Error('could not obtain a thumbnail image for the video ad');
+
+  return { video_id: videoId, image_hash: imageHash, call_to_action: { type: 'SHOP_NOW', value: { link: ctaLink } } };
+}
+
 // ═══════════════════════════════════════════════════════════════
 // CREATIVE BUILDERS
 // ═══════════════════════════════════════════════════════════════
 
 async function buildCreativeFromSheetRow(row, igUserId) {
   const mediaType = (row['Image or Video'] || '').trim().toLowerCase();
+  const driveFileId = extractDriveFileId(row['URL']);
+
   if (mediaType === 'video') {
-    console.log('  Sheet match is a video — video creative upload isn\'t implemented, falling back to reused-post.');
-    return null;
+    if (!driveFileId) { console.log('  Video sheet match has no usable Drive URL — falling back to reused-post.'); return null; }
+    const ctaLink = extractCtaLink(row['Primary Text']) || KAPRUKA_HOME_URL;
+    const message = (row['Primary Text'] || '').trim();
+    console.log(`  Sheet match (video): Content ID ${row['Content ID'] || '?'}, CTA link -> ${ctaLink}`);
+
+    if (DRY_RUN) {
+      return { source: 'sheet_match_video', contentId: row['Content ID'] || null, ctaLink, message, dryRunNote: `would download Drive video ${driveFileId}, upload+process as a native video ad` };
+    }
+
+    const downloadRes = await fetch(`https://drive.google.com/uc?export=download&id=${driveFileId}`);
+    const contentType = downloadRes.headers.get('content-type') || '';
+    if (!downloadRes.ok || contentType.includes('text/html')) {
+      // Also fails closed for large files Drive can't direct-download without
+      // a virus-scan confirmation click — same failure shape as "not shared".
+      console.log('  Could not download the Drive video directly (not publicly shared, or too large for a direct link?) — falling back to reused-post.');
+      return null;
+    }
+    const videoBytes = Buffer.from(await downloadRes.arrayBuffer());
+
+    let videoData;
+    try {
+      videoData = await buildVideoData(videoBytes, driveFileId, ctaLink, null);
+    } catch (e) {
+      console.log(`  Video upload/processing failed (${e.message}) — falling back to reused-post.`);
+      return null;
+    }
+
+    let creative;
+    try {
+      creative = await graphPost(`${AD_ACCOUNT_ID}/adcreatives`, {
+        name: `Organic Winner (sheet video) - ${row['Content ID'] || driveFileId}`,
+        object_story_spec: { page_id: PAGE_ID, ...(igUserId ? { instagram_actor_id: igUserId } : {}), video_data: { ...videoData, link_description: message } },
+      });
+    } catch (e) {
+      if (igUserId && /instagram_actor_id/i.test(e.message)) {
+        console.log('  IG placement rejected (ad account likely not connected to the IG account in Business Manager) — retrying Facebook-only.');
+        creative = await graphPost(`${AD_ACCOUNT_ID}/adcreatives`, {
+          name: `Organic Winner (sheet video, FB-only) - ${row['Content ID'] || driveFileId}`,
+          object_story_spec: { page_id: PAGE_ID, video_data: { ...videoData, link_description: message } },
+        });
+      } else {
+        throw e;
+      }
+    }
+
+    return { source: 'sheet_match_video', contentId: row['Content ID'] || null, ctaLink, message, creativeId: creative.id };
   }
 
-  const driveFileId = extractDriveFileId(row['URL']);
   if (!driveFileId) { console.log('  Sheet match has no usable Drive URL — falling back to reused-post.'); return null; }
 
   const ctaLink = extractCtaLink(row['Primary Text']) || KAPRUKA_HOME_URL;
@@ -395,64 +502,116 @@ async function buildCreativeFromSheetRow(row, igUserId) {
   return { source: 'sheet_match', contentId: row['Content ID'] || null, ctaLink, message, creativeId: creative.id };
 }
 
-// Rebuilds a fresh link_data ad from the post's OWN image, instead of
-// reusing the post as an object (object_story_id / source_instagram_media_id)
-// — that reuse path requires the ad account to be formally assigned the Page
-// as a Business Manager asset, which isn't set up on this account (confirmed
-// live: /act_.../promote_pages returns empty, and object_story_id fails with
+// Inspects the post's own media and returns enough info to build a creative
+// from it directly, without downloading anything yet. For FB video posts,
+// the attachment only carries the video's object id (attachment.target.id)
+// — the actual downloadable source URL lives on that video object itself,
+// hence the second lookup.
+async function fetchPostMediaInfo(postId, isIg) {
+  if (isIg) {
+    const media = await graphGet(postId, { fields: 'media_url,thumbnail_url,media_type,media_product_type' }, PAGE_SCOPED_TOKEN);
+    const isVideo = media.media_type === 'VIDEO' || media.media_product_type === 'REELS';
+    return {
+      isVideo,
+      imageUrl: media.media_url || media.thumbnail_url || null,
+      videoUrl: isVideo ? (media.media_url || null) : null,
+      thumbnailUrl: media.thumbnail_url || null,
+    };
+  }
+  const post = await graphGet(postId, { fields: 'full_picture,attachments{media_type,target}' }, PAGE_SCOPED_TOKEN);
+  const attachment = post.attachments?.data?.[0];
+  const isVideo = attachment?.media_type === 'video';
+  let videoUrl = null, thumbnailUrl = post.full_picture || null;
+  if (isVideo && attachment?.target?.id) {
+    try {
+      const video = await graphGet(attachment.target.id, { fields: 'source,picture' }, PAGE_SCOPED_TOKEN);
+      videoUrl = video.source || null;
+      thumbnailUrl = video.picture || thumbnailUrl;
+    } catch (e) {
+      console.log(`  Could not fetch the video's own source URL (${e.message}).`);
+    }
+  }
+  return { isVideo, imageUrl: post.full_picture || null, videoUrl, thumbnailUrl };
+}
+
+// Rebuilds a fresh ad (image link_data, or native video_data for
+// video/Reels) from the post's OWN media, instead of reusing the post as an
+// object (object_story_id / source_instagram_media_id) — that reuse path
+// requires the ad account to be formally assigned the Page as a Business
+// Manager asset, which isn't set up on this account (confirmed live:
+// /act_.../promote_pages returns empty, and object_story_id fails with
 // "Post not owned by ad's Page"). Creating brand-new content that merely
 // references the Page works under a much looser permission level (confirmed
 // live, same as the Aug 12 ad that succeeded this way) — this reproduces
 // that same working shape for the "no sheet match" case instead of failing.
-async function buildCreativeFromLivePostImage(group, igUserId) {
+async function buildCreativeFromLivePost(group, igUserId) {
   const postId = group.fbPostId || group.igPostId;
   if (!postId) return null;
   const isIg = !group.fbPostId && !!group.igPostId;
   const ctaLink = extractCtaLink(group.message) || KAPRUKA_HOME_URL;
   const message = (group.message || '').slice(0, 600);
+  const safeName = postId.replace(/[^a-zA-Z0-9]/g, '_');
 
   if (DRY_RUN) {
-    return { source: 'live_post_image', ctaLink, message, dryRunNote: `would fetch ${isIg ? 'IG media' : 'FB post'} ${postId}'s own image, upload it, build a fresh link_data creative` };
+    return { source: 'live_post', ctaLink, message, dryRunNote: `would inspect ${isIg ? 'IG media' : 'FB post'} ${postId} and build an image or native video creative from its own media` };
   }
 
-  // There is no video-upload capability in this pipeline (no /advideos
-  // call). Without this check, a video/Reel winner would silently become a
-  // static-image ad built from its thumbnail frame — mechanically
-  // successful but a materially different, misleading ad. Bail out instead
-  // and let it fall through to the direct-reuse fallback, which references
-  // the native post/media object and would preserve the actual video if
-  // that path is ever unblocked.
-  let imageUrl;
+  let info;
   try {
-    if (isIg) {
-      const media = await graphGet(postId, { fields: 'media_url,thumbnail_url,media_type,media_product_type' }, PAGE_SCOPED_TOKEN);
-      if (media.media_type === 'VIDEO' || media.media_product_type === 'REELS') {
-        console.log('  This is an IG video/Reel — no video-upload support, falling back to boosting the post directly.');
-        return null;
-      }
-      imageUrl = media.media_url || media.thumbnail_url;
-    } else {
-      const post = await graphGet(postId, { fields: 'full_picture,attachments{media_type}' }, PAGE_SCOPED_TOKEN);
-      const attachmentType = post.attachments?.data?.[0]?.media_type;
-      if (attachmentType === 'video') {
-        console.log('  This is an FB video post — no video-upload support, falling back to boosting the post directly instead of faking a static-image ad.');
-        return null;
-      }
-      imageUrl = post.full_picture;
-    }
+    info = await fetchPostMediaInfo(postId, isIg);
   } catch (e) {
-    console.log(`  Could not fetch the post's own image (${e.message}) — falling back to boosting the post directly.`);
+    console.log(`  Could not fetch the post's own media (${e.message}) — falling back to boosting the post directly.`);
     return null;
   }
-  if (!imageUrl) {
+
+  if (info.isVideo) {
+    if (!info.videoUrl) {
+      console.log('  This is a video/Reel but no downloadable source URL was found — falling back to boosting the post directly.');
+      return null;
+    }
+    console.log('  This is a video/Reel — uploading it as a native video ad.');
+    const videoRes = await fetch(info.videoUrl);
+    if (!videoRes.ok) { console.log('  Could not download the video file — falling back to boosting the post directly.'); return null; }
+    const videoBytes = Buffer.from(await videoRes.arrayBuffer());
+
+    let videoData;
+    try {
+      videoData = await buildVideoData(videoBytes, safeName, ctaLink, info.thumbnailUrl);
+    } catch (e) {
+      console.log(`  Video upload/processing failed (${e.message}) — falling back to boosting the post directly.`);
+      return null;
+    }
+
+    let creative;
+    try {
+      creative = await graphPost(`${AD_ACCOUNT_ID}/adcreatives`, {
+        name: `Organic Winner (live video) - ${postId}`,
+        object_story_spec: { page_id: PAGE_ID, ...(igUserId ? { instagram_actor_id: igUserId } : {}), video_data: { ...videoData, link_description: message } },
+      });
+    } catch (e) {
+      if (igUserId && /instagram_actor_id/i.test(e.message)) {
+        console.log('  IG placement rejected — retrying Facebook-only.');
+        creative = await graphPost(`${AD_ACCOUNT_ID}/adcreatives`, {
+          name: `Organic Winner (live video, FB-only) - ${postId}`,
+          object_story_spec: { page_id: PAGE_ID, video_data: { ...videoData, link_description: message } },
+        });
+      } else {
+        throw e;
+      }
+    }
+
+    return { source: 'live_video', ctaLink, message, creativeId: creative.id };
+  }
+
+  if (!info.imageUrl) {
     console.log('  Post has no image to build a creative from — falling back to boosting the post directly.');
     return null;
   }
 
-  const imageRes = await fetch(imageUrl);
+  const imageRes = await fetch(info.imageUrl);
   if (!imageRes.ok) { console.log('  Could not download the post\'s image — falling back to boosting the post directly.'); return null; }
   const imageBytes = Buffer.from(await imageRes.arrayBuffer());
-  const hash = await uploadAdImage(imageBytes, `${postId.replace(/[^a-zA-Z0-9]/g, '_')}.jpg`);
+  const hash = await uploadAdImage(imageBytes, `${safeName}.jpg`);
 
   const linkData = {
     message, link: ctaLink, image_hash: hash,
@@ -580,8 +739,8 @@ async function main() {
       const sheetMatch = findSheetMatch(sheetRows, group.message);
       let built = sheetMatch ? await buildCreativeFromSheetRow(sheetMatch, igUserId) : null;
       if (!built && !sheetMatch) {
-        console.log('  No sheet match — rebuilding a fresh ad from the post\'s own image.');
-        built = await buildCreativeFromLivePostImage(group, igUserId);
+        console.log('  No sheet match — rebuilding a fresh ad from the post\'s own media.');
+        built = await buildCreativeFromLivePost(group, igUserId);
       }
       if (!built) {
         built = await buildCreativeFromExistingPost(group, igUserId);

@@ -20,11 +20,19 @@
 //  ever changes.
 //
 //  ADVANTAGE OVER THE NODE SCRIPT: this endpoint reads the creative sheet
-//  and downloads Drive images using the SAME authenticated Google token
-//  functions/api/posting-calendar.js already uses (GOOGLE_CLIENT_ID/SECRET/
-//  REFRESH_TOKEN, scoped to spreadsheets + drive.readonly) — so, unlike the
-//  Node script, it does NOT require the sheet or its Drive files to be
-//  publicly link-shared.
+//  and downloads Drive images/videos using the SAME authenticated Google
+//  token functions/api/posting-calendar.js already uses (GOOGLE_CLIENT_ID/
+//  SECRET/REFRESH_TOKEN, scoped to spreadsheets + drive.readonly) — so,
+//  unlike the Node script, it does NOT require the sheet or its Drive files
+//  to be publicly link-shared.
+//
+//  VIDEO/REEL HANDLING: video winners are uploaded as native video ads
+//  (/advideos), but this is a synchronous HTTP request with a real timeout,
+//  so the wait for Meta to finish processing the video is capped short (see
+//  waitForVideoReady). If it doesn't finish in time, this endpoint falls
+//  back to the next option rather than hanging the click — the weekly cron
+//  (scripts/weekly-organic-winners-to-ads.js), which has no such timeout,
+//  will still pick the same video up cleanly on its own run.
 //
 //  Env vars required (Cloudflare Pages secrets — separate from the GitHub
 //  Actions secrets used by the weekly cron; both must be set independently):
@@ -250,17 +258,97 @@ async function uploadAdImage(env, imageBytes, filename) {
   return entry.hash;
 }
 
+async function uploadAdVideo(env, videoBytes, filename) {
+  const form = new FormData();
+  form.append('access_token', env.META_ADS_ACCESS_TOKEN);
+  form.append('source', new Blob([videoBytes]), filename);
+  const res = await fetch(`https://graph.facebook.com/${GRAPH_VERSION}/${env.META_AD_ACCOUNT_ID}/advideos`, { method: 'POST', body: form });
+  const body = await res.json();
+  if (body.error) throw new Error(`advideos upload: ${body.error.message}`);
+  if (!body.id) throw new Error('advideos upload: no video id returned');
+  return body.id;
+}
+
+// A Pages Function has a request lifetime, unlike the cron script — so this
+// polls for a much shorter budget. If the video isn't done processing in
+// time, the caller treats it the same as "couldn't build a video creative"
+// and falls back to the next option (reused-post) rather than blocking the
+// click. The upload itself already happened and keeps processing on Meta's
+// side either way; it's just not used for this particular push.
+async function waitForVideoReady(env, videoId, timeoutMs = 25000, intervalMs = 3000) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    const data = await graphGet(env, videoId, { fields: 'status' });
+    const status = data.status?.video_status;
+    if (status === 'ready') return true;
+    if (status === 'error') throw new Error(`Meta rejected the uploaded video: ${JSON.stringify(data.status)}`);
+    await new Promise(r => setTimeout(r, intervalMs));
+  }
+  return false;
+}
+
+async function buildVideoData(env, videoBytes, namePrefix, ctaLink, providedThumbnailUrl) {
+  const videoId = await uploadAdVideo(env, videoBytes, `${namePrefix}.mp4`);
+  const ready = await waitForVideoReady(env, videoId);
+  if (!ready) throw new Error(`video ${videoId} is still processing — it'll be usable shortly, but not within this request`);
+
+  let imageHash = null;
+  if (providedThumbnailUrl) {
+    try {
+      const thumbRes = await fetch(providedThumbnailUrl);
+      if (thumbRes.ok) imageHash = await uploadAdImage(env, await thumbRes.arrayBuffer(), `${namePrefix}_thumb.jpg`);
+    } catch (e) { /* fall through to Meta-generated thumbnail below */ }
+  }
+  if (!imageHash) {
+    const thumbs = await graphGet(env, `${videoId}/thumbnails`, {});
+    const picked = thumbs.data?.find(t => t.is_preferred) || thumbs.data?.[0];
+    if (picked?.uri) {
+      const thumbRes = await fetch(picked.uri);
+      if (thumbRes.ok) imageHash = await uploadAdImage(env, await thumbRes.arrayBuffer(), `${namePrefix}_autothumb.jpg`);
+    }
+  }
+  if (!imageHash) throw new Error('could not obtain a thumbnail image for the video ad');
+
+  return { video_id: videoId, image_hash: imageHash, call_to_action: { type: 'SHOP_NOW', value: { link: ctaLink } } };
+}
+
 // ── Creative builders ─────────────────────────────────────────────────────
 async function buildCreativeFromSheetRow(env, googleToken, row, igUserId) {
   const mediaType = (row['Image or Video'] || '').trim().toLowerCase();
-  if (mediaType === 'video') return null; // video ad-creative upload not implemented
-
   const driveFileId = extractDriveFileId(row['URL']);
   if (!driveFileId) return null;
 
   const homeUrl = env.KAPRUKA_HOME_URL || 'https://www.kapruka.com';
   const ctaLink = extractCtaLink(row['Primary Text']) || homeUrl;
   const message = (row['Primary Text'] || '').trim();
+
+  if (mediaType === 'video') {
+    const videoBytes = await downloadDriveFile(googleToken, driveFileId);
+    let videoData;
+    try {
+      videoData = await buildVideoData(env, videoBytes, driveFileId, ctaLink, null);
+    } catch (e) {
+      console.warn('Sheet video upload/processing did not finish in time, falling back:', e.message);
+      return null;
+    }
+    let creative;
+    try {
+      creative = await graphPost(env, `${env.META_AD_ACCOUNT_ID}/adcreatives`, {
+        name: `Organic Winner (sheet video) - ${row['Content ID'] || driveFileId}`,
+        object_story_spec: { page_id: env.META_PAGE_ID, ...(igUserId ? { instagram_actor_id: igUserId } : {}), video_data: { ...videoData, link_description: message } },
+      });
+    } catch (e) {
+      if (igUserId && /instagram_actor_id/i.test(e.message)) {
+        creative = await graphPost(env, `${env.META_AD_ACCOUNT_ID}/adcreatives`, {
+          name: `Organic Winner (sheet video, FB-only) - ${row['Content ID'] || driveFileId}`,
+          object_story_spec: { page_id: env.META_PAGE_ID, video_data: { ...videoData, link_description: message } },
+        });
+      } else {
+        throw e;
+      }
+    }
+    return { source: 'sheet_match_video', contentId: row['Content ID'] || null, ctaLink, message, creativeId: creative.id };
+  }
 
   const imageBytes = await downloadDriveFile(googleToken, driveFileId);
   const hash = await uploadAdImage(env, imageBytes, `${driveFileId}.jpg`);
@@ -293,46 +381,102 @@ async function buildCreativeFromSheetRow(env, googleToken, row, igUserId) {
   return { source: 'sheet_match', contentId: row['Content ID'] || null, ctaLink, message, creativeId: creative.id };
 }
 
-// Rebuilds a fresh link_data ad from the post's OWN image, instead of
-// reusing the post as an object (object_story_id / source_instagram_media_id)
-// — that reuse path requires the ad account to be formally assigned the Page
-// as a Business Manager asset, which isn't set up on this account (confirmed
-// live: /act_.../promote_pages returns empty, and object_story_id fails with
+async function fetchPostMediaInfo(env, postId, isIg, pageScopedToken) {
+  if (isIg) {
+    const media = await graphGet(env, postId, { fields: 'media_url,thumbnail_url,media_type,media_product_type' }, pageScopedToken);
+    const isVideo = media.media_type === 'VIDEO' || media.media_product_type === 'REELS';
+    return {
+      isVideo,
+      imageUrl: media.media_url || media.thumbnail_url || null,
+      videoUrl: isVideo ? (media.media_url || null) : null,
+      thumbnailUrl: media.thumbnail_url || null,
+    };
+  }
+  const post = await graphGet(env, postId, { fields: 'full_picture,attachments{media_type,target}' }, pageScopedToken);
+  const attachment = post.attachments?.data?.[0];
+  const isVideo = attachment?.media_type === 'video';
+  let videoUrl = null, thumbnailUrl = post.full_picture || null;
+  if (isVideo && attachment?.target?.id) {
+    try {
+      const video = await graphGet(env, attachment.target.id, { fields: 'source,picture' }, pageScopedToken);
+      videoUrl = video.source || null;
+      thumbnailUrl = video.picture || thumbnailUrl;
+    } catch (e) { /* fall through with no videoUrl — caller bails to fallback */ }
+  }
+  return { isVideo, imageUrl: post.full_picture || null, videoUrl, thumbnailUrl };
+}
+
+// Rebuilds a fresh ad (image link_data, or native video_data for
+// video/Reels) from the post's OWN media, instead of reusing the post as an
+// object (object_story_id / source_instagram_media_id) — that reuse path
+// requires the ad account to be formally assigned the Page as a Business
+// Manager asset, which isn't set up on this account (confirmed live:
+// /act_.../promote_pages returns empty, and object_story_id fails with
 // "Post not owned by ad's Page"). Creating brand-new content that merely
 // references the Page works under a much looser permission level — this
 // reproduces that same working shape instead of failing.
-async function buildCreativeFromLivePostImage(env, group, igUserId) {
+//
+// Video path has a short processing-wait budget (see waitForVideoReady) —
+// if a video doesn't finish in time within this request, this bails to the
+// next fallback rather than hanging the "Push Now" click. The weekly cron
+// (scripts/weekly-organic-winners-to-ads.js) has no such constraint and will
+// pick up the same video cleanly on its own run.
+async function buildCreativeFromLivePost(env, group, igUserId) {
   const postId = group.fbPostId || group.igPostId;
   if (!postId) return null;
   const isIg = !group.fbPostId && !!group.igPostId;
   const ctaLink = extractCtaLink(group.message) || env.KAPRUKA_HOME_URL || 'https://www.kapruka.com';
   const message = (group.message || '').slice(0, 600);
-
-  // No video-upload capability exists here (no /advideos call). Without this
-  // check, a video/Reel winner would silently become a static-image ad built
-  // from its thumbnail — mechanically successful but a misleading, different
-  // ad. Bail out and let it fall through to the direct-reuse fallback instead.
+  const safeName = postId.replace(/[^a-zA-Z0-9]/g, '_');
   const pageScopedToken = env.META_PAGE_ACCESS_TOKEN || env.META_ADS_ACCESS_TOKEN;
-  let imageUrl;
+
+  let info;
   try {
-    if (isIg) {
-      const media = await graphGet(env, postId, { fields: 'media_url,thumbnail_url,media_type,media_product_type' }, pageScopedToken);
-      if (media.media_type === 'VIDEO' || media.media_product_type === 'REELS') return null;
-      imageUrl = media.media_url || media.thumbnail_url;
-    } else {
-      const post = await graphGet(env, postId, { fields: 'full_picture,attachments{media_type}' }, pageScopedToken);
-      if (post.attachments?.data?.[0]?.media_type === 'video') return null;
-      imageUrl = post.full_picture;
-    }
+    info = await fetchPostMediaInfo(env, postId, isIg, pageScopedToken);
   } catch (e) {
     return null;
   }
-  if (!imageUrl) return null;
 
-  const imageRes = await fetch(imageUrl);
+  if (info.isVideo) {
+    if (!info.videoUrl) return null;
+    const videoRes = await fetch(info.videoUrl);
+    if (!videoRes.ok) return null;
+    const videoBytes = await videoRes.arrayBuffer();
+
+    let videoData;
+    try {
+      videoData = await buildVideoData(env, videoBytes, safeName, ctaLink, info.thumbnailUrl);
+    } catch (e) {
+      console.warn('Live video upload/processing did not finish in time, falling back:', e.message);
+      return null;
+    }
+
+    let creative;
+    try {
+      creative = await graphPost(env, `${env.META_AD_ACCOUNT_ID}/adcreatives`, {
+        name: `Organic Winner (live video) - ${postId}`,
+        object_story_spec: { page_id: env.META_PAGE_ID, ...(igUserId ? { instagram_actor_id: igUserId } : {}), video_data: { ...videoData, link_description: message } },
+      });
+    } catch (e) {
+      if (igUserId && /instagram_actor_id/i.test(e.message)) {
+        creative = await graphPost(env, `${env.META_AD_ACCOUNT_ID}/adcreatives`, {
+          name: `Organic Winner (live video, FB-only) - ${postId}`,
+          object_story_spec: { page_id: env.META_PAGE_ID, video_data: { ...videoData, link_description: message } },
+        });
+      } else {
+        throw e;
+      }
+    }
+
+    return { source: 'live_video', ctaLink, message, creativeId: creative.id };
+  }
+
+  if (!info.imageUrl) return null;
+
+  const imageRes = await fetch(info.imageUrl);
   if (!imageRes.ok) return null;
   const imageBytes = await imageRes.arrayBuffer();
-  const hash = await uploadAdImage(env, imageBytes, `${postId.replace(/[^a-zA-Z0-9]/g, '_')}.jpg`);
+  const hash = await uploadAdImage(env, imageBytes, `${safeName}.jpg`);
 
   const linkData = {
     message, link: ctaLink, image_hash: hash,
@@ -428,7 +572,7 @@ export async function onRequestPost(context) {
 
     const sheetMatch = sheetRows.find(row => row['Primary Text'] && fuzzyMatch(row['Primary Text'], group.message));
     let built = sheetMatch ? await buildCreativeFromSheetRow(env, googleToken, sheetMatch, igUserId) : null;
-    if (!built && !sheetMatch) built = await buildCreativeFromLivePostImage(env, group, igUserId);
+    if (!built && !sheetMatch) built = await buildCreativeFromLivePost(env, group, igUserId);
     if (!built) built = await buildCreativeFromExistingPost(env, group, igUserId);
 
     const ad = await graphPost(env, `${env.META_AD_ACCOUNT_ID}/ads`, {
