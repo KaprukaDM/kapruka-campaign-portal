@@ -70,6 +70,13 @@ const SUPABASE_URL = 'https://ivllhheqqiseagmctfyp.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml2bGxoaGVxcWlzZWFnbWN0ZnlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1NzQzMzksImV4cCI6MjA4NDE1MDMzOX0.OnkYNACtdknKDY2KqLfiGN0ORXpKaW906fD0TtSJlIk';
 
 const ADS_ACCESS_TOKEN = process.env.META_ADS_ACCESS_TOKEN || process.env.META_PAGE_ACCESS_TOKEN;
+// Ads/User-type tokens can't see page-scoped fields like
+// instagram_business_account (confirmed live: the call succeeds but the
+// field is silently absent, not an error) — Meta's "new Pages experience"
+// requires an actual Page token for that. Prefer a real page token
+// specifically for the IG-account lookup; fall back to the ads token if
+// that's genuinely all that's configured.
+const PAGE_SCOPED_TOKEN = process.env.META_PAGE_ACCESS_TOKEN || ADS_ACCESS_TOKEN;
 const AD_ACCOUNT_ID = process.env.META_AD_ACCOUNT_ID; // 'act_XXXXXXXXXX'
 const PAGE_ID = process.env.META_PAGE_ID;
 const IG_USER_ID_OVERRIDE = process.env.META_IG_USER_ID || null;
@@ -277,10 +284,10 @@ function extractDriveFileId(driveUrl) {
 // GRAPH API HELPERS
 // ═══════════════════════════════════════════════════════════════
 
-async function graphGet(path, params) {
+async function graphGet(path, params, token = ADS_ACCESS_TOKEN) {
   const url = new URL(`https://graph.facebook.com/${GRAPH_VERSION}/${path}`);
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
-  url.searchParams.set('access_token', ADS_ACCESS_TOKEN);
+  url.searchParams.set('access_token', token);
   const res = await fetch(url);
   const json = await res.json();
   if (json.error) throw new Error(`GET ${path}: ${json.error.message}`);
@@ -300,8 +307,16 @@ async function graphPost(path, body) {
 }
 
 async function findInstagramAccountId() {
-  if (IG_USER_ID_OVERRIDE) return IG_USER_ID_OVERRIDE;
-  const data = await graphGet(PAGE_ID, { fields: 'instagram_business_account' });
+  // Guard against the easy copy-paste mistake of setting META_IG_USER_ID to
+  // the Facebook Page ID instead of the actual IG business account ID —
+  // that produces exactly "Param instagram_actor_id must be a valid
+  // Instagram account id" on every single ad, since a Page ID isn't a valid
+  // IG account ID.
+  if (IG_USER_ID_OVERRIDE && IG_USER_ID_OVERRIDE !== PAGE_ID) return IG_USER_ID_OVERRIDE;
+  if (IG_USER_ID_OVERRIDE === PAGE_ID) {
+    console.warn('META_IG_USER_ID is set to the same value as META_PAGE_ID — that\'s almost certainly a mistake (should be the IG business account ID, not the Page ID). Ignoring the override and auto-discovering instead.');
+  }
+  const data = await graphGet(PAGE_ID, { fields: 'instagram_business_account' }, PAGE_SCOPED_TOKEN);
   return data.instagram_business_account?.id || null;
 }
 
@@ -375,9 +390,13 @@ async function buildCreativeFromExistingPost(group, igUserId) {
   }
 
   if (group.fbPostId) {
+    // group.fbPostId already comes from the Graph API in composite
+    // "{page_id}_{post_id}" form (confirmed against a live post) — prepending
+    // PAGE_ID again here produced a doubled, invalid ID and every reused-FB-post
+    // ad failed with "(#100) Invalid post_id parameter".
     const creative = await graphPost(`${AD_ACCOUNT_ID}/adcreatives`, {
       name: `Organic Winner (reused FB post) - ${group.fbPostId}`,
-      object_story_id: `${PAGE_ID}_${group.fbPostId}`,
+      object_story_id: group.fbPostId,
       call_to_action: { type: 'SHOP_NOW', value: { link: ctaLink } },
     });
     return { source: 'reused_post', ctaLink, creativeId: creative.id };

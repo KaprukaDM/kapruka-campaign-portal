@@ -203,10 +203,10 @@ function extractDriveFileId(driveUrl) {
 }
 
 // ── Meta Graph API helpers ───────────────────────────────────────────────
-async function graphGet(env, path, params) {
+async function graphGet(env, path, params, token = env.META_ADS_ACCESS_TOKEN) {
   const url = new URL(`https://graph.facebook.com/${GRAPH_VERSION}/${path}`);
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
-  url.searchParams.set('access_token', env.META_ADS_ACCESS_TOKEN);
+  url.searchParams.set('access_token', token);
   const res = await fetch(url);
   const body = await res.json();
   if (body.error) throw new Error(`GET ${path}: ${body.error.message}`);
@@ -225,8 +225,16 @@ async function graphPost(env, path, payload) {
 }
 
 async function findInstagramAccountId(env) {
-  if (env.META_IG_USER_ID) return env.META_IG_USER_ID;
-  const data = await graphGet(env, env.META_PAGE_ID, { fields: 'instagram_business_account' });
+  // Guard against the easy copy-paste mistake of setting META_IG_USER_ID to
+  // the Facebook Page ID instead of the actual IG business account ID —
+  // that produces exactly "Param instagram_actor_id must be a valid
+  // Instagram account id" on every ad, since a Page ID isn't a valid IG ID.
+  if (env.META_IG_USER_ID && env.META_IG_USER_ID !== env.META_PAGE_ID) return env.META_IG_USER_ID;
+  // META_ADS_ACCESS_TOKEN (ads/User-type token) can't see page-scoped fields
+  // like instagram_business_account — the call succeeds but the field is
+  // silently absent, not an error. A real Page token is required.
+  const pageScopedToken = env.META_PAGE_ACCESS_TOKEN || env.META_ADS_ACCESS_TOKEN;
+  const data = await graphGet(env, env.META_PAGE_ID, { fields: 'instagram_business_account' }, pageScopedToken);
   return data.instagram_business_account?.id || null;
 }
 
@@ -276,9 +284,13 @@ async function buildCreativeFromExistingPost(env, group, igUserId) {
   const ctaLink = env.KAPRUKA_HOME_URL || 'https://www.kapruka.com';
 
   if (group.fbPostId) {
+    // group.fbPostId already comes from the Graph API in composite
+    // "{page_id}_{post_id}" form — prepending META_PAGE_ID again here
+    // produced a doubled, invalid ID and every reused-FB-post push failed
+    // with "(#100) Invalid post_id parameter".
     const creative = await graphPost(env, `${env.META_AD_ACCOUNT_ID}/adcreatives`, {
       name: `Organic Winner (reused FB post) - ${group.fbPostId}`,
-      object_story_id: `${env.META_PAGE_ID}_${group.fbPostId}`,
+      object_story_id: group.fbPostId,
       call_to_action: { type: 'SHOP_NOW', value: { link: ctaLink } },
     });
     return { source: 'reused_post', ctaLink, creativeId: creative.id };
