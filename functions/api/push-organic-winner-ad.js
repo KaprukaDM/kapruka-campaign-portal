@@ -179,7 +179,13 @@ function fuzzyMatch(a, b) {
   if (na.includes(nb) || nb.includes(na)) return true;
   const wa = new Set(na.split(' ')), wb = new Set(nb.split(' '));
   const intersection = [...wa].filter(w => wb.has(w)).length;
-  return intersection / Math.min(wa.size, wb.size) >= 0.6;
+  // Jaccard (intersection / union), not intersection / min(sizeA, sizeB) —
+  // see scripts/weekly-organic-winners-to-ads.js's fuzzyMatch for the two
+  // live false-positive matches (a short post caption matching an
+  // unrelated sheet row, and a short/placeholder sheet row matching an
+  // unrelated post) that this fixes.
+  const union = new Set([...wa, ...wb]).size;
+  return intersection / union >= 0.6;
 }
 
 function extractCtaLink(primaryText) {
@@ -318,13 +324,13 @@ async function buildCreativeFromSheetRow(env, googleToken, row, igUserId) {
     try {
       creative = await graphPost(env, `${env.META_AD_ACCOUNT_ID}/adcreatives`, {
         name: `Organic Winner (sheet video) - ${row['Content ID'] || driveFileId}`,
-        object_story_spec: { page_id: env.META_PAGE_ID, ...(igUserId ? { instagram_actor_id: igUserId } : {}), video_data: { ...videoData, link_description: message } },
+        object_story_spec: { page_id: env.META_PAGE_ID, ...(igUserId ? { instagram_actor_id: igUserId } : {}), video_data: { ...videoData, message } },
       });
     } catch (e) {
       if (igUserId && /instagram_actor_id/i.test(e.message)) {
         creative = await graphPost(env, `${env.META_AD_ACCOUNT_ID}/adcreatives`, {
           name: `Organic Winner (sheet video, FB-only) - ${row['Content ID'] || driveFileId}`,
-          object_story_spec: { page_id: env.META_PAGE_ID, video_data: { ...videoData, link_description: message } },
+          object_story_spec: { page_id: env.META_PAGE_ID, video_data: { ...videoData, message } },
         });
       } else {
         throw e;
@@ -438,13 +444,13 @@ async function buildCreativeFromLivePost(env, group, igUserId) {
     try {
       creative = await graphPost(env, `${env.META_AD_ACCOUNT_ID}/adcreatives`, {
         name: `Organic Winner (live video) - ${postId}`,
-        object_story_spec: { page_id: env.META_PAGE_ID, ...(igUserId ? { instagram_actor_id: igUserId } : {}), video_data: { ...videoData, link_description: message } },
+        object_story_spec: { page_id: env.META_PAGE_ID, ...(igUserId ? { instagram_actor_id: igUserId } : {}), video_data: { ...videoData, message } },
       });
     } catch (e) {
       if (igUserId && /instagram_actor_id/i.test(e.message)) {
         creative = await graphPost(env, `${env.META_AD_ACCOUNT_ID}/adcreatives`, {
           name: `Organic Winner (live video, FB-only) - ${postId}`,
-          object_story_spec: { page_id: env.META_PAGE_ID, video_data: { ...videoData, link_description: message } },
+          object_story_spec: { page_id: env.META_PAGE_ID, video_data: { ...videoData, message } },
         });
       } else {
         throw e;

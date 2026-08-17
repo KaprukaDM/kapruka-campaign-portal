@@ -3,8 +3,10 @@
 // WEEKLY ORGANIC WINNERS → PAID ADS
 //
 // Runs weekly (.github/workflows/weekly-organic-winners-ads.yml). For each
-// organic FB/IG post from the last 7 days that qualifies as a "winner"
-// (same reaction-rate-ratio logic as the admin dashboard's 🏆 badge):
+// organic FB/IG post from the last 100 synced posts (no date cutoff — same
+// scope as admin-dashboard.html's Queued-for-Ads list) that qualifies as a
+// "winner" (same reaction-rate-ratio logic as the admin dashboard's 🏆
+// badge):
 //
 //   1. Search the creative sheet's Primary Text column for a fuzzy match to
 //      the winning post's caption.
@@ -86,8 +88,17 @@ const CREATIVE_SHEET_ID = process.env.CREATIVE_SHEET_ID || '1CNSZqL5MCbTaj5fF4L_
 const CREATIVE_SHEET_GID = process.env.CREATIVE_SHEET_GID || '275837150';
 const KAPRUKA_HOME_URL = process.env.KAPRUKA_HOME_URL || 'https://www.kapruka.com';
 const GRAPH_VERSION = 'v21.0';
-const LOOKBACK_DAYS = 7;
 const WINNER_MULTIPLIER = 1.5;
+// Matches admin-dashboard.html and functions/api/push-organic-winner-ad.js
+// exactly: last 100 synced posts, no date cutoff. This USED to be a 7-day
+// lookback, which silently diverged from the dashboard's "Queued for Weekly
+// Ad Push" list (explicitly designed to keep a winner queued until it's
+// actually pushed, however long that takes) — a winner older than 7 days
+// would show as queued on the dashboard forever, but this script could
+// never see it to push it, since it fell outside the fetch entirely.
+// Confirmed live: 5 real winners were in exactly that stuck state before
+// this fix, all older than 7 days.
+const POST_FETCH_LIMIT = 100;
 
 if (!DRY_RUN) {
   if (!ADS_ACCESS_TOKEN) { console.error('Missing META_ADS_ACCESS_TOKEN (or META_PAGE_ACCESS_TOKEN) env var.'); process.exit(1); }
@@ -96,12 +107,11 @@ if (!DRY_RUN) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// SUPABASE — pull last-7-days performance, record pushes
+// SUPABASE — pull recent performance, record pushes
 // ═══════════════════════════════════════════════════════════════
 
 async function fetchRecentPerformance() {
-  const since = new Date(Date.now() - LOOKBACK_DAYS * 24 * 60 * 60 * 1000).toISOString();
-  const url = `${SUPABASE_URL}/rest/v1/facebook_post_performance?created_time=gte.${encodeURIComponent(since)}&order=created_time.desc&limit=500`;
+  const url = `${SUPABASE_URL}/rest/v1/facebook_post_performance?order=created_time.desc&limit=${POST_FETCH_LIMIT}`;
   const res = await fetch(url, { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } });
   if (!res.ok) throw new Error(`Supabase fetch failed (${res.status}): ${await res.text()}`);
   return res.json();
@@ -262,8 +272,21 @@ function fuzzyMatch(a, b) {
   if (na.includes(nb) || nb.includes(na)) return true;
   const wa = new Set(na.split(' ')), wb = new Set(nb.split(' '));
   const intersection = [...wa].filter(w => wb.has(w)).length;
-  const overlap = intersection / Math.min(wa.size, wb.size);
-  return overlap >= 0.6;
+  // Jaccard (intersection / union), NOT intersection / min(sizeA, sizeB) —
+  // the min-based "overlap coefficient" this used to use spikes falsely
+  // whenever EITHER text is short, regardless of whether the two are
+  // actually about the same thing. Confirmed live: a short post caption
+  // ("Happiness, delivered to your door.") matched an unrelated sheet row
+  // about a baking kit purely because most of the post's few words were
+  // generic filler ("delivered to your door") also present in that row;
+  // separately, a short/placeholder-like sheet row ("Sri Lankan
+  // Favourite...") matched a completely unrelated Cashew Bar post because
+  // 2 of its mere 3 words are common enough to appear in almost any
+  // caption. Jaccard penalizes both cases (score 0.44 and 0.13
+  // respectively) while still scoring genuine near-duplicate matches at
+  // 0.75+.
+  const union = new Set([...wa, ...wb]).size;
+  return intersection / union >= 0.6;
 }
 
 function findSheetMatch(sheetRows, postMessage) {
@@ -365,7 +388,9 @@ async function waitForVideoReady(videoId) {
 // thumbnail image_hash (prefers the post's own thumbnail if one was passed
 // in; falls back to a Meta-generated thumbnail for the uploaded video).
 // Returns the video_data fields shared by every video creative (video_id +
-// image_hash + CTA) — callers merge in link_description themselves.
+// image_hash + CTA) — callers merge in `message` (the primary/body text —
+// NOT `link_description`, which is only the small link-card subtitle and
+// isn't the visible caption) themselves.
 async function buildVideoData(videoBytes, namePrefix, ctaLink, providedThumbnailUrl) {
   console.log(`  Uploading video (${(videoBytes.length / 1024 / 1024).toFixed(1)} MB) to ad account...`);
   const videoId = await uploadAdVideo(videoBytes, `${namePrefix}.mp4`);
@@ -435,14 +460,14 @@ async function buildCreativeFromSheetRow(row, igUserId) {
     try {
       creative = await graphPost(`${AD_ACCOUNT_ID}/adcreatives`, {
         name: `Organic Winner (sheet video) - ${row['Content ID'] || driveFileId}`,
-        object_story_spec: { page_id: PAGE_ID, ...(igUserId ? { instagram_actor_id: igUserId } : {}), video_data: { ...videoData, link_description: message } },
+        object_story_spec: { page_id: PAGE_ID, ...(igUserId ? { instagram_actor_id: igUserId } : {}), video_data: { ...videoData, message } },
       });
     } catch (e) {
       if (igUserId && /instagram_actor_id/i.test(e.message)) {
         console.log('  IG placement rejected (ad account likely not connected to the IG account in Business Manager) — retrying Facebook-only.');
         creative = await graphPost(`${AD_ACCOUNT_ID}/adcreatives`, {
           name: `Organic Winner (sheet video, FB-only) - ${row['Content ID'] || driveFileId}`,
-          object_story_spec: { page_id: PAGE_ID, video_data: { ...videoData, link_description: message } },
+          object_story_spec: { page_id: PAGE_ID, video_data: { ...videoData, message } },
         });
       } else {
         throw e;
@@ -586,14 +611,14 @@ async function buildCreativeFromLivePost(group, igUserId) {
     try {
       creative = await graphPost(`${AD_ACCOUNT_ID}/adcreatives`, {
         name: `Organic Winner (live video) - ${postId}`,
-        object_story_spec: { page_id: PAGE_ID, ...(igUserId ? { instagram_actor_id: igUserId } : {}), video_data: { ...videoData, link_description: message } },
+        object_story_spec: { page_id: PAGE_ID, ...(igUserId ? { instagram_actor_id: igUserId } : {}), video_data: { ...videoData, message } },
       });
     } catch (e) {
       if (igUserId && /instagram_actor_id/i.test(e.message)) {
         console.log('  IG placement rejected — retrying Facebook-only.');
         creative = await graphPost(`${AD_ACCOUNT_ID}/adcreatives`, {
           name: `Organic Winner (live video, FB-only) - ${postId}`,
-          object_story_spec: { page_id: PAGE_ID, video_data: { ...videoData, link_description: message } },
+          object_story_spec: { page_id: PAGE_ID, video_data: { ...videoData, message } },
         });
       } else {
         throw e;
@@ -724,7 +749,7 @@ async function main() {
     DRY_RUN ? Promise.resolve(null) : findInstagramAccountId(),
   ]);
 
-  console.log(`Fetched ${posts.length} posts from the last ${LOOKBACK_DAYS} days. Sheet rows: ${sheetRows.length}.`);
+  console.log(`Fetched the last ${posts.length} synced posts. Sheet rows: ${sheetRows.length}.`);
 
   const grouped = groupPosts(posts);
   const winners = findWinners(grouped).filter(w => !alreadyPushed.has(w.key));
