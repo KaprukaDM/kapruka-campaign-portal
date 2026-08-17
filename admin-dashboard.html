@@ -1607,6 +1607,7 @@
         <div class="card" id="queuedAdsCard" style="display:none;">
           <div class="calendar-header">
             <h2 style="margin:0;">🚀 Queued for Weekly Ad Push (<span id="queuedAdsCount">0</span>)</h2>
+            <button id="pushAllWinnersBtn" class="btn btn-primary" style="padding:8px 16px;font-size:13px;" onclick="pushAllQueuedWinners()">🚀 Push All</button>
           </div>
           <div style="font-size:12px;color:#666;margin-bottom:16px;">
             🏆 Winners (from the last 100 synced posts) that haven't been pushed to an ad yet — stays on this list until pushed, regardless of how much time passes.
@@ -4307,11 +4308,18 @@
     }
 
     async function pushOrganicWinnerAd(btn) {
+      if (!confirm('This creates a LIVE ad in ad set 52816670204854 with real budget, starting immediately. Continue?')) return;
+      await doPushWinner(btn);
+    }
+
+    // Shared by the per-row "Push Now" button and "Push All" — no confirm()
+    // here, since "Push All" confirms once for the whole batch rather than
+    // once per item. Returns true on success, false on failure (so "Push
+    // All" can tally results without a thrown error stopping the loop).
+    async function doPushWinner(btn) {
       const groupKey = btn.dataset.groupKey;
       const row = btn.closest('tr');
       const actionCell = btn.parentElement;
-
-      if (!confirm('This creates a LIVE ad in ad set 52816670204854 with real budget, starting immediately. Continue?')) return;
 
       btn.disabled = true;
       btn.textContent = '⏳ Pushing…';
@@ -4328,11 +4336,37 @@
         actionCell.innerHTML = `<span class="badge" style="background:#E8F5E9;color:#1B5E20;">✅ Ad ${escapeHtml(data.adId)}</span>`;
         document.getElementById('queuedAdsCount').textContent = String(Math.max(0, Number(document.getElementById('queuedAdsCount').textContent) - 1));
         setTimeout(() => { row.style.transition = 'opacity 0.4s'; row.style.opacity = '0'; setTimeout(() => row.remove(), 400); }, 1500);
+        return true;
       } catch (e) {
         btn.disabled = false;
         btn.textContent = '🚀 Push Now';
-        alert('Push failed: ' + e.message);
+        actionCell.insertAdjacentHTML('beforeend', `<div style="color:#d32f2f;font-size:11px;margin-top:4px;">${escapeHtml(e.message)}</div>`);
+        return false;
       }
+    }
+
+    async function pushAllQueuedWinners() {
+      const buttons = Array.from(document.querySelectorAll('#queuedAdsTable button[onclick^="pushOrganicWinnerAd"]'));
+      if (buttons.length === 0) { alert('Nothing queued to push.'); return; }
+
+      if (!confirm(`This creates ${buttons.length} LIVE ad(s) in ad set 52816670204854 with real budget, one at a time, starting immediately. Continue?`)) return;
+
+      const allBtn = document.getElementById('pushAllWinnersBtn');
+      allBtn.disabled = true;
+      let ok = 0, failed = 0;
+
+      for (let i = 0; i < buttons.length; i++) {
+        const btn = buttons[i];
+        if (btn.disabled) continue; // already pushed/mid-flight from an earlier click
+        allBtn.textContent = `⏳ Pushing ${i + 1} of ${buttons.length}…`;
+        const success = await doPushWinner(btn);
+        if (success) ok++; else failed++;
+        if (i < buttons.length - 1) await new Promise(r => setTimeout(r, 800)); // spread out the Meta API calls
+      }
+
+      allBtn.disabled = false;
+      allBtn.textContent = '🚀 Push All';
+      alert(`Push All complete: ${ok} created, ${failed} failed.${failed > 0 ? ' Check the error text under each failed row.' : ''}`);
     }
 
     function PLATFORM_BADGE_LIST(platforms) {
