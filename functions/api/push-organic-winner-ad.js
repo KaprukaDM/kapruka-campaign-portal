@@ -308,14 +308,20 @@ async function buildCreativeFromLivePostImage(env, group, igUserId) {
   const ctaLink = extractCtaLink(group.message) || env.KAPRUKA_HOME_URL || 'https://www.kapruka.com';
   const message = (group.message || '').slice(0, 600);
 
+  // No video-upload capability exists here (no /advideos call). Without this
+  // check, a video/Reel winner would silently become a static-image ad built
+  // from its thumbnail — mechanically successful but a misleading, different
+  // ad. Bail out and let it fall through to the direct-reuse fallback instead.
   const pageScopedToken = env.META_PAGE_ACCESS_TOKEN || env.META_ADS_ACCESS_TOKEN;
   let imageUrl;
   try {
     if (isIg) {
-      const media = await graphGet(env, postId, { fields: 'media_url,thumbnail_url' }, pageScopedToken);
+      const media = await graphGet(env, postId, { fields: 'media_url,thumbnail_url,media_type,media_product_type' }, pageScopedToken);
+      if (media.media_type === 'VIDEO' || media.media_product_type === 'REELS') return null;
       imageUrl = media.media_url || media.thumbnail_url;
     } else {
-      const post = await graphGet(env, postId, { fields: 'full_picture' }, pageScopedToken);
+      const post = await graphGet(env, postId, { fields: 'full_picture,attachments{media_type}' }, pageScopedToken);
+      if (post.attachments?.data?.[0]?.media_type === 'video') return null;
       imageUrl = post.full_picture;
     }
   } catch (e) {

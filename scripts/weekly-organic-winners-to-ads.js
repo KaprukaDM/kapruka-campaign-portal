@@ -415,13 +415,29 @@ async function buildCreativeFromLivePostImage(group, igUserId) {
     return { source: 'live_post_image', ctaLink, message, dryRunNote: `would fetch ${isIg ? 'IG media' : 'FB post'} ${postId}'s own image, upload it, build a fresh link_data creative` };
   }
 
+  // There is no video-upload capability in this pipeline (no /advideos
+  // call). Without this check, a video/Reel winner would silently become a
+  // static-image ad built from its thumbnail frame — mechanically
+  // successful but a materially different, misleading ad. Bail out instead
+  // and let it fall through to the direct-reuse fallback, which references
+  // the native post/media object and would preserve the actual video if
+  // that path is ever unblocked.
   let imageUrl;
   try {
     if (isIg) {
-      const media = await graphGet(postId, { fields: 'media_url,thumbnail_url' }, PAGE_SCOPED_TOKEN);
+      const media = await graphGet(postId, { fields: 'media_url,thumbnail_url,media_type,media_product_type' }, PAGE_SCOPED_TOKEN);
+      if (media.media_type === 'VIDEO' || media.media_product_type === 'REELS') {
+        console.log('  This is an IG video/Reel — no video-upload support, falling back to boosting the post directly.');
+        return null;
+      }
       imageUrl = media.media_url || media.thumbnail_url;
     } else {
-      const post = await graphGet(postId, { fields: 'full_picture' }, PAGE_SCOPED_TOKEN);
+      const post = await graphGet(postId, { fields: 'full_picture,attachments{media_type}' }, PAGE_SCOPED_TOKEN);
+      const attachmentType = post.attachments?.data?.[0]?.media_type;
+      if (attachmentType === 'video') {
+        console.log('  This is an FB video post — no video-upload support, falling back to boosting the post directly instead of faking a static-image ad.');
+        return null;
+      }
       imageUrl = post.full_picture;
     }
   } catch (e) {
