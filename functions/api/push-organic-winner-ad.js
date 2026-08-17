@@ -265,17 +265,30 @@ async function buildCreativeFromSheetRow(env, googleToken, row, igUserId) {
   const imageBytes = await downloadDriveFile(googleToken, driveFileId);
   const hash = await uploadAdImage(env, imageBytes, `${driveFileId}.jpg`);
 
-  const creative = await graphPost(env, `${env.META_AD_ACCOUNT_ID}/adcreatives`, {
-    name: `Organic Winner (sheet) - ${row['Content ID'] || driveFileId}`,
-    object_story_spec: {
-      page_id: env.META_PAGE_ID,
-      ...(igUserId ? { instagram_actor_id: igUserId } : {}),
-      link_data: {
-        message, link: ctaLink, image_hash: hash,
-        call_to_action: { type: 'SHOP_NOW', value: { link: ctaLink } },
-      },
-    },
-  });
+  const linkData = {
+    message, link: ctaLink, image_hash: hash,
+    call_to_action: { type: 'SHOP_NOW', value: { link: ctaLink } },
+  };
+
+  let creative;
+  try {
+    creative = await graphPost(env, `${env.META_AD_ACCOUNT_ID}/adcreatives`, {
+      name: `Organic Winner (sheet) - ${row['Content ID'] || driveFileId}`,
+      object_story_spec: { page_id: env.META_PAGE_ID, ...(igUserId ? { instagram_actor_id: igUserId } : {}), link_data: linkData },
+    });
+  } catch (e) {
+    // The ad account not being connected to the IG account in Business
+    // Manager (a config issue, not something code can fix) shows up as this
+    // exact error — fall back to Facebook-only rather than losing the whole ad.
+    if (igUserId && /instagram_actor_id/i.test(e.message)) {
+      creative = await graphPost(env, `${env.META_AD_ACCOUNT_ID}/adcreatives`, {
+        name: `Organic Winner (sheet, FB-only) - ${row['Content ID'] || driveFileId}`,
+        object_story_spec: { page_id: env.META_PAGE_ID, link_data: linkData },
+      });
+    } else {
+      throw e;
+    }
+  }
 
   return { source: 'sheet_match', contentId: row['Content ID'] || null, ctaLink, message, creativeId: creative.id };
 }
