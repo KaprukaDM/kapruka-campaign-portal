@@ -4250,6 +4250,9 @@
         return;
       }
 
+      queuedWinnersByKey = {};
+      queued.forEach(p => { queuedWinnersByKey[p.key] = p; });
+
       tbody.innerHTML = queued
         .sort((a, b) => b.combined - a.combined)
         .map(p => {
@@ -4266,13 +4269,41 @@
               <td>${fmtNum(p.combined)}</td>
               <td>${fmtNum(p.reactions_total)}</td>
               <td style="font-size:12px;color:#666;">${p.reasons.join(', ')}</td>
-              <td>
+              <td style="white-space:nowrap;">
                 <button class="btn btn-primary" style="padding:6px 12px;font-size:12px;white-space:nowrap;"
                         data-group-key="${escapeHtml(p.key)}" onclick="pushOrganicWinnerAd(this)">🚀 Push Now</button>
+                <button class="btn" style="padding:6px 12px;font-size:12px;white-space:nowrap;background:#eee;color:#666;margin-left:4px;"
+                        data-group-key="${escapeHtml(p.key)}" onclick="removeQueuedWinner(this)">✖ Remove</button>
               </td>
             </tr>
           `;
         }).join('');
+    }
+
+    let queuedWinnersByKey = {};
+
+    async function removeQueuedWinner(btn) {
+      const groupKey = btn.dataset.groupKey;
+      const group = queuedWinnersByKey[groupKey];
+      if (!group) return;
+
+      if (!confirm('Remove this from the queue? It won\'t be pushed as an ad by "Push Now" or the Monday automation — but nothing about the original post itself changes.')) return;
+
+      const row = btn.closest('tr');
+      btn.disabled = true;
+      const originalText = btn.textContent;
+      btn.textContent = '⏳';
+      try {
+        await skipOrganicWinner(group);
+        row.style.transition = 'opacity 0.4s';
+        row.style.opacity = '0';
+        document.getElementById('queuedAdsCount').textContent = String(Math.max(0, Number(document.getElementById('queuedAdsCount').textContent) - 1));
+        setTimeout(() => row.remove(), 400);
+      } catch (e) {
+        btn.disabled = false;
+        btn.textContent = originalText;
+        alert('Could not remove: ' + e.message);
+      }
     }
 
     async function pushOrganicWinnerAd(btn) {

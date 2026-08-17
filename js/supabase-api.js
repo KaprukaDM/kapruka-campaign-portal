@@ -407,6 +407,24 @@ async function getPromotedOrganicWinnerKeys() {
   }
 }
 
+// "Remove from list" on the Queued-for-Ads card — inserts a marker row into
+// the SAME table the push endpoint and the weekly cron both check before
+// promoting a winner, so removing it here also stops the Monday automation
+// from picking it up later (not just a client-side hide).
+async function skipOrganicWinner(group) {
+  return await supabaseQuery('organic_winner_ad_pushes', 'POST', {
+    group_key: group.key,
+    platforms: (group.platforms || []).join(','),
+    message_excerpt: (group.message || '').slice(0, 200),
+    creative_source: 'skipped',
+    matched_content_id: null,
+    cta_link: null,
+    ad_id: null,
+    adset_id: 'n/a (skipped)',
+    status: 'skipped'
+  });
+}
+
 // ═══════════════════════════════════════════════════════════════
 // DM APPROVAL HELPERS
 // ═══════════════════════════════════════════════════════════════
