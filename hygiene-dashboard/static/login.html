@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kapruka Page Hygiene</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="/style.css">
+<style>
+  body { display: flex; align-items: center; justify-content: center; height: 100vh; }
+  .box { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 32px; width: 320px; }
+  .box h1 { font-size: 18px; color: var(--purple); margin: 0 0 4px; }
+  .box p { font-size: 12.5px; color: var(--muted); margin: 0 0 20px; }
+  .box input { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 7px; font-size: 14px; margin-bottom: 12px; }
+  .box button { width: 100%; padding: 10px; background: var(--purple); color: #fff; border: none; border-radius: 7px; font-size: 14px; cursor: pointer; }
+  .box button:hover { background: var(--purple-dark); }
+  .err { color: var(--red); font-size: 12.5px; min-height: 16px; margin-top: 8px; }
+</style>
+</head>
+<body>
+  <div class="box">
+    <h1>Page Hygiene Dashboard</h1>
+    <p>Kapruka product page CVR audit</p>
+    <input type="password" id="pw" placeholder="Password" autofocus>
+    <button id="go">Sign in</button>
+    <div class="err" id="err"></div>
+  </div>
+  <script>
+    async function submit() {
+      const pw = document.getElementById('pw').value;
+      const r = await fetch('/login', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({password: pw})
+      });
+      if (r.ok) { location.href = '/'; }
+      else { document.getElementById('err').textContent = 'Wrong password'; }
+    }
+    document.getElementById('go').addEventListener('click', submit);
+    document.getElementById('pw').addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+  </script>
+</body>
+</html>

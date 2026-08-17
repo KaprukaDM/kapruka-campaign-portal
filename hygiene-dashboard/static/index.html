@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kapruka Page Hygiene</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="topbar">
+    <div>
+      <h1>Page Hygiene Dashboard</h1>
+      <div class="sub" id="batchInfo">loading…</div>
+    </div>
+    <button id="logout">Sign out</button>
+  </div>
+
+  <div class="wrap">
+    <div class="filters">
+      <div>
+        <label>Category</label>
+        <select id="catSel"><option value="">All categories</option></select>
+      </div>
+      <div id="flagChips" style="display:flex; gap:8px; flex-wrap:wrap;"></div>
+    </div>
+
+    <div class="summary" id="summary"></div>
+    <div id="list"></div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,173 @@
+:root {
+  --purple: #402970;
+  --purple-dark: #2c1c4e;
+  --purple-light: #f9f7ff;
+  --gold: #ffb800;
+  --green: #63ce3a;
+  --red: #d92d20;
+  --ink: #18191a;
+  --muted: #6b6a72;
+  --border: #e6e2f2;
+  --bg: #f5f5f8;
+  --card: #ffffff;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+.topbar {
+  background: var(--purple);
+  color: #fff;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.topbar h1 {
+  font-size: 17px;
+  margin: 0;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.topbar .sub {
+  font-size: 12px;
+  opacity: 0.75;
+  margin-top: 2px;
+}
+
+.topbar button {
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.25);
+  padding: 7px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.topbar button:hover { background: rgba(255,255,255,0.22); }
+
+.wrap { max-width: 1180px; margin: 0 auto; padding: 20px 24px 60px; }
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+}
+
+.filters select, .filters input[type="date"] {
+  padding: 7px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  font-size: 13px;
+  background: #fff;
+  color: var(--ink);
+}
+
+.filters label { font-size: 12px; color: var(--muted); margin-right: 4px; }
+
+.chip {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #fff;
+  font-size: 12.5px;
+  cursor: pointer;
+  color: var(--purple-dark);
+  user-select: none;
+}
+.chip.active { background: var(--purple); color: #fff; border-color: var(--purple); }
+
+.summary { display: flex; gap: 14px; margin-bottom: 16px; flex-wrap: wrap; }
+.stat {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  min-width: 120px;
+}
+.stat .n { font-size: 22px; font-weight: 700; color: var(--purple); }
+.stat .l { font-size: 12px; color: var(--muted); }
+
+.product {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.product-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 16px;
+  cursor: pointer;
+}
+
+.product-head .name { font-weight: 600; font-size: 14px; flex: 1; min-width: 200px; }
+.product-head .cat {
+  font-size: 11px;
+  color: var(--purple-dark);
+  background: var(--purple-light);
+  padding: 3px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.product-head .users { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.product-head .badge-count {
+  background: var(--red);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.product-head .review-badge {
+  background: var(--gold);
+  color: #402c00;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.product-body {
+  border-top: 1px solid var(--border);
+  padding: 12px 16px 16px;
+  display: none;
+  background: #fcfbff;
+}
+.product.open .product-body { display: block; }
+
+.product-body a.url { font-size: 12px; color: var(--purple); word-break: break-all; }
+
+.issue {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px dashed var(--border);
+}
+.issue:last-child { border-bottom: none; }
+.issue input[type="checkbox"] { margin-top: 3px; width: 16px; height: 16px; accent-color: var(--green); }
+.issue .label { font-weight: 600; font-size: 13px; }
+.issue .why { font-size: 12.5px; color: var(--purple-dark); margin-top: 2px; font-weight: 500; }
+.issue .reason { font-size: 12px; color: var(--muted); margin-top: 3px; }
+.issue.checked .label, .issue.checked .why, .issue.checked .reason { text-decoration: line-through; opacity: 0.55; }
+.severity-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+
+.empty { text-align: center; padding: 60px 20px; color: var(--muted); }
