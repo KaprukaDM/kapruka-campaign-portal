@@ -595,7 +595,16 @@ export async function onRequestPost(context) {
       status: 'pushed',
     };
     if (skippedRowId) {
-      await supabaseQuery(`organic_winner_ad_pushes?id=eq.${skippedRowId}`, 'PATCH', pushRecord, 'return=minimal');
+      // return=minimal masks a real failure mode here: Supabase's anon-key
+      // RLS policy on this table allows INSERT/SELECT but not UPDATE — a
+      // PATCH against a row it can't touch returns 200 with zero rows
+      // affected, not an error. Confirmed live: an earlier "skipped" row
+      // silently kept its old values despite this exact PATCH reporting
+      // success. return=representation lets us actually detect that.
+      const updated = await supabaseQuery(`organic_winner_ad_pushes?id=eq.${skippedRowId}`, 'PATCH', pushRecord, 'return=representation');
+      if (!updated.length) {
+        throw new Error(`The ad (${ad.id}) was created successfully, but overwriting the earlier "skipped" tracking row failed silently (likely an RLS policy blocking UPDATE for the anon key) — ask an admin to add an UPDATE policy for the anon role on organic_winner_ad_pushes, or manually fix row id ${skippedRowId} in the Supabase table editor so it isn't re-pushed as a duplicate later.`);
+      }
     } else {
       await supabaseQuery('organic_winner_ad_pushes', 'POST', pushRecord, 'return=minimal');
     }
