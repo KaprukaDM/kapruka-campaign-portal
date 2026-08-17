@@ -3,12 +3,15 @@
 //  PUSH ORGANIC WINNER → LIVE AD  (manual, one-click, from the admin dashboard)
 //
 //  Same job as scripts/weekly-organic-winners-to-ads.js (the Monday cron),
-//  but for a single post on demand, triggered by the "🚀 Push Now" button in
-//  the "Queued for Weekly Ad Push" card. Runs server-side as a Cloudflare
-//  Pages Function — same infra as functions/api/posting-calendar.js — so the
-//  Meta ads token never touches the browser. The whole site (including
-//  /api/*) sits behind functions/_middleware.js's Basic Auth, so this
-//  endpoint is not publicly reachable.
+//  but for a single post on demand, triggered by either the "🚀 Push Now"
+//  button in the "Queued for Weekly Ad Push" card (🏆 Winners only), or the
+//  per-row "🚀 Push to Ads" button on the full Organic Social Performance
+//  table (any synced post — no Winner requirement; a human explicitly
+//  chose it). Runs server-side as a Cloudflare Pages Function — same infra
+//  as functions/api/posting-calendar.js — so the Meta ads token never
+//  touches the browser. The whole site (including /api/*) sits behind
+//  functions/_middleware.js's Basic Auth, so this endpoint is not publicly
+//  reachable.
 //
 //  WHY A SEPARATE COPY OF THE WINNER/SHEET-MATCH LOGIC:
 //  This mirrors admin-dashboard.html's grouping/winner criteria AND
@@ -54,7 +57,6 @@
 
 const CREATIVE_SHEET_GID = '275837150';
 const GRAPH_VERSION = 'v21.0';
-const WINNER_MULTIPLIER = 1.5;
 
 const SUPABASE_URL = 'https://ivllhheqqiseagmctfyp.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml2bGxoaGVxcWlzZWFnbWN0ZnlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1NzQzMzksImV4cCI6MjA4NDE1MDMzOX0.OnkYNACtdknKDY2KqLfiGN0ORXpKaW906fD0TtSJlIk';
@@ -158,25 +160,6 @@ function groupPosts(posts) {
     }
   }
   return Array.from(groups.values());
-}
-
-function combinedOf(p) { return (Number(p.impressions) || 0) + (Number(p.reach) || 0); }
-function rateOf(n, d) { return d > 0 ? n / d : 0; }
-
-function isWinner(group, groupedPosts) {
-  const combinedRated = groupedPosts.filter(p => combinedOf(p) > 0);
-  const avgCombinedRate = combinedRated.length ? combinedRated.reduce((t, p) => t + rateOf(Number(p.reactions_total) || 0, combinedOf(p)), 0) / combinedRated.length : 0;
-  const avgCombinedVolume = combinedRated.length ? combinedRated.reduce((t, p) => t + combinedOf(p), 0) / combinedRated.length : 0;
-  const reachRated = groupedPosts.filter(p => (Number(p.reach) || 0) > 0);
-  const avgReachRate = reachRated.length ? reachRated.reduce((t, p) => t + rateOf(Number(p.reactions_total) || 0, Number(p.reach) || 0), 0) / reachRated.length : 0;
-
-  const reactions = Number(group.reactions_total) || 0;
-  const combined = combinedOf(group);
-  const combinedRate = rateOf(reactions, combined);
-  const reachRate = rateOf(reactions, Number(group.reach) || 0);
-  return (avgCombinedRate > 0 && combinedRate >= avgCombinedRate * WINNER_MULTIPLIER)
-    || (avgReachRate > 0 && reachRate >= avgReachRate * WINNER_MULTIPLIER)
-    || (avgCombinedVolume > 0 && combined >= avgCombinedVolume * WINNER_MULTIPLIER);
 }
 
 // ── Sheet matching ────────────────────────────────────────────────────────
@@ -550,18 +533,30 @@ export async function onRequestPost(context) {
       if (!env[required]) return json({ error: `Server is missing the ${required} secret — ask an admin to configure it in Cloudflare Pages settings.` }, 500);
     }
 
-    const alreadyPushed = await supabaseQuery(`organic_winner_ad_pushes?group_key=eq.${encodeURIComponent(group_key)}&select=ad_id`);
-    if (alreadyPushed.length) return json({ error: 'This post has already been pushed to an ad.', adId: alreadyPushed[0].ad_id }, 409);
+    // An existing row with no ad_id is a "skipped" marker (written by the
+    // dashboard's Remove button), not a real push — that shouldn't block a
+    // deliberate push, it should be overwritten (see the PATCH-vs-POST
+    // choice below). Only an existing row that actually has an ad_id means
+    // this post genuinely already has a live ad.
+    const existingRows = await supabaseQuery(`organic_winner_ad_pushes?group_key=eq.${encodeURIComponent(group_key)}&select=id,ad_id`);
+    const realPush = existingRows.find(r => r.ad_id);
+    if (realPush) return json({ error: 'This post has already been pushed to an ad.', adId: realPush.ad_id }, 409);
+    const skippedRowId = existingRows.find(r => !r.ad_id)?.id || null;
 
-    // Matches the dashboard's Queued-for-Ads scope exactly (see
-    // admin-dashboard.html renderQueuedForAds) — bounded by post count, not
-    // a date cutoff, so a winner the dashboard is showing (however old)
-    // never 404s here just because it fell outside a fixed day window.
+    // Matches the dashboard's Organic Social Performance / Queued-for-Ads
+    // scope exactly — bounded by post count, not a date cutoff, so a post
+    // the dashboard is showing (however old) never 404s here just because
+    // it fell outside a fixed day window.
     const posts = await supabaseQuery('facebook_post_performance?order=created_time.desc&limit=100');
     const grouped = groupPosts(posts);
     const group = grouped.find(g => g.key === group_key);
     if (!group) return json({ error: 'That post was not found in the last 100 synced posts — it may have aged out. Refresh the dashboard and retry.' }, 404);
-    if (!isWinner(group, grouped)) return json({ error: 'That post no longer qualifies as a Winner (performance data may have shifted since the page loaded — refresh and retry).' }, 409);
+    // No isWinner() gate here on purpose: this endpoint also backs the
+    // per-row "Push to Ads" button on the full Organic Social Performance
+    // table, which is deliberately available for ANY synced post, not just
+    // ones the 🏆 Winner heuristic flagged. The winner check still decides
+    // what's auto-queued/auto-run by the Monday cron — it just isn't a
+    // gate on a human's explicit one-off click here.
 
     const adsetId = env.TARGET_ADSET_ID || '52816670204854';
     const googleToken = await getGoogleAccessToken(env);
@@ -582,7 +577,7 @@ export async function onRequestPost(context) {
       status: 'ACTIVE',
     });
 
-    await supabaseQuery('organic_winner_ad_pushes', 'POST', {
+    const pushRecord = {
       group_key: group.key,
       platforms: group.platforms.join(','),
       message_excerpt: (group.message || '').slice(0, 200),
@@ -591,7 +586,13 @@ export async function onRequestPost(context) {
       cta_link: built.ctaLink,
       ad_id: ad.id,
       adset_id: adsetId,
-    }, 'return=minimal');
+      status: 'pushed',
+    };
+    if (skippedRowId) {
+      await supabaseQuery(`organic_winner_ad_pushes?id=eq.${skippedRowId}`, 'PATCH', pushRecord, 'return=minimal');
+    } else {
+      await supabaseQuery('organic_winner_ad_pushes', 'POST', pushRecord, 'return=minimal');
+    }
 
     return json({ ok: true, adId: ad.id, source: built.source, ctaLink: built.ctaLink });
   } catch (e) {

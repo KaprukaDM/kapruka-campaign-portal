@@ -597,6 +597,44 @@
       box-shadow: var(--shadow-md);
     }
 
+    /* SEO Performance */
+    .seo-range-toggle {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .seo-range-btn {
+      padding: 8px 18px;
+      border-radius: 20px;
+      border: 2px solid var(--primary-purple);
+      background: white;
+      color: var(--primary-purple);
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .seo-range-btn:hover {
+      background: #f3ecfa;
+    }
+
+    .seo-range-btn.active {
+      background: var(--primary-purple);
+      color: white;
+    }
+
+    .seo-cat-row {
+      cursor: pointer;
+    }
+
+    .seo-cat-row:hover {
+      background: #f9f5ff;
+    }
+
     /* Calendar */
     .calendar-header {
       display: flex;
@@ -1178,6 +1216,7 @@
         <button class="tab-btn" onclick="switchTab('hotproducts')">🔥 Hot Products</button>
         <button class="tab-btn" onclick="switchTab('departments')">🏢 Department Config</button>
         <button class="tab-btn" onclick="switchTab('postingcal')">🗓️ Posting Calendar</button>
+        <button class="tab-btn" onclick="switchTab('seo')">🔍 SEO Performance</button>
         <button class="tab-btn" style="margin-left:auto;background:#d32f2f;" onclick="logout()">Logout</button>
       </div>
 
@@ -1593,10 +1632,11 @@
                   <th>Reactions</th>
                   <th>Comments</th>
                   <th>Shares</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody id="fbPerfTable">
-                <tr><td colspan="10" style="text-align:center;padding:40px;">Loading...</td></tr>
+                <tr><td colspan="11" style="text-align:center;padding:40px;">Loading...</td></tr>
               </tbody>
             </table>
           </div>
@@ -1916,9 +1956,135 @@
           </div>
         </div>
       </div>
+
+      <!-- SEO Performance Tab -->
+      <div id="tab-seo" class="tab-content">
+        <div class="card">
+          <h2>🔍 SEO Performance
+            <span style="font-size:12px;font-weight:500;color:#888;">Google Search Console · pages containing /online/</span>
+          </h2>
+
+          <!-- Overview -->
+          <div id="seoOverviewPanel">
+            <div class="seo-range-toggle" id="seoRangeToggle">
+              <button class="seo-range-btn active" data-range="30" onclick="setSeoRange(30)">Last 30 Days</button>
+              <button class="seo-range-btn" data-range="90" onclick="setSeoRange(90)">Last 90 Days</button>
+              <button class="seo-range-btn" data-range="180" onclick="setSeoRange(180)">Last 180 Days</button>
+              <span style="margin-left:auto;font-size:12px;color:#888;" id="seoRangeDates"></span>
+              <span style="font-size:12px;color:var(--primary-purple);cursor:pointer;font-weight:600;" onclick="loadSeoOverview()">↻ Refresh</span>
+            </div>
+
+            <div id="seoOverviewWarning" style="display:none;background:#FFF3E0;color:#E65100;padding:10px 16px;border-radius:8px;font-size:12px;margin-bottom:16px;"></div>
+
+            <div class="stats-grid">
+              <div class="stat-card" style="background:#E3F2FD;">
+                <div style="color:#1565C0;font-size:12px;font-weight:600;text-transform:uppercase;margin-bottom:8px;">Clicks</div>
+                <div style="color:#0D47A1;font-size:32px;font-weight:700;" id="seoKpiClicks">–</div>
+              </div>
+              <div class="stat-card" style="background:#E8F5E9;">
+                <div style="color:#2E7D32;font-size:12px;font-weight:600;text-transform:uppercase;margin-bottom:8px;">Impressions</div>
+                <div style="color:#1B5E20;font-size:32px;font-weight:700;" id="seoKpiImpressions">–</div>
+              </div>
+              <div class="stat-card" style="background:#FFF3E0;">
+                <div style="color:#E65100;font-size:12px;font-weight:600;text-transform:uppercase;margin-bottom:8px;">Avg CTR</div>
+                <div style="color:#BF360C;font-size:32px;font-weight:700;" id="seoKpiCtr">–</div>
+              </div>
+              <div class="stat-card" style="background:#F3E5F5;">
+                <div style="color:#6A1B9A;font-size:12px;font-weight:600;text-transform:uppercase;margin-bottom:8px;">Avg Position</div>
+                <div style="color:#4A148C;font-size:32px;font-weight:700;" id="seoKpiPosition">–</div>
+              </div>
+            </div>
+
+            <h3 style="color:var(--primary-purple);font-size:16px;margin-bottom:10px;">📈 Clicks &amp; Impressions Trend</h3>
+            <div style="position:relative;height:280px;margin-bottom:30px;">
+              <canvas id="seoTrendChart"></canvas>
+            </div>
+
+            <h3 style="color:var(--primary-purple);font-size:16px;margin-bottom:10px;">🗂️ Root Categories
+              <span style="font-weight:400;font-size:12px;color:#888;">— click a bar or row for details</span>
+            </h3>
+            <div style="position:relative;height:340px;margin-bottom:20px;">
+              <canvas id="seoCategoryChart"></canvas>
+            </div>
+
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr><th>Category</th><th>Clicks</th><th>Impressions</th><th>CTR</th><th>Avg Position</th><th>Pages</th></tr>
+                </thead>
+                <tbody id="seoCategoryTable">
+                  <tr><td colspan="6" style="text-align:center;padding:40px;">Loading…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Category Detail (drill-down) -->
+          <div id="seoDetailPanel" style="display:none;">
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;flex-wrap:wrap;">
+              <button class="btn btn-primary" style="padding:8px 18px;font-size:13px;" onclick="closeSeoDetail()">← Back to Categories</button>
+              <h3 style="color:var(--primary-purple);font-size:20px;margin:0;" id="seoDetailTitle"></h3>
+              <span style="margin-left:auto;font-size:12px;color:#888;" id="seoDetailRangeDates"></span>
+            </div>
+
+            <div class="stats-grid">
+              <div class="stat-card" style="background:#E3F2FD;">
+                <div style="color:#1565C0;font-size:12px;font-weight:600;text-transform:uppercase;margin-bottom:8px;">Clicks</div>
+                <div style="color:#0D47A1;font-size:28px;font-weight:700;" id="seoDetailKpiClicks">–</div>
+              </div>
+              <div class="stat-card" style="background:#E8F5E9;">
+                <div style="color:#2E7D32;font-size:12px;font-weight:600;text-transform:uppercase;margin-bottom:8px;">Impressions</div>
+                <div style="color:#1B5E20;font-size:28px;font-weight:700;" id="seoDetailKpiImpressions">–</div>
+              </div>
+              <div class="stat-card" style="background:#FFF3E0;">
+                <div style="color:#E65100;font-size:12px;font-weight:600;text-transform:uppercase;margin-bottom:8px;">Avg CTR</div>
+                <div style="color:#BF360C;font-size:28px;font-weight:700;" id="seoDetailKpiCtr">–</div>
+              </div>
+              <div class="stat-card" style="background:#F3E5F5;">
+                <div style="color:#6A1B9A;font-size:12px;font-weight:600;text-transform:uppercase;margin-bottom:8px;">Avg Position</div>
+                <div style="color:#4A148C;font-size:28px;font-weight:700;" id="seoDetailKpiPosition">–</div>
+              </div>
+            </div>
+
+            <h4 style="color:var(--primary-purple);font-size:15px;margin-bottom:8px;">📈 Trend</h4>
+            <div style="position:relative;height:240px;margin-bottom:26px;">
+              <canvas id="seoDetailTrendChart"></canvas>
+            </div>
+
+            <h4 style="color:var(--primary-purple);font-size:15px;margin-bottom:8px;">Sub-Categories</h4>
+            <div style="position:relative;height:300px;margin-bottom:20px;">
+              <canvas id="seoDetailBarChart"></canvas>
+            </div>
+
+            <div class="table-container" style="margin-bottom:26px;">
+              <table>
+                <thead>
+                  <tr><th>Sub-Category</th><th>Sub-Sub-Category</th><th>Clicks</th><th>Impressions</th><th>CTR</th><th>Avg Position</th><th>Pages</th></tr>
+                </thead>
+                <tbody id="seoDetailSubTable">
+                  <tr><td colspan="7" style="text-align:center;padding:40px;">Loading…</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h4 style="color:var(--primary-purple);font-size:15px;margin-bottom:8px;">Top Pages</h4>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr><th>Page</th><th>Clicks</th><th>Impressions</th><th>CTR</th><th>Avg Position</th></tr>
+                </thead>
+                <tbody id="seoDetailPagesTable">
+                  <tr><td colspan="5" style="text-align:center;padding:40px;">Loading…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
   <script src="js/supabase-api.js"></script>
   <script>
     // ═══════════════════════════════════════════════════════════
@@ -2129,7 +2295,7 @@
 
           setTimeout(() => {
             const hash = window.location.hash.substring(1);
-            if (hash && ['requests', 'products', 'content', 'studio', 'dmapprovals', 'hotproducts', 'departments', 'postingcal'].includes(hash)) {
+            if (hash && ['requests', 'products', 'content', 'studio', 'dmapprovals', 'hotproducts', 'departments', 'postingcal', 'seo'].includes(hash)) {
               switchTab(hash);
             }
           }, 300);
@@ -2245,6 +2411,8 @@
       } else if (tab === 'postingcal') {
         loadPostingCalendar();
         loadPcalCalendar();
+      } else if (tab === 'seo') {
+        loadSeoOverview();
       }
     }
     
@@ -4064,19 +4232,19 @@
     async function loadFacebookPerformance() {
       try {
         const posts = await getFacebookPostPerformance(100);
-        renderFacebookPerformance(posts);
+        await renderFacebookPerformance(posts);
       } catch (error) {
         document.getElementById('fbPerfTable').innerHTML =
-          '<tr><td colspan="10" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
+          '<tr><td colspan="11" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
       }
     }
 
-    function renderFacebookPerformance(posts) {
+    async function renderFacebookPerformance(posts) {
       const tbody = document.getElementById('fbPerfTable');
       const lastSynced = document.getElementById('fbLastSynced');
 
       if (!posts || posts.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:40px;">No posts synced yet. The sync job runs automatically every 6 hours.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:40px;">No posts synced yet. The sync job runs automatically every 6 hours.</td></tr>';
         document.getElementById('fbStatPosts').textContent = '0';
         document.getElementById('fbStatImpressions').textContent = '0';
         document.getElementById('fbStatReach').textContent = '0';
@@ -4157,6 +4325,19 @@
 
       const winnerGroups = [];
 
+      // Powers the per-row "Push to Ads" button below: a row with a real
+      // ad_id is already pushed (show a badge, no button); a row with no
+      // ad_id is a "skipped" marker from the queue's Remove button (still
+      // shows a button — pushing here overrides that, same as the backend
+      // already supports for the Queued-for-Ads flow).
+      let pushedByKey = new Map();
+      try {
+        const pushed = await getPromotedOrganicWinnerKeys();
+        pushedByKey = new Map(pushed.map(r => [r.group_key, r]));
+      } catch (e) {
+        console.warn('Could not check already-pushed ads for the performance table:', e.message);
+      }
+
       tbody.innerHTML = groupedPosts.map(p => {
         const rawMessage = p.message || '(no caption)';
         const excerpt = escapeHtml(rawMessage.slice(0, 80)) + (rawMessage.length > 80 ? '…' : '');
@@ -4187,6 +4368,12 @@
           winnerGroups.push({ ...p, combined, reasons });
         }
 
+        const pushedRow = pushedByKey.get(p.key);
+        const actionsCell = pushedRow?.ad_id
+          ? `<span class="badge" style="background:#E8F5E9;color:#1B5E20;white-space:nowrap;">✅ Ad ${escapeHtml(pushedRow.ad_id)}</span>`
+          : `<button class="btn btn-primary" style="padding:6px 10px;font-size:12px;white-space:nowrap;"
+                     data-group-key="${escapeHtml(p.key)}" onclick="pushPerfRowToAds(this)">🚀 Push to Ads</button>`;
+
         return `
           <tr>
             <td>${platformBadges(p.platforms)}</td>
@@ -4199,6 +4386,7 @@
             <td>${fmtNum(p.reactions_total)}</td>
             <td>${fmtNum(p.comments_count)}</td>
             <td>${fmtNum(p.shares_count)}</td>
+            <td style="white-space:nowrap;">${actionsCell}</td>
           </tr>
         `;
       }).join('');
@@ -4371,6 +4559,37 @@
 
     function PLATFORM_BADGE_LIST(platforms) {
       return [...new Set(platforms)].map(pl => PLATFORM_BADGE[pl] || pl).join(' ');
+    }
+
+    // "Push to Ads" on the full Organic Social Performance table — unlike
+    // doPushWinner (Queued for Ads), this works for ANY synced post, not
+    // just ones flagged 🏆 Winner: the backend no longer gates on winner
+    // status for a deliberate one-off click, only the auto-queue/cron do.
+    // The row itself isn't removed on success (this table is a running
+    // history, not a queue) — its Actions cell just swaps to the ad badge.
+    async function pushPerfRowToAds(btn) {
+      if (!confirm('This creates a LIVE ad in ad set 52816670204854 with real budget, starting immediately. Continue?')) return;
+
+      const groupKey = btn.dataset.groupKey;
+      const cell = btn.parentElement;
+      btn.disabled = true;
+      btn.textContent = '⏳ Pushing…';
+
+      try {
+        const res = await fetch('/api/push-organic-winner-ad', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ group_key: groupKey }),
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.error || `Request failed (${res.status})`);
+
+        cell.innerHTML = `<span class="badge" style="background:#E8F5E9;color:#1B5E20;white-space:nowrap;">✅ Ad ${escapeHtml(data.adId)}</span>`;
+      } catch (e) {
+        btn.disabled = false;
+        btn.textContent = '🚀 Push to Ads';
+        cell.insertAdjacentHTML('beforeend', `<div style="color:#d32f2f;font-size:11px;margin-top:4px;max-width:180px;white-space:normal;">${escapeHtml(e.message)}</div>`);
+      }
     }
 
     function saveStudioMonth() {
@@ -5366,6 +5585,237 @@
         alert('Delete failed: ' + e.message);
         btn.disabled = false;
         btn.textContent = originalText;
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // SEO PERFORMANCE (Google Search Console, /online/ pages)
+    // ═══════════════════════════════════════════════════════════
+    let seoRange = 30;
+    let seoActiveCategory = null;
+    let seoTrendChart = null;
+    let seoCategoryChart = null;
+    let seoDetailTrendChart = null;
+    let seoDetailBarChart = null;
+
+    function seoNum(n) { return Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 0 }); }
+    function seoPct(n) { return (Number(n || 0) * 100).toFixed(2) + '%'; }
+    function seoPos(n) { return Number(n || 0).toFixed(1); }
+
+    function setSeoRange(range) {
+      seoRange = range;
+      document.querySelectorAll('#seoRangeToggle .seo-range-btn').forEach(b => {
+        b.classList.toggle('active', Number(b.dataset.range) === range);
+      });
+      if (seoActiveCategory) {
+        loadSeoCategoryDetail(seoActiveCategory);
+      } else {
+        loadSeoOverview();
+      }
+    }
+
+    function seoDestroyChart(chart) {
+      if (chart) chart.destroy();
+      return null;
+    }
+
+    function seoRenderTrendChart(canvasId, existingChart, trend) {
+      const ctx = document.getElementById(canvasId).getContext('2d');
+      const chart = seoDestroyChart(existingChart);
+      return new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: trend.map(t => t.date),
+          datasets: [
+            {
+              label: 'Clicks', data: trend.map(t => t.clicks), borderColor: '#5e3a8e',
+              backgroundColor: 'rgba(94,58,142,0.08)', yAxisID: 'y', tension: 0.25, fill: true, pointRadius: 0
+            },
+            {
+              label: 'Impressions', data: trend.map(t => t.impressions), borderColor: '#F57C00',
+              backgroundColor: 'rgba(245,124,0,0.06)', yAxisID: 'y1', tension: 0.25, fill: true, pointRadius: 0
+            }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          scales: {
+            y: { position: 'left', beginAtZero: true, title: { display: true, text: 'Clicks' } },
+            y1: { position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, title: { display: true, text: 'Impressions' } }
+          }
+        }
+      });
+    }
+
+    function seoRenderCategoryChart(categories) {
+      const ctx = document.getElementById('seoCategoryChart').getContext('2d');
+      seoCategoryChart = seoDestroyChart(seoCategoryChart);
+      const top = categories.slice(0, 15);
+      seoCategoryChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: top.map(c => c.label),
+          datasets: [{ label: 'Clicks', data: top.map(c => c.clicks), backgroundColor: '#5e3a8e', borderRadius: 6 }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          onClick: (evt, elements) => {
+            if (!elements.length) return;
+            loadSeoCategoryDetail(top[elements[0].index].key);
+          },
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true, title: { display: true, text: 'Clicks' } } },
+          onHover: (evt, elements) => { evt.native.target.style.cursor = elements.length ? 'pointer' : 'default'; }
+        }
+      });
+    }
+
+    function seoRenderCategoryTable(categories) {
+      const tbody = document.getElementById('seoCategoryTable');
+      if (!categories.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;">No /online/ pages with data in this range.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = categories.map(c => `
+        <tr class="seo-cat-row" onclick="loadSeoCategoryDetail('${c.key.replace(/'/g, "\\'")}')">
+          <td><strong>${escapeHtml(c.label)}</strong></td>
+          <td>${seoNum(c.clicks)}</td>
+          <td>${seoNum(c.impressions)}</td>
+          <td>${seoPct(c.ctr)}</td>
+          <td>${seoPos(c.position)}</td>
+          <td>${seoNum(c.pageCount)}</td>
+        </tr>
+      `).join('');
+    }
+
+    async function loadSeoOverview() {
+      seoActiveCategory = null;
+      document.getElementById('seoDetailPanel').style.display = 'none';
+      document.getElementById('seoOverviewPanel').style.display = 'block';
+
+      const warningEl = document.getElementById('seoOverviewWarning');
+      warningEl.style.display = 'none';
+      document.getElementById('seoCategoryTable').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;">Loading…</td></tr>';
+
+      try {
+        const res = await fetch(`/api/seo-performance?range=${seoRange}`);
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.error || 'Failed to load SEO data');
+
+        document.getElementById('seoKpiClicks').textContent = seoNum(data.totals.clicks);
+        document.getElementById('seoKpiImpressions').textContent = seoNum(data.totals.impressions);
+        document.getElementById('seoKpiCtr').textContent = seoPct(data.totals.ctr);
+        document.getElementById('seoKpiPosition').textContent = seoPos(data.totals.position);
+        document.getElementById('seoRangeDates').textContent = data.startDate && data.endDate ? `${data.startDate} → ${data.endDate}` : '';
+
+        if (data.warnings && data.warnings.length) {
+          warningEl.style.display = 'block';
+          warningEl.textContent = '⚠️ ' + data.warnings.join(' | ');
+        }
+
+        seoTrendChart = seoRenderTrendChart('seoTrendChart', seoTrendChart, data.trend);
+        seoRenderCategoryChart(data.categories);
+        seoRenderCategoryTable(data.categories);
+      } catch (e) {
+        document.getElementById('seoCategoryTable').innerHTML =
+          `<tr><td colspan="6" style="text-align:center;padding:40px;color:#d32f2f;">Failed to load: ${escapeHtml(e.message)}</td></tr>`;
+      }
+    }
+
+    function closeSeoDetail() {
+      seoActiveCategory = null;
+      document.getElementById('seoDetailPanel').style.display = 'none';
+      document.getElementById('seoOverviewPanel').style.display = 'block';
+    }
+
+    function seoFlattenSubcategories(subcategories) {
+      const rows = [];
+      subcategories.forEach(sub => {
+        if (sub.children && sub.children.length) {
+          sub.children.forEach(child => rows.push({ sub, child }));
+        } else {
+          rows.push({ sub, child: null });
+        }
+      });
+      return rows;
+    }
+
+    function seoRenderDetailBarChart(subcategories) {
+      const ctx = document.getElementById('seoDetailBarChart').getContext('2d');
+      seoDetailBarChart = seoDestroyChart(seoDetailBarChart);
+      const top = subcategories.slice(0, 20);
+      seoDetailBarChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: top.map(c => c.label),
+          datasets: [
+            { label: 'Clicks', data: top.map(c => c.clicks), backgroundColor: '#5e3a8e', borderRadius: 6 },
+            { label: 'Impressions', data: top.map(c => c.impressions), backgroundColor: '#F57C00', borderRadius: 6, hidden: true }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+    }
+
+    async function loadSeoCategoryDetail(key) {
+      seoActiveCategory = key;
+      document.getElementById('seoOverviewPanel').style.display = 'none';
+      document.getElementById('seoDetailPanel').style.display = 'block';
+      document.getElementById('seoDetailTitle').textContent = 'Loading…';
+      document.getElementById('seoDetailSubTable').innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;">Loading…</td></tr>';
+      document.getElementById('seoDetailPagesTable').innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;">Loading…</td></tr>';
+
+      try {
+        const res = await fetch(`/api/seo-performance?range=${seoRange}&category=${encodeURIComponent(key)}`);
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.error || 'Failed to load category data');
+
+        document.getElementById('seoDetailTitle').textContent = '🗂️ ' + data.label;
+        document.getElementById('seoDetailRangeDates').textContent = data.startDate && data.endDate ? `${data.startDate} → ${data.endDate}` : '';
+        document.getElementById('seoDetailKpiClicks').textContent = seoNum(data.totals.clicks);
+        document.getElementById('seoDetailKpiImpressions').textContent = seoNum(data.totals.impressions);
+        document.getElementById('seoDetailKpiCtr').textContent = seoPct(data.totals.ctr);
+        document.getElementById('seoDetailKpiPosition').textContent = seoPos(data.totals.position);
+
+        seoDetailTrendChart = seoRenderTrendChart('seoDetailTrendChart', seoDetailTrendChart, data.trend);
+        seoRenderDetailBarChart(data.subcategories);
+
+        const subTbody = document.getElementById('seoDetailSubTable');
+        const flatRows = seoFlattenSubcategories(data.subcategories);
+        subTbody.innerHTML = !flatRows.length
+          ? '<tr><td colspan="7" style="text-align:center;padding:40px;">No sub-categories found — this category has no further URL segments in the selected range.</td></tr>'
+          : flatRows.map(({ sub, child }) => `
+            <tr>
+              <td><strong>${escapeHtml(sub.label)}</strong></td>
+              <td>${child ? escapeHtml(child.label) : '—'}</td>
+              <td>${seoNum((child || sub).clicks)}</td>
+              <td>${seoNum((child || sub).impressions)}</td>
+              <td>${seoPct((child || sub).ctr)}</td>
+              <td>${seoPos((child || sub).position)}</td>
+              <td>${seoNum((child || sub).pageCount)}</td>
+            </tr>
+          `).join('');
+
+        const pagesTbody = document.getElementById('seoDetailPagesTable');
+        pagesTbody.innerHTML = !data.topPages.length
+          ? '<tr><td colspan="5" style="text-align:center;padding:40px;">No pages found.</td></tr>'
+          : data.topPages.map(p => `
+            <tr>
+              <td><a href="${escapeHtml(p.page)}" target="_blank" style="color:#5e3a8e;word-break:break-all;">${escapeHtml(p.page)}</a></td>
+              <td>${seoNum(p.clicks)}</td>
+              <td>${seoNum(p.impressions)}</td>
+              <td>${seoPct(p.ctr)}</td>
+              <td>${seoPos(p.position)}</td>
+            </tr>
+          `).join('');
+      } catch (e) {
+        document.getElementById('seoDetailTitle').textContent = 'Error';
+        document.getElementById('seoDetailSubTable').innerHTML =
+          `<tr><td colspan="7" style="text-align:center;padding:40px;color:#d32f2f;">Failed to load: ${escapeHtml(e.message)}</td></tr>`;
       }
     }
 </script>

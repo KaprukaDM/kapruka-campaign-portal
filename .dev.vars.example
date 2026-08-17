@@ -1,0 +1,17 @@
+# Copy to .dev.vars and fill in real values for local `wrangler pages dev` testing.
+# .dev.vars is gitignored — never commit real secrets.
+
+# ── Basic Auth (functions/_middleware.js) — pick any one user to log in locally ──
+MANAGER_PASS=change-me
+
+# ── Google Search Console (functions/api/seo-performance.js) ───────────────
+# OAuth client — same Google Cloud project already used for GOOGLE_REFRESH_TOKEN
+# elsewhere in this repo; GSC_REFRESH_TOKEN below is a separate refresh token
+# scoped to https://www.googleapis.com/auth/webmasters.readonly.
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GSC_REFRESH_TOKEN=
+# One or more Search Console property identifiers, space or comma separated.
+GSC_SITE_URL=https://www.kapruka.com/
+# Rows fetched per page-level request when paginating (default 2500, GSC max 25000).
+GSC_ROW_LIMIT=2500
