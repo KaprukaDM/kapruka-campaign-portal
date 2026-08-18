@@ -119,21 +119,71 @@ function parseInsights(body) {
   return out;
 }
 
-async function fetchInsights(mediaId, mediaProductType, token) {
-  const metrics = metricsFor(mediaProductType);
-  try {
-    return parseInsights(await graphGet(`${mediaId}/insights`, { metric: metrics }, token));
-  } catch (e) {
-    // The Graph API is inconsistent post-by-post about which metrics are
-    // actually valid, not just by declared media_product_type — fall back
-    // to the common safe set rather than losing this post's data entirely.
-    if (metrics === SAFE_FALLBACK_METRICS) return { error: e.message };
-    try {
-      return parseInsights(await graphGet(`${mediaId}/insights`, { metric: SAFE_FALLBACK_METRICS }, token));
-    } catch (e2) {
-      return { error: e2.message };
-    }
+// Cloudflare Pages Functions cap outgoing fetches at 50 subrequests per
+// invocation (default plan) — one insights call per post blew past that on
+// anything beyond a handful of posts (confirmed live: "Too many subrequests"
+// on a 14/30-day window). Facebook's Graph API batch endpoint bundles up to
+// 50 individual calls into ONE outgoing HTTP request, so fetching insights
+// for an entire window now costs ~2 subrequests total (one batch + one
+// fallback-retry batch) instead of one per post.
+const GRAPH_BATCH_LIMIT = 50;
+
+async function graphBatch(token, calls) {
+  // calls: [{ id, relativeUrl }]. Returns a Map from id -> parsed body (or
+  // { error } if that specific sub-call failed).
+  const results = new Map();
+  for (let i = 0; i < calls.length; i += GRAPH_BATCH_LIMIT) {
+    const chunk = calls.slice(i, i + GRAPH_BATCH_LIMIT);
+    const res = await fetch(`https://graph.facebook.com/${GRAPH_VERSION}/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        access_token: token,
+        batch: JSON.stringify(chunk.map(c => ({ method: 'GET', relative_url: c.relativeUrl }))),
+      }),
+    });
+    const batchBody = await res.json();
+    if (!Array.isArray(batchBody)) throw new Error(`Graph batch request failed: ${JSON.stringify(batchBody)}`);
+    chunk.forEach((c, idx) => {
+      const item = batchBody[idx];
+      let parsed = null;
+      try { parsed = item?.body ? JSON.parse(item.body) : null; } catch (e) { /* leave null */ }
+      if (item && item.code === 200 && parsed && !parsed.error) {
+        results.set(c.id, parsed);
+      } else {
+        results.set(c.id, { error: parsed?.error?.message || `HTTP ${item?.code ?? '?'}` });
+      }
+    });
   }
+  return results;
+}
+
+async function fetchAllInsights(mediaList, token) {
+  const primaryCalls = mediaList.map(m => ({
+    id: m.id,
+    relativeUrl: `${m.id}/insights?metric=${encodeURIComponent(metricsFor(m.media_product_type))}`,
+  }));
+  const primaryResults = await graphBatch(token, primaryCalls);
+
+  // Same fallback rationale as before: the Graph API is inconsistent
+  // post-by-post about which metrics are actually valid, not just by
+  // declared media_product_type. Retry only the failures, still batched.
+  const needsFallback = mediaList.filter(m => primaryResults.get(m.id)?.error);
+  let fallbackResults = new Map();
+  if (needsFallback.length) {
+    const fallbackCalls = needsFallback.map(m => ({
+      id: m.id,
+      relativeUrl: `${m.id}/insights?metric=${encodeURIComponent(SAFE_FALLBACK_METRICS)}`,
+    }));
+    fallbackResults = await graphBatch(token, fallbackCalls);
+  }
+
+  const out = new Map();
+  for (const m of mediaList) {
+    const raw = fallbackResults.get(m.id) || primaryResults.get(m.id);
+    out.set(m.id, raw?.error ? { error: raw.error } : parseInsights(raw));
+  }
+  return out;
 }
 
 async function callOpenAI(env, dataPayload) {
@@ -175,15 +225,16 @@ export async function onRequestPost(context) {
     const media = await fetchRecentMedia(igAccountId, token, since, maxPosts);
     if (!media.length) return json({ error: `No Instagram posts found in the last ${days} days.` }, 404);
 
-    const posts = await Promise.all(media.map(async (m) => ({
+    const insightsById = await fetchAllInsights(media, token);
+    const posts = media.map((m) => ({
       id: m.id,
       caption: m.caption || '',
       media_type: m.media_type,
       media_product_type: m.media_product_type,
       timestamp: m.timestamp,
       permalink: m.permalink,
-      insights: await fetchInsights(m.id, m.media_product_type, token),
-    })));
+      insights: insightsById.get(m.id) || { error: 'no insights returned' },
+    }));
 
     const dataPayload = {
       accountId: igAccountId,
