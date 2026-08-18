@@ -269,7 +269,9 @@ function monthOccupancy(rows, year, month) {
       page: String(row[COL.PAGE] || '').trim(),
       posted: st.indexOf('Posted') === 0,
       time: SLOT_LABELS[slotIndex],
-      primaryText: String(row[COL.PRIMARY_TEXT] || '').trim()
+      primaryText: String(row[COL.PRIMARY_TEXT] || '').trim(),
+      mediaUrl: String(row[COL.MEDIA_URL] || '').trim(),
+      mediaType: String(row[COL.MEDIA_TYPE] || '').trim()
     });
   });
   return Object.values(byDate);
@@ -472,8 +474,9 @@ export async function onRequestPost(context) {
 export async function onRequestPatch(context) {
   const { env, request } = context;
   try {
-    const { contentId, date } = await request.json();
-    if (!contentId || !date) return json({ error: 'contentId and date are required' }, 400);
+    const { contentId, date, primaryText } = await request.json();
+    if (!contentId) return json({ error: 'contentId is required' }, 400);
+    if (!date && typeof primaryText !== 'string') return json({ error: 'date or primaryText is required' }, 400);
 
     const token = await getAccessToken(env);
     const sheetRows = await sheetsGet(env, token, `${SHEET_NAME}!A2:H`);
@@ -482,10 +485,20 @@ export async function onRequestPatch(context) {
 
     const status = String(sheetRows[rowIdx][COL.STATUS] || '').trim();
     if (status.indexOf('Posted') === 0) {
-      return json({ error: "This has already been posted — can't reschedule a published post." }, 409);
+      return json({ error: "This has already been posted — can't edit a published post." }, 409);
     }
 
     const sheetRowNumber = rowIdx + 2; // +1 for header row, +1 for 1-based sheet rows
+
+    // Picking a generated headline (Copywriter button) writes straight back
+    // to the Primary Text column — same sheet, same row, so it's exactly
+    // "the final post" the rest of the pipeline (scheduling, posting) reads.
+    if (typeof primaryText === 'string') {
+      await sheetsUpdate(env, token, `${SHEET_NAME}!E${sheetRowNumber}`, [primaryText]);
+    }
+
+    if (!date) return json({ ok: true, primaryText });
+
     await sheetsUpdate(env, token, `${SHEET_NAME}!G${sheetRowNumber}`, [date]);
 
     // Slot for the response message only — the real slot a post lands in is
