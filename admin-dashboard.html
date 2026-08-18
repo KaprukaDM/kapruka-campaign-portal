@@ -5570,7 +5570,7 @@
               <div style="display:flex;gap:6px;margin-top:6px;margin-left:80px;flex-wrap:wrap;">
                 <button type="button" class="btn" style="padding:4px 10px;font-size:11px;background:#eee;color:#333;" onclick="pcalToggleReschedule(this)">📅 Reschedule</button>
                 <button type="button" class="btn" style="padding:4px 10px;font-size:11px;background:#fee2e2;color:#dc2626;" onclick="pcalDeleteScheduled(this, '${pcalEscapeHtml(it.contentId)}', '${pcalEscapeHtml(dateStr)}')">🗑️ Delete</button>
-                ${it.mediaUrl ? `<button type="button" class="btn" style="padding:4px 10px;font-size:11px;background:#F3E5F5;color:#6A1B9A;" onclick="pcalRunCopywriter(this, '${pcalEscapeHtml(it.contentId)}')">✍️ Copywriter</button>` : ''}
+                <button type="button" class="btn" style="padding:4px 10px;font-size:11px;background:#F3E5F5;color:#6A1B9A;" onclick="pcalRunCopywriter(this, '${pcalEscapeHtml(it.contentId)}')" title="${it.mediaUrl ? '' : 'No image found on this row (Media URL column is empty) — click to see the exact error'}">✍️ Copywriter${it.mediaUrl ? '' : ' ⚠️'}</button>
               </div>
               <div class="pcal-reschedule-inline" style="display:none;gap:6px;margin-top:6px;margin-left:80px;align-items:center;">
                 <input type="date" class="pcal-reschedule-date" style="padding:4px 8px;font-size:12px;border:1px solid #ddd;border-radius:6px;">
