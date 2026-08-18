@@ -254,7 +254,11 @@ const CHECKLIST_ITEMS = [
   { key: 'brand_colors',   label: 'Uses Kapruka brand colors' },
   { key: 'logo_placement', label: 'If a second logo is present, Kapruka logo stays top-left/top-right (not beside it) and the 2nd logo is inside the content' },
   { key: 'no_repeat_idea', label: 'No repeated idea/concept from previous posts' },
-  { key: 'logo_clearspace',label: 'Clear space maintained around the Kapruka logo' },
+  { key: 'logo_clearspace',label: 'Clear space maintained around the Kapruka logo',
+    note: 'Always maintain clear space around the Kapruka logo to keep it visible, clean, and easy to recognize. ' +
+          '• To ensure adequate breathing space, maintain a clear space equal to the logo\'s height (1x) on all sides. ' +
+          '• No text, graphics, images, borders, or other design elements should enter this clear space. ' +
+          '• The logo should always be placed in a clean and uncluttered area to protect its visibility and brand impact.' },
   { key: 'logo_top_110',   label: 'Logo placed within 110px from the top (when on top)' },
   { key: 'fair_margins',   label: 'Fair margins maintained' },
   { key: 'consistency',    label: 'Consistent with other Kapruka content' },

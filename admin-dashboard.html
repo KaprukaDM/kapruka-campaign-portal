@@ -3704,6 +3704,7 @@
           <input type="checkbox" class="checklist-item" data-key="${item.key}" data-label="${escapeHtml(item.label)}" id="chk_${stage}_${slotId}_${item.key}">
           <span class="checklist-row-label">${item.label}</span>
         </label>
+        ${item.note ? `<div class="checklist-row-note" style="margin:2px 0 8px 26px;font-size:11px;color:#888;line-height:1.5;">${escapeHtml(item.note)}</div>` : ''}
       `).join('');
 
       return `
