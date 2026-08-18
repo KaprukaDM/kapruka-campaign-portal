@@ -15,3 +15,11 @@ GSC_REFRESH_TOKEN=
 GSC_SITE_URL=https://www.kapruka.com/
 # Rows fetched per page-level request when paginating (default 2500, GSC max 25000).
 GSC_ROW_LIMIT=2500
+
+# ── Post Creative Strategy (functions/api/post-creative-strategy.js) ───────
+# META_PAGE_ACCESS_TOKEN is reused from the ads-push features elsewhere in
+# this repo (needs instagram_basic + page-scoped read access).
+OPENAI_API_KEY=
+# Optional overrides — default to Kapruka's Page/IG account and gpt-4o.
+META_IG_ACCOUNT_ID=
+OPENAI_MODEL=

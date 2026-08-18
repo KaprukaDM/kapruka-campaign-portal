@@ -1217,6 +1217,7 @@
         <button class="tab-btn" onclick="switchTab('departments')">🏢 Department Config</button>
         <button class="tab-btn" onclick="switchTab('postingcal')">🗓️ Posting Calendar</button>
         <button class="tab-btn" onclick="switchTab('seo')">🔍 SEO Performance</button>
+        <button class="tab-btn" onclick="switchTab('creativestrategy')">🎯 Post Creative Strategy</button>
         <button class="tab-btn" style="margin-left:auto;background:#d32f2f;" onclick="logout()">Logout</button>
       </div>
 
@@ -1964,8 +1965,20 @@
             <span style="font-size:12px;font-weight:500;color:#888;">Google Search Console · pages containing /online/</span>
           </h2>
 
+          <!-- Password Gate -->
+          <div id="seoGate" style="max-width:340px;margin:20px auto;text-align:center;">
+            <p style="font-size:13px;color:#666;margin-bottom:14px;">🔒 This section is password protected.</p>
+            <form id="seoGateForm">
+              <div class="form-group">
+                <input type="password" id="seoGatePassword" required placeholder="Password" autocomplete="off">
+              </div>
+              <button type="submit" class="btn btn-primary" style="width:100%;">Unlock</button>
+            </form>
+            <div id="seoGateError" style="display:none;color:#d32f2f;font-size:13px;margin-top:10px;">Incorrect password.</div>
+          </div>
+
           <!-- Overview -->
-          <div id="seoOverviewPanel">
+          <div id="seoOverviewPanel" style="display:none;">
             <div class="seo-range-toggle" id="seoRangeToggle">
               <button class="seo-range-btn active" data-range="30" onclick="setSeoRange(30)">Last 30 Days</button>
               <button class="seo-range-btn" data-range="90" onclick="setSeoRange(90)">Last 90 Days</button>
@@ -2079,6 +2092,38 @@
               </table>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Post Creative Strategy Tab -->
+      <div id="tab-creativestrategy" class="tab-content">
+        <div class="card">
+          <h2>🎯 Post Creative Strategy
+            <span style="font-size:12px;font-weight:500;color:#888;">Instagram · investigator-style weekly review, powered by OpenAI</span>
+          </h2>
+          <div style="font-size:13px;color:#666;margin-bottom:16px;line-height:1.6;max-width:820px;">
+            Pulls Kapruka's own Instagram posts and per-post insights (reach, engagement rate, and for Reels: hook rate,
+            watch time) for the selected window, then has an LLM investigate cross-post patterns — what worked, what
+            didn't, and why — and turn that into a concrete creative strategy for next week. Every recommendation is
+            expected to cite the actual post(s)/numbers behind it, not generic advice. Costs an OpenAI API call per run,
+            so this doesn't auto-run — click Run Analysis when you want a fresh report.
+          </div>
+
+          <div class="seo-range-toggle">
+            <button class="seo-range-btn active" data-days="7" onclick="setCreativeStrategyRange(7)">Last 7 Days</button>
+            <button class="seo-range-btn" data-days="14" onclick="setCreativeStrategyRange(14)">Last 14 Days</button>
+            <button class="seo-range-btn" data-days="30" onclick="setCreativeStrategyRange(30)">Last 30 Days</button>
+            <button id="runCreativeStrategyBtn" class="btn btn-primary" style="margin-left:auto;padding:8px 18px;font-size:13px;" onclick="runCreativeStrategyAnalysis()">🔍 Run Analysis</button>
+          </div>
+
+          <div id="creativeStrategyStatus" style="display:none;background:#F3E5F5;color:#6A1B9A;padding:12px 16px;border-radius:8px;font-size:13px;margin:16px 0;"></div>
+
+          <div id="creativeStrategyReport" style="font-size:14px;color:#333;"></div>
+
+          <details id="creativeStrategyRawWrap" style="display:none;margin-top:24px;">
+            <summary style="cursor:pointer;font-size:12px;color:#888;">Raw pulled data (for verification)</summary>
+            <pre id="creativeStrategyRaw" style="background:#f7f5fa;padding:12px;border-radius:8px;font-size:11px;overflow-x:auto;max-height:400px;overflow-y:auto;"></pre>
+          </details>
         </div>
       </div>
     </div>
@@ -2338,7 +2383,12 @@
     function logout() {
       isLoggedIn = false;
       isSuperAdmin = false;
-      try { sessionStorage.removeItem('adminLoggedIn'); sessionStorage.removeItem('adminRole'); } catch(e) {}
+      seoUnlocked = false;
+      try {
+        sessionStorage.removeItem('adminLoggedIn');
+        sessionStorage.removeItem('adminRole');
+        sessionStorage.removeItem('seoUnlocked');
+      } catch(e) {}
       document.getElementById('loginScreen').style.display = 'block';
       document.getElementById('adminContent').style.display = 'none';
       document.getElementById('adminPassword').value = '';
@@ -2384,7 +2434,8 @@
             (tab === 'hotproducts' && btnText.includes('hot')) ||
             (tab === 'departments' && btnText.includes('department')) ||
             (tab === 'dmapprovals' && btnText.includes('dm')) ||
-            (tab === 'postingcal' && btnText.includes('posting'))) {
+            (tab === 'postingcal' && btnText.includes('posting')) ||
+            (tab === 'creativestrategy' && btnText.includes('creative strategy'))) {
           btn.classList.add('active');
         }
       });
@@ -2412,7 +2463,7 @@
         loadPostingCalendar();
         loadPcalCalendar();
       } else if (tab === 'seo') {
-        loadSeoOverview();
+        checkSeoGate();
       }
     }
     
@@ -5591,12 +5642,42 @@
     // ═══════════════════════════════════════════════════════════
     // SEO PERFORMANCE (Google Search Console, /online/ pages)
     // ═══════════════════════════════════════════════════════════
+    const SEO_TAB_PASSWORD = 'daraz';
+    let seoUnlocked = false;
     let seoRange = 30;
     let seoActiveCategory = null;
     let seoTrendChart = null;
     let seoCategoryChart = null;
     let seoDetailTrendChart = null;
     let seoDetailBarChart = null;
+
+    try { seoUnlocked = sessionStorage.getItem('seoUnlocked') === 'true'; } catch(e) {}
+
+    function checkSeoGate() {
+      if (seoUnlocked) {
+        document.getElementById('seoGate').style.display = 'none';
+        document.getElementById('seoOverviewPanel').style.display = 'block';
+        loadSeoOverview();
+      } else {
+        document.getElementById('seoGate').style.display = 'block';
+        document.getElementById('seoOverviewPanel').style.display = 'none';
+        document.getElementById('seoDetailPanel').style.display = 'none';
+        document.getElementById('seoGatePassword').value = '';
+        document.getElementById('seoGateError').style.display = 'none';
+      }
+    }
+
+    document.getElementById('seoGateForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const entered = document.getElementById('seoGatePassword').value;
+      if (entered === SEO_TAB_PASSWORD) {
+        seoUnlocked = true;
+        try { sessionStorage.setItem('seoUnlocked', 'true'); } catch(e) {}
+        checkSeoGate();
+      } else {
+        document.getElementById('seoGateError').style.display = 'block';
+      }
+    });
 
     function seoNum(n) { return Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 0 }); }
     function seoPct(n) { return (Number(n || 0) * 100).toFixed(2) + '%'; }
@@ -5612,6 +5693,114 @@
       } else {
         loadSeoOverview();
       }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // POST CREATIVE STRATEGY — Instagram investigator report (OpenAI-backed)
+    // ═══════════════════════════════════════════════════════════════
+
+    let creativeStrategyDays = 7;
+
+    function setCreativeStrategyRange(days) {
+      creativeStrategyDays = days;
+      document.querySelectorAll('#tab-creativestrategy .seo-range-btn').forEach(b => {
+        b.classList.toggle('active', Number(b.dataset.days) === days);
+      });
+    }
+
+    async function runCreativeStrategyAnalysis() {
+      const btn = document.getElementById('runCreativeStrategyBtn');
+      const statusEl = document.getElementById('creativeStrategyStatus');
+      const reportEl = document.getElementById('creativeStrategyReport');
+      const rawWrap = document.getElementById('creativeStrategyRawWrap');
+      const rawEl = document.getElementById('creativeStrategyRaw');
+
+      btn.disabled = true;
+      statusEl.style.display = '';
+      statusEl.textContent = `⏳ Pulling the last ${creativeStrategyDays} days of Instagram posts and insights, then asking the model to investigate…`;
+      reportEl.innerHTML = '';
+      rawWrap.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/post-creative-strategy', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ days: creativeStrategyDays }),
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.error || `Request failed (${res.status})`);
+
+        statusEl.style.display = 'none';
+        reportEl.innerHTML = renderMarkdownToHtml(data.report);
+        rawEl.textContent = JSON.stringify(data.raw, null, 2);
+        rawWrap.style.display = '';
+      } catch (e) {
+        statusEl.textContent = '❌ ' + e.message;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    // Small dependency-free markdown renderer (headers, bold/italic/code,
+    // links, tables, bullet lists, hr, paragraphs) — enough to render what
+    // GPT actually produces for this report without pulling in a CDN library.
+    function creativeStrategyInlineMd(text) {
+      return escapeHtml(text)
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/`([^`]+)`/g, '<code style="background:#f3f0fa;padding:1px 5px;border-radius:4px;">$1</code>')
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" style="color:#5e3a8e;">$1</a>');
+    }
+
+    function renderMarkdownToHtml(md) {
+      const lines = (md || '').split(/\r\n|\n/);
+      let html = '';
+      let tableRows = [], inTable = false;
+      let inList = false;
+
+      const flushTable = () => {
+        if (!tableRows.length) return;
+        const header = tableRows[0];
+        const bodyRows = tableRows.slice(2); // row 0 = header, row 1 = |---|---| separator
+        html += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;margin:12px 0;font-size:13px;">';
+        html += '<thead><tr>' + header.map(c => `<th style="text-align:left;padding:8px;border-bottom:2px solid #ddd;">${creativeStrategyInlineMd(c)}</th>`).join('') + '</tr></thead>';
+        html += '<tbody>' + bodyRows.map(r => '<tr>' + r.map(c => `<td style="padding:8px;border-bottom:1px solid #eee;">${creativeStrategyInlineMd(c)}</td>`).join('') + '</tr>').join('') + '</tbody>';
+        html += '</table></div>';
+        tableRows = []; inTable = false;
+      };
+      const flushList = () => { if (inList) { html += '</ul>'; inList = false; } };
+
+      for (const rawLine of lines) {
+        const line = rawLine.trim();
+
+        if (/^\|.*\|$/.test(line)) {
+          inTable = true;
+          tableRows.push(line.slice(1, -1).split('|').map(c => c.trim()));
+          continue;
+        } else if (inTable) {
+          flushTable();
+        }
+
+        if (!line) { flushList(); continue; }
+        if (/^######\s+/.test(line)) { flushList(); html += `<h6>${creativeStrategyInlineMd(line.replace(/^######\s+/, ''))}</h6>`; continue; }
+        if (/^#####\s+/.test(line)) { flushList(); html += `<h5>${creativeStrategyInlineMd(line.replace(/^#####\s+/, ''))}</h5>`; continue; }
+        if (/^####\s+/.test(line)) { flushList(); html += `<h4>${creativeStrategyInlineMd(line.replace(/^####\s+/, ''))}</h4>`; continue; }
+        if (/^###\s+/.test(line)) { flushList(); html += `<h3 style="margin-top:20px;">${creativeStrategyInlineMd(line.replace(/^###\s+/, ''))}</h3>`; continue; }
+        if (/^##\s+/.test(line)) { flushList(); html += `<h2 style="margin-top:24px;color:var(--primary-purple);">${creativeStrategyInlineMd(line.replace(/^##\s+/, ''))}</h2>`; continue; }
+        if (/^#\s+/.test(line)) { flushList(); html += `<h1 style="margin-top:24px;">${creativeStrategyInlineMd(line.replace(/^#\s+/, ''))}</h1>`; continue; }
+        if (/^-{3,}$/.test(line)) { flushList(); html += '<hr style="margin:16px 0;border:none;border-top:1px solid #ddd;">'; continue; }
+        if (/^[-*]\s+/.test(line)) {
+          if (!inList) { html += '<ul style="margin:8px 0;padding-left:22px;">'; inList = true; }
+          html += `<li>${creativeStrategyInlineMd(line.replace(/^[-*]\s+/, ''))}</li>`;
+          continue;
+        }
+
+        flushList();
+        html += `<p style="margin:8px 0;line-height:1.6;">${creativeStrategyInlineMd(line)}</p>`;
+      }
+      flushList();
+      if (inTable) flushTable();
+      return html;
     }
 
     function seoDestroyChart(chart) {
