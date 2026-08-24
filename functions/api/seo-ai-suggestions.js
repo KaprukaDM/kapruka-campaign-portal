@@ -10,9 +10,11 @@
 //    - plausible sub-categories customers search for that don't exist as a
 //      facet anywhere on the page yet
 //
-//  This is reasoning over data the caller already gathered — no scraping or
-//  GSC calls happen here. Env: OPENAI_API_KEY (required), OPENAI_MODEL
-//  (optional, defaults to gpt-4o) — both already used by post-creative-strategy.js.
+//  This is reasoning over data the caller already gathered — no scraping,
+//  vision, or GSC calls happen here, so it defaults to a cheaper text-only
+//  model rather than the gpt-4o default used by the vision-dependent
+//  features (post-creative-strategy.js, generate-headlines.js).
+//  Env: OPENAI_API_KEY (required), OPENAI_MODEL (optional, overrides the default below).
 //
 //  POST /api/seo-ai-suggestions
 //    body: {
@@ -95,7 +97,7 @@ export async function onRequestPost(context) {
     const payload = await request.json();
     if (!payload || !payload.category) return json({ error: 'Missing category data in request body' }, 400);
 
-    const model = env.OPENAI_MODEL || 'gpt-4o';
+    const model = env.OPENAI_MODEL || 'gpt-5.6-luna';
     const res = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${env.OPENAI_API_KEY}` },
