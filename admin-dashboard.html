@@ -6337,10 +6337,10 @@
         return `<div style="margin-bottom:20px;"><h4 style="color:var(--primary-purple);font-size:15px;margin-bottom:8px;">${title}</h4>${body}</div>`;
       };
 
-      const titles = section('✏️ Product Title Suggestions', data.titleSuggestions, t => card(`
-        <strong>Keyword:</strong> ${escapeHtml(t.query || '—')}<br>
-        <strong>Insight:</strong> ${escapeHtml(t.insight || '')}<br>
-        <strong>Action:</strong> ${escapeHtml(t.action || '')}
+      const renames = section('✏️ Category Rename Suggestions', data.categoryRenameSuggestions, r => card(`
+        <strong>${escapeHtml(r.currentName || '—')}</strong> → <strong>${escapeHtml(r.suggestedName || '—')}</strong><br>
+        <strong>Keyword:</strong> ${escapeHtml(r.query || '—')}<br>
+        <strong>Reason:</strong> ${escapeHtml(r.reason || '')}
       `));
 
       const gaps = section('📦 Catalog Gaps (increase product range)', data.catalogGaps, g => card(`
@@ -6355,7 +6355,7 @@
         return card(`<strong>${escapeHtml(n.name || '—')}</strong>${badge}<br>${escapeHtml(n.reason || '')}`);
       });
 
-      return titles + gaps + ideas;
+      return renames + gaps + ideas;
     }
 </script>
 </body>

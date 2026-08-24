@@ -5,7 +5,7 @@
 //  Takes real GSC search data (functions/api/seo-performance.js) plus a live
 //  catalog scan (functions/api/seo-category-scan.js) for one root category
 //  and asks OpenAI to turn that into concrete recommendations:
-//    - product title / listing copy improvements that work in real keywords
+//    - category/sub-category/facet rename suggestions that match real keywords
 //    - facets/sub-categories with meaningful search demand but a thin catalog
 //    - plausible sub-categories customers search for that don't exist as a
 //      facet anywhere on the page yet
@@ -44,10 +44,12 @@ given, for ONE product category on kapruka.com:
 
 Your job is to turn this into concrete, evidence-based recommendations in three groups:
 
-1. titleSuggestions — how product titles/listing copy in this category should change to capture
-   more of the top search queries. Cite the actual query and explain the gap (e.g. a query has
-   high impressions but the category's page/product titles likely don't contain that phrasing).
-   Keep suggestions concrete and actionable, not generic SEO advice.
+1. categoryRenameSuggestions — category, sub-category, or facet LABELS (e.g. the name shown for a
+   brand/gender/product-type filter, or the root category name itself) that should be renamed to
+   match how customers actually search. Cite the actual top query the current name misses, and
+   explain the gap (e.g. a query has high impressions but the facet's current label doesn't use
+   that phrasing, or is a brand name instead of the product type customers search for). Only
+   propose a rename for a facet/category that is actually in the given data — never invent one.
 
 2. catalogGaps — facets/sub-categories where search demand (GSC impressions, either sitewide
    queries or per-facet click share) looks meaningfully higher than what the low product count
@@ -62,14 +64,14 @@ Your job is to turn this into concrete, evidence-based recommendations in three 
    pattern — no direct keyword evidence).
 
 Rules:
-  - Base every claim ONLY on the data given. Never invent search volume, product names, or
+  - Base every claim ONLY on the data given. Never invent search volume, product/category names, or
     numbers not present in the input.
   - Every item must be specific to THIS category's actual data — no generic e-commerce advice.
   - If the data doesn't support a group (e.g. no clear catalog gaps), return an empty array for it.
   - Return 3-8 items per group where the data supports it, ranked most-impactful first.
 
-Respond with a single JSON object: { "titleSuggestions": [...], "catalogGaps": [...], "newSubcategoryIdeas": [...] }
-  - titleSuggestions items: { "query": string, "insight": string, "action": string }
+Respond with a single JSON object: { "categoryRenameSuggestions": [...], "catalogGaps": [...], "newSubcategoryIdeas": [...] }
+  - categoryRenameSuggestions items: { "currentName": string, "suggestedName": string, "query": string, "reason": string }
   - catalogGaps items: { "facet": string, "currentCount": number|null, "issue": string, "action": string }
   - newSubcategoryIdeas items: { "name": string, "reason": string, "evidenceType": "keyword-demand"|"taxonomy-gap" }`;
 
@@ -106,7 +108,7 @@ export async function onRequestPost(context) {
     catch { throw new Error('OpenAI returned non-JSON content'); }
 
     return json({
-      titleSuggestions: parsed.titleSuggestions || [],
+      categoryRenameSuggestions: parsed.categoryRenameSuggestions || [],
       catalogGaps: parsed.catalogGaps || [],
       newSubcategoryIdeas: parsed.newSubcategoryIdeas || []
     });
