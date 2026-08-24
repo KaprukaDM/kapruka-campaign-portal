@@ -55,25 +55,35 @@ Your job is to turn this into concrete, evidence-based recommendations in three 
    queries or per-facet click share) looks meaningfully higher than what the low product count
    for that facet can satisfy. Name the specific facet, its current count, and why it's a gap.
 
-3. newSubcategoryIdeas — sub-categories or product types that customers are plausibly searching
-   for (visible in the top queries, or standard for this vertical) but that do NOT appear
-   anywhere in the scraped facet list at all — a genuine blind spot, not just a thin one.
-   For each, say what evidence (a specific query, or an obvious taxonomy gap vs the facets that
-   DO exist) supports it, and mark evidenceType as one of: "keyword-demand" (a real GSC query
-   suggests this) or "taxonomy-gap" (inferred from what's missing given the category's own facet
-   pattern — no direct keyword evidence).
+3. newSubcategoryIdeas — sub-categories or product types that do NOT appear anywhere in the
+   scraped facet list at all (a genuine blind spot, not just a thin one). Draw on TWO sources
+   for these, and use both — don't limit yourself to only what's directly visible in the data:
+     a) the top search queries and general query patterns given to you, and
+     b) your own general knowledge of what sub-categories/product types a category like this
+        normally carries in retail/e-commerce (e.g. for a jewellery category, things like
+        anklets, nose pins, cufflinks, or gemstone types are standard even if no query happens
+        to be in the sample) — reason like an experienced merchandiser for this vertical, not
+        just a data-matching tool.
+   For each idea, mark evidenceType as one of: "keyword-demand" (a real GSC query in the given
+   data suggests this), "taxonomy-gap" (inferred from a pattern in the category's OWN existing
+   facets — e.g. it has facets for 4 jewellery types but not a 5th common one), or
+   "industry-knowledge" (general retail/vertical knowledge, not tied to a specific query or the
+   facet pattern — say plainly that this is general knowledge, not something derived from the data).
 
 Rules:
-  - Base every claim ONLY on the data given. Never invent search volume, product/category names, or
-    numbers not present in the input.
-  - Every item must be specific to THIS category's actual data — no generic e-commerce advice.
+  - For categoryRenameSuggestions and catalogGaps: base every claim ONLY on the data given.
+    Never invent search volume, product/category names, or numbers not present in the input.
+  - For newSubcategoryIdeas: queries and facet counts you cite must be real (from the data), but
+    the idea itself may also come from your own general knowledge as described above — just
+    label it correctly with evidenceType so the reader knows which is which.
+  - Every item must be specific to THIS category — no generic e-commerce advice unrelated to it.
   - If the data doesn't support a group (e.g. no clear catalog gaps), return an empty array for it.
   - Return 3-8 items per group where the data supports it, ranked most-impactful first.
 
 Respond with a single JSON object: { "categoryRenameSuggestions": [...], "catalogGaps": [...], "newSubcategoryIdeas": [...] }
   - categoryRenameSuggestions items: { "currentName": string, "suggestedName": string, "query": string, "reason": string }
   - catalogGaps items: { "facet": string, "currentCount": number|null, "issue": string, "action": string }
-  - newSubcategoryIdeas items: { "name": string, "reason": string, "evidenceType": "keyword-demand"|"taxonomy-gap" }`;
+  - newSubcategoryIdeas items: { "name": string, "reason": string, "evidenceType": "keyword-demand"|"taxonomy-gap"|"industry-knowledge" }`;
 
 export async function onRequestPost(context) {
   const { env, request } = context;

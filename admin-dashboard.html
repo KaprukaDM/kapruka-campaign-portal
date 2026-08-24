@@ -6350,8 +6350,13 @@
       `));
 
       const ideas = section('🆕 Unexplored Sub-Category Ideas', data.newSubcategoryIdeas, n => {
-        const isKeyword = n.evidenceType === 'keyword-demand';
-        const badge = `<span style="background:${isKeyword ? '#E8F5E9' : '#FFF3E0'};color:${isKeyword ? '#2E7D32' : '#E65100'};padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;margin-left:8px;">${isKeyword ? 'Keyword Demand' : 'Taxonomy Gap'}</span>`;
+        const badgeStyles = {
+          'keyword-demand': { bg: '#E8F5E9', fg: '#2E7D32', label: 'Keyword Demand' },
+          'taxonomy-gap': { bg: '#FFF3E0', fg: '#E65100', label: 'Taxonomy Gap' },
+          'industry-knowledge': { bg: '#E3F2FD', fg: '#1565C0', label: 'Industry Knowledge' }
+        };
+        const style = badgeStyles[n.evidenceType] || badgeStyles['taxonomy-gap'];
+        const badge = `<span style="background:${style.bg};color:${style.fg};padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;margin-left:8px;">${style.label}</span>`;
         return card(`<strong>${escapeHtml(n.name || '—')}</strong>${badge}<br>${escapeHtml(n.reason || '')}`);
       });
 
