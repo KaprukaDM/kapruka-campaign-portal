@@ -2,8 +2,7 @@
 """
 Kapruka Page Hygiene Dashboard - backend.
 
-Two auth paths:
-  - human login (POST /login, password from DASHBOARD_PASSWORD) -> signed cookie session
+Open dashboard, no login. Only the ingest endpoint is protected:
   - ingest (POST /api/ingest, bearer DASHBOARD_INGEST_KEY) -> used only by
     scripts/hygiene_dashboard_scan.py on the daily scan machine
 
@@ -16,17 +15,14 @@ import hashlib, hmac, json, os, sqlite3, time
 from pathlib import Path
 
 from fastapi import FastAPI, Request, Response, HTTPException, Depends
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 ROOT = Path(__file__).resolve().parent
 DB_PATH = ROOT / "data.db"
 STATIC = ROOT / "static"
 
-DASHBOARD_PASSWORD = os.environ.get("DASHBOARD_PASSWORD", "")
 DASHBOARD_INGEST_KEY = os.environ.get("DASHBOARD_INGEST_KEY", "")
-SESSION_SECRET = os.environ.get("DASHBOARD_SESSION_SECRET", DASHBOARD_PASSWORD or "change-me")
-SESSION_TTL = 60 * 60 * 24 * 14  # 14 days
 
 # label: what's wrong, in plain words. why: the money reason, explained like to a
 # 5-year-old - one short sentence, no jargon. Kept in sync with scripts/hygiene_dashboard_flags.py.
@@ -88,29 +84,6 @@ init_db()
 
 
 # ---------------------------------------------------------------- auth
-def _sign(payload: str) -> str:
-    return hmac.new(SESSION_SECRET.encode(), payload.encode(), hashlib.sha256).hexdigest()
-
-
-def make_session() -> str:
-    exp = str(int(time.time()) + SESSION_TTL)
-    return f"{exp}.{_sign(exp)}"
-
-
-def valid_session(token: str | None) -> bool:
-    if not token or "." not in token:
-        return False
-    exp, sig = token.split(".", 1)
-    if not hmac.compare_digest(sig, _sign(exp)):
-        return False
-    return int(exp) > time.time()
-
-
-def require_session(request: Request):
-    if not valid_session(request.cookies.get("session")):
-        raise HTTPException(status_code=401, detail="not logged in")
-
-
 def require_ingest_key(request: Request):
     auth = request.headers.get("authorization", "")
     if not auth.startswith("Bearer ") or not DASHBOARD_INGEST_KEY:
@@ -118,29 +91,6 @@ def require_ingest_key(request: Request):
     token = auth.removeprefix("Bearer ").strip()
     if not hmac.compare_digest(token, DASHBOARD_INGEST_KEY):
         raise HTTPException(status_code=401, detail="bad ingest key")
-
-
-@app.post("/login")
-async def login(request: Request):
-    body = await request.json()
-    password = (body or {}).get("password", "")
-    if not DASHBOARD_PASSWORD or not hmac.compare_digest(password, DASHBOARD_PASSWORD):
-        raise HTTPException(status_code=401, detail="wrong password")
-    resp = JSONResponse({"ok": True})
-    resp.set_cookie("session", make_session(), max_age=SESSION_TTL, httponly=True, samesite="lax")
-    return resp
-
-
-@app.post("/logout")
-async def logout():
-    resp = JSONResponse({"ok": True})
-    resp.delete_cookie("session")
-    return resp
-
-
-@app.get("/api/me")
-async def me(request: Request):
-    return {"logged_in": valid_session(request.cookies.get("session"))}
 
 
 # ---------------------------------------------------------------- ingest (bearer)
@@ -186,7 +136,7 @@ async def ingest(request: Request, _=Depends(require_ingest_key)):
     return {"ok": True, "inserted": n, "batch_date": batch_date}
 
 
-# ---------------------------------------------------------------- read API (session)
+# ---------------------------------------------------------------- read API
 def _row_to_dict(r: sqlite3.Row) -> dict:
     return {
         "id": r["id"], "batch_date": r["batch_date"], "url": r["url"],
@@ -203,7 +153,7 @@ def _row_to_dict(r: sqlite3.Row) -> dict:
 
 
 @app.get("/api/flags")
-async def flags_meta(_=Depends(require_session)):
+async def flags_meta():
     return FLAGS
 
 
@@ -222,7 +172,7 @@ _LATEST_PER_URL = """
 
 
 @app.get("/api/categories")
-async def categories(_=Depends(require_session)):
+async def categories():
     con = db()
     rows = con.execute(f"SELECT DISTINCT category FROM ({_LATEST_PER_URL}) ORDER BY category").fetchall()
     con.close()
@@ -231,7 +181,7 @@ async def categories(_=Depends(require_session)):
 
 @app.get("/api/products")
 async def products(category: str | None = None, flag: str | None = None,
-                    only_flagged: bool = True, _=Depends(require_session)):
+                    only_flagged: bool = True):
     con = db()
     q = f"SELECT * FROM ({_LATEST_PER_URL})"
     params = []
@@ -259,7 +209,7 @@ async def products(category: str | None = None, flag: str | None = None,
 
 
 @app.post("/api/checklist/{row_id}")
-async def toggle_checklist(row_id: int, request: Request, _=Depends(require_session)):
+async def toggle_checklist(row_id: int, request: Request):
     body = await request.json()
     flag_key = body.get("flag")
     checked = bool(body.get("checked"))
@@ -280,18 +230,11 @@ async def toggle_checklist(row_id: int, request: Request, _=Depends(require_sess
 
 # ---------------------------------------------------------------- static frontend
 @app.get("/")
-async def index(request: Request):
-    if not valid_session(request.cookies.get("session")):
-        return RedirectResponse("/login.html")
+async def index():
     return HTMLResponse((STATIC / "index.html").read_text(encoding="utf-8"))
 
 
 app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
-
-
-@app.get("/login.html")
-async def login_page():
-    return HTMLResponse((STATIC / "login.html").read_text(encoding="utf-8"))
 
 
 @app.get("/app.js")

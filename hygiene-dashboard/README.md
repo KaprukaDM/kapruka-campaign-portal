@@ -3,7 +3,7 @@
 Source backup — the running instance is deployed separately (like `daraz-agent/`),
 not served through this Cloudflare Pages site.
 
-**Live:** http://23.111.183.110:8090 (password-gated)
+**Live:** http://23.111.183.110:8090 (open, no login)
 **Runs on:** the same VPS as this portal, its own port (8090), own folder
 (`C:\apps\kapruka-hygiene-dashboard` on the VPS), own scheduled task. Does not
 touch the campaign-portal IIS site on port 80.
@@ -17,7 +17,7 @@ in a filterable dashboard with a persistent per-issue checklist.
 Run locally:
 ```
 pip install -r requirements.txt
-set DASHBOARD_PASSWORD=... & set DASHBOARD_INGEST_KEY=... & set DASHBOARD_SESSION_SECRET=...
+set DASHBOARD_INGEST_KEY=...
 python -m uvicorn app:app --port 8090
 ```
 

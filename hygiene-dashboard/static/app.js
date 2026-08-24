@@ -16,16 +16,10 @@ let currentCategory = "";
 
 async function api(path, opts) {
   const r = await fetch(path, opts);
-  if (r.status === 401) { location.href = "/login.html"; throw new Error("unauth"); }
   return r.json();
 }
 
 async function init() {
-  document.getElementById("logout").addEventListener("click", async () => {
-    await fetch("/logout", { method: "POST" });
-    location.href = "/login.html";
-  });
-
   FLAGS = await api("/api/flags");
   renderFlagChips();
 
