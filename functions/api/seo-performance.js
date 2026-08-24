@@ -177,6 +177,84 @@ async function fetchDateSeries(token, siteUrls, { startDate, endDate, pathRegex 
     .sort((a, b) => a.date < b.date ? -1 : 1);
 }
 
+// One row per search query, merged across all configured sites — top
+// keywords driving traffic into the given page/category scope.
+async function fetchQueryBreakdown(token, siteUrls, { startDate, endDate, pathRegex, rowLimit }, warnings) {
+  const merged = new Map(); // query -> { clicks, impressions, posW }
+  for (const siteUrl of siteUrls) {
+    try {
+      const data = await gscQuery(token, siteUrl, {
+        startDate, endDate,
+        dimensions: ['query'],
+        dimensionFilterGroups: pathFilter(pathRegex),
+        rowLimit
+      });
+      for (const row of data.rows || []) {
+        const q = row.keys[0];
+        const entry = merged.get(q) || { clicks: 0, impressions: 0, posW: 0 };
+        entry.clicks += row.clicks;
+        entry.impressions += row.impressions;
+        entry.posW += row.position * row.impressions;
+        merged.set(q, entry);
+      }
+    } catch (e) {
+      warnings.push(`${siteUrl} (query breakdown): ${e.message}`);
+    }
+  }
+  return [...merged.entries()]
+    .map(([query, v]) => ({
+      query, clicks: v.clicks, impressions: v.impressions,
+      ctr: v.impressions ? v.clicks / v.impressions : 0,
+      position: v.impressions ? v.posW / v.impressions : 0
+    }))
+    .sort((a, b) => b.clicks - a.clicks);
+}
+
+// page -> best single query driving it (highest clicks, ties broken by
+// impressions). Only used for category drill-downs — page×query rows can be
+// large, so this is never run at the site-wide overview scope.
+async function fetchPageTopQueries(token, siteUrls, { startDate, endDate, pathRegex, rowLimit }, warnings) {
+  const byPage = new Map(); // page -> Map(query -> {clicks, impressions})
+  for (const siteUrl of siteUrls) {
+    try {
+      let startRow = 0;
+      for (let i = 0; i < MAX_PAGE_FETCH_PAGES; i++) {
+        const data = await gscQuery(token, siteUrl, {
+          startDate, endDate,
+          dimensions: ['page', 'query'],
+          dimensionFilterGroups: pathFilter(pathRegex),
+          rowLimit, startRow
+        });
+        const got = data.rows || [];
+        for (const r of got) {
+          const [page, query] = r.keys;
+          let qmap = byPage.get(page);
+          if (!qmap) { qmap = new Map(); byPage.set(page, qmap); }
+          const entry = qmap.get(query) || { clicks: 0, impressions: 0 };
+          entry.clicks += r.clicks;
+          entry.impressions += r.impressions;
+          qmap.set(query, entry);
+        }
+        if (got.length < rowLimit) break;
+        startRow += rowLimit;
+      }
+    } catch (e) {
+      warnings.push(`${siteUrl} (page-query breakdown): ${e.message}`);
+    }
+  }
+  const topByPage = new Map();
+  for (const [page, qmap] of byPage) {
+    let best = null;
+    for (const [query, v] of qmap) {
+      if (!best || v.clicks > best.clicks || (v.clicks === best.clicks && v.impressions > best.impressions)) {
+        best = { query, clicks: v.clicks, impressions: v.impressions };
+      }
+    }
+    if (best) topByPage.set(page, best);
+  }
+  return topByPage;
+}
+
 // One row per page, concatenated across all configured sites (paginated per site).
 async function fetchPageBreakdown(token, siteUrls, { startDate, endDate, pathRegex, rowLimit }, warnings) {
   const rows = [];
@@ -327,11 +405,21 @@ export async function onRequestGet(context) {
       const tree = buildCategoryTree(pageRows, { onlyRoot: categoryKey });
       const rootNode = tree.get(categoryKey);
       const finalized = rootNode ? finalizeNode(rootNode) : null;
+
+      const [topQueries, pageTopQueries] = await Promise.all([
+        fetchQueryBreakdown(token, siteUrls, { startDate, endDate, pathRegex, rowLimit: 25 }, warnings),
+        fetchPageTopQueries(token, siteUrls, { startDate, endDate, pathRegex, rowLimit: rowLimitFromEnv(env) }, warnings)
+      ]);
+
       const topPages = pageRows
         .slice()
         .sort((a, b) => b.clicks - a.clicks)
         .slice(0, 30)
-        .map(r => ({ page: r.page, clicks: r.clicks, impressions: r.impressions, ctr: r.impressions ? r.clicks / r.impressions : 0, position: r.position }));
+        .map(r => ({
+          page: r.page, clicks: r.clicks, impressions: r.impressions,
+          ctr: r.impressions ? r.clicks / r.impressions : 0, position: r.position,
+          topQuery: pageTopQueries.get(r.page) || null
+        }));
 
       return json({
         mode: 'category',
@@ -342,6 +430,7 @@ export async function onRequestGet(context) {
         subcategories: finalized?.children || [],
         pageCount: pageRows.length,
         topPages,
+        topQueries: topQueries.slice(0, 15),
         warnings
       });
     }
