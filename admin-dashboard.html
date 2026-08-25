@@ -6292,7 +6292,7 @@
 
         if (seoCatalogScannedFor !== key) return; // user navigated away mid-scan
         seoCatalogScan = { totalProducts: data.totalProducts, facets, drilldowns };
-        renderSeoCatalog(seoCatalogScan);
+        renderSeoCatalog(seoCatalogScan, key);
       } catch (e) {
         if (seoCatalogScannedFor !== key) return;
         document.getElementById('seoCatalogStatus').textContent = '⚠️ ' + e.message;
@@ -6317,42 +6317,74 @@
       }));
     }
 
+    // Sub-category (and deeper) facet links on kapruka.com often carry NO
+    // "(N)" count at all — confirmed live: the site only reliably annotates
+    // counts on the TOP-level filter list, not one level deeper. Parsing a
+    // parenthetical off a parent page is a best-effort shortcut, not a
+    // source of truth — so every row also carries the facet's own `url`,
+    // and seoFillMissingProductCounts() below fetches that url directly and
+    // reads ITS OWN totalProductsLoaded value when the shortcut came up empty.
     function seoBuildCatalogRows(subcategories, scan) {
       const facetByKey = new Map((scan.facets || []).map(f => [seoNormKey(f.key), f]));
       const drillByParentKey = new Map(
         (scan.drilldowns || []).map(d => [seoNormKey(d.facetKey), new Map((d.facets || []).map(f => [seoNormKey(f.key), f]))])
       );
 
-      const rows = seoFlattenSubcategories(subcategories || []).map(({ sub, child }) => {
+      return seoFlattenSubcategories(subcategories || []).map(({ sub, child }) => {
         const target = child || sub; // the GSC node this row's clicks/impressions come from
-        let products = null;
+        let facet = null;
         if (child) {
           const childMap = drillByParentKey.get(seoNormKey(sub.key));
-          const facet = childMap ? childMap.get(seoNormKey(child.key)) : null;
-          products = facet ? facet.count : null;
+          facet = childMap ? childMap.get(seoNormKey(child.key)) : null;
         } else {
-          const facet = facetByKey.get(seoNormKey(sub.key));
-          products = facet ? facet.count : null;
+          facet = facetByKey.get(seoNormKey(sub.key));
         }
         return {
           subLabel: sub.label,
           childLabel: child ? child.label : null,
-          products,
+          products: facet ? facet.count : null,
+          url: facet ? facet.url : null,
           impressions: target.impressions,
           clicks: target.clicks
         };
       });
-      return seoFlagCatalogOpportunities(rows);
     }
 
-    function renderSeoCatalog(scan) {
+    // Best-effort fill for rows with no parsed count but a known url: fetch
+    // that row's OWN page and read its OWN totalProductsLoaded directly,
+    // rather than trusting a possibly-absent sidebar annotation on some
+    // other page. Capped and run in parallel since this can be many rows.
+    const SEO_CATALOG_FILL_CAP = 20;
+    async function seoFillMissingProductCounts(rows) {
+      const targets = rows.filter(r => r.products == null && r.url).slice(0, SEO_CATALOG_FILL_CAP);
+      if (!targets.length) return rows;
+      await Promise.all(targets.map(async r => {
+        try {
+          const res = await fetch(`/api/seo-category-scan?url=${encodeURIComponent(r.url)}`);
+          const data = await res.json();
+          if (res.ok && !data.error && data.totalProducts != null) r.products = data.totalProducts;
+        } catch (e) { /* leave as unknown — best-effort */ }
+      }));
+      return rows;
+    }
+
+    async function renderSeoCatalog(scan, key) {
       document.getElementById('seoDetailKpiProducts').textContent = scan.totalProducts != null ? seoNum(scan.totalProducts) : '—';
 
-      const rows = seoBuildCatalogRows(seoDetailData?.subcategories, scan);
+      let rows = seoBuildCatalogRows(seoDetailData?.subcategories, scan);
+      renderSeoCatalogTable(seoFlagCatalogOpportunities(rows), true);
+
+      rows = await seoFillMissingProductCounts(rows);
+      if (seoCatalogScannedFor !== key) return; // user navigated away mid-fill
+      renderSeoCatalogTable(seoFlagCatalogOpportunities(rows), false);
+    }
+
+    function renderSeoCatalogTable(rows, stillFilling) {
       const opportunityCount = rows.filter(r => r.opportunity).length;
-      document.getElementById('seoCatalogStatus').textContent = rows.length
-        ? `${rows.length} row(s) matched against the live catalog${opportunityCount ? ` — ${opportunityCount} flagged as an opportunity` : ''}.`
-        : 'No sub-categories with GSC traffic to match against the live catalog in this range.';
+      document.getElementById('seoCatalogStatus').textContent = !rows.length
+        ? 'No sub-categories with GSC traffic to match against the live catalog in this range.'
+        : `${rows.length} row(s) matched against the live catalog${opportunityCount ? ` — ${opportunityCount} flagged as an opportunity` : ''}.`
+          + (stillFilling ? ' Filling in missing product counts…' : '');
 
       const tbody = document.getElementById('seoCatalogTable');
       tbody.innerHTML = !rows.length
@@ -6361,7 +6393,7 @@
           <tr${r.opportunity ? ' style="background:#FFF8E1;"' : ''}>
             <td><strong>${escapeHtml(r.subLabel)}</strong></td>
             <td>${r.childLabel ? escapeHtml(r.childLabel) : '—'}</td>
-            <td>${r.products != null ? seoNum(r.products) : '—'}</td>
+            <td>${r.products != null ? seoNum(r.products) : (stillFilling && r.url ? '…' : '—')}</td>
             <td>${seoNum(r.impressions)}</td>
             <td>${seoNum(r.clicks)}</td>
             <td>${r.opportunity ? '<span style="background:#FFF3E0;color:#E65100;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;">🔥 Opportunity</span>' : ''}</td>
