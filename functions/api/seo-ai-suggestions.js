@@ -107,8 +107,9 @@ export async function onRequestPost(context) {
           { role: 'system', content: SYSTEM_PROMPT },
           { role: 'user', content: JSON.stringify(payload) }
         ],
-        response_format: { type: 'json_object' },
-        temperature: 0.4
+        response_format: { type: 'json_object' }
+        // No `temperature` override — gpt-5.6-luna (and other reasoning-tier
+        // models) only support the default value of 1 and error on anything else.
       })
     });
     const body = await res.json();
