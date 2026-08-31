@@ -29,6 +29,11 @@
 //  Sheet columns (1-based, "Content Approval List" tab — must match Content.gs COL):
 //    A ContentID  B Platform  C MediaType  D MediaURL  E PrimaryText
 //    F Page  G ScheduleDate  H Status  I..O Links  P TT_RESULT
+//    Q WhatsApp Link  — new, not read by Content.gs. Optional "Product Name"
+//      field in the scheduling form builds a wa.me customer-inquiry link
+//      here (as a HYPERLINK() formula) when given; left blank otherwise.
+//      NOTE: give this column the header "WhatsApp Link" in row 1 of the
+//      sheet (one-time manual step — this API only ever appends data rows).
 //
 //  META-SCHEDULED POSTS (optional, month view only):
 //  Posts scheduled directly in Meta Business Suite (not through this app)
@@ -55,6 +60,22 @@ const COL = {
   CONTENT_ID: 0, PLATFORM: 1, MEDIA_TYPE: 2, MEDIA_URL: 3, PRIMARY_TEXT: 4,
   PAGE: 5, SCHEDULE_DATE: 6, STATUS: 7
 };
+// Column Q — new, additive. Columns I-P are already spoken for (see the
+// header comment above) and Content.gs only ever writes those via
+// single-cell getRange() calls, never a wide range, so a new column here is
+// safe and won't be touched or clobbered by the posting bot.
+const WHATSAPP_NUMBER = '94711222002';
+
+// Builds a clickable customer-inquiry WhatsApp link for a product, or '' if
+// no product name was given — the caller writes '' straight into the sheet
+// cell (no link), leaving Primary Text completely untouched either way.
+function buildWhatsAppLink(productName) {
+  const trimmed = String(productName || '').trim();
+  if (!trimmed) return '';
+  const text = `Hi I am interested ${trimmed} `; // trailing space -> trailing "+"
+  const encoded = encodeURIComponent(text).replace(/%20/g, '+');
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encoded}`;
+}
 const POSTING_SLOTS = [
   { hour: 10, minute: 0 }, { hour: 12, minute: 0 }, { hour: 15, minute: 0 },
   { hour: 18, minute: 0 }, { hour: 21, minute: 0 }
@@ -407,7 +428,7 @@ export async function onRequestGet(context) {
 export async function onRequestPost(context) {
   const { env, request } = context;
   try {
-    const { studioId, date, primaryText, mediaOrder } = await request.json();
+    const { studioId, date, primaryText, mediaOrder, productName } = await request.json();
     if (!studioId || !date) {
       return json({ error: 'studioId and date are required' }, 400);
     }
@@ -448,9 +469,17 @@ export async function onRequestPost(context) {
       mediaType = 'Image';
     }
 
-    // A ContentID, B Platform, C MediaType, D MediaURL, E PrimaryText, F Page, G ScheduleDate, H Status
-    await sheetsAppend(env, token, `${SHEET_NAME}!A:H`, [
-      contentId, '', mediaType, mediaUrl, String(primaryText || '').trim(), page, date, 'Approved'
+    const whatsappLink = buildWhatsAppLink(productName);
+    // '' for a link is written as a plain blank cell; a real link is written as a
+    // HYPERLINK() formula (USER_ENTERED parses it exactly like typing it in) so it's
+    // clickable in the sheet rather than just a plain URL string.
+    const whatsappCell = whatsappLink ? `=HYPERLINK("${whatsappLink}","${whatsappLink}")` : '';
+
+    // A ContentID, B Platform, C MediaType, D MediaURL, E PrimaryText, F Page, G ScheduleDate,
+    // H Status, I-P (existing columns, left blank here), Q WhatsApp Link
+    await sheetsAppend(env, token, `${SHEET_NAME}!A:Q`, [
+      contentId, '', mediaType, mediaUrl, String(primaryText || '').trim(), page, date, 'Approved',
+      '', '', '', '', '', '', '', '', whatsappCell
     ]);
 
     // Sheet append is the critical step (it's what the posting bot reads) — if this

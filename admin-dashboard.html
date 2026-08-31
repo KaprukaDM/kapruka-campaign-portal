@@ -5371,9 +5371,15 @@
           <div id="pcalCopywriterPanel" style="display:none;margin-bottom:10px;padding:12px;background:#faf7fd;border-radius:8px;font-size:12px;"></div>
           <textarea id="pcalPrimaryText" rows="6" style="width:100%;color:#111;background:#fff;">${pcalEscapeHtml(pcalSelected.primaryText)}</textarea>
         </div>
+        <div class="form-group">
+          <label>Product name <span style="font-weight:400;color:#888;">— optional, generates a clickable WhatsApp inquiry link saved alongside this post. Leave blank for no link (Primary text is unaffected either way).</span></label>
+          <input type="text" id="pcalProductName" placeholder="e.g. Floral Serenade Swiss Roll" oninput="pcalUpdateWaPreview()" style="width:100%;color:#111;background:#fff;">
+          <div id="pcalWaPreview" style="font-size:12px;color:#888;margin-top:6px;"></div>
+        </div>
         <button class="btn btn-primary" id="pcalSaveBtn" onclick="savePcalSchedule()">Save schedule</button>
         <div id="pcalMsg"></div>`;
       document.getElementById('pcalDateInput').addEventListener('change', loadPcalSlots);
+      pcalUpdateWaPreview();
       if (pcalSelected.isFolder) loadPcalFolderPicker();
     }
 
@@ -5432,6 +5438,24 @@
 
     function pcalUseHeadline(btn) {
       document.getElementById('pcalPrimaryText').value = btn.dataset.headline;
+    }
+
+    // Mirrors buildWhatsAppLink() in functions/api/posting-calendar.js — for
+    // preview only, the server rebuilds the real link from productName at save time.
+    const PCAL_WHATSAPP_NUMBER = '94711222002';
+    function pcalBuildWhatsAppLink(productName) {
+      const trimmed = (productName || '').trim();
+      if (!trimmed) return '';
+      const text = `Hi I am interested ${trimmed} `;
+      const encoded = encodeURIComponent(text).replace(/%20/g, '+');
+      return `https://wa.me/${PCAL_WHATSAPP_NUMBER}?text=${encoded}`;
+    }
+
+    function pcalUpdateWaPreview() {
+      const name = document.getElementById('pcalProductName').value;
+      const preview = document.getElementById('pcalWaPreview');
+      const link = pcalBuildWhatsAppLink(name);
+      preview.textContent = link ? `→ ${link}` : 'No product name — no WhatsApp link will be saved.';
     }
 
     // ── Folder reorder picker ────────────────────────────────────
@@ -5505,6 +5529,7 @@
     async function savePcalSchedule() {
       const d = document.getElementById('pcalDateInput').value;
       const text = document.getElementById('pcalPrimaryText').value;
+      const productName = document.getElementById('pcalProductName').value;
       const msg = document.getElementById('pcalMsg');
       if (!pcalSelected || !pcalSelected.studioId) { msg.innerHTML = '<div class="pcal-msg err">No post selected — click Refresh and pick a post again.</div>'; return; }
       if (!d) { msg.innerHTML = '<div class="pcal-msg err">Pick a date.</div>'; return; }
@@ -5515,7 +5540,7 @@
       try {
         const res = await fetch('/api/posting-calendar', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ studioId: pcalSelected.studioId, date: d, primaryText: text, mediaOrder: pcalSelected.isFolder ? pcalFolderOrder : undefined })
+          body: JSON.stringify({ studioId: pcalSelected.studioId, date: d, primaryText: text, productName, mediaOrder: pcalSelected.isFolder ? pcalFolderOrder : undefined })
         });
         const result = await res.json();
         if (!res.ok || result.error) throw new Error(result.error || 'Save failed');
