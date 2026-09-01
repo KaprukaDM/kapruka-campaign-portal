@@ -101,6 +101,41 @@ body {
 }
 .stat .n { font-size: 22px; font-weight: 700; color: var(--purple); }
 .stat .l { font-size: 12px; color: var(--muted); }
+.stat-good .n { color: var(--green); }
+.stat-bad .n { color: var(--red); }
+
+.recheck-box {
+  background: #fff6f5;
+  border: 1px solid #f3c6c0;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+.recheck-title { font-size: 13px; font-weight: 700; color: var(--red); margin-bottom: 8px; }
+.recheck-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 6px 0;
+  border-bottom: 1px dashed #f3c6c0;
+  font-size: 12.5px;
+}
+.recheck-row:last-child { border-bottom: none; }
+.recheck-row a { color: var(--purple); font-weight: 600; text-decoration: none; }
+.recheck-row a:hover { text-decoration: underline; }
+.recheck-flag { color: var(--muted); }
+.recheck-when { color: var(--muted); font-size: 11.5px; margin-left: auto; }
+.recheck-reopen {
+  background: #fff;
+  border: 1px solid var(--red);
+  color: var(--red);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11.5px;
+  cursor: pointer;
+}
+.recheck-reopen:hover { background: var(--red); color: #fff; }
 
 .product {
   background: var(--card);
@@ -168,6 +203,17 @@ body {
 .issue .why { font-size: 12.5px; color: var(--purple-dark); margin-top: 2px; font-weight: 500; }
 .issue .reason { font-size: 12px; color: var(--muted); margin-top: 3px; }
 .issue.checked .label, .issue.checked .why, .issue.checked .reason { text-decoration: line-through; opacity: 0.55; }
+.issue.mismatch .label, .issue.mismatch .why, .issue.mismatch .reason { text-decoration: none; opacity: 1; }
 .severity-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+
+.still-flagged {
+  font-size: 12px;
+  color: var(--red);
+  font-weight: 600;
+  margin-top: 5px;
+}
+
+.resolved-wrap { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+.resolved-line { font-size: 12px; color: var(--green); font-weight: 600; padding: 3px 0; }
 
 .empty { text-align: center; padding: 60px 20px; color: var(--muted); }

@@ -106,6 +106,15 @@ async def ingest(request: Request, _=Depends(require_ingest_key)):
     now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     n = 0
     for it in items:
+        url = it.get("url")
+        # Carry the checklist forward from this URL's most recent scan (a new
+        # batch_date is a brand-new row, so without this every daily re-scan
+        # would silently wipe out anyone's "fixed" checkmarks).
+        prev = con.execute(
+            "SELECT checklist FROM scans WHERE url=? ORDER BY created_at DESC, id DESC LIMIT 1",
+            (url,),
+        ).fetchone()
+        prev_checklist = prev["checklist"] if prev else "{}"
         con.execute("""
         INSERT INTO scans (batch_date, url, product_id, name, category, title, meta_description,
                             description_text, image_count, low_res_count, availability,
@@ -122,13 +131,13 @@ async def ingest(request: Request, _=Depends(require_ingest_key)):
             flags=excluded.flags, flag_reasons=excluded.flag_reasons,
             needs_manual_review=excluded.needs_manual_review, created_at=excluded.created_at
         """, (
-            batch_date, it.get("url"), it.get("product_id"), it.get("name"), it.get("category"),
+            batch_date, url, it.get("product_id"), it.get("name"), it.get("category"),
             it.get("title"), it.get("meta_description"), it.get("description_text"),
             it.get("image_count", 0), it.get("low_res_count", 0), it.get("availability"),
             it.get("active_users", 0), it.get("views", 0), it.get("impressions", 0),
             it.get("clicks", 0), int(bool(it.get("important"))),
             json.dumps(it.get("flags", [])), json.dumps(it.get("flag_reasons", {})),
-            int(bool(it.get("needs_manual_review"))), json.dumps({}), now,
+            int(bool(it.get("needs_manual_review"))), prev_checklist, now,
         ))
         n += 1
     con.commit()
@@ -138,6 +147,15 @@ async def ingest(request: Request, _=Depends(require_ingest_key)):
 
 # ---------------------------------------------------------------- read API
 def _row_to_dict(r: sqlite3.Row) -> dict:
+    flags = json.loads(r["flags"] or "[]")
+    checklist = json.loads(r["checklist"] or "{}")
+    # A checked box only means "someone marked this fixed" - the daily re-scan is
+    # what actually proves it. If the flag is still in this latest scan's flags,
+    # the fix didn't take; still_flagged tells the UI to surface that mismatch
+    # instead of trusting the checkbox.
+    for flag_key, entry in checklist.items():
+        if isinstance(entry, dict):
+            entry["still_flagged"] = flag_key in flags
     return {
         "id": r["id"], "batch_date": r["batch_date"], "url": r["url"],
         "product_id": r["product_id"], "name": r["name"], "category": r["category"],
@@ -146,9 +164,9 @@ def _row_to_dict(r: sqlite3.Row) -> dict:
         "low_res_count": r["low_res_count"], "availability": r["availability"],
         "active_users": r["active_users"], "views": r["views"],
         "impressions": r["impressions"], "clicks": r["clicks"], "important": bool(r["important"]),
-        "flags": json.loads(r["flags"] or "[]"), "flag_reasons": json.loads(r["flag_reasons"] or "{}"),
+        "flags": flags, "flag_reasons": json.loads(r["flag_reasons"] or "{}"),
         "needs_manual_review": bool(r["needs_manual_review"]),
-        "checklist": json.loads(r["checklist"] or "{}"), "created_at": r["created_at"],
+        "checklist": checklist, "created_at": r["created_at"],
     }
 
 
@@ -194,6 +212,29 @@ async def products(category: str | None = None, flag: str | None = None,
     total_scanned = len(all_items)
     pending_review = sum(1 for p in all_items if p["needs_manual_review"])
 
+    # Addressed/fixed/needs-recheck are counted per checked flag (not per product),
+    # over every scanned page in this category - not just the ones currently
+    # visible under the flag/only_flagged filter below.
+    marked_done = 0
+    verified_fixed = 0
+    recheck_items = []
+    for p in all_items:
+        for flag_key, entry in p["checklist"].items():
+            if not isinstance(entry, dict) or not entry.get("checked"):
+                continue
+            marked_done += 1
+            if entry.get("still_flagged"):
+                recheck_items.append({
+                    "row_id": p["id"], "url": p["url"],
+                    "name": p["name"] or p["title"] or p["url"],
+                    "category": p["category"], "flag": flag_key,
+                    "label": FLAGS.get(flag_key, {}).get("label", flag_key),
+                    "checked_at": entry.get("at"),
+                })
+            else:
+                verified_fixed += 1
+    recheck_items.sort(key=lambda x: x["checked_at"] or "", reverse=True)
+
     out = all_items
     if flag:
         out = [p for p in out if flag in p["flags"]]
@@ -205,7 +246,9 @@ async def products(category: str | None = None, flag: str | None = None,
         out = [p for p in out if p["flags"]]
     out.sort(key=lambda p: -(p["active_users"] or 0))
     return {"count": len(out), "items": out,
-            "total_scanned": total_scanned, "pending_review": pending_review}
+            "total_scanned": total_scanned, "pending_review": pending_review,
+            "marked_done": marked_done, "verified_fixed": verified_fixed,
+            "needs_recheck": len(recheck_items), "recheck_items": recheck_items}
 
 
 @app.post("/api/checklist/{row_id}")

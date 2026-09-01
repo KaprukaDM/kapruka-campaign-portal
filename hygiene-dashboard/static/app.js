@@ -11,7 +11,6 @@ const SEV_COLOR = { 5: "#d92d20", 4: "#ff6b35", 3: "#ffb800", 2: "#8a8a8a" };
 
 let FLAGS = {};
 let activeFlag = null;
-let currentDate = null;
 let currentCategory = "";
 
 async function api(path, opts) {
@@ -22,22 +21,6 @@ async function api(path, opts) {
 async function init() {
   FLAGS = await api("/api/flags");
   renderFlagChips();
-
-  const dates = await api("/api/dates");
-  const dateSel = document.getElementById("dateSel");
-  if (!dates.length) {
-    document.getElementById("batchInfo").textContent = "No scans ingested yet.";
-    document.getElementById("list").innerHTML = '<div class="empty">No data yet — run the daily scan to populate this dashboard.</div>';
-    return;
-  }
-  dates.forEach(d => {
-    const o = document.createElement("option");
-    o.value = d; o.textContent = d;
-    dateSel.appendChild(o);
-  });
-  currentDate = dates[0];
-  dateSel.value = currentDate;
-  dateSel.addEventListener("change", () => { currentDate = dateSel.value; loadCategories(); load(); });
 
   document.getElementById("catSel").addEventListener("change", (e) => {
     currentCategory = e.target.value; load();
@@ -73,7 +56,7 @@ function refreshChipState() {
 }
 
 async function loadCategories() {
-  const cats = await api(`/api/categories?date=${encodeURIComponent(currentDate)}`);
+  const cats = await api("/api/categories");
   const sel = document.getElementById("catSel");
   const prev = sel.value;
   sel.innerHTML = '<option value="">All categories</option>';
@@ -86,36 +69,73 @@ async function loadCategories() {
 }
 
 async function load() {
-  const params = new URLSearchParams({ date: currentDate });
+  const params = new URLSearchParams();
   if (currentCategory) params.set("category", currentCategory);
   if (activeFlag) params.set("flag", activeFlag);
   const data = await api(`/api/products?${params.toString()}`);
 
+  if (!data.total_scanned) {
+    document.getElementById("batchInfo").textContent = "No scans ingested yet.";
+    document.getElementById("list").innerHTML = '<div class="empty">No data yet — run the daily scan to populate this dashboard.</div>';
+    document.getElementById("summary").innerHTML = "";
+    document.getElementById("recheck").innerHTML = "";
+    return;
+  }
+
   document.getElementById("batchInfo").textContent =
-    `Batch ${data.batch_date} — ${data.total_scanned} pages scanned, ${data.count} have a real issue`;
+    `${data.total_scanned} pages scanned, ${data.count} have a real issue`;
 
   renderSummary(data);
+  renderRecheck(data.recheck_items);
   renderList(data.items);
 }
 
 function renderSummary(data) {
-  const items = data.items;
-  const counts = {};
-  items.forEach(p => p.flags.forEach(f => { counts[f] = (counts[f] || 0) + 1; }));
   const wrap = document.getElementById("summary");
   wrap.innerHTML = "";
-  const stat = (n, l) => {
+  const stat = (n, l, extraClass) => {
     const d = document.createElement("div");
-    d.className = "stat";
+    d.className = "stat" + (extraClass ? " " + extraClass : "");
     d.innerHTML = `<div class="n">${n}</div><div class="l">${l}</div>`;
     return d;
   };
-  wrap.appendChild(stat(items.length, "pages with a real issue"));
-  const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
-  if (top) wrap.appendChild(stat(top[1], FLAGS[top[0]] ? FLAGS[top[0]].label : top[0]));
+  wrap.appendChild(stat(data.count, "pages with an open issue"));
+  wrap.appendChild(stat(data.marked_done, "issues marked done"));
+  wrap.appendChild(stat(data.verified_fixed, "confirmed fixed by re-scan", "stat-good"));
+  wrap.appendChild(stat(data.needs_recheck, "marked done but still detected", data.needs_recheck ? "stat-bad" : ""));
   if (data.pending_review) {
     wrap.appendChild(stat(data.pending_review, "title/desc checks pending (no AI key set)"));
   }
+}
+
+function renderRecheck(items) {
+  const wrap = document.getElementById("recheck");
+  wrap.innerHTML = "";
+  if (!items || !items.length) return;
+
+  const box = document.createElement("div");
+  box.className = "recheck-box";
+  box.innerHTML = `<div class="recheck-title">⚠ Needs recheck — marked done, but the last scan still found the issue</div>`;
+  items.forEach(it => {
+    const row = document.createElement("div");
+    row.className = "recheck-row";
+    row.innerHTML = `
+      <a href="${it.url}" target="_blank" rel="noopener">${escapeHtml(it.name)}</a>
+      <span class="recheck-flag">${escapeHtml(it.label)}</span>
+      <span class="recheck-when">marked done ${it.checked_at ? new Date(it.checked_at).toLocaleDateString() : ""}</span>
+      <button type="button" class="recheck-reopen">Re-open</button>
+    `;
+    row.querySelector(".recheck-reopen").addEventListener("click", async () => {
+      await api(`/api/checklist/${it.row_id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ flag: it.flag, checked: false }),
+      }).catch(() => {});
+      load();
+    });
+    box.appendChild(row);
+  });
+  wrap.appendChild(box);
 }
 
 function renderList(items) {
@@ -165,14 +185,32 @@ function renderProduct(p) {
     ));
   }
   body.appendChild(issuesWrap);
+
+  const resolvedFlags = Object.entries(p.checklist)
+    .filter(([flagKey, entry]) => entry && entry.checked && !entry.still_flagged);
+  if (resolvedFlags.length) {
+    const resolvedWrap = document.createElement("div");
+    resolvedWrap.className = "resolved-wrap";
+    resolvedFlags.forEach(([flagKey, entry]) => {
+      const label = (FLAGS[flagKey] || {}).label || flagKey;
+      const d = document.createElement("div");
+      d.className = "resolved-line";
+      d.textContent = `✓ ${label} — confirmed fixed by re-scan${entry.at ? " (marked done " + new Date(entry.at).toLocaleDateString() + ")" : ""}`;
+      resolvedWrap.appendChild(d);
+    });
+    body.appendChild(resolvedWrap);
+  }
+
   el.appendChild(body);
   return el;
 }
 
 function renderIssue(product, flagKey, label, why, reason) {
   const row = document.createElement("div");
-  const checked = !!(product.checklist[flagKey] && product.checklist[flagKey].checked);
-  row.className = "issue" + (checked ? " checked" : "");
+  const entry = product.checklist[flagKey];
+  const checked = !!(entry && entry.checked);
+  const mismatch = checked && entry.still_flagged;
+  row.className = "issue" + (checked ? " checked" : "") + (mismatch ? " mismatch" : "");
 
   const sev = SEVERITY[flagKey] || 2;
   const dot = document.createElement("div");
@@ -184,12 +222,12 @@ function renderIssue(product, flagKey, label, why, reason) {
   cb.type = "checkbox";
   cb.checked = checked;
   cb.addEventListener("change", async () => {
-    row.classList.toggle("checked", cb.checked);
     await api(`/api/checklist/${product.id}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ flag: flagKey, checked: cb.checked }),
     }).catch(() => {});
+    load();
   });
   row.appendChild(cb);
 
@@ -198,6 +236,7 @@ function renderIssue(product, flagKey, label, why, reason) {
     <div class="label">${escapeHtml(label)}</div>
     <div class="why">${escapeHtml(why || "")}</div>
     <div class="reason">${escapeHtml(reason || "")}</div>
+    ${mismatch ? `<div class="still-flagged">⚠ Marked done ${entry.at ? "on " + new Date(entry.at).toLocaleDateString() : ""}, but still detected by the last scan — not actually fixed.</div>` : ""}
   `;
   row.appendChild(text);
   return row;
