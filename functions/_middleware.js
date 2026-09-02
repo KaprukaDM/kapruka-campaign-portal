@@ -12,14 +12,6 @@ export const onRequest = async (context) => {
     return await next();
   }
 
-  // Skip authentication for the public WhatsApp short-link redirector — this
-  // is the URL that goes out in ads/posts and customers click it directly,
-  // so it must never sit behind the internal Basic Auth gate. See
-  // functions/go/[code].js.
-  if (url.pathname.startsWith('/go/')) {
-    return await next();
-  }
-  
   // Get authentication header
   const auth = request.headers.get('Authorization');
   
