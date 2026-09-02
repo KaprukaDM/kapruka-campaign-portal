@@ -29,14 +29,13 @@
 //  Sheet columns (1-based, "Content Approval List" tab — must match Content.gs COL):
 //    A ContentID  B Platform  C MediaType  D MediaURL  E PrimaryText
 //    F Page  G ScheduleDate  H Status  I..O Links  P TT_RESULT
-//    Q WhatsApp Link  — new, not read by Content.gs. Optional "Product Name"
-//      field in the scheduling form builds a wa.me customer-inquiry link,
-//      wraps it in a branded short.io link (kapruka.s.gy — see
-//      buildWhatsAppLink() below), and writes that short link here (as a
-//      HYPERLINK() formula) when a product name is given; left blank
-//      otherwise.
-//      NOTE: give this column the header "WhatsApp Link" in row 1 of the
-//      sheet (one-time manual step — this API only ever appends data rows).
+//    Optional "Product Name" field in the scheduling form builds a wa.me
+//      customer-inquiry link, wraps it in a branded short.io link
+//      (kapruka.s.gy — see buildWhatsAppLink() below), and appends it as a
+//      second line under the caption text in column E itself — so it goes
+//      out as part of the actual published post (Content.gs posts column E
+//      verbatim), not a sheet-only reference column. Left untouched when no
+//      product name is given.
 //
 //  SHORT LINKS  → short.io (https://short.io), domain kapruka.s.gy. Chosen
 //      because this app's own Cloudflare account doesn't control the
@@ -530,16 +529,17 @@ export async function onRequestPost(context) {
     }
 
     const whatsappLink = await buildWhatsAppLink(env, productName);
-    // '' for a link is written as a plain blank cell; a real link is written as a
-    // HYPERLINK() formula (USER_ENTERED parses it exactly like typing it in) so it's
-    // clickable in the sheet rather than just a plain URL string.
-    const whatsappCell = whatsappLink ? `=HYPERLINK("${whatsappLink}","${whatsappLink}")` : '';
+    // The link is appended as its own line under the caption text, so it goes
+    // out as part of the actual published post (Content.gs posts column E
+    // verbatim) — not a separate sheet-only column. '' when no Product Name
+    // was given leaves Primary Text completely untouched.
+    const primaryTextTrimmed = String(primaryText || '').trim();
+    const finalPrimaryText = whatsappLink ? `${primaryTextTrimmed}\n${whatsappLink}` : primaryTextTrimmed;
 
     // A ContentID, B Platform, C MediaType, D MediaURL, E PrimaryText, F Page, G ScheduleDate,
-    // H Status, I-P (existing columns, left blank here), Q WhatsApp Link
-    await sheetsAppend(env, token, `${SHEET_NAME}!A:Q`, [
-      contentId, '', mediaType, mediaUrl, String(primaryText || '').trim(), page, date, 'Approved',
-      '', '', '', '', '', '', '', '', whatsappCell
+    // H Status, I-P (existing columns, left blank here)
+    await sheetsAppend(env, token, `${SHEET_NAME}!A:P`, [
+      contentId, '', mediaType, mediaUrl, finalPrimaryText, page, date, 'Approved'
     ]);
 
     // Sheet append is the critical step (it's what the posting bot reads) — if this
