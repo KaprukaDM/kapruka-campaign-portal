@@ -30,10 +30,37 @@
 //    A ContentID  B Platform  C MediaType  D MediaURL  E PrimaryText
 //    F Page  G ScheduleDate  H Status  I..O Links  P TT_RESULT
 //    Q WhatsApp Link  — new, not read by Content.gs. Optional "Product Name"
-//      field in the scheduling form builds a wa.me customer-inquiry link
-//      here (as a HYPERLINK() formula) when given; left blank otherwise.
+//      field in the scheduling form builds a wa.me customer-inquiry link,
+//      wraps it in a short redirect link on this app's own domain (see
+//      SHORT_LINK_BASE / createShortLink() below and functions/go/[code].js),
+//      and writes that short link here (as a HYPERLINK() formula) when a
+//      product name is given; left blank otherwise.
 //      NOTE: give this column the header "WhatsApp Link" in row 1 of the
 //      sheet (one-time manual step — this API only ever appends data rows).
+//
+//  SHORT LINKS  → Supabase table `short_links` (code text unique, target_url
+//      text, product_name text, clicks int default 0, created_at timestamptz
+//      default now()). One row per scheduled post that had a Product Name.
+//      Resolved publicly at /go/{code} by functions/go/[code].js, which is
+//      the one route deliberately excluded from this app's Basic Auth gate
+//      (see functions/_middleware.js) since customers click it directly.
+//      One-time setup in Supabase SQL editor:
+//        create table short_links (
+//          code text primary key,
+//          target_url text not null,
+//          product_name text,
+//          clicks int not null default 0,
+//          created_at timestamptz not null default now()
+//        );
+//        create or replace function increment_short_link_clicks(p_code text)
+//        returns void language sql as $$
+//          update short_links set clicks = clicks + 1 where code = p_code;
+//        $$;
+//      PORTAL DOMAIN NOTE: short links resolve on THIS app's own domain
+//      (kapruka-campaign-portal.pages.dev), not the real www.kapruka.com —
+//      this Pages project doesn't control that DNS zone/server. If someone
+//      later wires a redirect route on the actual kapruka.com site, update
+//      SHORT_LINK_BASE below to point there instead; nothing else changes.
 //
 //  META-SCHEDULED POSTS (optional, month view only):
 //  Posts scheduled directly in Meta Business Suite (not through this app)
@@ -66,15 +93,73 @@ const COL = {
 // safe and won't be touched or clobbered by the posting bot.
 const WHATSAPP_NUMBER = '94711222002';
 
-// Builds a clickable customer-inquiry WhatsApp link for a product, or '' if
-// no product name was given — the caller writes '' straight into the sheet
-// cell (no link), leaving Primary Text completely untouched either way.
-function buildWhatsAppLink(productName) {
+// Builds the raw wa.me customer-inquiry link for a product (the actual
+// destination), or '' if no product name was given.
+function buildRawWhatsAppLink(productName) {
   const trimmed = String(productName || '').trim();
   if (!trimmed) return '';
   const text = `Hi I am interested ${trimmed} `; // trailing space -> trailing "+"
   const encoded = encodeURIComponent(text).replace(/%20/g, '+');
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encoded}`;
+}
+
+// Public-facing base for short links — the redirector at functions/go/[code].js
+// is deliberately excluded from this app's Basic Auth gate (see
+// functions/_middleware.js) so customers clicking it never hit a login prompt.
+// This is this Pages project's own domain (see PORTAL DOMAIN note at top of
+// file), NOT the real kapruka.com — this project doesn't control that zone.
+const SHORT_LINK_BASE = 'https://kapruka-campaign-portal.pages.dev/go';
+
+function randomShortCode(len = 7) {
+  const alphabet = 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O/1/l/I
+  let out = '';
+  const bytes = new Uint8Array(len);
+  crypto.getRandomValues(bytes);
+  for (let i = 0; i < len; i++) out += alphabet[bytes[i] % alphabet.length];
+  return out;
+}
+
+// Creates a row in Supabase `short_links` mapping a fresh code -> the real
+// wa.me destination, and returns the public short URL to hand out instead
+// of the raw wa.me link. Retries once on a code collision (unique constraint
+// on `code`); after that, surfaces the error rather than looping forever.
+async function createShortLink(targetUrl, productName) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const code = randomShortCode();
+    try {
+      await supabaseQuery('short_links', 'POST', {
+        code,
+        target_url: targetUrl,
+        product_name: productName,
+      });
+      return `${SHORT_LINK_BASE}/${code}`;
+    } catch (e) {
+      if (attempt === 0 && /duplicate key|already exists|23505/i.test(String(e.message))) {
+        continue; // collision on the unique `code` column — try once more with a fresh code
+      }
+      throw e;
+    }
+  }
+  throw new Error('Could not generate a unique short link code after retrying.');
+}
+
+// Builds the clickable link to store in the sheet for a product: creates a
+// kapruka-campaign-portal.pages.dev/go/{code} short link that redirects to
+// the real wa.me customer-inquiry link, so what goes out in ads/posts reads
+// as a clean branded-looking URL rather than a raw wa.me address. Returns ''
+// if no product name was given — caller writes '' straight into the sheet
+// cell (no link), leaving Primary Text completely untouched either way.
+async function buildWhatsAppLink(productName) {
+  const rawLink = buildRawWhatsAppLink(productName);
+  if (!rawLink) return '';
+  try {
+    return await createShortLink(rawLink, String(productName).trim());
+  } catch (e) {
+    // Short-link creation is a nice-to-have, not the critical path — if
+    // Supabase is unreachable or the table isn't set up yet, fall back to
+    // the raw wa.me link rather than losing the WhatsApp link entirely.
+    return rawLink;
+  }
 }
 const POSTING_SLOTS = [
   { hour: 10, minute: 0 }, { hour: 12, minute: 0 }, { hour: 15, minute: 0 },
@@ -469,7 +554,7 @@ export async function onRequestPost(context) {
       mediaType = 'Image';
     }
 
-    const whatsappLink = buildWhatsAppLink(productName);
+    const whatsappLink = await buildWhatsAppLink(productName);
     // '' for a link is written as a plain blank cell; a real link is written as a
     // HYPERLINK() formula (USER_ENTERED parses it exactly like typing it in) so it's
     // clickable in the sheet rather than just a plain URL string.
