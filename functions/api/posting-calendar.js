@@ -56,11 +56,13 @@
 //        returns void language sql as $$
 //          update short_links set clicks = clicks + 1 where code = p_code;
 //        $$;
-//      PORTAL DOMAIN NOTE: short links resolve on THIS app's own domain
-//      (kapruka-campaign-portal.pages.dev), not the real www.kapruka.com —
-//      this Pages project doesn't control that DNS zone/server. If someone
-//      later wires a redirect route on the actual kapruka.com site, update
-//      SHORT_LINK_BASE below to point there instead; nothing else changes.
+//      PORTAL DOMAIN: short links resolve on go.kapruka.com, a Cloudflare
+//      Pages custom domain added to this same project (Workers & Pages >
+//      kapruka-campaign-portal > Custom domains). It serves the same
+//      functions/ tree as kapruka-campaign-portal.pages.dev, so no separate
+//      deploy or route is needed — just SHORT_LINK_BASE below. If the
+//      custom domain is ever removed, revert SHORT_LINK_BASE to
+//      'https://kapruka-campaign-portal.pages.dev/go'.
 //
 //  META-SCHEDULED POSTS (optional, month view only):
 //  Posts scheduled directly in Meta Business Suite (not through this app)
@@ -106,9 +108,11 @@ function buildRawWhatsAppLink(productName) {
 // Public-facing base for short links — the redirector at functions/go/[code].js
 // is deliberately excluded from this app's Basic Auth gate (see
 // functions/_middleware.js) so customers clicking it never hit a login prompt.
-// This is this Pages project's own domain (see PORTAL DOMAIN note at top of
-// file), NOT the real kapruka.com — this project doesn't control that zone.
-const SHORT_LINK_BASE = 'https://kapruka-campaign-portal.pages.dev/go';
+// go.kapruka.com is a Cloudflare Pages custom domain on this same project
+// (added via the dashboard, Workers & Pages > kapruka-campaign-portal >
+// Custom domains) — real kapruka.com subdomain, so links read as
+// go.kapruka.com/{code} instead of the long .pages.dev address.
+const SHORT_LINK_BASE = 'https://go.kapruka.com/go';
 
 function randomShortCode(len = 7) {
   const alphabet = 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O/1/l/I
