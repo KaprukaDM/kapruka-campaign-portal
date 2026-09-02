@@ -56,13 +56,13 @@
 //        returns void language sql as $$
 //          update short_links set clicks = clicks + 1 where code = p_code;
 //        $$;
-//      PORTAL DOMAIN: short links resolve on go.kapruka.com, a Cloudflare
-//      Pages custom domain added to this same project (Workers & Pages >
-//      kapruka-campaign-portal > Custom domains). It serves the same
-//      functions/ tree as kapruka-campaign-portal.pages.dev, so no separate
-//      deploy or route is needed — just SHORT_LINK_BASE below. If the
-//      custom domain is ever removed, revert SHORT_LINK_BASE to
-//      'https://kapruka-campaign-portal.pages.dev/go'.
+//      PORTAL DOMAIN: short links resolve on THIS app's own domain
+//      (kapruka-campaign-portal.pages.dev), not www.kapruka.com — that DNS
+//      zone is owned/managed by IT, not this Cloudflare account, so a
+//      kapruka.com custom subdomain isn't set-uppable from here. It would
+//      need IT to add one CNAME record (e.g. buy -> this project's
+//      .pages.dev address, proxied) in their own account. If that happens,
+//      update SHORT_LINK_BASE below to match; nothing else changes.
 //
 //  META-SCHEDULED POSTS (optional, month view only):
 //  Posts scheduled directly in Meta Business Suite (not through this app)
@@ -108,11 +108,13 @@ function buildRawWhatsAppLink(productName) {
 // Public-facing base for short links — the redirector at functions/go/[code].js
 // is deliberately excluded from this app's Basic Auth gate (see
 // functions/_middleware.js) so customers clicking it never hit a login prompt.
-// go.kapruka.com is a Cloudflare Pages custom domain on this same project
-// (added via the dashboard, Workers & Pages > kapruka-campaign-portal >
-// Custom domains) — real kapruka.com subdomain, so links read as
-// go.kapruka.com/{code} instead of the long .pages.dev address.
-const SHORT_LINK_BASE = 'https://go.kapruka.com/go';
+// This is this Pages project's own domain, NOT www.kapruka.com — that zone's
+// DNS is owned/managed by IT, not this account, so a kapruka.com custom
+// subdomain (e.g. buy.kapruka.com) isn't set-uppable from here; it would need
+// IT to add one CNAME record (buy -> kapruka-campaign-portal.pages.dev,
+// proxied) in their Cloudflare account. If that ever happens, update this
+// constant to match and nothing else in the app needs to change.
+const SHORT_LINK_BASE = 'https://kapruka-campaign-portal.pages.dev/go';
 
 function randomShortCode(len = 7) {
   const alphabet = 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O/1/l/I
