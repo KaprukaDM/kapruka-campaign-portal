@@ -900,6 +900,39 @@
       border-left-color: #8E24AA;
     }
 
+    /* High-priority slots (all campaign bookings) get a red rail + tint so
+       they stand out from ordinary content-calendar posts at a glance. */
+    .slot-item.high-priority {
+      border-left-color: #E53935;
+      border-left-width: 5px;
+      background: #FFF3F2;
+    }
+
+    /* Slot labels (e.g. "Promotion Time Sensitive"). Rendered on its own line
+       under the badges so long label text never squeezes the status pill. */
+    .slot-labels {
+      display: block;
+      margin-top: 5px;
+    }
+
+    .slot-label {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 9.5px;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      border: 1px solid transparent;
+      white-space: normal;
+    }
+
+    .slot-label.label-promo-time-sensitive {
+      background: #FFE0B2;
+      color: #A34700;
+      border-color: #FB8C00;
+    }
+
     .slot-number {
       font-weight: 700;
       font-size: 11px;
@@ -3356,6 +3389,11 @@
 
         if (!silent) await generateEmptySlotsForMonth(currentStudioYear, currentStudioMonth);
 
+        // Repair campaign booking slots created before High became their
+        // default, so the stored priority matches what the grid shows.
+        // Non-fatal and a no-op once everything is already High.
+        if (!silent) await backfillCampaignBookingPriority();
+
         studioMonthRawData = await getStudioCalendarForMonth(currentStudioYear, currentStudioMonth);
 
         const startDate = `${currentStudioYear}-${String(currentStudioMonth).padStart(2, '0')}-01`;
@@ -3427,7 +3465,9 @@
         item.assigned_to,
         item.caption,
         item.studio_status,
-        item.approval_status
+        item.approval_status,
+        // derived label text, so "promotion time sensitive" is searchable
+        getStudioSlotLabels(item).join(' ')
       ].filter(Boolean).join(' ').toLowerCase();
       // every whitespace-separated token must appear somewhere
       return term.split(/\s+/).filter(Boolean).every(tok => haystack.includes(tok));
@@ -3501,6 +3541,28 @@
       document.getElementById('completedSlots').textContent = completedSlots;
       document.getElementById('approvedSlots').textContent = approvedSlots;
       document.getElementById('completionRate').textContent = completionRate + '%';
+    }
+
+    // ── Priority + label badges (shared by the calendar grid and the modal) ──
+    // Priority values come from the calendar's existing High/Low field;
+    // labels come from getStudioSlotLabels() in js/supabase-api.js.
+    const SLOT_LABEL_CLASSES = {
+      'Promotion Time Sensitive': 'label-promo-time-sensitive'
+    };
+
+    function renderPriorityBadge(priority) {
+      if (!priority) return '';
+      const isHigh = priority === 'High';
+      return `<span class="slot-status" style="background:${isHigh ? '#E53935' : '#78909C'};color:#fff;">${isHigh ? '🔴 High' : 'Low'}</span>`;
+    }
+
+    function renderSlotLabels(item) {
+      const labels = getStudioSlotLabels(item);
+      if (!labels.length) return '';
+      const pills = labels.map(label =>
+        `<span class="slot-label ${SLOT_LABEL_CLASSES[label] || ''}">⚡ ${escapeHtml(label)}</span>`
+      ).join(' ');
+      return `<span class="slot-labels">${pills}</span>`;
     }
 
     function renderCalendarGrid(data, monthThemes = []) {
@@ -3695,9 +3757,11 @@
               displayText = `${displayText} • ${item.product_code}`;
             }
 
-            const priorityBadge = item.priority
-              ? `<span class="slot-status" style="background:${item.priority === 'High' ? '#E53935' : '#78909C'};color:#fff;">${item.priority === 'High' ? '🔴 High' : 'Low'}</span>`
-              : '';
+            // Campaign bookings are forced to High by getStudioSlotPriority(),
+            // so they read as high priority even if an old DB row still says Low.
+            const effectivePriority = getStudioSlotPriority(item);
+            const priorityBadge = renderPriorityBadge(effectivePriority);
+            if (effectivePriority === 'High') slotDiv.classList.add('high-priority');
 
             slotDiv.innerHTML = `
               <span class="slot-number">📅</span>
@@ -3705,6 +3769,7 @@
               ${priorityBadge}
               <span class="slot-page">${displayText}</span>
               ${getAssignedPersonDisplay(item)}
+              ${renderSlotLabels(item)}
             `;
 
             slotDiv.onclick = () => showSlotDetails(item, dateStr);
@@ -3966,7 +4031,18 @@
             <div>
               <strong style="color:#5e3a8e;">Type:</strong>
               <span>${slotData.slot_type === 'lead_form' ? '🔵 Lead Form' : '🟢 Content Calendar'}</span>
+              ${isCampaignBookingSlot(slotData) ? '<span style="margin-left:6px;color:#666;font-size:12px;">(Campaign Booking)</span>' : ''}
             </div>
+            ${getStudioSlotPriority(slotData) ? `
+            <div>
+              <strong style="color:#5e3a8e;">Priority:</strong>
+              ${renderPriorityBadge(getStudioSlotPriority(slotData))}
+            </div>` : ''}
+            ${getStudioSlotLabels(slotData).length ? `
+            <div>
+              <strong style="color:#5e3a8e;">Labels:</strong>
+              ${renderSlotLabels(slotData)}
+            </div>` : ''}
             <div>
               <strong style="color:#5e3a8e;">Page:</strong> 
               <span>${slotData.page_name || '-'}</span>

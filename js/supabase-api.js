@@ -36,6 +36,63 @@ const VALID_STATUSES = [
 
 const STUDIO_STATUSES = ['Received', 'Working', 'Submitted for Review', 'Approved', 'Rejected by Head', 'Hold', 'Posted'];
 
+// ═══════════════════════════════════════════════════════════════
+// STUDIO CALENDAR PRIORITY + LABELS
+// ═══════════════════════════════════════════════════════════════
+// studio_calendar.priority is the calendar's existing priority field and
+// only ever holds one of these two values (see the Extra Content form and
+// the priority badge in admin-dashboard.html).
+const STUDIO_PRIORITIES = ['High', 'Low'];
+const STUDIO_PRIORITY_HIGH = 'High';
+
+// Campaign booking slots (campaign-booking.html → request_log → studio_calendar)
+// are paid/committed promotions with a fixed go-live date, so they are ALWAYS
+// high priority and always carry the "Promotion Time Sensitive" label.
+const CAMPAIGN_BOOKING_SOURCE = 'campaign_booking';
+const LABEL_PROMOTION_TIME_SENSITIVE = 'Promotion Time Sensitive';
+
+function isCampaignBookingSlot(row) {
+  return !!row && row.source_type === CAMPAIGN_BOOKING_SOURCE;
+}
+
+// Priority a slot should be RENDERED with. Campaign bookings are forced to
+// High even if an older row in the DB still says Low/null, so the calendar is
+// consistent immediately without waiting on the backfill.
+function getStudioSlotPriority(row) {
+  if (isCampaignBookingSlot(row)) return STUDIO_PRIORITY_HIGH;
+  return row && row.priority ? row.priority : null;
+}
+
+// Labels are derived from the slot's source rather than stored in their own
+// column — studio_calendar has no labels/tags column, and source_type is
+// already the authoritative "what kind of slot is this" field, so deriving
+// keeps one source of truth and covers every existing row with no migration.
+function getStudioSlotLabels(row) {
+  const labels = [];
+  if (isCampaignBookingSlot(row)) labels.push(LABEL_PROMOTION_TIME_SENSITIVE);
+  return labels;
+}
+
+/**
+ * One-shot repair for campaign booking slots created before high priority
+ * became the default. Safe to call repeatedly: it only touches rows that are
+ * not already High, and never throws (a failure here must not block the
+ * calendar from loading).
+ */
+async function backfillCampaignBookingPriority() {
+  const filter = `source_type=eq.${CAMPAIGN_BOOKING_SOURCE}&or=(priority.is.null,priority.neq.${STUDIO_PRIORITY_HIGH})`;
+  try {
+    const stale = await supabaseQuery(`studio_calendar?${filter}&select=id`);
+    if (!stale.length) return { updated: 0 };
+    await supabaseQuery(`studio_calendar?${filter}`, 'PATCH', { priority: STUDIO_PRIORITY_HIGH });
+    console.log(`[studio] Backfilled ${stale.length} campaign booking slot(s) to High priority`);
+    return { updated: stale.length };
+  } catch (error) {
+    console.warn('backfillCampaignBookingPriority failed (non-fatal):', error.message);
+    return { updated: 0, error: error.message };
+  }
+}
+
 // Pages available for selection when booking/assigning content.
 const PAGE_OPTIONS = ['Kapruka FB', 'Global Shop'];
 
@@ -178,6 +235,11 @@ async function upsertStudioCalendarEntry(entry) {
   // Only touch priority when explicitly provided, so unrelated re-upserts
   // (e.g. content edits) don't wipe an existing High/Low label.
   if (entry.priority !== undefined) payload.priority = entry.priority;
+
+  // Campaign booking slots are always high priority — enforced here so every
+  // path that writes one (initial submit, status sync, future callers) lands
+  // on the same value instead of each caller remembering to pass it.
+  if (isCampaignBookingSlot(entry)) payload.priority = STUDIO_PRIORITY_HIGH;
 
   if (entry.source_id) {
     const existing = await supabaseQuery(
@@ -848,7 +910,7 @@ async function submitCampaignRequest(formData) {
   await upsertStudioCalendarEntry({
     date: formData.goLiveDate,
     department: formData.department,
-    source_type: 'campaign_booking',
+    source_type: CAMPAIGN_BOOKING_SOURCE,
     source_id: savedRequest.id,          // link back to request_log row
     product_code: null,
     page_name: null,
@@ -856,7 +918,10 @@ async function submitCampaignRequest(formData) {
     content_details: formData.campaign,   // campaign description flows into studio
     reference_links: '',
     slot_type: 'content_calendar',
-    booking_status: 'booked'
+    booking_status: 'booked',
+    // Booked campaigns have a committed go-live date → always High priority,
+    // and the calendar renders them with the "Promotion Time Sensitive" label.
+    priority: STUDIO_PRIORITY_HIGH
   });
 
   return { success: true, requestId: savedRequest.request_id };
@@ -977,7 +1042,14 @@ async function updateRequestStatus(row, status, reviewer, comments) {
     `studio_calendar?source_type=eq.campaign_booking&source_id=eq.${row}`
   );
   if (studioRows.length > 0) {
-    const studioPayload = { studio_status: status, approval_status: status, updated_at: new Date().toISOString() };
+    // Re-assert High here too: this PATCH is the main way older campaign
+    // booking rows get touched, so it doubles as a lazy backfill.
+    const studioPayload = {
+      studio_status: status,
+      approval_status: status,
+      priority: STUDIO_PRIORITY_HIGH,
+      updated_at: new Date().toISOString()
+    };
     await supabaseQuery(`studio_calendar?id=eq.${studioRows[0].id}`, 'PATCH', studioPayload);
   }
 
