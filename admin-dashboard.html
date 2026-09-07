@@ -3704,7 +3704,15 @@
 
         // Content-calendar daily posts ALWAYS render, regardless of the
         // lead-form page schedule for the day.
-        const contentItems = dayData.filter(d => d.slot_type === 'content_calendar');
+        // High-priority posts (every campaign booking, plus any extra content
+        // marked High) sort to the top of the day so they're the first thing
+        // read in a busy cell instead of being buried. Stable otherwise, so
+        // the existing date/slot_number order is preserved within each group.
+        const contentItems = dayData
+          .filter(d => d.slot_type === 'content_calendar')
+          .map((item, index) => ({ item, index }))
+          .sort((a, b) => (studioPriorityRank(b.item) - studioPriorityRank(a.item)) || (a.index - b.index))
+          .map(entry => entry.item);
           contentItems.forEach(item => {
             const slotDiv = document.createElement('div');
             slotDiv.className = 'slot-item content-calendar';

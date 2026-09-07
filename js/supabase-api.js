@@ -63,6 +63,13 @@ function getStudioSlotPriority(row) {
   return row && row.priority ? row.priority : null;
 }
 
+// Sort weight for a slot's priority — higher sorts first. Anything that
+// orders slots by importance should key off this rather than comparing the
+// raw string, so campaign bookings stay on top wherever it's used.
+function studioPriorityRank(row) {
+  return getStudioSlotPriority(row) === STUDIO_PRIORITY_HIGH ? 1 : 0;
+}
+
 // Labels are derived from the slot's source rather than stored in their own
 // column — studio_calendar has no labels/tags column, and source_type is
 // already the authoritative "what kind of slot is this" field, so deriving
