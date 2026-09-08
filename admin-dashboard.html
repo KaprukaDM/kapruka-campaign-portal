@@ -1684,7 +1684,7 @@
             <button id="pushAllWinnersBtn" class="btn btn-primary" style="padding:8px 16px;font-size:13px;" onclick="pushAllQueuedWinners()">🚀 Push All</button>
           </div>
           <div style="font-size:12px;color:#666;margin-bottom:16px;">
-            🏆 Winners (from the last 100 synced posts) that haven't been pushed to an ad yet — stays on this list until pushed, regardless of how much time passes.
+            🏆 Winners (from the last 100 synced posts) that haven't been pushed to an ad yet, plus 🎯 posted content that was High priority + Promotion Time Sensitive, which is queued here automatically the moment it's marked Posted. Items stay on this list until pushed or removed, regardless of how much time passes.
             <span id="queuedAdsNote"></span>
           </div>
           <div class="table-container">
@@ -1696,7 +1696,7 @@
                   <th>Post</th>
                   <th>Views + Reach</th>
                   <th>Reactions</th>
-                  <th>Winner Reason</th>
+                  <th>Reason</th>
                   <th>Action</th>
                 </tr>
               </thead>
@@ -4425,6 +4425,10 @@
         document.getElementById('fbStatReach').textContent = '0';
         document.getElementById('fbStatEngaged').textContent = '0';
         lastSynced.textContent = '';
+        // Still render the queue: auto-queued campaign content comes from
+        // studio_calendar, not from the FB sync, so it must show even when
+        // nothing has been synced from Facebook yet.
+        renderQueuedForAds([], []);
         return;
       }
 
@@ -4566,7 +4570,7 @@
         `;
       }).join('');
 
-      renderQueuedForAds(winnerGroups);
+      renderQueuedForAds(winnerGroups, groupedPosts);
     }
 
     // Preview of what scripts/weekly-organic-winners-to-ads.js will act on
@@ -4575,22 +4579,11 @@
     // Sheet-matching itself isn't replicated here (the creative sheet's
     // export endpoint doesn't allow browser-side CORS fetches) — this shows
     // WHICH posts are queued, not which creative each will end up using.
-    async function renderQueuedForAds(winnerGroups) {
+    async function renderQueuedForAds(winnerGroups, groupedPosts) {
       const card = document.getElementById('queuedAdsCard');
       const tbody = document.getElementById('queuedAdsTable');
       if (!card || !tbody) return;
-
-      // No time-window filter here — a winner stays in this list until it's
-      // actually pushed, however long that takes. Scope is already bounded
-      // by the 100-post fetch in loadFacebookPerformance(), not a date cutoff,
-      // so a winner from post #37 doesn't silently vanish from the queue just
-      // because a week passed without anyone pushing it.
-      if (winnerGroups.length === 0) {
-        card.style.display = '';
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;">No winners yet.</td></tr>';
-        document.getElementById('queuedAdsCount').textContent = '0';
-        return;
-      }
+      card.style.display = '';
 
       let pushedKeys = new Set();
       try {
@@ -4600,48 +4593,229 @@
         console.warn('Could not check already-pushed ads (showing all winners as queued):', e.message);
       }
 
-      const queued = winnerGroups.filter(p => !pushedKeys.has(p.key));
-      const alreadyPushed = winnerGroups.length - queued.length;
+      // ── 1. Organic 🏆 Winners ─────────────────────────────────────────
+      // No time-window filter here — a winner stays in this list until it's
+      // actually pushed, however long that takes. Scope is already bounded
+      // by the 100-post fetch in loadFacebookPerformance(), not a date cutoff,
+      // so a winner from post #37 doesn't silently vanish from the queue just
+      // because a week passed without anyone pushing it.
+      const queuedWinners = (winnerGroups || []).filter(p => !pushedKeys.has(p.key));
+      const alreadyPushed = (winnerGroups || []).length - queuedWinners.length;
 
-      card.style.display = '';
-      document.getElementById('queuedAdsCount').textContent = queued.length;
-      document.getElementById('queuedAdsNote').textContent = alreadyPushed > 0
-        ? `${alreadyPushed} other winner(s) already have an ad and are excluded.`
-        : '';
+      // ── 2. Auto-queued posted campaign content ────────────────────────
+      const autoItems = await buildAutoQueuedAdItems(groupedPosts || [], pushedKeys, queuedWinners);
 
-      if (queued.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;">All current winners have already been pushed to ads.</td></tr>';
+      const items = [
+        ...queuedWinners.map(p => ({ kind: 'winner', key: p.key, group: p, sortValue: p.combined })),
+        ...autoItems
+      ];
+
+      document.getElementById('queuedAdsCount').textContent = items.length;
+      const notes = [];
+      if (alreadyPushed > 0) notes.push(`${alreadyPushed} other winner(s) already have an ad and are excluded.`);
+      if (autoItems.length > 0) notes.push(`${autoItems.length} auto-queued from posted High + Promotion Time Sensitive content.`);
+      document.getElementById('queuedAdsNote').textContent = notes.join(' ');
+
+      if (items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;">Nothing queued — no winners and no posted time-sensitive campaign content waiting for an ad.</td></tr>';
+        queuedWinnersByKey = {};
         return;
       }
 
+      // Auto-queued campaign content sorts above organic winners: it's a
+      // committed, date-bound promotion, so it's the more urgent push.
       queuedWinnersByKey = {};
-      queued.forEach(p => { queuedWinnersByKey[p.key] = p; });
+      items.forEach(it => { queuedWinnersByKey[it.key] = it.kind === 'winner' ? it.group : it.skipPayload; });
 
-      tbody.innerHTML = queued
-        .sort((a, b) => b.combined - a.combined)
-        .map(p => {
-          const rawMessage = p.message || '(no caption)';
-          const excerpt = escapeHtml(rawMessage.slice(0, 80)) + (rawMessage.length > 80 ? '…' : '');
-          const postCell = p.permalink_url
-            ? `<a href="${p.permalink_url}" target="_blank" style="color:#5e3a8e;">${excerpt}</a>`
-            : excerpt;
-          return `
-            <tr data-group-key="${escapeHtml(p.key)}">
-              <td>${PLATFORM_BADGE_LIST(p.platforms)}</td>
-              <td>${p.created_time ? new Date(p.created_time).toLocaleDateString() : '-'}</td>
-              <td style="max-width:320px;">${postCell}</td>
-              <td>${fmtNum(p.combined)}</td>
-              <td>${fmtNum(p.reactions_total)}</td>
-              <td style="font-size:12px;color:#666;">${p.reasons.join(', ')}</td>
-              <td style="white-space:nowrap;">
-                <button class="btn btn-primary" style="padding:6px 12px;font-size:12px;white-space:nowrap;"
-                        data-group-key="${escapeHtml(p.key)}" onclick="pushOrganicWinnerAd(this)">🚀 Push Now</button>
-                <button class="btn" style="padding:6px 12px;font-size:12px;white-space:nowrap;background:#eee;color:#666;margin-left:4px;"
-                        data-group-key="${escapeHtml(p.key)}" onclick="removeQueuedWinner(this)">✖ Remove</button>
-              </td>
-            </tr>
-          `;
-        }).join('');
+      tbody.innerHTML = items
+        .sort((a, b) => (b.kind === 'campaign') - (a.kind === 'campaign') || (b.sortValue - a.sortValue))
+        .map(it => it.kind === 'campaign' ? renderAutoQueuedRow(it) : renderWinnerQueueRow(it.group))
+        .join('');
+    }
+
+    function renderWinnerQueueRow(p) {
+      const rawMessage = p.message || '(no caption)';
+      const excerpt = escapeHtml(rawMessage.slice(0, 80)) + (rawMessage.length > 80 ? '…' : '');
+      const postCell = p.permalink_url
+        ? `<a href="${p.permalink_url}" target="_blank" style="color:#5e3a8e;">${excerpt}</a>`
+        : excerpt;
+      return `
+        <tr data-group-key="${escapeHtml(p.key)}">
+          <td>${PLATFORM_BADGE_LIST(p.platforms)}</td>
+          <td>${p.created_time ? new Date(p.created_time).toLocaleDateString() : '-'}</td>
+          <td style="max-width:320px;">${postCell}</td>
+          <td>${fmtNum(p.combined)}</td>
+          <td>${fmtNum(p.reactions_total)}</td>
+          <td style="font-size:12px;color:#666;">${p.reasons.join(', ')}</td>
+          <td style="white-space:nowrap;">
+            <button class="btn btn-primary" style="padding:6px 12px;font-size:12px;white-space:nowrap;"
+                    data-group-key="${escapeHtml(p.key)}" onclick="pushOrganicWinnerAd(this)">🚀 Push Now</button>
+            <button class="btn" style="padding:6px 12px;font-size:12px;white-space:nowrap;background:#eee;color:#666;margin-left:4px;"
+                    data-group-key="${escapeHtml(p.key)}" onclick="removeQueuedWinner(this)">✖ Remove</button>
+          </td>
+        </tr>
+      `;
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // AUTO-QUEUE: posted High + Promotion Time Sensitive content
+    // ─────────────────────────────────────────────────────────────
+    // A slot lands here the moment its studio status becomes Posted while it
+    // is High priority AND carries the Promotion Time Sensitive label (see
+    // qualifiesForAutoAdQueue() in js/supabase-api.js) — nobody adds it by
+    // hand. The whole list is DERIVED from studio_calendar on every render,
+    // so posting/re-saving the same slot repeatedly can never duplicate a
+    // row, and pushing or removing it writes the one tracking row in
+    // organic_winner_ad_pushes that takes it back out for good.
+    //
+    // Pushing needs a real Facebook/Instagram post to build the ad creative
+    // from, and studio_calendar has no post_id — so each auto-queued slot is
+    // matched to a synced post by (a) the live link typed into the Posted
+    // form, or (b) being the only post synced on the slot's date. When that's
+    // ambiguous the row offers a picker instead of guessing, and when nothing
+    // is synced yet it waits for the next Facebook sync.
+    const AUTO_QUEUE_REASON = 'Auto-queued: posted High + Promotion Time Sensitive';
+    let autoQueueCandidates = {};
+
+    async function buildAutoQueuedAdItems(groupedPosts, pushedKeys, queuedWinners) {
+      let slots = [];
+      try {
+        slots = await getAutoQueuedAdSlots();
+      } catch (e) {
+        console.warn('Auto-queue lookup failed (showing organic winners only):', e.message);
+        return [];
+      }
+      if (!slots.length) return [];
+
+      const links = await getPostedLinksForSlots(slots.map(s => s.id));
+      const localDay = (iso) => iso ? new Date(iso).toLocaleDateString('en-CA') : null;
+      const lastSegment = (url) => String(url || '').split(/[?#]/)[0].replace(/\/+$/, '').split('/').pop();
+
+      autoQueueCandidates = {};
+      const winnerKeys = new Set((queuedWinners || []).map(w => w.key));
+      const items = [];
+
+      slots.forEach(slot => {
+        const queueKey = campaignQueueKey(slot);
+        if (pushedKeys.has(queueKey)) return; // already pushed or removed
+
+        const sameDay = (groupedPosts || []).filter(p => localDay(p.created_time) === slot.date);
+
+        // (a) explicit link wins, (b) otherwise only accept an unambiguous
+        //     single post for that day — never guess between three.
+        const link = links[slot.id];
+        const seg = link ? lastSegment(link) : null;
+        let matched = null;
+        if (seg) {
+          matched = (groupedPosts || []).find(p =>
+            (p.permalink_url && lastSegment(p.permalink_url) === seg) ||
+            (p.permalink_url && String(p.permalink_url).includes(seg))
+          ) || null;
+        }
+        if (!matched && sameDay.length === 1) matched = sameDay[0];
+
+        // Already sitting in the queue as an organic winner — annotate that
+        // row instead of adding a second one for the same post.
+        if (matched && winnerKeys.has(matched.key)) {
+          const winner = queuedWinners.find(w => w.key === matched.key);
+          if (winner && !winner.reasons.includes(AUTO_QUEUE_REASON)) winner.reasons.push(AUTO_QUEUE_REASON);
+          return;
+        }
+        if (matched && pushedKeys.has(matched.key)) return;
+
+        autoQueueCandidates[slot.id] = sameDay;
+        items.push({
+          kind: 'campaign',
+          key: queueKey,
+          slot,
+          matched,
+          candidates: sameDay,
+          sortValue: new Date(slot.date).getTime() || 0,
+          skipPayload: {
+            key: queueKey,
+            platforms: matched ? matched.platforms : [],
+            message: slot.content_details || slot.format || `Studio slot ${slot.id}`
+          }
+        });
+      });
+
+      return items;
+    }
+
+    function renderAutoQueuedRow(item) {
+      const slot = item.slot;
+      const matched = item.matched;
+      const raw = slot.content_details || slot.format || '(no details)';
+      const excerpt = escapeHtml(raw.slice(0, 80)) + (raw.length > 80 ? '…' : '');
+      const detailCell = matched && matched.permalink_url
+        ? `<a href="${matched.permalink_url}" target="_blank" style="color:#5e3a8e;">${excerpt}</a>`
+        : excerpt;
+
+      const platformCell = matched
+        ? PLATFORM_BADGE_LIST(matched.platforms)
+        : '<span class="badge" style="background:#FFF3E0;color:#E65100;">🎯 Campaign</span>';
+
+      const combined = matched ? (Number(matched.impressions) || 0) + (Number(matched.reach) || 0) : null;
+
+      let actionCell;
+      if (matched) {
+        actionCell = `
+          <button class="btn btn-primary" style="padding:6px 12px;font-size:12px;white-space:nowrap;"
+                  data-group-key="${escapeHtml(matched.key)}" onclick="pushOrganicWinnerAd(this)">🚀 Push Now</button>`;
+      } else if (item.candidates.length > 1) {
+        actionCell = `
+          <select id="autoQueuePick-${slot.id}" title="Which of that day's synced posts did this campaign go out as?"
+                  onchange="pickAutoQueuePost(${slot.id})"
+                  style="max-width:150px;padding:5px;font-size:11px;border:1px solid #ddd;border-radius:6px;">
+            <option value="">Which post?</option>
+            ${item.candidates.map((c, i) =>
+              `<option value="${i}">${escapeHtml((c.message || '(no caption)').slice(0, 45))}</option>`).join('')}
+          </select>
+          <button class="btn btn-primary" id="autoQueuePush-${slot.id}" disabled
+                  style="padding:6px 12px;font-size:12px;white-space:nowrap;margin-left:4px;opacity:0.5;"
+                  onclick="pushOrganicWinnerAd(this)">🚀 Push Now</button>`;
+      } else {
+        actionCell = `<span style="font-size:11px;color:#888;"
+                            title="Nothing is synced from Facebook for ${escapeHtml(slot.date || '')} yet, so there's no post to build an ad from. This row becomes pushable on its own once the sync catches up.">⏳ Awaiting FB sync</span>`;
+      }
+
+      return `
+        <tr data-group-key="${escapeHtml(item.key)}" style="background:#FFFDF7;">
+          <td>${platformCell}</td>
+          <td>${slot.date ? new Date(slot.date + 'T00:00:00').toLocaleDateString() : '-'}</td>
+          <td style="max-width:320px;">${detailCell}</td>
+          <td>${combined === null ? '-' : fmtNum(combined)}</td>
+          <td>${matched ? fmtNum(matched.reactions_total) : '-'}</td>
+          <td style="font-size:12px;color:#666;min-width:180px;">
+            <span class="badge" style="background:#FFEBEE;color:#C62828;">High</span>
+            <span class="badge" style="background:#FFF3E0;color:#E65100;white-space:nowrap;">Promotion Time Sensitive</span>
+            <div style="margin-top:4px;font-size:11px;">Auto-queued on Posted</div>
+          </td>
+          <td style="white-space:nowrap;">
+            ${actionCell}
+            <button class="btn" style="padding:6px 12px;font-size:12px;white-space:nowrap;background:#eee;color:#666;margin-left:4px;"
+                    data-group-key="${escapeHtml(item.key)}" onclick="removeQueuedWinner(this)">✖ Remove</button>
+          </td>
+        </tr>
+      `;
+    }
+
+    // Enables Push Now once a human picks which of that day's synced posts
+    // this campaign slot actually went out as.
+    function pickAutoQueuePost(slotId) {
+      const select = document.getElementById(`autoQueuePick-${slotId}`);
+      const button = document.getElementById(`autoQueuePush-${slotId}`);
+      if (!select || !button) return;
+      const chosen = (autoQueueCandidates[slotId] || [])[Number(select.value)];
+      if (chosen) {
+        button.dataset.groupKey = chosen.key;
+        button.disabled = false;
+        button.style.opacity = '1';
+      } else {
+        delete button.dataset.groupKey;
+        button.disabled = true;
+        button.style.opacity = '0.5';
+      }
     }
 
     let queuedWinnersByKey = {};

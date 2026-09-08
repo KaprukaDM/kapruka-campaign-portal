@@ -80,6 +80,112 @@ function getStudioSlotLabels(row) {
   return labels;
 }
 
+// ── AUTO-QUEUE FOR THE WEEKLY AD PUSH ──────────────────────────────────
+// Posted campaign content that is BOTH high priority and time sensitive is
+// queued for the weekly ad push automatically — no manual "add to queue"
+// step. Like the labels above, this is DERIVED from state that already
+// exists (studio_calendar.priority + source_type + studio_status) rather
+// than written to a new queue table, which is what makes it inherently
+// idempotent: re-saving or re-posting the same slot can't create a second
+// queue entry, because there is no insert to duplicate. The queue card
+// de-dupes further on the keys below.
+const AD_QUEUE_POSTED_STATUS = 'Posted';
+
+// Stable identity for an auto-queued slot inside organic_winner_ad_pushes
+// (the same table the push endpoint and Monday cron check). Namespaced so it
+// can never collide with a facebook_post_performance "caption|date" key.
+const CAMPAIGN_QUEUE_KEY_PREFIX = 'campaign_slot:';
+
+function campaignQueueKey(row) {
+  return `${CAMPAIGN_QUEUE_KEY_PREFIX}${row.id}`;
+}
+
+// "Time sensitive" is not its own column — it's the Promotion Time Sensitive
+// label, derived from source_type by getStudioSlotLabels(). Keying off the
+// label (not source_type directly) means anything that earns the label in
+// future is auto-queued too, with no change here.
+function isTimeSensitiveSlot(row) {
+  return getStudioSlotLabels(row).includes(LABEL_PROMOTION_TIME_SENSITIVE);
+}
+
+// studio_status is the studio calendar's live state; approval_status is the
+// mirrored value written by the request_log sync. Either landing on Posted
+// counts as published. Prefix match so a future "Posted (late)"-style value
+// still registers, same as functions/api/posting-calendar.js does.
+function isStudioSlotPosted(row) {
+  const status = (row && (row.studio_status || row.approval_status)) || '';
+  return status.indexOf(AD_QUEUE_POSTED_STATUS) === 0;
+}
+
+function qualifiesForAutoAdQueue(row) {
+  return isStudioSlotPosted(row)
+    && getStudioSlotPriority(row) === STUDIO_PRIORITY_HIGH
+    && isTimeSensitiveSlot(row);
+}
+
+// How far back the auto-queue looks. An ad can only be built from a post
+// that's still in facebook_post_performance (the sync keeps roughly the last
+// few weeks at current posting volume), so queueing a promotion from months
+// ago would only ever produce a row nobody can push. 30 days comfortably
+// covers the syncable window without dredging up the whole backlog.
+const AUTO_QUEUE_LOOKBACK_DAYS = 30;
+
+function autoQueueCutoffDate() {
+  const d = new Date();
+  d.setDate(d.getDate() - AUTO_QUEUE_LOOKBACK_DAYS);
+  return d.toISOString().split('T')[0];
+}
+
+/**
+ * Every studio slot that should currently be sitting in the Weekly Ad Push
+ * queue because it was posted while high priority + time sensitive.
+ * Newest first. Never throws — the queue card must still render its organic
+ * winners if this lookup fails.
+ */
+async function getAutoQueuedAdSlots(limit = 40) {
+  try {
+    const rows = await supabaseQuery(
+      `studio_calendar?studio_status=eq.${AD_QUEUE_POSTED_STATUS}` +
+      `&date=gte.${autoQueueCutoffDate()}` +
+      '&select=id,date,source_type,priority,studio_status,approval_status,page_name,content_details,format,product_code,reference_links' +
+      '&order=date.desc,id.desc&limit=300'
+    );
+    return rows.filter(qualifiesForAutoAdQueue).slice(0, limit);
+  } catch (error) {
+    console.error('getAutoQueuedAdSlots error:', error);
+    return [];
+  }
+}
+
+/**
+ * The live post URL for a slot, if whoever marked it Posted typed one in.
+ * studio_calendar has no post_link column — the modal's "Posted link" field
+ * is only persisted inside the studio_activity_log detail text ("Marked as
+ * Posted — <url>"), so that's where this reads it from. Returns
+ * { [slot_id]: url } for the slots that have one; slots without a link are
+ * simply absent.
+ */
+async function getPostedLinksForSlots(slotIds) {
+  const ids = (slotIds || []).filter(Boolean);
+  if (!ids.length) return {};
+  try {
+    const rows = await supabaseQuery(
+      `studio_activity_log?slot_id=in.(${ids.join(',')})&select=slot_id,detail,created_at&order=created_at.asc`
+    );
+    const links = {};
+    rows.forEach(r => {
+      const detail = r.detail || '';
+      if (!/Marked as Posted/i.test(detail)) return;
+      const match = detail.match(/https?:\/\/[^\s)]+/);
+      if (match) links[r.slot_id] = match[0];
+    });
+    return links;
+  } catch (error) {
+    console.warn('getPostedLinksForSlots failed (non-fatal):', error.message);
+    return {};
+  }
+}
+
 /**
  * One-shot repair for campaign booking slots created before high priority
  * became the default. Safe to call repeatedly: it only touches rows that are
