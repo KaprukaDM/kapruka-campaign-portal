@@ -1789,28 +1789,8 @@ async function searchProductPerformance(keyword, startDate, endDate) {
   } catch (error) { throw error; }
 }
 
-// ═══════════════════════════════════════════════════════════════
-// EXPERIMENT CAMPAIGNS API
-// ═══════════════════════════════════════════════════════════════
-
-async function getExperimentCampaigns(startDate, endDate) {
-  const url = `${SUPABASE_URL}/rest/v1/experiment_campaigns?date=gte.${startDate}&date=lte.${endDate}&order=campaign_name.asc,date.desc`;
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json' }
-  });
-  if (!response.ok) throw new Error(`Failed to fetch experiments: ${response.status}`);
-  return await response.json();
-}
-
-async function getAllExperimentCampaigns() {
-  const url = `${SUPABASE_URL}/rest/v1/experiment_campaigns?order=date.desc,campaign_name.asc`;
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json' }
-  });
-  if (!response.ok) throw new Error(`Failed to fetch all experiments: ${response.status}`);
-  return await response.json();
-}
+// The experiment_campaigns helpers (getExperimentCampaigns /
+// getAllExperimentCampaigns) were removed with experiments-dashboard.html, their
+// only caller. The Supabase table itself is left intact and untouched.
 
 console.log('✅ Supabase API v2 loaded — unified status sync active');

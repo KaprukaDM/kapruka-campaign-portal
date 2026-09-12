@@ -7,37 +7,11 @@
   <link rel="stylesheet" href="css/styles.css">
   <link rel="icon" type="image/png" href="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw">
   <style>
-    .experiments-btn {
-      position: fixed; bottom: 30px; right: 30px;
-      background: linear-gradient(135deg, rgba(255,215,0,0.9), rgba(255,165,0,0.9));
-      color: #1a0b2e; padding: 16px 28px; border-radius: 50px;
-      text-decoration: none; font-weight: 700; font-size: 15px;
-      box-shadow: 0 8px 25px rgba(255,215,0,0.4); transition: all 0.3s;
-      border: 3px solid rgba(255,255,255,0.3); z-index: 1000;
-      display: flex; align-items: center; gap: 10px; backdrop-filter: blur(10px);
-    }
-    .experiments-btn:hover { transform: translateY(-5px) scale(1.05); box-shadow: 0 12px 35px rgba(255,215,0,0.6); background: linear-gradient(135deg, #FFD700, #FFA500); }
-    .experiments-btn .icon { font-size: 20px; animation: pulse 2s infinite; }
+    /* Shared by .avurudhu-btn .icon — keep even though the Experiments button is gone. */
     @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
-    .experiments-btn .label { font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
-
-    .messenger-btn {
-      position: fixed; bottom: 100px; right: 30px;
-      background: linear-gradient(135deg, rgba(0,132,255,0.9), rgba(102,126,234,0.9));
-      color: white; padding: 16px 28px; border-radius: 50px;
-      text-decoration: none; font-weight: 700; font-size: 15px;
-      box-shadow: 0 8px 25px rgba(0,132,255,0.4); transition: all 0.3s;
-      border: 3px solid rgba(255,255,255,0.3); z-index: 1000;
-      display: flex; align-items: center; gap: 10px; backdrop-filter: blur(10px);
-    }
-    .messenger-btn:hover { transform: translateY(-5px) scale(1.05); box-shadow: 0 12px 35px rgba(0,132,255,0.6); }
-    .messenger-btn .icon { font-size: 20px; animation: bounce 2s infinite; }
-    @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
-    .messenger-btn .label { font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .messenger-btn .badge { background: #ff3e3e; color: white; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; margin-left: 5px; animation: pulse 2s infinite; }
 
     .ads-manager-btn {
-      position: fixed; bottom: 170px; right: 30px;
+      position: fixed; bottom: 30px; right: 30px;
       background: linear-gradient(135deg, rgba(220,38,127,0.9), rgba(156,39,176,0.9));
       color: white; padding: 16px 28px; border-radius: 50px;
       text-decoration: none; font-weight: 700; font-size: 15px;
@@ -50,24 +24,9 @@
     @keyframes rotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     .ads-manager-btn .label { font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
 
-    /* ── Goals Manager Button ── */
-    .goals-manager-btn {
-      position: fixed; bottom: 240px; right: 30px;
-      background: linear-gradient(135deg, rgba(90,10,138,0.92), rgba(255,193,7,0.85));
-      color: white; padding: 16px 28px; border-radius: 50px;
-      font-weight: 700; font-size: 15px;
-      box-shadow: 0 8px 25px rgba(90,10,138,0.5); transition: all 0.3s;
-      border: 3px solid rgba(255,255,255,0.3); z-index: 1000;
-      display: flex; align-items: center; gap: 10px; backdrop-filter: blur(10px); cursor: pointer;
-    }
-    .goals-manager-btn:hover { transform: translateY(-5px) scale(1.05); box-shadow: 0 12px 35px rgba(90,10,138,0.7); }
-    .goals-manager-btn .icon { font-size: 20px; animation: goalPulse 2s ease-in-out infinite; }
-    @keyframes goalPulse { 0%, 100% { transform: scale(1) rotate(0deg); } 50% { transform: scale(1.15) rotate(5deg); } }
-    .goals-manager-btn .label { font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
-
     /* ── Avurudhu / Season Checklist Button ── */
     .avurudhu-btn {
-      position: fixed; bottom: 310px; right: 30px;
+      position: fixed; bottom: 100px; right: 30px;
       background: linear-gradient(135deg, rgba(255,105,135,0.9), rgba(255,165,0,0.9));
       color: white; padding: 16px 28px; border-radius: 50px;
       font-weight: 700; font-size: 15px;
@@ -78,20 +37,6 @@
     .avurudhu-btn:hover { transform: translateY(-5px) scale(1.05); box-shadow: 0 12px 35px rgba(255,105,135,0.6); }
     .avurudhu-btn .icon { font-size: 20px; animation: pulse 2s infinite; }
     .avurudhu-btn .label { font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
-
-    .cod-confirmation-btn {
-      position: fixed; bottom: 380px; right: 30px;
-      background: linear-gradient(135deg, rgba(16,185,129,0.9), rgba(5,150,105,0.9));
-      color: white; padding: 16px 28px; border-radius: 50px;
-      text-decoration: none; font-weight: 700; font-size: 15px;
-      box-shadow: 0 8px 25px rgba(16,185,129,0.4); transition: all 0.3s;
-      border: 3px solid rgba(255,255,255,0.3); z-index: 1000;
-      display: flex; align-items: center; gap: 10px; backdrop-filter: blur(10px); cursor: pointer;
-    }
-    .cod-confirmation-btn:hover { transform: translateY(-5px) scale(1.05); box-shadow: 0 12px 35px rgba(16,185,129,0.6); }
-    .cod-confirmation-btn .icon { font-size: 20px; animation: wiggle 2.5s ease-in-out infinite; }
-    @keyframes wiggle { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(-10deg); } 75% { transform: rotate(10deg); } }
-    .cod-confirmation-btn .label { font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
 
     /* ── Password Modal (shared) ── */
     .password-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); z-index: 10000; justify-content: center; align-items: center; }
@@ -140,13 +85,9 @@
     }
 
     @media (max-width: 768px) {
-      .experiments-btn, .messenger-btn, .ads-manager-btn, .goals-manager-btn, .avurudhu-btn, .cod-confirmation-btn { bottom: 20px; right: 20px; padding: 12px 20px; font-size: 13px; }
-      .messenger-btn { bottom: 80px; }
-      .ads-manager-btn { bottom: 140px; }
-      .goals-manager-btn { bottom: 200px; }
-      .avurudhu-btn { bottom: 260px; }
-      .cod-confirmation-btn { bottom: 320px; }
-      .experiments-btn .icon, .messenger-btn .icon, .ads-manager-btn .icon, .goals-manager-btn .icon, .avurudhu-btn .icon, .cod-confirmation-btn .icon { font-size: 18px; }
+      .ads-manager-btn, .avurudhu-btn { bottom: 20px; right: 20px; padding: 12px 20px; font-size: 13px; }
+      .avurudhu-btn { bottom: 80px; }
+      .ads-manager-btn .icon, .avurudhu-btn .icon { font-size: 18px; }
       .password-box { padding: 30px 20px; }
     }
   </style>
@@ -173,15 +114,10 @@
         </div>
       </a>
 
-      <a href="product-suggestion.html" class="option-card">
-        <div class="option-title">💡 Social Media Direct Order (Factory Pages)</div>
-        <div class="option-desc">Submit product suggestions for Facebook lead form campaigns with weekly submission tracking.</div>
-        <div class="option-features">
-          <div class="feature-item"><div class="feature-icon">✓</div><span>Submit product recommendations</span></div>
-          <div class="feature-item"><div class="feature-icon">✓</div><span>Track approval status</span></div>
-          <div class="feature-item"><div class="feature-icon">✓</div><span>View weekly targets and progress</span></div>
-        </div>
-      </a>
+      <!-- Social Media Direct Order (Factory Pages) card intentionally not surfaced
+           here: the page is still live at product-suggestion.html via its direct URL,
+           and its product_suggestions data still feeds the admin dashboard's Product
+           Suggestions tab, the DM Approvals source filter and the studio_calendar sync. -->
 
       <a href="content-calendar.html" class="option-card">
         <div class="option-title">📅 Content Calendar (Kapruka Official Page)</div>
@@ -295,37 +231,15 @@
   </div>
 
   <!-- Floating Buttons -->
-  <a href="experiments-dashboard.html" class="experiments-btn">
-    <span class="icon">🧪</span>
-    <span class="label">Experiments</span>
-  </a>
-
-  <a href="messenger-hub.html" class="messenger-btn">
-    <span class="icon">💬</span>
-    <span class="label">Messenger Hub</span>
-    <span class="badge">NEW</span>
-  </a>
-
   <div class="ads-manager-btn" onclick="openPasswordModal('ads')">
     <span class="icon">🎯</span>
     <span class="label">Ads Manager</span>
-  </div>
-
-  <!-- Goals Manager — between Ads Manager and Avurudhu -->
-  <div class="goals-manager-btn" onclick="openPasswordModal('goals')">
-    <span class="icon">🎯</span>
-    <span class="label">Goals Manager</span>
   </div>
 
   <!-- Avurudhu / Season Checklist -->
   <div class="avurudhu-btn" onclick="openPasswordModal('avurudhu')">
     <span class="icon">🌸</span>
     <span class="label">Season Checklist</span>
-  </div>
-
-  <div class="cod-confirmation-btn" onclick="openPasswordModal('cod')">
-    <span class="icon">✅</span>
-    <span class="label">COD Confirmation</span>
   </div>
 
   <!-- Country Picker Modal (International Gifting Price Checker) -->
@@ -356,18 +270,14 @@
   <script>
     const PASSWORDS = {
       ads:      'Fari',
-      cod:      'Chamudhi',
       daraz:    '8055',
-      avurudhu: '207',
-      goals:    '207'
+      avurudhu: '207'
     };
 
     const URLS = {
       ads:      'https://docs.google.com/forms/d/e/1FAIpQLSfGSObGAIJz46oQd0xN3oISjS46SEkFtL0_ZGkIfh6ansvqPQ/viewform',
-      cod:      'https://script.google.com/macros/s/AKfycbwA7rio-Gs2woBvLWKmq9KR_z1SLLV1O5d9apeShpfD4r8JdpaEI9g2pjBmyl1vK4DRDQ/exec',
       daraz:    'https://daraz-agent.onrender.com',
-      avurudhu: 'https://kaprukadm.github.io/kapruka-campaign-portal/season_checklist.html',
-      goals:    'kapruka_v4.html'
+      avurudhu: 'https://kaprukadm.github.io/kapruka-campaign-portal/season_checklist.html'
     };
 
     // Add another entry here when a new country goes live — see
@@ -403,10 +313,8 @@
       currentSection = section;
       const titles = {
         ads:      '🎯 Ads Manager Access',
-        cod:      '✅ COD Confirmation Access',
         daraz:    '🛒 Daraz Market Agent',
-        avurudhu: '🌸 Season Checklist',
-        goals:    '🎯 Goals Manager Access'
+        avurudhu: '🌸 Season Checklist'
       };
       document.getElementById('modalTitle').textContent = titles[section] || '🔒 Access Required';
       document.getElementById('modalSubtitle').textContent = 'Enter password to continue';
