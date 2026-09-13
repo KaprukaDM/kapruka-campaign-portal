@@ -33,6 +33,9 @@
 //   META_IG_USER_ID        — Instagram Business Account ID (auto-discovered
 //                            if unset).
 //   TARGET_ADSET_ID        — defaults to 52816670204854 (given by the team).
+//                            If that ad set's flight has ended, the newest
+//                            live ad set in the SAME campaign is used instead
+//                            (see resolveTargetAdSetId).
 //   CREATIVE_SHEET_ID      — defaults to the Kapruka content-calendar sheet.
 //   CREATIVE_SHEET_GID     — defaults to the tab given by the team.
 //   KAPRUKA_HOME_URL       — defaults to https://www.kapruka.com
@@ -354,20 +357,62 @@ async function graphPost(path, body) {
   return json;
 }
 
-// Read-only preflight on the destination ad set. Every ad this job creates
-// lands in TARGET_ADSET_ID, so if that ad set (or its campaign) is paused,
-// archived, or past its end date, every single post fails with the same
-// opaque Meta error — which is exactly what happened for a week. Logging the
-// ad set's real state up front makes that obvious instead of invisible.
-async function describeTargetAdSet() {
-  const adset = await graphGet(TARGET_ADSET_ID, {
-    fields: 'id,name,status,effective_status,start_time,end_time,is_dynamic_creative,'
-      + 'optimization_goal,billing_event,destination_type,daily_budget,lifetime_budget,'
-      + 'campaign{id,name,objective,status,effective_status,special_ad_categories,'
-      + 'buying_type,is_skadnetwork_attribution}',
+// ── Where new ads actually go ────────────────────────────────────────────
+// TARGET_ADSET_ID was hardcoded to one lifetime-budget ad set with a fixed
+// 30-day flight ("...| $500/30d", ended 2026-09-03). Meta refuses to add an
+// ad to an ad set whose end_time has passed, and reports it only as
+// "Invalid parameter" — so the moment that flight ended, EVERY push failed,
+// with nothing in the message to say why. Rather than hardcode another ID
+// that expires next month, resolve the destination at run time: use the
+// configured ad set if it can still take ads, otherwise the newest sibling
+// ad set in the SAME campaign that can.
+const ADSET_RESOLVE_FIELDS =
+  'id,name,status,effective_status,start_time,end_time,is_dynamic_creative,'
+  + 'optimization_goal,billing_event,destination_type,daily_budget,lifetime_budget';
+const DEAD_STATUSES = ['DELETED', 'ARCHIVED'];
+
+// Why this ad set can't take a new ad, or null if it can. PAUSED is fine —
+// Meta accepts new ads into a paused ad set, they just don't deliver until
+// it's switched back on, which is a human decision, not an error.
+function adSetRejectionReason(adset, now = Date.now()) {
+  const status = adset.effective_status || adset.status;
+  if (DEAD_STATUSES.includes(status)) return `is ${status}`;
+  if (adset.end_time && new Date(adset.end_time).getTime() <= now) {
+    return `finished its flight on ${adset.end_time} (Meta rejects new ads in an ended ad set)`;
+  }
+  return null;
+}
+
+async function resolveTargetAdSetId() {
+  const configured = await graphGet(TARGET_ADSET_ID, {
+    fields: `${ADSET_RESOLVE_FIELDS},campaign{id,name,objective,status,effective_status,special_ad_categories,buying_type}`,
   });
-  console.log('Target ad set:', JSON.stringify(adset));
-  return adset;
+  console.log('Configured ad set:', JSON.stringify(configured));
+
+  const reason = adSetRejectionReason(configured);
+  if (!reason) return configured.id;
+
+  const campaign = configured.campaign;
+  console.warn(`⚠ Ad set ${configured.id} ("${configured.name}") ${reason}.`);
+  if (!campaign?.id) {
+    throw new Error(`Target ad set ${configured.id} ${reason}, and its campaign could not be read to find a replacement. Point TARGET_ADSET_ID at a live ad set.`);
+  }
+
+  const siblings = await graphGet(`${campaign.id}/adsets`, { fields: ADSET_RESOLVE_FIELDS, limit: 100 });
+  const usable = (siblings.data || [])
+    .filter(a => !adSetRejectionReason(a))
+    .sort((a, b) => new Date(b.start_time || 0) - new Date(a.start_time || 0));
+
+  if (!usable.length) {
+    throw new Error(
+      `Target ad set ${configured.id} ${reason}, and campaign "${campaign.name}" (${campaign.id}) has no other ad set that can accept new ads. `
+      + 'Create a new ad set (or extend this one\'s end date) in that campaign, then re-run — or set TARGET_ADSET_ID to the ad set you want.'
+    );
+  }
+
+  const picked = usable[0];
+  console.warn(`→ Falling back to the newest live ad set in the same campaign: ${picked.id} ("${picked.name}", ends ${picked.end_time || 'never'}).`);
+  return picked.id;
 }
 
 async function findInstagramAccountId() {
@@ -747,11 +792,15 @@ async function buildCreativeFromExistingPost(group, igUserId) {
   throw new Error('Group has neither an FB post_id nor a usable IG post_id — cannot build a reused-post creative.');
 }
 
+// Set by resolveTargetAdSetId() at the start of the run — may differ from
+// TARGET_ADSET_ID when the configured ad set's flight has ended.
+let activeAdSetId = TARGET_ADSET_ID;
+
 async function createAd(creativeId, name) {
-  if (DRY_RUN) { console.log(`  [dry-run] would create ad "${name}" in ad set ${TARGET_ADSET_ID} with creative ${creativeId}, status ACTIVE`); return { id: '[dry-run]' }; }
+  if (DRY_RUN) { console.log(`  [dry-run] would create ad "${name}" in ad set ${activeAdSetId} with creative ${creativeId}, status ACTIVE`); return { id: '[dry-run]' }; }
   return graphPost(`${AD_ACCOUNT_ID}/ads`, {
     name,
-    adset_id: TARGET_ADSET_ID,
+    adset_id: activeAdSetId,
     creative: { creative_id: creativeId },
     status: 'ACTIVE',
   });
@@ -791,10 +840,10 @@ async function main() {
 
   console.log(`Fetched the last ${posts.length} synced posts. Sheet rows: ${sheetRows.length}.`);
 
-  if (ADS_ACCESS_TOKEN) {
-    try { await describeTargetAdSet(); }
-    catch (e) { console.warn(`Could not read target ad set ${TARGET_ADSET_ID}: ${e.message}`); }
-  }
+  // Resolve the destination before building a single creative — an ended or
+  // archived ad set fails every push identically, and there's no point
+  // uploading 19 videos to find that out one opaque error at a time.
+  if (ADS_ACCESS_TOKEN) activeAdSetId = await resolveTargetAdSetId();
 
   const grouped = groupPosts(posts);
   const winners = findWinners(grouped).filter(w => !alreadyPushed.has(w.key));
@@ -831,7 +880,7 @@ async function main() {
         matched_content_id: built.contentId || null,
         cta_link: built.ctaLink,
         ad_id: ad.id,
-        adset_id: TARGET_ADSET_ID,
+        adset_id: activeAdSetId,
       });
       console.log(`  ✅ Created ad ${ad.id} (${built.source})`);
       results.created++;

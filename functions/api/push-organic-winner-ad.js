@@ -47,7 +47,9 @@
 //    META_PAGE_ID            — Facebook Page ID
 //  Optional:
 //    META_IG_USER_ID         — Instagram Business Account ID (auto-discovered if unset)
-//    TARGET_ADSET_ID         — defaults to 52816670204854
+//    TARGET_ADSET_ID         — defaults to 52816670204854. If that ad set's
+//                              flight has ended, the newest live ad set in
+//                              the SAME campaign is used (resolveTargetAdSetId).
 //    KAPRUKA_HOME_URL        — defaults to https://www.kapruka.com
 //
 //  Ads are created with status ACTIVE — clicking "Push Now" spends the ad
@@ -200,13 +202,32 @@ function extractDriveFileId(driveUrl) {
 }
 
 // ── Meta Graph API helpers ───────────────────────────────────────────────
+// Meta's top-level error.message is often useless on its own ("Invalid
+// parameter") — the real reason lives in error_user_title/error_user_msg,
+// error_subcode and error_data.blame_field_specs. Dropping those is what
+// turned a week of failed pushes into an unreadable "Invalid parameter"
+// under every row in the dashboard's queue.
+function formatGraphError(method, path, error) {
+  const parts = [error.message || 'Unknown Graph API error'];
+  if (error.error_user_title) parts.push(error.error_user_title);
+  if (error.error_user_msg) parts.push(error.error_user_msg);
+  const codes = [
+    error.code !== undefined ? `code ${error.code}` : null,
+    error.error_subcode !== undefined ? `subcode ${error.error_subcode}` : null,
+  ].filter(Boolean);
+  if (codes.length) parts.push(`(${codes.join(', ')})`);
+  const blame = error.error_data?.blame_field_specs;
+  if (blame) parts.push(`blame_field_specs: ${JSON.stringify(blame)}`);
+  return `${method} ${path}: ${parts.join(' — ')}`;
+}
+
 async function graphGet(env, path, params, token = env.META_ADS_ACCESS_TOKEN) {
   const url = new URL(`https://graph.facebook.com/${GRAPH_VERSION}/${path}`);
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
   url.searchParams.set('access_token', token);
   const res = await fetch(url);
   const body = await res.json();
-  if (body.error) throw new Error(`GET ${path}: ${body.error.message}`);
+  if (body.error) throw new Error(formatGraphError('GET', path, body.error));
   return body;
 }
 
@@ -217,8 +238,66 @@ async function graphPost(env, path, payload) {
     body: JSON.stringify({ ...payload, access_token: env.META_ADS_ACCESS_TOKEN }),
   });
   const body = await res.json();
-  if (body.error) throw new Error(`POST ${path}: ${body.error.message}`);
+  if (body.error) throw new Error(formatGraphError('POST', path, body.error));
   return body;
+}
+
+// ── Where new ads actually go ────────────────────────────────────────────
+// The default ad set (52816670204854) is a lifetime-budget ad set with a
+// fixed 30-day flight that ended 2026-09-03. Meta refuses to add an ad to an
+// ad set whose end_time has passed and says only "Invalid parameter", so
+// from that date every "Push Now" click failed. Resolve the destination per
+// request instead of trusting a hardcoded ID that expires each month: keep
+// the configured ad set if it can still take ads, otherwise use the newest
+// sibling ad set in the SAME campaign that can.
+// Mirrors resolveTargetAdSetId() in scripts/weekly-organic-winners-to-ads.js
+// — no shared module exists across a Workers isolate and a Node script, so
+// the two copies must be kept in sync by hand.
+const ADSET_RESOLVE_FIELDS =
+  'id,name,status,effective_status,start_time,end_time,is_dynamic_creative,'
+  + 'optimization_goal,billing_event,destination_type,daily_budget,lifetime_budget';
+const DEAD_STATUSES = ['DELETED', 'ARCHIVED'];
+
+// Why this ad set can't take a new ad, or null if it can. PAUSED is fine —
+// Meta accepts new ads into a paused ad set, they just don't deliver until
+// someone switches it back on.
+function adSetRejectionReason(adset, now = Date.now()) {
+  const status = adset.effective_status || adset.status;
+  if (DEAD_STATUSES.includes(status)) return `is ${status}`;
+  if (adset.end_time && new Date(adset.end_time).getTime() <= now) {
+    return `finished its flight on ${adset.end_time} (Meta rejects new ads in an ended ad set)`;
+  }
+  return null;
+}
+
+async function resolveTargetAdSetId(env, configuredId) {
+  const configured = await graphGet(env, configuredId, {
+    fields: `${ADSET_RESOLVE_FIELDS},campaign{id,name}`,
+  });
+
+  const reason = adSetRejectionReason(configured);
+  if (!reason) return configured.id;
+
+  const campaign = configured.campaign;
+  console.warn(`Ad set ${configured.id} ("${configured.name}") ${reason}.`);
+  if (!campaign?.id) {
+    throw new Error(`The target ad set ${configured.id} ${reason}, and its campaign couldn't be read to find a replacement. Point TARGET_ADSET_ID at a live ad set in Cloudflare Pages settings.`);
+  }
+
+  const siblings = await graphGet(env, `${campaign.id}/adsets`, { fields: ADSET_RESOLVE_FIELDS, limit: 100 });
+  const usable = (siblings.data || [])
+    .filter(a => !adSetRejectionReason(a))
+    .sort((a, b) => new Date(b.start_time || 0) - new Date(a.start_time || 0));
+
+  if (!usable.length) {
+    throw new Error(
+      `The target ad set "${configured.name}" ${reason}, and campaign "${campaign.name}" has no other ad set that can accept new ads. `
+      + 'Create a new ad set (or extend this one\'s end date) in that campaign in Ads Manager, then push again.'
+    );
+  }
+
+  console.warn(`Falling back to the newest live ad set in the same campaign: ${usable[0].id} ("${usable[0].name}").`);
+  return usable[0].id;
 }
 
 async function findInstagramAccountId(env) {
@@ -564,7 +643,10 @@ export async function onRequestPost(context) {
     // what's auto-queued/auto-run by the Monday cron — it just isn't a
     // gate on a human's explicit one-off click here.
 
-    const adsetId = env.TARGET_ADSET_ID || '52816670204854';
+    // Resolve the destination ad set BEFORE building any creative: an ended
+    // ad set rejects every ad identically, and there's no point spending 25s
+    // uploading a video to Meta only to be told "Invalid parameter" after.
+    const adsetId = await resolveTargetAdSetId(env, env.TARGET_ADSET_ID || '52816670204854');
     const googleToken = await getGoogleAccessToken(env);
     const [sheetRows, igUserId] = await Promise.all([
       sheetsGetCsvRows(env, googleToken).catch(e => { console.warn('Sheet read failed, will fall back to reused-post:', e.message); return []; }),
