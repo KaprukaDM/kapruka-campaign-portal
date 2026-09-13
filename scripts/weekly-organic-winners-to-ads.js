@@ -62,12 +62,17 @@
 //     script requests it anyway; verify the resulting ad actually shows the
 //     button before relying on it.
 //
-// Pass --dry-run (or DRY_RUN=1) to log everything this would do — sheet
-// matches, extracted links, which posts would get ads — without calling any
-// Meta write endpoints or touching Supabase. Strongly recommended for the
+// Pass --dry-run (or DRY_RUN=1/true/yes) to log everything this would do —
+// sheet matches, extracted links, which posts would get ads — without calling
+// any Meta write endpoints or touching Supabase. Strongly recommended for the
 // first run.
+//
+// The workflow's "Dry run" checkbox sends the STRING 'true', not '1'. The old
+// `=== '1'` check silently ignored that, so ticking the box still ran live and
+// created real ads — accept the truthy spellings GitHub actually sends.
 
-const DRY_RUN = process.argv.includes('--dry-run') || process.env.DRY_RUN === '1';
+const DRY_RUN = process.argv.includes('--dry-run')
+  || ['1', 'true', 'yes', 'on'].includes(String(process.env.DRY_RUN || '').trim().toLowerCase());
 
 const SUPABASE_URL = 'https://ivllhheqqiseagmctfyp.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml2bGxoaGVxcWlzZWFnbWN0ZnlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1NzQzMzksImV4cCI6MjA4NDE1MDMzOX0.OnkYNACtdknKDY2KqLfiGN0ORXpKaW906fD0TtSJlIk';
@@ -308,13 +313,32 @@ function extractDriveFileId(driveUrl) {
 // GRAPH API HELPERS
 // ═══════════════════════════════════════════════════════════════
 
+// Meta's top-level error.message is often useless on its own ("Invalid
+// parameter") — the actual reason lives in error_user_title/error_user_msg,
+// error_subcode and error_data.blame_field_specs. Dropping those turned a
+// whole week of failed ad pushes into an unreadable "Invalid parameter" in
+// both the cron log and the dashboard's error toast, so always keep them.
+function formatGraphError(method, path, error) {
+  const parts = [error.message || 'Unknown Graph API error'];
+  if (error.error_user_title) parts.push(error.error_user_title);
+  if (error.error_user_msg) parts.push(error.error_user_msg);
+  const codes = [
+    error.code !== undefined ? `code ${error.code}` : null,
+    error.error_subcode !== undefined ? `subcode ${error.error_subcode}` : null,
+  ].filter(Boolean);
+  if (codes.length) parts.push(`(${codes.join(', ')})`);
+  const blame = error.error_data?.blame_field_specs;
+  if (blame) parts.push(`blame_field_specs: ${JSON.stringify(blame)}`);
+  return `${method} ${path}: ${parts.join(' — ')}`;
+}
+
 async function graphGet(path, params, token = ADS_ACCESS_TOKEN) {
   const url = new URL(`https://graph.facebook.com/${GRAPH_VERSION}/${path}`);
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
   url.searchParams.set('access_token', token);
   const res = await fetch(url);
   const json = await res.json();
-  if (json.error) throw new Error(`GET ${path}: ${json.error.message}`);
+  if (json.error) throw new Error(formatGraphError('GET', path, json.error));
   return json;
 }
 
@@ -326,8 +350,24 @@ async function graphPost(path, body) {
     body: JSON.stringify({ ...body, access_token: ADS_ACCESS_TOKEN }),
   });
   const json = await res.json();
-  if (json.error) throw new Error(`POST ${path}: ${json.error.message}`);
+  if (json.error) throw new Error(formatGraphError('POST', path, json.error));
   return json;
+}
+
+// Read-only preflight on the destination ad set. Every ad this job creates
+// lands in TARGET_ADSET_ID, so if that ad set (or its campaign) is paused,
+// archived, or past its end date, every single post fails with the same
+// opaque Meta error — which is exactly what happened for a week. Logging the
+// ad set's real state up front makes that obvious instead of invisible.
+async function describeTargetAdSet() {
+  const adset = await graphGet(TARGET_ADSET_ID, {
+    fields: 'id,name,status,effective_status,start_time,end_time,is_dynamic_creative,'
+      + 'optimization_goal,billing_event,destination_type,daily_budget,lifetime_budget,'
+      + 'campaign{id,name,objective,status,effective_status,special_ad_categories,'
+      + 'buying_type,is_skadnetwork_attribution}',
+  });
+  console.log('Target ad set:', JSON.stringify(adset));
+  return adset;
 }
 
 async function findInstagramAccountId() {
@@ -750,6 +790,11 @@ async function main() {
   ]);
 
   console.log(`Fetched the last ${posts.length} synced posts. Sheet rows: ${sheetRows.length}.`);
+
+  if (ADS_ACCESS_TOKEN) {
+    try { await describeTargetAdSet(); }
+    catch (e) { console.warn(`Could not read target ad set ${TARGET_ADSET_ID}: ${e.message}`); }
+  }
 
   const grouped = groupPosts(posts);
   const winners = findWinners(grouped).filter(w => !alreadyPushed.has(w.key));
