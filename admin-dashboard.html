@@ -1687,6 +1687,19 @@
             🏆 Winners (from the last 100 synced posts) that haven't been pushed to an ad yet, plus 🎯 posted content that was High priority + Promotion Time Sensitive, which is queued here automatically the moment it's marked Posted. Items stay on this list until pushed or removed, regardless of how much time passes.
             <span id="queuedAdsNote"></span>
           </div>
+
+          <!-- Destination picker. The old behaviour hardcoded one ad set ID;
+               when that ad set's flight ended, Meta refused every ad and there
+               was no way to point elsewhere without a code change. -->
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px;padding:12px;background:#F7F4FB;border:1px solid #E3DAF0;border-radius:8px;">
+            <label for="adDestinationSelect" style="font-size:13px;font-weight:600;color:#5e3a8e;white-space:nowrap;">Push into ad set</label>
+            <select id="adDestinationSelect" onchange="onAdDestinationChange()"
+                    style="flex:1;min-width:260px;max-width:560px;padding:7px 10px;font-size:13px;border:1px solid #ddd;border-radius:6px;">
+              <option value="">Loading ad sets…</option>
+            </select>
+            <button class="btn" style="padding:6px 12px;font-size:12px;background:#eee;color:#666;" onclick="loadAdDestinations(true)">🔄</button>
+            <div id="adDestinationNote" style="flex-basis:100%;font-size:12px;color:#666;"></div>
+          </div>
           <div class="table-container">
             <table>
               <thead>
@@ -2382,9 +2395,23 @@
     }
 
     // Escapes text for safe insertion into innerHTML while keeping it as literal text
+    // Quotes MUST be escaped, not just angle brackets: almost every use of
+    // this is inside a double-quoted HTML attribute built by string
+    // concatenation. A Facebook caption containing a " (e.g. the post
+    // '"Sharing is caring" has limits.') used to terminate
+    // data-group-key="…" early, so the Push Now button for that row read back
+    // an empty group key and the push failed with "group_key is required" —
+    // a separate failure from the expired-ad-set one, on exactly the rows
+    // whose caption happens to contain a quote. &quot;/&#39; render as the
+    // plain characters in text content too, so this is safe everywhere.
     function escapeHtml(str) {
       if (str === null || str === undefined) return '';
-      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -4584,6 +4611,7 @@
       const tbody = document.getElementById('queuedAdsTable');
       if (!card || !tbody) return;
       card.style.display = '';
+      loadAdDestinations(); // fire-and-forget; the table doesn't wait on it
 
       let pushedKeys = new Set();
       try {
@@ -4818,6 +4846,82 @@
       }
     }
 
+    // ─────────────────────────────────────────────────────────────
+    // DESTINATION AD SET PICKER
+    // ─────────────────────────────────────────────────────────────
+    // Every push used to land in one hardcoded ad set (52816670204854). That
+    // ad set was a 30-day flight; once it ended on 2026-09-03 Meta rejected
+    // every ad into it ("Ad set has ended", subcode 3858750) and the whole
+    // queue became unpushable with no way to redirect it from the UI. The
+    // server still has a fallback, but the destination is now an explicit,
+    // remembered choice — so the next time a flight ends this is a dropdown
+    // change, not a code change.
+    const AD_DESTINATION_STORAGE_KEY = 'weeklyAdPushAdSetId';
+    let adDestinations = [];
+
+    function selectedAdSet() {
+      const id = document.getElementById('adDestinationSelect')?.value || '';
+      return adDestinations.find(a => a.id === id) || null;
+    }
+
+    function onAdDestinationChange() {
+      const chosen = selectedAdSet();
+      try {
+        if (chosen) localStorage.setItem(AD_DESTINATION_STORAGE_KEY, chosen.id);
+        else localStorage.removeItem(AD_DESTINATION_STORAGE_KEY);
+      } catch (e) { /* private mode — the choice just won't persist */ }
+
+      const note = document.getElementById('adDestinationNote');
+      if (!note) return;
+      if (!chosen) {
+        note.innerHTML = 'No ad set chosen — pushes will use the server default, which fails if its flight has ended.';
+        note.style.color = '#d32f2f';
+      } else if (!chosen.willDeliver) {
+        note.innerHTML = `Ads will be <strong>created</strong> in “${escapeHtml(chosen.name)}” but won’t spend or deliver until that ad set/campaign is switched on in Ads Manager (currently ${escapeHtml(chosen.effectiveStatus)}).`;
+        note.style.color = '#E65100';
+      } else {
+        note.innerHTML = `Live ad set — pushing spends “${escapeHtml(chosen.campaignName || chosen.name)}” budget immediately.`;
+        note.style.color = '#1B5E20';
+      }
+    }
+
+    async function loadAdDestinations(force) {
+      const select = document.getElementById('adDestinationSelect');
+      const note = document.getElementById('adDestinationNote');
+      if (!select) return;
+      if (adDestinations.length && !force) return;
+
+      select.innerHTML = '<option value="">Loading ad sets…</option>';
+      try {
+        const res = await fetch('/api/push-organic-winner-ad');
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.error || `Request failed (${res.status})`);
+
+        adDestinations = data.adSets || [];
+        if (!adDestinations.length) {
+          select.innerHTML = '<option value="">No ad set in this account can accept new ads</option>';
+          if (note) { note.textContent = 'Create an ad set (or extend an ended one) in Ads Manager, then hit 🔄.'; note.style.color = '#d32f2f'; }
+          return;
+        }
+
+        let remembered = null;
+        try { remembered = localStorage.getItem(AD_DESTINATION_STORAGE_KEY); } catch (e) {}
+        const preferred = adDestinations.find(a => a.id === remembered)
+          || (data.defaultIsUsable ? adDestinations.find(a => a.id === data.defaultAdSetId) : null)
+          || adDestinations.find(a => a.willDeliver)
+          || adDestinations[0];
+
+        select.innerHTML = adDestinations.map(a => {
+          const label = `${a.willDeliver ? '🟢' : '⏸'} ${a.name}${a.campaignName ? ' — ' + a.campaignName : ''}`;
+          return `<option value="${escapeHtml(a.id)}"${a.id === preferred.id ? ' selected' : ''}>${escapeHtml(label)}</option>`;
+        }).join('');
+        onAdDestinationChange();
+      } catch (e) {
+        select.innerHTML = '<option value="">Could not load ad sets</option>';
+        if (note) { note.textContent = 'Could not load ad sets: ' + e.message; note.style.color = '#d32f2f'; }
+      }
+    }
+
     let queuedWinnersByKey = {};
 
     async function removeQueuedWinner(btn) {
@@ -4844,8 +4948,19 @@
       }
     }
 
+    // Names the ad set actually selected rather than a hardcoded ID, and says
+    // plainly whether it will spend right now or sit paused.
+    function pushConfirmText(count) {
+      const chosen = selectedAdSet();
+      const what = count === 1 ? 'a LIVE ad' : `${count} LIVE ad(s), one at a time,`;
+      if (!chosen) return `This creates ${what} using the server's default ad set. Continue?`;
+      return chosen.willDeliver
+        ? `This creates ${what} in "${chosen.name}" with real budget, starting immediately. Continue?`
+        : `This creates ${what} in "${chosen.name}". That ad set is ${chosen.effectiveStatus}, so nothing spends or delivers until it's switched on in Ads Manager. Continue?`;
+    }
+
     async function pushOrganicWinnerAd(btn) {
-      if (!confirm('This creates a LIVE ad in ad set 52816670204854 with real budget, starting immediately. Continue?')) return;
+      if (!confirm(pushConfirmText(1))) return;
       await doPushWinner(btn);
     }
 
@@ -4865,12 +4980,13 @@
         const res = await fetch('/api/push-organic-winner-ad', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ group_key: groupKey }),
+          body: JSON.stringify({ group_key: groupKey, adset_id: selectedAdSet()?.id || undefined }),
         });
         const data = await res.json();
         if (!res.ok || data.error) throw new Error(data.error || `Request failed (${res.status})`);
 
         actionCell.innerHTML = `<span class="badge" style="background:#E8F5E9;color:#1B5E20;">✅ Ad ${escapeHtml(data.adId)}</span>`;
+        if (data.warnings && data.warnings.length) console.warn('Ad created with warnings:', data.warnings);
         document.getElementById('queuedAdsCount').textContent = String(Math.max(0, Number(document.getElementById('queuedAdsCount').textContent) - 1));
         setTimeout(() => { row.style.transition = 'opacity 0.4s'; row.style.opacity = '0'; setTimeout(() => row.remove(), 400); }, 1500);
         return true;
@@ -4886,7 +5002,7 @@
       const buttons = Array.from(document.querySelectorAll('#queuedAdsTable button[onclick^="pushOrganicWinnerAd"]'));
       if (buttons.length === 0) { alert('Nothing queued to push.'); return; }
 
-      if (!confirm(`This creates ${buttons.length} LIVE ad(s) in ad set 52816670204854 with real budget, one at a time, starting immediately. Continue?`)) return;
+      if (!confirm(pushConfirmText(buttons.length))) return;
 
       const allBtn = document.getElementById('pushAllWinnersBtn');
       allBtn.disabled = true;
@@ -4917,7 +5033,7 @@
     // The row itself isn't removed on success (this table is a running
     // history, not a queue) — its Actions cell just swaps to the ad badge.
     async function pushPerfRowToAds(btn) {
-      if (!confirm('This creates a LIVE ad in ad set 52816670204854 with real budget, starting immediately. Continue?')) return;
+      if (!confirm(pushConfirmText(1))) return;
 
       const groupKey = btn.dataset.groupKey;
       const cell = btn.parentElement;
@@ -4928,7 +5044,7 @@
         const res = await fetch('/api/push-organic-winner-ad', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ group_key: groupKey }),
+          body: JSON.stringify({ group_key: groupKey, adset_id: selectedAdSet()?.id || undefined }),
         });
         const data = await res.json();
         if (!res.ok || data.error) throw new Error(data.error || `Request failed (${res.status})`);

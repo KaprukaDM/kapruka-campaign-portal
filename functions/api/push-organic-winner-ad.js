@@ -47,10 +47,16 @@
 //    META_PAGE_ID            — Facebook Page ID
 //  Optional:
 //    META_IG_USER_ID         — Instagram Business Account ID (auto-discovered if unset)
-//    TARGET_ADSET_ID         — defaults to 52816670204854. If that ad set's
-//                              flight has ended, the newest live ad set in
-//                              the SAME campaign is used (resolveTargetAdSetId).
+//    TARGET_ADSET_ID         — fallback destination only. The dashboard now
+//                              sends the ad set the user picked (see
+//                              onRequestGet below); this is what's used when
+//                              nothing was picked, e.g. the first load.
+//                              Defaults to 52816670204854.
 //    KAPRUKA_HOME_URL        — defaults to https://www.kapruka.com
+//
+//  GET on this same route lists the ad sets in the account that can actually
+//  accept a new ad, so the dashboard can offer a destination picker instead
+//  of everyone being stuck behind one hardcoded ID that expires monthly.
 //
 //  Ads are created with status ACTIVE — clicking "Push Now" spends the ad
 //  set's budget immediately, same as the Monday cron, per the team's
@@ -243,13 +249,18 @@ async function graphPost(env, path, payload) {
 }
 
 // ── Where new ads actually go ────────────────────────────────────────────
-// The default ad set (52816670204854) is a lifetime-budget ad set with a
-// fixed 30-day flight that ended 2026-09-03. Meta refuses to add an ad to an
-// ad set whose end_time has passed and says only "Invalid parameter", so
-// from that date every "Push Now" click failed. Resolve the destination per
-// request instead of trusting a hardcoded ID that expires each month: keep
-// the configured ad set if it can still take ads, otherwise use the newest
-// sibling ad set in the SAME campaign that can.
+// The old default ad set (52816670204854) was a lifetime-budget ad set with
+// a fixed 30-day flight that ended 2026-09-03. Meta refuses to add an ad to
+// an ad set whose end_time has passed — confirmed live, subcode 3858750,
+// "Ad set {id} expired on Sep 3, 2026" — and that campaign has exactly one
+// ad set, so there was no sibling to fall back to and every single "Push
+// Now" click died here before any creative was even built.
+//
+// The underlying defect was never that one ID: it's that the destination was
+// only changeable by editing code or a Cloudflare secret, so it rots the day
+// any flighted ad set ends. The dashboard now sends the ad set a human
+// picked (listAdSetsThatCanAcceptAds below backs that picker) and this
+// resolver is only the fallback for when nothing was picked.
 // Mirrors resolveTargetAdSetId() in scripts/weekly-organic-winners-to-ads.js
 // — no shared module exists across a Workers isolate and a Node script, so
 // the two copies must be kept in sync by hand.
@@ -257,6 +268,35 @@ const ADSET_RESOLVE_FIELDS =
   'id,name,status,effective_status,start_time,end_time,is_dynamic_creative,'
   + 'optimization_goal,billing_event,destination_type,daily_budget,lifetime_budget';
 const DEAD_STATUSES = ['DELETED', 'ARCHIVED'];
+
+// An ad set can accept an ad while still being paused (or sitting in a paused
+// campaign) — the ad is created fine, it just doesn't deliver until someone
+// switches it on. That distinction matters to whoever is clicking Push, so
+// it's reported separately from "can this take an ad at all".
+function adSetWillDeliver(adset) {
+  return (adset.effective_status || adset.status) === 'ACTIVE';
+}
+
+// Every ad set in the account that Meta would accept a new ad into, newest
+// flight first. Powers the dashboard's destination picker.
+async function listAdSetsThatCanAcceptAds(env) {
+  const res = await graphGet(env, `${env.META_AD_ACCOUNT_ID}/adsets`, {
+    fields: `${ADSET_RESOLVE_FIELDS},campaign{id,name,objective,effective_status}`,
+    limit: 500,
+  });
+  return (res.data || [])
+    .filter(a => !adSetRejectionReason(a))
+    .sort((a, b) => new Date(b.start_time || 0) - new Date(a.start_time || 0))
+    .map(a => ({
+      id: a.id,
+      name: a.name,
+      campaignName: a.campaign?.name || '',
+      objective: a.campaign?.objective || '',
+      effectiveStatus: a.effective_status || a.status,
+      endTime: a.end_time || null,
+      willDeliver: adSetWillDeliver(a),
+    }));
+}
 
 // Why this ad set can't take a new ad, or null if it can. PAUSED is fine —
 // Meta accepts new ads into a paused ad set, they just don't deliver until
@@ -291,19 +331,18 @@ async function resolveTargetAdSetId(env, configuredId) {
 
   if (!usable.length) {
     // Nothing in this campaign can take an ad. Don't silently spend budget in
-    // some unrelated campaign — but do name the live ad sets elsewhere in the
-    // account, so the dashboard's error text says exactly what to point at.
+    // some unrelated campaign — point at the dashboard's own picker instead,
+    // and name a few valid destinations so the message is actionable even if
+    // the picker failed to load.
     let elsewhere = '';
     try {
-      const all = await graphGet(env, `${env.META_AD_ACCOUNT_ID}/adsets`, { fields: `${ADSET_RESOLVE_FIELDS},campaign{id,name}`, limit: 200 });
-      const live = (all.data || []).filter(a => !adSetRejectionReason(a));
+      const live = await listAdSetsThatCanAcceptAds(env);
       elsewhere = live.length
-        ? ` Live ad sets you could use instead: ${live.slice(0, 5).map(a => `${a.id} "${a.name}"`).join('; ')}.`
+        ? ` Pick one from the "Push into" dropdown above this table — e.g. ${live.slice(0, 3).map(a => `${a.id} "${a.name}"`).join('; ')}.`
         : ' No ad set anywhere in this ad account can currently accept new ads.';
     } catch (e) { /* the primary message is already actionable without this */ }
     throw new Error(
-      `The target ad set "${configured.name}" ${reason}, and campaign "${campaign.name}" has no other ad set that can accept new ads. `
-      + 'Create a new ad set (or extend this one\'s end date) in that campaign in Ads Manager, then push again.'
+      `The default ad set "${configured.name}" ${reason}, and campaign "${campaign.name}" has no other ad set that can accept new ads.`
       + elsewhere
     );
   }
@@ -619,16 +658,44 @@ async function buildCreativeFromExistingPost(env, group, igUserId) {
   throw new Error('Group has neither an FB post_id nor a usable IG post_id.');
 }
 
-// ── Main handler ────────────────────────────────────────────────────────
+// ── Main handlers ────────────────────────────────────────────────────────
+function missingSecret(env) {
+  for (const required of ['META_ADS_ACCESS_TOKEN', 'META_AD_ACCOUNT_ID', 'META_PAGE_ID']) {
+    if (!env[required]) return `Server is missing the ${required} secret — ask an admin to configure it in Cloudflare Pages settings.`;
+  }
+  return null;
+}
+
+// GET /api/push-organic-winner-ad — destinations for the dashboard's picker.
+// Read-only: lists the ad sets Meta would accept a new ad into, and flags the
+// configured default so the UI can preselect it when it's still valid.
+export async function onRequestGet(context) {
+  const { env } = context;
+  try {
+    const missing = missingSecret(env);
+    if (missing) return json({ error: missing }, 500);
+
+    const defaultAdSetId = env.TARGET_ADSET_ID || '52816670204854';
+    const adSets = await listAdSetsThatCanAcceptAds(env);
+    return json({
+      ok: true,
+      defaultAdSetId,
+      defaultIsUsable: adSets.some(a => a.id === defaultAdSetId),
+      adSets,
+    });
+  } catch (e) {
+    return json({ error: e.message }, 500);
+  }
+}
+
 export async function onRequestPost(context) {
   const { env, request } = context;
   try {
-    const { group_key } = await request.json();
+    const { group_key, adset_id: requestedAdSetId } = await request.json();
     if (!group_key) return json({ error: 'group_key is required' }, 400);
 
-    for (const required of ['META_ADS_ACCESS_TOKEN', 'META_AD_ACCOUNT_ID', 'META_PAGE_ID']) {
-      if (!env[required]) return json({ error: `Server is missing the ${required} secret — ask an admin to configure it in Cloudflare Pages settings.` }, 500);
-    }
+    const missing = missingSecret(env);
+    if (missing) return json({ error: missing }, 500);
 
     // An existing row with no ad_id is a "skipped" marker (written by the
     // dashboard's Remove button), not a real push — that shouldn't block a
@@ -658,16 +725,55 @@ export async function onRequestPost(context) {
     // Resolve the destination ad set BEFORE building any creative: an ended
     // ad set rejects every ad identically, and there's no point spending 25s
     // uploading a video to Meta only to be told "Invalid parameter" after.
-    const adsetId = await resolveTargetAdSetId(env, env.TARGET_ADSET_ID || '52816670204854');
-    const googleToken = await getGoogleAccessToken(env);
+    //
+    // An explicitly picked ad set is never silently swapped for another one —
+    // that's someone choosing where real budget goes. If their choice can't
+    // take an ad, say so and stop.
+    let adsetId;
+    if (requestedAdSetId) {
+      const chosen = await graphGet(env, String(requestedAdSetId), { fields: `${ADSET_RESOLVE_FIELDS},campaign{id,name}` });
+      const chosenReason = adSetRejectionReason(chosen);
+      if (chosenReason) {
+        return json({ error: `The ad set you picked, "${chosen.name}" (${chosen.id}), ${chosenReason}. Pick a different destination in the "Push into" dropdown.` }, 400);
+      }
+      adsetId = chosen.id;
+    } else {
+      adsetId = await resolveTargetAdSetId(env, env.TARGET_ADSET_ID || '52816670204854');
+    }
+    // Google is only needed to read the creative sheet and pull its Drive
+    // files. Losing it must degrade to building the ad from the post's own
+    // media, not abort the push — but it's reported back in `warnings` rather
+    // than swallowed, so a broken refresh token is still visible instead of
+    // quietly downgrading every ad's creative forever.
+    const warnings = [];
+    let googleToken = null;
+    try {
+      googleToken = await getGoogleAccessToken(env);
+    } catch (e) {
+      console.warn('Google auth failed, falling back to the post\'s own media:', e.message);
+      warnings.push(`Creative sheet unavailable (${e.message}) — built the ad from the post's own media instead.`);
+    }
+
     const [sheetRows, igUserId] = await Promise.all([
-      sheetsGetCsvRows(env, googleToken).catch(e => { console.warn('Sheet read failed, will fall back to reused-post:', e.message); return []; }),
+      googleToken
+        ? sheetsGetCsvRows(env, googleToken).catch(e => {
+            console.warn('Sheet read failed, falling back to the post\'s own media:', e.message);
+            warnings.push(`Creative sheet read failed (${e.message}) — built the ad from the post's own media instead.`);
+            return [];
+          })
+        : Promise.resolve([]),
       findInstagramAccountId(env),
     ]);
 
     const sheetMatch = sheetRows.find(row => row['Primary Text'] && fuzzyMatch(row['Primary Text'], group.message));
     let built = sheetMatch ? await buildCreativeFromSheetRow(env, googleToken, sheetMatch, igUserId) : null;
-    if (!built && !sheetMatch) built = await buildCreativeFromLivePost(env, group, igUserId);
+    // A sheet match that produced nothing (no Drive file on the row, or a
+    // video that didn't finish processing in time) must still fall through to
+    // the post's own media. It used to skip straight past this to
+    // buildCreativeFromExistingPost, which is the one path known NOT to work
+    // on this ad account — so "we found your caption in the sheet" made a
+    // push strictly more likely to fail than not finding it at all.
+    if (!built) built = await buildCreativeFromLivePost(env, group, igUserId);
     if (!built) built = await buildCreativeFromExistingPost(env, group, igUserId);
 
     const ad = await graphPost(env, `${env.META_AD_ACCOUNT_ID}/ads`, {
@@ -703,7 +809,7 @@ export async function onRequestPost(context) {
       await supabaseQuery('organic_winner_ad_pushes', 'POST', pushRecord, 'return=minimal');
     }
 
-    return json({ ok: true, adId: ad.id, source: built.source, ctaLink: built.ctaLink });
+    return json({ ok: true, adId: ad.id, adSetId: adsetId, source: built.source, ctaLink: built.ctaLink, warnings });
   } catch (e) {
     return json({ error: e.message }, 500);
   }
