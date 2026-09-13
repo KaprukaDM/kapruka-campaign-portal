@@ -45,6 +45,16 @@
 //    META_ADS_ACCESS_TOKEN   — token with ads_management scope
 //    META_AD_ACCOUNT_ID      — e.g. 'act_1234567890'
 //    META_PAGE_ID            — Facebook Page ID
+//    META_PAGE_ACCESS_TOKEN  — a PAGE access token (pages_read_engagement +
+//                              instagram_basic). Effectively required: nearly
+//                              every push builds its creative from the post's
+//                              own media, and Meta will not let the ads/User
+//                              token read the Page's own posts — it answers
+//                              "(#10) … requires the 'pages_read_engagement'
+//                              permission" for a FB post and "Unsupported get
+//                              request" for an IG media id. Without it every
+//                              push fails. GET reports this as `pageAccess`
+//                              so the dashboard can warn before anyone clicks.
 //  Optional:
 //    META_IG_USER_ID         — Instagram Business Account ID (auto-discovered if unset)
 //    TARGET_ADSET_ID         — fallback destination only. The dashboard now
@@ -227,13 +237,36 @@ function formatGraphError(method, path, error) {
   return `${method} ${path}: ${parts.join(' — ')}`;
 }
 
+// The raw error object is kept on the thrown Error (.graph) as well as being
+// formatted into the message: callers need the numeric code to tell "this
+// token may not read that object" (recoverable only by fixing a secret) apart
+// from "there is nothing there" (genuinely fall back to the next creative
+// source). Matching on message text alone would break the moment Meta
+// rewords a string.
+function graphError(method, path, error) {
+  const err = new Error(formatGraphError(method, path, error));
+  err.graph = error;
+  return err;
+}
+
+// Meta's "you are not allowed to read this object" family. (#10) is the
+// Pages permission error, and code 100 / subcode 33 is the "Unsupported get
+// request… does not exist, cannot be loaded due to missing permissions"
+// shape returned for an Instagram media id read with the wrong token. Both
+// mean the TOKEN is wrong, not the post.
+function isPermissionDeniedError(e) {
+  const g = e?.graph;
+  if (!g) return false;
+  return g.code === 10 || g.code === 200 || g.code === 190 || (g.code === 100 && g.error_subcode === 33);
+}
+
 async function graphGet(env, path, params, token = env.META_ADS_ACCESS_TOKEN) {
   const url = new URL(`https://graph.facebook.com/${GRAPH_VERSION}/${path}`);
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
   url.searchParams.set('access_token', token);
   const res = await fetch(url);
   const body = await res.json();
-  if (body.error) throw new Error(formatGraphError('GET', path, body.error));
+  if (body.error) throw graphError('GET', path, body.error);
   return body;
 }
 
@@ -244,8 +277,52 @@ async function graphPost(env, path, payload) {
     body: JSON.stringify({ ...payload, access_token: env.META_ADS_ACCESS_TOKEN }),
   });
   const body = await res.json();
-  if (body.error) throw new Error(formatGraphError('POST', path, body.error));
+  if (body.error) throw graphError('POST', path, body.error);
   return body;
+}
+
+// ── Page-scoped read access ──────────────────────────────────────────────
+// Almost every push builds its creative from the post's OWN media, and
+// reading a Page/IG post's media REQUIRES a Page-scoped token. Confirmed
+// live on 2026-09-13 against this account: the ads (User) token returns
+// "(#10) … requires the 'pages_read_engagement' permission" for a Facebook
+// post and "Unsupported get request" for an Instagram media id, while
+// META_PAGE_ACCESS_TOKEN reads both fine. So when META_PAGE_ACCESS_TOKEN is
+// missing or stale, EVERY push fails — previously with a message blaming the
+// post ("Post not owned by ad's Page") instead of the token.
+const PAGE_TOKEN_FIX =
+  'Set META_PAGE_ACCESS_TOKEN (a Page access token for this Facebook Page, with '
+  + 'pages_read_engagement + instagram_basic) in Cloudflare Pages → Settings → '
+  + 'Environment variables, then retry.';
+
+function pageScopedTokenFor(env) {
+  return env.META_PAGE_ACCESS_TOKEN || env.META_ADS_ACCESS_TOKEN;
+}
+
+// Cheap, read-only: /me with a Page token returns the Page itself, with a
+// User token it returns the person. That one call says whether post reads
+// will work before anything is uploaded or spent.
+async function checkPageReadAccess(env) {
+  if (!env.META_PAGE_ACCESS_TOKEN) {
+    return {
+      ok: false,
+      reason: 'META_PAGE_ACCESS_TOKEN is not configured, so post media is being read with the ads token — '
+        + 'which Meta does not allow for a Page\'s own posts. Every push will fail until it is set. ' + PAGE_TOKEN_FIX,
+    };
+  }
+  try {
+    const me = await graphGet(env, 'me', { fields: 'id,name' }, env.META_PAGE_ACCESS_TOKEN);
+    if (String(me.id) !== String(env.META_PAGE_ID)) {
+      return {
+        ok: false,
+        reason: `META_PAGE_ACCESS_TOKEN belongs to "${me.name}" (${me.id}), not Page ${env.META_PAGE_ID} — `
+          + 'it looks like a user/ads token rather than a Page token, so post media cannot be read. ' + PAGE_TOKEN_FIX,
+      };
+    }
+    return { ok: true, reason: null };
+  } catch (e) {
+    return { ok: false, reason: `META_PAGE_ACCESS_TOKEN was rejected by Meta (${e.message}). ` + PAGE_TOKEN_FIX };
+  }
 }
 
 // ── Where new ads actually go ────────────────────────────────────────────
@@ -432,10 +509,13 @@ async function buildVideoData(env, videoBytes, namePrefix, ctaLink, providedThum
 }
 
 // ── Creative builders ─────────────────────────────────────────────────────
-async function buildCreativeFromSheetRow(env, googleToken, row, igUserId) {
+async function buildCreativeFromSheetRow(env, googleToken, row, igUserId, notes = []) {
   const mediaType = (row['Image or Video'] || '').trim().toLowerCase();
   const driveFileId = extractDriveFileId(row['URL']);
-  if (!driveFileId) return null;
+  if (!driveFileId) {
+    notes.push(`Creative sheet row ${row['Content ID'] || '(no Content ID)'} matched this caption but has no usable Drive file in its URL column.`);
+    return null;
+  }
 
   const homeUrl = env.KAPRUKA_HOME_URL || 'https://www.kapruka.com';
   const ctaLink = extractCtaLink(row['Primary Text']) || homeUrl;
@@ -448,6 +528,7 @@ async function buildCreativeFromSheetRow(env, googleToken, row, igUserId) {
       videoData = await buildVideoData(env, videoBytes, driveFileId, ctaLink, null);
     } catch (e) {
       console.warn('Sheet video upload/processing did not finish in time, falling back:', e.message);
+      notes.push(`Creative-sheet video could not be turned into an ad in time: ${e.message}`);
       return null;
     }
     let creative;
@@ -509,20 +590,26 @@ async function fetchPostMediaInfo(env, postId, isIg, pageScopedToken) {
       imageUrl: media.media_url || media.thumbnail_url || null,
       videoUrl: isVideo ? (media.media_url || null) : null,
       thumbnailUrl: media.thumbnail_url || null,
+      videoUrlError: null,
     };
   }
   const post = await graphGet(env, postId, { fields: 'full_picture,attachments{media_type,target}' }, pageScopedToken);
   const attachment = post.attachments?.data?.[0];
   const isVideo = attachment?.media_type === 'video';
-  let videoUrl = null, thumbnailUrl = post.full_picture || null;
+  let videoUrl = null, videoUrlError = null, thumbnailUrl = post.full_picture || null;
   if (isVideo && attachment?.target?.id) {
     try {
       const video = await graphGet(env, attachment.target.id, { fields: 'source,picture' }, pageScopedToken);
       videoUrl = video.source || null;
       thumbnailUrl = video.picture || thumbnailUrl;
-    } catch (e) { /* fall through with no videoUrl — caller bails to fallback */ }
+    } catch (e) {
+      // Still falls back, but the reason travels with it instead of being
+      // dropped — a dropped reason here is what made every failed push
+      // report the wrong cause.
+      videoUrlError = e.message;
+    }
   }
-  return { isVideo, imageUrl: post.full_picture || null, videoUrl, thumbnailUrl };
+  return { isVideo, imageUrl: post.full_picture || null, videoUrl, thumbnailUrl, videoUrlError };
 }
 
 // Rebuilds a fresh ad (image link_data, or native video_data for
@@ -540,26 +627,50 @@ async function fetchPostMediaInfo(env, postId, isIg, pageScopedToken) {
 // next fallback rather than hanging the "Push Now" click. The weekly cron
 // (scripts/weekly-organic-winners-to-ads.js) has no such constraint and will
 // pick up the same video cleanly on its own run.
-async function buildCreativeFromLivePost(env, group, igUserId) {
+async function buildCreativeFromLivePost(env, group, igUserId, notes = []) {
   const postId = group.fbPostId || group.igPostId;
-  if (!postId) return null;
+  if (!postId) {
+    notes.push('The post group has no Facebook or Instagram post id to read media from.');
+    return null;
+  }
   const isIg = !group.fbPostId && !!group.igPostId;
   const ctaLink = extractCtaLink(group.message) || env.KAPRUKA_HOME_URL || 'https://www.kapruka.com';
   const message = (group.message || '').slice(0, 600);
   const safeName = postId.replace(/[^a-zA-Z0-9]/g, '_');
-  const pageScopedToken = env.META_PAGE_ACCESS_TOKEN || env.META_ADS_ACCESS_TOKEN;
+  const pageScopedToken = pageScopedTokenFor(env);
+  const usingAdsTokenToReadPage = !env.META_PAGE_ACCESS_TOKEN;
 
   let info;
   try {
     info = await fetchPostMediaInfo(env, postId, isIg, pageScopedToken);
   } catch (e) {
+    // A permission failure here is a broken secret, not a property of this
+    // post — every other push would hit it too. Returning null used to send
+    // it down the reused-post path, which fails on this ad account with
+    // "Post not owned by ad's Page": the wrong cause, on every row. Stop and
+    // name the real problem instead.
+    if (isPermissionDeniedError(e)) {
+      throw new Error(
+        `Meta refused to read ${isIg ? 'Instagram media' : 'Facebook post'} ${postId}, which the ad creative is built from: ${e.message} — `
+        + (usingAdsTokenToReadPage
+          ? 'META_PAGE_ACCESS_TOKEN is not configured, so this fell back to the ads token, which Meta does not accept for a Page\'s own posts. ' + PAGE_TOKEN_FIX
+          : 'META_PAGE_ACCESS_TOKEN looks expired or is missing pages_read_engagement / instagram_basic. ' + PAGE_TOKEN_FIX)
+      );
+    }
+    notes.push(`Reading the post's own media failed: ${e.message}`);
     return null;
   }
 
   if (info.isVideo) {
-    if (!info.videoUrl) return null;
+    if (!info.videoUrl) {
+      notes.push(`The post is a video but its source URL could not be read${info.videoUrlError ? ` (${info.videoUrlError})` : ''}.`);
+      return null;
+    }
     const videoRes = await fetch(info.videoUrl);
-    if (!videoRes.ok) return null;
+    if (!videoRes.ok) {
+      notes.push(`Downloading the post's video failed with HTTP ${videoRes.status}.`);
+      return null;
+    }
     const videoBytes = await videoRes.arrayBuffer();
 
     let videoData;
@@ -567,6 +678,7 @@ async function buildCreativeFromLivePost(env, group, igUserId) {
       videoData = await buildVideoData(env, videoBytes, safeName, ctaLink, info.thumbnailUrl);
     } catch (e) {
       console.warn('Live video upload/processing did not finish in time, falling back:', e.message);
+      notes.push(`Native video ad could not be built: ${e.message}`);
       return null;
     }
 
@@ -590,10 +702,16 @@ async function buildCreativeFromLivePost(env, group, igUserId) {
     return { source: 'live_video', ctaLink, message, creativeId: creative.id };
   }
 
-  if (!info.imageUrl) return null;
+  if (!info.imageUrl) {
+    notes.push('The post has no image Meta will return a URL for, so no creative could be built from it.');
+    return null;
+  }
 
   const imageRes = await fetch(info.imageUrl);
-  if (!imageRes.ok) return null;
+  if (!imageRes.ok) {
+    notes.push(`Downloading the post's image failed with HTTP ${imageRes.status}.`);
+    return null;
+  }
   const imageBytes = await imageRes.arrayBuffer();
   const hash = await uploadAdImage(env, imageBytes, `${safeName}.jpg`);
 
@@ -628,34 +746,45 @@ async function buildCreativeFromLivePost(env, group, igUserId) {
 // failing until that's fixed on Meta's side. Kept as a fallback rather than
 // removed so it starts working automatically once the Business Manager
 // connection is actually in place, without a code change.
-async function buildCreativeFromExistingPost(env, group, igUserId) {
+async function buildCreativeFromExistingPost(env, group, igUserId, notes = []) {
   const ctaLink = env.KAPRUKA_HOME_URL || 'https://www.kapruka.com';
+  // Why we got all the way down here. Without this the last-resort failure
+  // ("Post not owned by ad's Page") was the ONLY thing the dashboard showed,
+  // which pointed at the post rather than at whatever actually went wrong
+  // two fallbacks earlier.
+  const because = notes.length ? ` Earlier creative attempts failed first: ${notes.join(' ')}` : '';
 
-  if (group.fbPostId) {
-    // group.fbPostId already comes from the Graph API in composite
-    // "{page_id}_{post_id}" form — prepending META_PAGE_ID again here
-    // produced a doubled, invalid ID and every reused-FB-post push failed
-    // with "(#100) Invalid post_id parameter".
-    const creative = await graphPost(env, `${env.META_AD_ACCOUNT_ID}/adcreatives`, {
-      name: `Organic Winner (reused FB post) - ${group.fbPostId}`,
-      object_story_id: group.fbPostId,
-      call_to_action: { type: 'SHOP_NOW', value: { link: ctaLink } },
-    });
-    return { source: 'reused_post', ctaLink, creativeId: creative.id };
+  try {
+    if (group.fbPostId) {
+      // group.fbPostId already comes from the Graph API in composite
+      // "{page_id}_{post_id}" form — prepending META_PAGE_ID again here
+      // produced a doubled, invalid ID and every reused-FB-post push failed
+      // with "(#100) Invalid post_id parameter".
+      const creative = await graphPost(env, `${env.META_AD_ACCOUNT_ID}/adcreatives`, {
+        name: `Organic Winner (reused FB post) - ${group.fbPostId}`,
+        object_story_id: group.fbPostId,
+        call_to_action: { type: 'SHOP_NOW', value: { link: ctaLink } },
+      });
+      return { source: 'reused_post', ctaLink, creativeId: creative.id };
+    }
+
+    if (group.igPostId && igUserId) {
+      const creative = await graphPost(env, `${env.META_AD_ACCOUNT_ID}/adcreatives`, {
+        name: `Organic Winner (reused IG post) - ${group.igPostId}`,
+        object_id: env.META_PAGE_ID,
+        instagram_actor_id: igUserId,
+        source_instagram_media_id: group.igPostId,
+        call_to_action: { type: 'SHOP_NOW', value: { link: ctaLink } },
+      });
+      return { source: 'reused_post', ctaLink, creativeId: creative.id };
+    }
+  } catch (e) {
+    // Re-thrown, never swallowed — just with the preceding failures attached
+    // so the dashboard shows the cause instead of only the symptom.
+    throw new Error(`${e.message}${because}`);
   }
 
-  if (group.igPostId && igUserId) {
-    const creative = await graphPost(env, `${env.META_AD_ACCOUNT_ID}/adcreatives`, {
-      name: `Organic Winner (reused IG post) - ${group.igPostId}`,
-      object_id: env.META_PAGE_ID,
-      instagram_actor_id: igUserId,
-      source_instagram_media_id: group.igPostId,
-      call_to_action: { type: 'SHOP_NOW', value: { link: ctaLink } },
-    });
-    return { source: 'reused_post', ctaLink, creativeId: creative.id };
-  }
-
-  throw new Error('Group has neither an FB post_id nor a usable IG post_id.');
+  throw new Error(`Group has neither an FB post_id nor a usable IG post_id.${because}`);
 }
 
 // ── Main handlers ────────────────────────────────────────────────────────
@@ -676,12 +805,19 @@ export async function onRequestGet(context) {
     if (missing) return json({ error: missing }, 500);
 
     const defaultAdSetId = env.TARGET_ADSET_ID || '52816670204854';
-    const adSets = await listAdSetsThatCanAcceptAds(env);
+    // Both up front: a valid destination is useless if post media can't be
+    // read, and that used to only be discoverable by clicking Push and
+    // reading a message that blamed the post.
+    const [adSets, pageAccess] = await Promise.all([
+      listAdSetsThatCanAcceptAds(env),
+      checkPageReadAccess(env),
+    ]);
     return json({
       ok: true,
       defaultAdSetId,
       defaultIsUsable: adSets.some(a => a.id === defaultAdSetId),
       adSets,
+      pageAccess,
     });
   } catch (e) {
     return json({ error: e.message }, 500);
@@ -765,16 +901,20 @@ export async function onRequestPost(context) {
       findInstagramAccountId(env),
     ]);
 
+    // Each builder appends why it couldn't produce a creative, so if the
+    // chain ends in the last-resort path its error carries the real cause
+    // rather than only its own symptom.
+    const notes = [];
     const sheetMatch = sheetRows.find(row => row['Primary Text'] && fuzzyMatch(row['Primary Text'], group.message));
-    let built = sheetMatch ? await buildCreativeFromSheetRow(env, googleToken, sheetMatch, igUserId) : null;
+    let built = sheetMatch ? await buildCreativeFromSheetRow(env, googleToken, sheetMatch, igUserId, notes) : null;
     // A sheet match that produced nothing (no Drive file on the row, or a
     // video that didn't finish processing in time) must still fall through to
     // the post's own media. It used to skip straight past this to
     // buildCreativeFromExistingPost, which is the one path known NOT to work
     // on this ad account — so "we found your caption in the sheet" made a
     // push strictly more likely to fail than not finding it at all.
-    if (!built) built = await buildCreativeFromLivePost(env, group, igUserId);
-    if (!built) built = await buildCreativeFromExistingPost(env, group, igUserId);
+    if (!built) built = await buildCreativeFromLivePost(env, group, igUserId, notes);
+    if (!built) built = await buildCreativeFromExistingPost(env, group, igUserId, notes);
 
     const ad = await graphPost(env, `${env.META_AD_ACCOUNT_ID}/ads`, {
       name: `Organic Winner - ${group.key.slice(0, 60)}`,

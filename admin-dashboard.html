@@ -1699,6 +1699,11 @@
             </select>
             <button class="btn" style="padding:6px 12px;font-size:12px;background:#eee;color:#666;" onclick="loadAdDestinations(true)">🔄</button>
             <div id="adDestinationNote" style="flex-basis:100%;font-size:12px;color:#666;"></div>
+            <!-- Server-side health of the Page token every push needs to read
+                 the post's media. Without this the only way to find out it was
+                 broken was to click Push and read an error that blamed the
+                 post instead of the token. -->
+            <div id="adPushHealth" style="display:none;flex-basis:100%;font-size:12px;padding:10px;border-radius:6px;background:#FFEBEE;color:#B71C1C;border:1px solid #F5C6CB;"></div>
           </div>
           <div class="table-container">
             <table>
@@ -4885,6 +4890,19 @@
       }
     }
 
+    // Pushes build their creative from the post's own Facebook/Instagram
+    // media, which only a Page-scoped token may read. When that token is
+    // missing or stale EVERY push fails, so say it once at the top of the
+    // card instead of letting each row fail separately with a message that
+    // blames the post.
+    function renderAdPushHealth(pageAccess) {
+      const box = document.getElementById('adPushHealth');
+      if (!box) return;
+      if (!pageAccess || pageAccess.ok) { box.style.display = 'none'; box.textContent = ''; return; }
+      box.style.display = '';
+      box.innerHTML = `<strong>⚠️ Pushes will fail:</strong> ${escapeHtml(pageAccess.reason || 'the server cannot read this Page\'s posts.')}`;
+    }
+
     async function loadAdDestinations(force) {
       const select = document.getElementById('adDestinationSelect');
       const note = document.getElementById('adDestinationNote');
@@ -4897,6 +4915,7 @@
         const data = await res.json();
         if (!res.ok || data.error) throw new Error(data.error || `Request failed (${res.status})`);
 
+        renderAdPushHealth(data.pageAccess);
         adDestinations = data.adSets || [];
         if (!adDestinations.length) {
           select.innerHTML = '<option value="">No ad set in this account can accept new ads</option>';
