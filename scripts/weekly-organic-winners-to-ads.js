@@ -399,14 +399,30 @@ async function resolveTargetAdSetId() {
   }
 
   const siblings = await graphGet(`${campaign.id}/adsets`, { fields: ADSET_RESOLVE_FIELDS, limit: 100 });
+  console.log(`Ad sets in campaign "${campaign.name}": `
+    + ((siblings.data || []).map(a => `${a.id} "${a.name}" ${a.effective_status || a.status} ends=${a.end_time || 'never'}`).join(' | ') || '(none)'));
   const usable = (siblings.data || [])
     .filter(a => !adSetRejectionReason(a))
     .sort((a, b) => new Date(b.start_time || 0) - new Date(a.start_time || 0));
 
   if (!usable.length) {
+    // Nothing in this campaign can take an ad. Don't silently spend budget in
+    // some unrelated campaign — but do name the live ad sets elsewhere in the
+    // account, so whoever reads this knows exactly what to point at.
+    let elsewhere = '';
+    try {
+      const all = await graphGet(`${AD_ACCOUNT_ID}/adsets`, { fields: `${ADSET_RESOLVE_FIELDS},campaign{id,name}`, limit: 200 });
+      const live = (all.data || []).filter(a => !adSetRejectionReason(a));
+      elsewhere = live.length
+        ? ` Live ad sets elsewhere in this ad account you could use instead: ${live.slice(0, 10).map(a => `${a.id} "${a.name}" (campaign "${a.campaign?.name || '?'}")`).join('; ')}.`
+        : ' There is no ad set anywhere in this ad account that can currently accept new ads.';
+    } catch (e) {
+      elsewhere = ` (Could not list the account's other ad sets: ${e.message})`;
+    }
     throw new Error(
       `Target ad set ${configured.id} ${reason}, and campaign "${campaign.name}" (${campaign.id}) has no other ad set that can accept new ads. `
       + 'Create a new ad set (or extend this one\'s end date) in that campaign, then re-run — or set TARGET_ADSET_ID to the ad set you want.'
+      + elsewhere
     );
   }
 

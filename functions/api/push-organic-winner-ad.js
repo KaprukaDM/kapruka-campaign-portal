@@ -290,9 +290,21 @@ async function resolveTargetAdSetId(env, configuredId) {
     .sort((a, b) => new Date(b.start_time || 0) - new Date(a.start_time || 0));
 
   if (!usable.length) {
+    // Nothing in this campaign can take an ad. Don't silently spend budget in
+    // some unrelated campaign — but do name the live ad sets elsewhere in the
+    // account, so the dashboard's error text says exactly what to point at.
+    let elsewhere = '';
+    try {
+      const all = await graphGet(env, `${env.META_AD_ACCOUNT_ID}/adsets`, { fields: `${ADSET_RESOLVE_FIELDS},campaign{id,name}`, limit: 200 });
+      const live = (all.data || []).filter(a => !adSetRejectionReason(a));
+      elsewhere = live.length
+        ? ` Live ad sets you could use instead: ${live.slice(0, 5).map(a => `${a.id} "${a.name}"`).join('; ')}.`
+        : ' No ad set anywhere in this ad account can currently accept new ads.';
+    } catch (e) { /* the primary message is already actionable without this */ }
     throw new Error(
       `The target ad set "${configured.name}" ${reason}, and campaign "${campaign.name}" has no other ad set that can accept new ads. `
       + 'Create a new ad set (or extend this one\'s end date) in that campaign in Ads Manager, then push again.'
+      + elsewhere
     );
   }
 
