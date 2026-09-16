@@ -161,11 +161,15 @@
 
     <div class="panel">
       <div class="range-toggle" id="rangeToggle">
-        <button class="range-btn active" data-range="30" onclick="setRange(30)">Last 30 Days</button>
+        <button class="range-btn active" data-range="launch" onclick="setRange('launch')">Since Launch (Aug 1, 2025)</button>
+        <button class="range-btn" data-range="30" onclick="setRange(30)">Last 30 Days</button>
         <button class="range-btn" data-range="90" onclick="setRange(90)">Last 90 Days</button>
         <button class="range-btn" data-range="180" onclick="setRange(180)">Last 180 Days</button>
         <span class="range-dates" id="rangeDates"></span>
-        <span class="refresh-link" onclick="loadData()">↻ Refresh</span>
+        <span class="refresh-link" id="refreshLink" onclick="loadMetrics()">↻ Load Performance Data</span>
+      </div>
+      <div id="metricsHint" style="font-size:12px;color:#888;margin:-10px 0 16px;">
+        Product list loaded instantly below. Click "Load Performance Data" to fetch live GSC + GA4 numbers (takes about a minute for the full launch window).
       </div>
 
       <div class="kpi-grid" id="kpiGrid">
@@ -208,6 +212,9 @@
     <div class="panel">
       <div class="filters-row">
         <input type="text" id="searchBox" placeholder="🔍 Search by product name or code..." oninput="applyFilters()">
+        <select id="categoryFilter" onchange="applyFilters()">
+          <option value="all">All Categories</option>
+        </select>
         <select id="statusFilter" onchange="applyFilters()">
           <option value="all">All Statuses</option>
           <option value="In Stock">In Stock</option>
@@ -222,6 +229,7 @@
             <tr>
               <th onclick="setSort('name')">Product<span class="sort-arrow" id="arrow-name"></span></th>
               <th onclick="setSort('code')">Code<span class="sort-arrow" id="arrow-code"></span></th>
+              <th onclick="setSort('category')">Category<span class="sort-arrow" id="arrow-category"></span></th>
               <th onclick="setSort('status')">Status<span class="sort-arrow" id="arrow-status"></span></th>
               <th onclick="setSort('clicks')">Clicks<span class="sort-arrow" id="arrow-clicks"></span></th>
               <th onclick="setSort('impressions')">Impressions<span class="sort-arrow" id="arrow-impressions"></span></th>
@@ -234,7 +242,7 @@
             </tr>
           </thead>
           <tbody id="tableBody">
-            <tr><td colspan="11" class="empty-row">Loading…</td></tr>
+            <tr><td colspan="12" class="empty-row">Loading…</td></tr>
           </tbody>
         </table>
       </div>
@@ -243,12 +251,15 @@
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
   <script>
-    let currentRange = 30;
+    let currentRange = 'launch';
     let allProducts = [];
     let filteredProducts = [];
-    let sortKey = 'pageViews';
-    let sortDir = 'desc';
+    let sortKey = 'name';
+    let sortDir = 'asc';
     let topProductsChart = null;
+    let metricsLoaded = false;
+
+    const METRIC_KEYS = ['clicks', 'impressions', 'ctr', 'position', 'pageViews', 'users', 'sessions'];
 
     function showLoading() { document.getElementById('loading').style.display = 'flex'; }
     function hideLoading() { document.getElementById('loading').style.display = 'none'; }
@@ -263,16 +274,16 @@
         .replace(/'/g, '&#39;');
     }
 
-    function num(n) { return Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 0 }); }
-    function pct(n) { return (Number(n || 0) * 100).toFixed(2) + '%'; }
-    function pos(n) { return Number(n || 0).toFixed(1); }
+    function num(n) { return n === null || n === undefined ? '–' : Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 }); }
+    function pct(n) { return n === null || n === undefined ? '–' : (Number(n) * 100).toFixed(2) + '%'; }
+    function pos(n) { return n === null || n === undefined ? '–' : Number(n).toFixed(1); }
 
     function setRange(range) {
       currentRange = range;
       document.querySelectorAll('#rangeToggle .range-btn').forEach(b => {
-        b.classList.toggle('active', Number(b.dataset.range) === range);
+        b.classList.toggle('active', b.dataset.range === String(range));
       });
-      loadData();
+      loadMetrics();
     }
 
     function setSort(key) {
@@ -292,7 +303,41 @@
       if (arrow) arrow.textContent = sortDir === 'desc' ? '▼' : '▲';
     }
 
-    async function loadData() {
+    function blankMetrics() {
+      const m = {};
+      for (const k of METRIC_KEYS) m[k] = null;
+      return m;
+    }
+
+    // Instant: the product list itself (name/code/category/status) is a
+    // static file, not a Google API call, so it renders immediately with
+    // metric columns blank. Real GSC/GA4 numbers only load when the user
+    // clicks Refresh (see loadMetrics) — that call takes well over a minute
+    // for the full "since launch" window.
+    async function preloadProducts() {
+      try {
+        const res = await fetch('data/newly-added-products.json');
+        const products = await res.json();
+        allProducts = products.map(p => ({ ...p, ...blankMetrics() }));
+        populateCategoryFilter(allProducts);
+        updateSortArrows();
+        applyFilters();
+      } catch (e) {
+        document.getElementById('tableBody').innerHTML =
+          '<tr><td colspan="12" class="empty-row">❌ Failed to load product list: ' + escapeHtml(e.message) + '</td></tr>';
+      }
+    }
+
+    function populateCategoryFilter(products) {
+      const select = document.getElementById('categoryFilter');
+      const current = select.value;
+      const categories = [...new Set(products.map(p => p.category).filter(Boolean))].sort();
+      select.innerHTML = '<option value="all">All Categories</option>' +
+        categories.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+      if (categories.includes(current)) select.value = current;
+    }
+
+    async function loadMetrics() {
       showLoading();
       document.getElementById('warningBanner').style.display = 'none';
       try {
@@ -300,16 +345,27 @@
         const data = await res.json();
         if (!res.ok || data.error) throw new Error(data.error || ('Request failed (' + res.status + ')'));
 
-        allProducts = data.products || [];
+        const byCode = new Map((data.products || []).map(p => [p.code.toLowerCase(), p]));
+        allProducts = allProducts.map(p => {
+          const metrics = byCode.get(p.code.toLowerCase());
+          return metrics ? { ...p, ...metrics, name: p.name, category: p.category, status: p.status } : p;
+        });
+        metricsLoaded = true;
+        document.getElementById('metricsHint').style.display = 'none';
+        document.getElementById('refreshLink').textContent = '↻ Refresh';
+
         renderKpis(data.totals);
         renderRangeDates(data.startDate, data.endDate);
         renderWarnings(data.warnings);
-        renderTopProductsChart(allProducts);
+        renderTopProductsChart(allProducts.filter(p => p.pageViews !== null));
+        sortKey = 'pageViews';
+        sortDir = 'desc';
         updateSortArrows();
         applyFilters();
       } catch (e) {
-        document.getElementById('tableBody').innerHTML =
-          '<tr><td colspan="11" class="empty-row">❌ ' + escapeHtml(e.message) + '</td></tr>';
+        const banner = document.getElementById('warningBanner');
+        banner.style.display = 'block';
+        banner.innerHTML = '❌ Failed to load performance data: ' + escapeHtml(e.message);
       } finally {
         hideLoading();
       }
@@ -341,6 +397,7 @@
       const top = products.slice(0, 20);
       const ctx = document.getElementById('topProductsChart').getContext('2d');
       if (topProductsChart) topProductsChart.destroy();
+      if (!top.length) return;
       topProductsChart = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -362,9 +419,11 @@
     function applyFilters() {
       const search = document.getElementById('searchBox').value.trim().toLowerCase();
       const status = document.getElementById('statusFilter').value;
+      const category = document.getElementById('categoryFilter').value;
 
       filteredProducts = allProducts.filter(p => {
         if (status !== 'all' && p.status !== status) return false;
+        if (category !== 'all' && p.category !== category) return false;
         if (search) {
           const hay = (p.name + ' ' + p.code).toLowerCase();
           if (!hay.includes(search)) return false;
@@ -374,7 +433,9 @@
 
       filteredProducts.sort((a, b) => {
         let av = a[sortKey], bv = b[sortKey];
-        if (typeof av === 'string') { av = av.toLowerCase(); bv = (bv || '').toLowerCase(); }
+        if (av === null || av === undefined) av = typeof bv === 'string' ? '' : -Infinity;
+        if (bv === null || bv === undefined) bv = typeof av === 'string' ? '' : -Infinity;
+        if (typeof av === 'string') { av = av.toLowerCase(); bv = String(bv).toLowerCase(); }
         if (av < bv) return sortDir === 'asc' ? -1 : 1;
         if (av > bv) return sortDir === 'asc' ? 1 : -1;
         return 0;
@@ -389,7 +450,7 @@
 
       const tbody = document.getElementById('tableBody');
       if (!filteredProducts.length) {
-        tbody.innerHTML = '<tr><td colspan="11" class="empty-row">No products match this filter.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="12" class="empty-row">No products match this filter.</td></tr>';
         return;
       }
 
@@ -397,6 +458,7 @@
         <tr>
           <td><strong>${escapeHtml(p.name)}</strong></td>
           <td>${escapeHtml(p.code)}</td>
+          <td>${escapeHtml(p.category || '—')}</td>
           <td><span class="status-badge ${p.status === 'OOS' ? 'status-oos' : 'status-instock'}">${escapeHtml(p.status)}</span></td>
           <td>${num(p.clicks)}</td>
           <td>${num(p.impressions)}</td>
@@ -405,13 +467,17 @@
           <td>${num(p.pageViews)}</td>
           <td>${num(p.users)}</td>
           <td>${num(p.sessions)}</td>
-          <td><a class="product-link" href="${escapeHtml(p.url)}" target="_blank" rel="noopener">View →</a></td>
+          <td><a class="product-link" href="${escapeHtml(KAPRUKA_LINK(p.code))}" target="_blank" rel="noopener">View →</a></td>
         </tr>
       `).join('');
     }
 
+    function KAPRUKA_LINK(code) {
+      return 'https://www.kapruka.com/buyonline/-/kid/' + encodeURIComponent(code);
+    }
+
     updateSortArrows();
-    loadData();
+    preloadProducts();
   </script>
 </body>
 </html>

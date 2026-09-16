@@ -4,6 +4,7 @@
 !.dev.vars.example
 .env*
 !.env.example
+node_modules
 
 # raw source export for data/newly-added-products.json — only the converted
 # JSON is committed, not the original CSV
