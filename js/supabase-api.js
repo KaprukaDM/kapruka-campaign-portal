@@ -150,7 +150,13 @@ async function getAutoQueuedAdSlots(limit = 40) {
       '&select=id,date,source_type,priority,studio_status,approval_status,page_name,content_details,format,product_code,reference_links' +
       '&order=date.desc,id.desc&limit=300'
     );
-    return rows.filter(qualifiesForAutoAdQueue).slice(0, limit);
+    const candidates = rows.filter(qualifiesForAutoAdQueue);
+    if (!candidates.length) return [];
+    // An ad is built FROM a live post — a slot that only claims to be Posted
+    // has no live post to boost, so queueing it just produces a push that
+    // fails at Meta. Require the same evidence the calendar badge requires.
+    const verified = await getVerifiedPostedSlotIds(candidates.map(r => r.id));
+    return candidates.filter(r => verified.has(r.id)).slice(0, limit);
   } catch (error) {
     console.error('getAutoQueuedAdSlots error:', error);
     return [];
@@ -184,6 +190,171 @@ async function getPostedLinksForSlots(slotIds) {
     console.warn('getPostedLinksForSlots failed (non-fatal):', error.message);
     return {};
   }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// POSTED VERIFICATION — "Posted" has to mean actually published
+// ═══════════════════════════════════════════════════════════════
+//
+// WHO OWNS WHAT (source of truth, decided deliberately — see
+// functions/api/studio-posted-sync.js for the sheet side):
+//
+//   studio_calendar  owns the WORKFLOW status (Received → Working →
+//                    Submitted → Approved → Good to Go → Scheduled).
+//                    Every page in this portal reads it, so it stays
+//                    authoritative for everything except one fact.
+//
+//   Google Sheet     owns the single fact "this actually went live".
+//   ("Content         The Content.gs bot is the thing that publishes, and
+//    Approval List")  it writes STATUS="Posted…" on the sheet row AFTER a
+//                    successful publish. Nothing in Supabase ever observes
+//                    a real publish, so Supabase cannot be trusted for it.
+//
+// Therefore studio_status='Posted' is a DERIVED value, never a free choice:
+// it is either reconciled in from the sheet, or set by hand with a link to
+// the live post attached. A Posted row with no evidence is not treated as
+// posted anywhere in the UI — it reads as "Pending verification".
+//
+// Evidence is stored in studio_activity_log (event_type='posted_verified'),
+// NOT in a new column — studio_calendar has no post_link/posted_date column
+// (checked against the live schema), and this repo has no migration tool, so
+// requiring one would have meant blocking on a manual SQL change. The log
+// table already exists, is already append-only, and is already where the
+// modal's posted link ends up today.
+const POSTED_VERIFIED_EVENT = 'posted_verified';
+const STUDIO_STATUS_POSTED = 'Posted';
+// What an unverified Posted row reads as instead of "Posted". It is still
+// stored as Posted in the DB (nothing is rewritten) — this is the label the
+// user actually sees, so the value stops claiming something it can't back up.
+const STUDIO_LABEL_UNVERIFIED = 'Pending verification';
+
+// Shapes that count as real proof a post is live. Anything that isn't a
+// resolvable pointer to a specific published post is rejected — "non-empty"
+// is not validation. Measured against the live DB when this was written: 489
+// rows said Posted and NOT ONE of them had a usable post link anywhere. The
+// old modal did have a "Post Link / URL" box, but studio_calendar has no
+// post_link column, so whatever was typed there was silently dropped on save
+// — which is why "Posted" carried no information at all beyond the word.
+const POST_EVIDENCE_PATTERNS = [
+  // facebook.com/<page>/posts/<id>, /videos/<id>, /reel/<id>, /photos/...
+  /^https?:\/\/(www\.|m\.|web\.)?facebook\.com\/[^\/\s]+\/(posts|videos|photos|reel)\/[A-Za-z0-9._-]+/i,
+  // facebook.com/reel/<id>, /share/p/<token>, /share/v/<token>
+  /^https?:\/\/(www\.|m\.|web\.)?facebook\.com\/(reel|share\/p|share\/v|share\/r)\/[A-Za-z0-9._-]+/i,
+  // permalink.php?story_fbid=…&id=…  /  photo.php?fbid=…  /  photo/?fbid=…
+  /^https?:\/\/(www\.|m\.|web\.)?facebook\.com\/(permalink\.php|photo\.php|photo\/|story\.php|watch\/?)\?.*\b(story_fbid|fbid|v)=\d+/i,
+  // fb.watch short links
+  /^https?:\/\/fb\.watch\/[A-Za-z0-9._-]+/i,
+  // instagram.com/p|reel|tv/<shortcode>
+  /^https?:\/\/(www\.)?instagram\.com\/(p|reel|reels|tv)\/[A-Za-z0-9._-]+/i,
+  // Raw Graph API post id — "<pageId>_<postId>", what the bot itself records
+  /^\d{6,}_\d{6,}$/
+];
+
+/**
+ * Validates a piece of "this is live" evidence. Returns
+ * { ok, value, reason } — `reason` is a human-readable rejection message
+ * suitable for showing straight to the user.
+ */
+function parsePostEvidence(raw) {
+  const value = String(raw == null ? '' : raw).trim();
+  if (!value) {
+    return { ok: false, value: '', reason: 'A link to the live post is required before this can be marked Posted.' };
+  }
+  if (POST_EVIDENCE_PATTERNS.some(re => re.test(value))) {
+    return { ok: true, value, reason: '' };
+  }
+  return {
+    ok: false,
+    value,
+    reason: 'That is not a link to a specific published post. Paste the permalink of the live post ' +
+            '(e.g. facebook.com/…/posts/… , facebook.com/reel/… , instagram.com/p/… ) or the Graph post id ' +
+            '(123456789_987654321). A page/profile link, a Drive link or free text is not proof it went out.'
+  };
+}
+
+/**
+ * Slot ids that have real evidence of being published, out of the ones asked
+ * about. Two things count:
+ *   1. a `posted_verified` activity-log entry (written by the sheet
+ *      reconciler, or by a hand-entry that passed parsePostEvidence), and
+ *   2. a legacy "Marked as Posted — <url>" entry whose URL still validates —
+ *      those were real evidence before this event type existed, so they are
+ *      honoured rather than thrown away.
+ * Never throws: the calendar must still render if the log table is
+ * unreachable (it just shows everything as unverified, which is the safe
+ * direction to fail in).
+ */
+// Only these rows can ever prove a post went live, so the filter is pushed
+// to the server rather than pulling the whole log down and sieving it here.
+// That matters: PostgREST caps every response at 1000 rows no matter what
+// `limit` says (verified against this project — `limit=5000` returns exactly
+// 1000). Fetching a month's raw log and filtering client-side would silently
+// drop evidence past row 1000 and quietly relabel genuinely-posted slots as
+// unverified. Pagination below covers the case where even the filtered set
+// grows past the cap.
+const POSTED_EVIDENCE_FILTER =
+  `or=(event_type.eq.${POSTED_VERIFIED_EVENT},detail.ilike.*Marked as Posted*)`;
+const SUPABASE_PAGE_SIZE = 1000;
+
+async function getVerifiedPostedSlotIds(slotIds) {
+  const ids = [...new Set((slotIds || []).filter(Boolean))];
+  if (!ids.length) return new Set();
+  const verified = new Set();
+  const consider = (r) => {
+    if (r.event_type === POSTED_VERIFIED_EVENT) { verified.add(r.slot_id); return; }
+    const detail = r.detail || '';
+    if (!/Marked as Posted/i.test(detail)) return;
+    const match = detail.match(/https?:\/\/[^\s)]+/);
+    if (match && parsePostEvidence(match[0]).ok) verified.add(r.slot_id);
+  };
+  try {
+    // Chunked by slot id (the id list rides in the URL, so it can't be
+    // unbounded) and paged within each chunk (the row cap above).
+    for (let i = 0; i < ids.length; i += 150) {
+      const chunk = ids.slice(i, i + 150);
+      for (let offset = 0; ; offset += SUPABASE_PAGE_SIZE) {
+        const rows = await supabaseQuery(
+          `studio_activity_log?slot_id=in.(${chunk.join(',')})&${POSTED_EVIDENCE_FILTER}` +
+          `&select=slot_id,event_type,detail&order=id.asc` +
+          `&limit=${SUPABASE_PAGE_SIZE}&offset=${offset}`
+        );
+        rows.forEach(consider);
+        if (rows.length < SUPABASE_PAGE_SIZE) break;
+      }
+    }
+    return verified;
+  } catch (error) {
+    console.warn('getVerifiedPostedSlotIds failed (non-fatal, treating all as unverified):', error.message);
+    return new Set();
+  }
+}
+
+/** True when the row claims Posted but nothing backs that claim up. */
+function isUnverifiedPosted(row, verifiedIds) {
+  if (!row || row.studio_status !== STUDIO_STATUS_POSTED) return false;
+  return !(verifiedIds && verifiedIds.has(row.id));
+}
+
+/**
+ * The label a Posted row should actually be shown with. Verified rows read
+ * "Posted"; unverified ones read "Pending verification" so the badge never
+ * claims a publish nobody can prove.
+ */
+function studioPostedLabel(row, verifiedIds) {
+  return isUnverifiedPosted(row, verifiedIds) ? STUDIO_LABEL_UNVERIFIED : STUDIO_STATUS_POSTED;
+}
+
+/**
+ * Records proof that a slot went live. Idempotent enough for repeated syncs:
+ * callers pass alreadyVerified to skip slots that already have a record.
+ */
+async function recordPostedVerification(slotId, evidence, actor) {
+  await logStudioActivity(
+    slotId,
+    POSTED_VERIFIED_EVENT,
+    `Verified posted — ${evidence}`,
+    actor || 'System'
+  );
 }
 
 /**
@@ -776,6 +947,21 @@ async function updateStudioStatus(id, statusData) {
     payload.hold_at = new Date().toISOString();
   }
 
+  // ── Posted is evidence-gated (see the POSTED VERIFICATION block above) ──
+  // Setting Posted by hand now means "I am attaching the live post". Without
+  // a link that resolves to a specific published post the save is refused —
+  // the alternative is the status silently meaning nothing, which is the bug
+  // this exists to fix. `verifiedBySheet` is set only by the sheet
+  // reconciler, which has already seen the bot's own "Posted" row.
+  let postedEvidence = null;
+  if (statusData.studio_status === STUDIO_STATUS_POSTED && !statusData.verifiedBySheet) {
+    const evidence = parsePostEvidence(statusData.post_link);
+    if (!evidence.ok) throw new Error(evidence.reason);
+    postedEvidence = evidence.value;
+  } else if (statusData.studio_status === STUDIO_STATUS_POSTED) {
+    postedEvidence = statusData.post_link || 'confirmed published by the posting bot (sheet)';
+  }
+
   payload.updated_at = new Date().toISOString();
 
   await supabaseQuery(`studio_calendar?id=eq.${id}`, 'PATCH', payload);
@@ -801,13 +987,20 @@ async function updateStudioStatus(id, statusData) {
     } else if (ns === 'Hold') {
       actor = 'Content Head'; evt = 'hold';
       detail = `Put on Hold — Reason: ${statusData.hold_reason || '(none)'}`;
-    } else if (ns === 'Posted') {
-      detail = 'Marked as Posted' + (statusData.post_link ? ` — ${statusData.post_link}` : '');
+    } else if (ns === STUDIO_STATUS_POSTED) {
+      detail = `Marked as Posted — ${postedEvidence}`;
     } else {
       detail = `Status → ${payload.approval_status || ns}`;
     }
     if (before.studio_status && before.studio_status !== ns) detail += ` (was ${before.studio_status})`;
     await logStudioActivity(id, evt, detail, actor);
+
+    // The evidence record itself — this is what makes the badge read
+    // "Posted" instead of "Pending verification", so it must be written
+    // whenever a slot legitimately reaches Posted.
+    if (ns === STUDIO_STATUS_POSTED && postedEvidence) {
+      await recordPostedVerification(id, postedEvidence, actor);
+    }
 
     // Assignment change (separate entry)
     if (statusData.assigned_to !== undefined && (statusData.assigned_to || null) !== (before.assigned_to || null)) {

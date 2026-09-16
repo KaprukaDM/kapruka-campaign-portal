@@ -415,6 +415,10 @@
     .status-hold { background: #FFE082; color: #F57F00; }
     .status-posted { background: #B39DDB; color: #311B92; }
     .status-scheduled { background: #4DD0E1; color: #006064; }
+    /* Stored as "Posted" but nothing proves it went live — deliberately reads
+       as a warning, not as a completed state, so it can't be mistaken for one. */
+    .badge-unverified { background: #FFE0B2; color: #E65100; }
+    .status-unverified { background: #FFE0B2; color: #E65100; }
 
     /* Action Buttons */
     .action-btns {
@@ -1575,7 +1579,8 @@
                   <option value="scheduled">Scheduled</option>
                   <option value="rejectedhead">Rejected by Head</option>
                   <option value="approveddm">Approved by DM</option>
-                  <option value="posted">Posted</option>
+                  <option value="posted">Posted (confirmed live)</option>
+                  <option value="postedunverified">⏳ Pending verification (claims Posted, no proof)</option>
                   <option value="rejecteddm">Rejected by DM</option>
                 </select>
                 <label style="color:#5e3a8e;font-weight:600;margin-right:10px;margin-left:20px;">Filter by Person:</label>
@@ -1590,6 +1595,24 @@
                 </select>
 
                 <div style="font-size:12px;color:#666;margin-top:8px;">Select a person to filter the calendar. Choose <strong>Unassigned</strong> to see unallocated slots.</div>
+
+                <!-- Posted reconciliation: the posting sheet is the only place
+                     that knows whether something actually went live, so this
+                     pulls that fact back into the calendar. -->
+                <div style="margin-top:14px;padding-top:14px;border-top:1px dashed #e0e0e0;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                  <button type="button" id="verifyPostedBtn" onclick="runPostedSync(false)"
+                          style="padding:9px 16px;border-radius:8px;border:2px solid #5e3a8e;background:#fff;color:#5e3a8e;font-weight:600;cursor:pointer;font-size:13px;">
+                    🔍 Check Posted vs sheet
+                  </button>
+                  <button type="button" id="applyPostedBtn" onclick="runPostedSync(true)"
+                          style="padding:9px 16px;border-radius:8px;border:none;background:#5e3a8e;color:#fff;font-weight:600;cursor:pointer;font-size:13px;">
+                    ✅ Verify Posted from sheet
+                  </button>
+                  <span style="font-size:12px;color:#666;">
+                    “Posted” is confirmed by the posting sheet, not by picking it from a dropdown.
+                  </span>
+                </div>
+                <div id="postedSyncResult" style="margin-top:12px;font-size:13px;"></div>
               </div>
 
               <!-- Legend: quick reference -->
@@ -2249,6 +2272,11 @@
     let studioMonthThemes = [];
     let studioSearchTerm = '';
     let studioSearchTimer = null;
+    // Slot ids in the loaded month that have real evidence of being published
+    // (see the POSTED VERIFICATION block in js/supabase-api.js). Anything
+    // stored as "Posted" but NOT in here is shown as "Pending verification" —
+    // the status stops claiming a publish nobody can point at.
+    let studioVerifiedPostedIds = new Set();
 
     // Store original data for filtering
     let allRequests = [];
@@ -3428,6 +3456,12 @@
 
         studioMonthRawData = await getStudioCalendarForMonth(currentStudioYear, currentStudioMonth);
 
+        // Which of this month's "Posted" rows can actually prove it. Only the
+        // Posted ones are asked about, so this is a small extra query.
+        studioVerifiedPostedIds = await getVerifiedPostedSlotIds(
+          studioMonthRawData.filter(r => r.studio_status === 'Posted').map(r => r.id)
+        );
+
         const startDate = `${currentStudioYear}-${String(currentStudioMonth).padStart(2, '0')}-01`;
         const lastDay = new Date(currentStudioYear, currentStudioMonth, 0).getDate();
         const endDate = `${currentStudioYear}-${String(currentStudioMonth).padStart(2, '0')}-${lastDay}`;
@@ -3523,7 +3557,14 @@
             if (filterValue === 'rejectedhead') return item.approval_status === 'Rejected by Head'; // NEW
             if (filterValue === 'approveddm') return item.approval_status === 'Approved by DM'; // NEW
             if (filterValue === 'rejecteddm') return item.approval_status === 'Rejected by DM' || item.studio_status === 'DM Rejected'; // NEW
-            if (filterValue === 'posted') return item.studio_status === 'Posted';
+            // "Posted" now means confirmed live. Rows that merely claim it
+            // are a separate, reviewable bucket rather than being counted in.
+            if (filterValue === 'posted') {
+              return item.studio_status === 'Posted' && !isUnverifiedPosted(item, studioVerifiedPostedIds);
+            }
+            if (filterValue === 'postedunverified') {
+              return isUnverifiedPosted(item, studioVerifiedPostedIds);
+            }
             return true;
           });
         }
@@ -3586,6 +3627,18 @@
       if (!priority) return '';
       const isHigh = priority === 'High';
       return `<span class="slot-status" style="background:${isHigh ? '#E53935' : '#78909C'};color:#fff;">${isHigh ? '🔴 High' : 'Low'}</span>`;
+    }
+
+    // Grid badge for a slot stored as "Posted". Only renders the confident
+    // green "Posted" pill when there is evidence the post is live; otherwise
+    // it reads "Pending verification" in amber, because a row nobody can
+    // point at a live post for is, as far as this dashboard knows, still
+    // sitting in the schedule.
+    function renderPostedSlotBadge(item) {
+      if (isUnverifiedPosted(item, studioVerifiedPostedIds)) {
+        return '<span class="slot-status status-unverified" title="Marked Posted but no live post link or sheet confirmation is attached — treat as not yet published.">⏳ Pending verification</span>';
+      }
+      return '<span class="slot-status status-posted" title="Confirmed live — evidence is in this slot&#39;s activity log.">✅ Posted</span>';
     }
 
     function renderSlotLabels(item) {
@@ -3691,7 +3744,7 @@
               } else if (slotData.approval_status === 'Approved by DM') {
                 statusBadge = '<span class="slot-status status-approved">✓ DM Approved</span>';
               } else if (slotData.studio_status === 'Posted') {
-                statusBadge = '<span class="slot-status status-posted">Posted</span>';
+                statusBadge = renderPostedSlotBadge(slotData);
               } else if (slotData.studio_status === 'Scheduled') {
                 statusBadge = '<span class="slot-status status-scheduled">📅 Scheduled</span>';
               } else if (slotData.approval_status === 'Rejected by DM' || slotData.studio_status === 'DM Rejected') {
@@ -3753,7 +3806,7 @@
             if (item.approval_status === 'Approved by DM') {
               statusBadge = '<span class="slot-status status-approved">✓ DM Approved</span>';
             } else if (item.studio_status === 'Posted') {
-              statusBadge = '<span class="slot-status status-posted">Posted</span>';
+              statusBadge = renderPostedSlotBadge(item);
             } else if (item.studio_status === 'Scheduled') {
               statusBadge = '<span class="slot-status status-scheduled">Scheduled</span>';
             } else if (item.approval_status === 'Rejected by DM' || item.studio_status === 'DM Rejected') {
@@ -4019,6 +4072,49 @@
           </div>`
         : '';
 
+      // ── Posted verification state for this one slot ──
+      // Re-read from the activity log rather than trusting the month-level
+      // cache: the modal always refreshes the row above, so the evidence it
+      // shows has to be just as fresh.
+      let slotPostedEvidence = '';
+      let slotUnverifiedPosted = false;
+      if (slotData.studio_status === 'Posted') {
+        try {
+          const log = await getStudioActivityLog(slotData.id);
+          const proof = log.filter(l => l.event_type === 'posted_verified').pop()
+            || log.filter(l => /Marked as Posted/i.test(l.detail || '')
+                 && (l.detail.match(/https?:\/\/[^\s)]+/) || [])
+                      .some(u => parsePostEvidence(u).ok)).pop();
+          if (proof) {
+            const m = (proof.detail || '').match(/https?:\/\/[^\s)]+/);
+            slotPostedEvidence = m ? m[0] : String(proof.detail || '').replace(/^Verified posted — /, '');
+          }
+          slotUnverifiedPosted = !proof;
+        } catch (e) {
+          // Can't prove it → don't claim it. Failing towards "unverified" is
+          // the honest direction.
+          slotUnverifiedPosted = true;
+        }
+      }
+      const slotPostedEvidenceHtml = slotPostedEvidence
+        ? `<div style="margin-top:6px;font-size:12px;color:#2E7D32;">✅ Confirmed live: ${
+            /^https?:\/\//i.test(slotPostedEvidence)
+              ? `<a href="${escapeHtml(slotPostedEvidence)}" target="_blank" rel="noopener" style="color:#2E7D32;">${escapeHtml(slotPostedEvidence)}</a>`
+              : escapeHtml(slotPostedEvidence)
+          }</div>`
+        : '';
+      const unverifiedPostedWarning = slotUnverifiedPosted ? `
+        <div style="background:#FFF3E0;padding:15px;border-radius:8px;margin-bottom:20px;border-left:4px solid #EF6C00;">
+          <strong style="color:#EF6C00;">⏳ Marked Posted, but nothing proves it went live</strong>
+          <p style="margin-top:8px;font-size:13px;color:#5D4037;">
+            This row is stored as <code>Posted</code> but has no live post link and the posting sheet has not
+            confirmed it either, so it may still be sitting in the schedule. It is <strong>not</strong> counted as
+            posted anywhere in this dashboard until it can be backed up. Nothing has been rewritten — to clear it,
+            either re-save it below with the permalink of the live post, or run
+            <em>Verify Posted from sheet</em> on the Studio tab if the posting bot published it.
+          </p>
+        </div>` : '';
+
       const statusOptions = ['Received', 'Working', 'Submitted for Review', 'Approved by Head', 'Good to Go', 'Scheduled', 'Rejected by Head', 'DM Rejected', 'Hold', 'Posted'].map(status =>
         `<option value="${status}" ${(slotData.studio_status === status || (status === 'Approved by Head' && slotData.studio_status === 'Approved')) ? 'selected' : ''}>${status}</option>`
       ).join('');
@@ -4116,10 +4212,11 @@
             </div>
             ${slotData.assigned_to ? `<div><strong style="color:#5e3a8e;">👤 Assigned To:</strong> <span style="background:#E3F2FD;padding:5px 12px;border-radius:20px;font-weight:600;">${slotData.assigned_to}</span></div>` : ''}
             <div>
-              <strong style="color:#5e3a8e;">Current Status:</strong> 
+              <strong style="color:#5e3a8e;">Current Status:</strong>
               <span class="badge ${
                 slotData.studio_status === 'Good to Go' ? 'badge-goodtogo' :
                 slotData.studio_status === 'Scheduled' ? 'badge-scheduled' :
+                slotUnverifiedPosted ? 'badge-unverified' :
                 slotData.studio_status === 'Posted' ? 'badge-posted' :
                 (slotData.studio_status === 'Hold' || slotData.studio_status === 'On Hold') ? 'badge-hold' :
                 (slotData.approval_status === 'Rejected by Head' || slotData.studio_status === 'Rejected by Head') ? 'badge-rejected' :
@@ -4128,12 +4225,13 @@
                 slotData.studio_status === 'Submitted for Review' ? 'badge-review' :
                 slotData.head_approved ? 'badge-approved' :
                 'badge-received'
-              }">${(slotData.studio_status === 'Good to Go' || slotData.studio_status === 'Scheduled') ? slotData.studio_status : (slotData.approval_status || slotData.studio_status)}</span>
+              }">${slotUnverifiedPosted ? '⏳ Pending verification' : ((slotData.studio_status === 'Good to Go' || slotData.studio_status === 'Scheduled') ? slotData.studio_status : (slotData.approval_status || slotData.studio_status))}</span>
+              ${slotPostedEvidenceHtml}
             </div>
           </div>
         </div>
 
-        ${rejectionInfo}${holdInfo}
+        ${unverifiedPostedWarning}${rejectionInfo}${holdInfo}
 
         <div id="activityLogSection" style="margin-bottom:20px;">
           <div style="font-weight:700;color:#5e3a8e;margin-bottom:8px;">🕘 Activity Log</div>
@@ -4182,17 +4280,29 @@
             <textarea id="dmRejectionReason" rows="3" placeholder="Explain why Digital Marketing is rejecting this content...">${slotData.dm_rejection_reason || ''}</textarea>
           </div>
           <div id="postedFieldsGroup" style="display:none;">
+            <div style="background:#E8F5E9;border-left:4px solid #2E7D32;padding:12px 14px;border-radius:8px;margin-bottom:14px;font-size:13px;color:#1B5E20;">
+              <strong>Posted means it is live.</strong> Paste the permalink of the actual published post —
+              it is checked, not just stored. If the posting bot published it from the sheet, use
+              <em>Verify Posted from sheet</em> on the Studio tab instead and leave this alone.
+            </div>
             <div class="form-group">
-              <label>🔗 Post Link / URL</label>
-              <input type="url" id="postedLink" placeholder="https://www.facebook.com/..." value="${slotData.post_link || ''}">
+              <label>🔗 Link to the live post *</label>
+              <input type="text" id="postedLink" placeholder="https://www.facebook.com/kapruka/posts/1234567890"
+                     value="${escapeHtml(slotPostedEvidence)}">
+              <div style="font-size:11px;color:#666;margin-top:4px;">
+                Accepted: facebook.com/…/posts/… · facebook.com/reel/… · facebook.com/…/videos/… ·
+                permalink.php?story_fbid=… · fb.watch/… · instagram.com/p/… · or the Graph post id
+                (123456789_987654321).
+              </div>
+              <div id="postedLinkMsg" style="color:#d32f2f;font-size:12px;margin-top:6px;"></div>
             </div>
             <div class="form-group">
               <label>📝 Posted Notes</label>
-              <textarea id="postedNotes" rows="3" placeholder="Describe what was posted, on which page, any notes...">${slotData.posted_update || ''}</textarea>
+              <textarea id="postedNotes" rows="3" placeholder="Describe what was posted, on which page, any notes..."></textarea>
             </div>
             <div class="form-group">
               <label>📅 Posted Date</label>
-              <input type="date" id="postedDate" value="${slotData.posted_date || new Date().toISOString().split('T')[0]}">
+              <input type="date" id="postedDate" value="${new Date().toISOString().split('T')[0]}">
             </div>
           </div>
           <button type="submit" class="btn btn-primary" style="width:100%;">Update Status</button>
@@ -4355,6 +4465,21 @@
         }
       });
 
+      // Live feedback on the evidence field, so the reason a link is rejected
+      // is visible before hitting Save rather than as a surprise alert after.
+      const postedLinkInput = document.getElementById('postedLink');
+      if (postedLinkInput) {
+        postedLinkInput.addEventListener('input', () => {
+          const msg = document.getElementById('postedLinkMsg');
+          const raw = postedLinkInput.value.trim();
+          if (!raw) { msg.textContent = ''; postedLinkInput.style.borderColor = ''; return; }
+          const check = parsePostEvidence(raw);
+          msg.style.color = check.ok ? '#2E7D32' : '#d32f2f';
+          msg.textContent = check.ok ? '✅ Looks like a real post link.' : check.reason;
+          postedLinkInput.style.borderColor = check.ok ? '#2E7D32' : '#d32f2f';
+        });
+      }
+
       statusSelect.dispatchEvent(new Event('change'));
 
       document.getElementById('updateStatusForm').addEventListener('submit', async (e) => {
@@ -4376,6 +4501,19 @@
         if (newStatus === 'DM Rejected' && !dmRejectionReason?.trim()) {
           alert('Please provide a reason for the DM rejection.');
           return;
+        }
+
+        // Posted is evidence-gated — it can only be reached with a link to
+        // the live post. updateStudioStatus() enforces this too (it is the
+        // real gate); this is just the friendlier front door.
+        if (newStatus === 'Posted') {
+          const check = parsePostEvidence(postedLink);
+          if (!check.ok) {
+            const msgEl = document.getElementById('postedLinkMsg');
+            if (msgEl) { msgEl.style.color = '#d32f2f'; msgEl.textContent = check.reason; }
+            alert('Can\'t mark this Posted yet.\n\n' + check.reason);
+            return;
+          }
         }
 
         try {
@@ -4414,6 +4552,85 @@
           alert('Error: ' + error.message);
         }
       });
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // POSTED RECONCILER (Studio tab button)
+    // Calls functions/api/studio-posted-sync.js. Read the header of that
+    // file for the source-of-truth decision; in short, the Google Sheet the
+    // posting bot writes to is the only thing that actually knows whether an
+    // item went live, so this is how that fact gets into studio_calendar.
+    // apply=false is a dry run that writes nothing.
+    // ─────────────────────────────────────────────────────────────
+    async function runPostedSync(apply) {
+      const out = document.getElementById('postedSyncResult');
+      const buttons = ['verifyPostedBtn', 'applyPostedBtn'].map(id => document.getElementById(id));
+      if (apply && !confirm(
+        'This reads the posting sheet and marks items Posted ONLY where the posting bot has ' +
+        'already published them.\n\nIt never un-marks anything — rows that claim Posted with no ' +
+        'proof are listed for review, not rewritten.\n\nContinue?')) return;
+
+      buttons.forEach(b => { if (b) { b.disabled = true; b.style.opacity = '0.6'; } });
+      out.innerHTML = '<span style="color:#5e3a8e;">⏳ Reading the posting sheet…</span>';
+      try {
+        const res = await fetch('/api/studio-posted-sync', apply
+          ? { method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ apply: true, actor: 'Sheet Sync (admin)' }) }
+          : { method: 'GET' });
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.error || ('HTTP ' + res.status));
+
+        const c = data.counts;
+        const row = (label, n, color, note) =>
+          `<div style="display:flex;gap:8px;align-items:baseline;margin:3px 0;">
+             <strong style="color:${color};min-width:34px;text-align:right;">${n}</strong>
+             <span>${label}${note ? ` <span style="color:#888;font-size:12px;">— ${note}</span>` : ''}</span>
+           </div>`;
+
+        const list = (items, color) => items.length
+          ? `<div style="margin-top:6px;max-height:160px;overflow:auto;border:1px solid #eee;border-radius:6px;padding:8px;background:#fff;">
+               ${items.slice(0, 60).map(i =>
+                 `<div style="font-size:12px;color:#555;border-bottom:1px solid #f4f4f4;padding:3px 0;">
+                    <code style="color:${color};">#${i.id}</code> ${i.date || '—'} · ${escapeHtml(i.page || '')}
+                    · sheet: <em>${escapeHtml(i.sheetStatus || 'no sheet row')}</em>
+                    <div style="color:#999;">${escapeHtml(i.content || '')}</div>
+                  </div>`).join('')}
+               ${items.length > 60 ? `<div style="font-size:12px;color:#888;padding-top:6px;">…and ${items.length - 60} more</div>` : ''}
+             </div>`
+          : '';
+
+        out.innerHTML = `
+          <div style="background:#F7F5FB;border:1px solid #e0d8f0;border-radius:10px;padding:14px;">
+            <div style="font-weight:700;color:#5e3a8e;margin-bottom:8px;">
+              ${apply ? '✅ Reconciled against the posting sheet' : '🔍 Dry run — nothing was changed'}
+            </div>
+            ${row('confirmed live by the posting bot, now marked Posted', apply ? data.result.promoted : c.promoted, '#2E7D32', apply ? '' : 'would be promoted')}
+            ${row('already Posted, proof attached', apply ? data.result.backfilled : c.backfilled, '#2E7D32', apply ? '' : 'would be backfilled')}
+            ${row('claim Posted but the sheet still has them scheduled', c.staleFlagged, '#EF6C00', 'flagged for review, NOT rewritten')}
+            ${list(data.stale, '#EF6C00')}
+            ${row('claim Posted with no sheet row and no link at all', c.orphanFlagged, '#EF6C00', 'flagged for review, NOT rewritten')}
+            ${list(data.orphan, '#EF6C00')}
+            ${row('already agree', c.alreadyInSync, '#666', '')}
+            ${data.result && data.result.errors && data.result.errors.length
+              ? `<div style="color:#d32f2f;margin-top:8px;">${data.result.errors.length} row(s) failed to update — see console.</div>` : ''}
+            <div style="font-size:12px;color:#666;margin-top:10px;border-top:1px solid #e8e8e8;padding-top:8px;">
+              Source of truth: <strong>the posting sheet</strong> decides “did it go live”.
+              studio_calendar owns every other status.
+            </div>
+          </div>`;
+        if (data.result && data.result.errors && data.result.errors.length) console.warn('posted sync errors', data.result.errors);
+        if (apply) { studioCalendarData = []; await loadStudioCalendar(); }
+      } catch (e) {
+        out.innerHTML = `<div style="background:#FFEBEE;border:1px solid #EF9A9A;border-radius:10px;padding:12px;color:#B71C1C;">
+          ❌ ${escapeHtml(e.message)}
+          <div style="font-size:12px;margin-top:6px;color:#777;">
+            If this mentions Google credentials, the deployment is missing GOOGLE_CLIENT_ID /
+            GOOGLE_CLIENT_SECRET / GOOGLE_REFRESH_TOKEN / CONTENT_SHEET_ID — the same secrets the
+            posting calendar uses. Nothing can be confirmed as posted without them.
+          </div></div>`;
+      } finally {
+        buttons.forEach(b => { if (b) { b.disabled = false; b.style.opacity = '1'; } });
+      }
     }
 
     // ✅ NEW: Helper function to display assigned person in slots
