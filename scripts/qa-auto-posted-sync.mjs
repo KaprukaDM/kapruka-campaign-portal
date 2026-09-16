@@ -6,7 +6,13 @@
 // only exist as Cloudflare Pages secrets, so /api/studio-posted-sync is
 // stubbed here with a realistic response. What's being checked is that the
 // page calls it by itself and reports the result — not Google's behaviour.
+//
+// QA_ADMIN_PASSWORD must be supplied from the environment — it is a real
+// admin credential and must never be committed to this repo.
 export default async function run(page) {
+  const adminPassword = process.env.QA_ADMIN_PASSWORD;
+  if (!adminPassword) throw new Error('Set QA_ADMIN_PASSWORD to run this QA script.');
+
   const calls = [];
 
   await page.route('**/api/studio-posted-sync', async (route) => {
@@ -25,7 +31,7 @@ export default async function run(page) {
   });
 
   await page.reload({ waitUntil: 'domcontentloaded' });
-  await page.fill('#adminPassword', 'Superadmin');
+  await page.fill('#adminPassword', adminPassword);
   await page.click('#loginForm button[type=submit]');
   await page.waitForSelector('#studioCalendarGrid', { timeout: 25000 });
 

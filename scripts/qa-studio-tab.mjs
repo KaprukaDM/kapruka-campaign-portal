@@ -1,10 +1,17 @@
 // Drives the admin Studio tab far enough to see what a "Posted" row is
 // actually labelled as. Used with the browser-automation skill:
-//   node <skill>/browser.mjs http://127.0.0.1:8800/admin-dashboard.html \
+//   QA_ADMIN_PASSWORD=... node <skill>/browser.mjs \
+//        http://127.0.0.1:8800/admin-dashboard.html \
 //        --script scripts/qa-studio-tab.mjs --screenshot out.png
+//
+// The password comes from the environment on purpose — it is a real admin
+// credential and must never be committed to this repo.
 export default async function run(page) {
+  const adminPassword = process.env.QA_ADMIN_PASSWORD;
+  if (!adminPassword) throw new Error('Set QA_ADMIN_PASSWORD to run this QA script.');
+
   // Superadmin goes straight to the Studio tab.
-  await page.fill('#adminPassword', 'Superadmin');
+  await page.fill('#adminPassword', adminPassword);
   await page.click('#loginForm button[type=submit]');
   await page.waitForSelector('#studioCalendarGrid', { timeout: 20000 });
 
