@@ -91,7 +91,14 @@ const PAGE_SCOPED_TOKEN = process.env.META_PAGE_ACCESS_TOKEN || ADS_ACCESS_TOKEN
 const AD_ACCOUNT_ID = process.env.META_AD_ACCOUNT_ID; // 'act_XXXXXXXXXX'
 const PAGE_ID = process.env.META_PAGE_ID;
 const IG_USER_ID_OVERRIDE = process.env.META_IG_USER_ID || null;
-const TARGET_ADSET_ID = process.env.TARGET_ADSET_ID || '52816670204854';
+// Default destination: the "Organic Winners" ad set (no end date), which is
+// where the dashboard's manual "Push Now" button has been sending these ads.
+// The previous default (52816670204854, "...| $500/30d") ended its flight on
+// 2026-09-03 and is the ONLY ad set in its campaign, so resolveTargetAdSetId
+// had no sibling to fall back to and threw — killing the whole Monday run
+// before a single ad was built (confirmed: the 2026-09-14 scheduled run
+// failed this way, 0 ads created).
+const TARGET_ADSET_ID = process.env.TARGET_ADSET_ID || '52763744155054';
 const CREATIVE_SHEET_ID = process.env.CREATIVE_SHEET_ID || '1CNSZqL5MCbTaj5fF4L_e95oJECVMpOZMUAz-b9r9Bpk';
 const CREATIVE_SHEET_GID = process.env.CREATIVE_SHEET_GID || '275837150';
 const KAPRUKA_HOME_URL = process.env.KAPRUKA_HOME_URL || 'https://www.kapruka.com';

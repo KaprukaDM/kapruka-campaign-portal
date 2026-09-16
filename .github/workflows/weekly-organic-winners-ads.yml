@@ -27,6 +27,10 @@ jobs:
           META_AD_ACCOUNT_ID: ${{ secrets.META_AD_ACCOUNT_ID }}
           META_PAGE_ID: ${{ secrets.META_PAGE_ID }}
           META_IG_USER_ID: ${{ secrets.META_IG_USER_ID }}
+          # Optional override for the destination ad set. Without this line the
+          # cron could only be repointed by editing code — set the
+          # TARGET_ADSET_ID repo secret (or variable) to move the ads instead.
+          TARGET_ADSET_ID: ${{ secrets.TARGET_ADSET_ID }}
           WHATSAPP_PHONE_ID: ${{ secrets.WHATSAPP_PHONE_ID }}
           WHATSAPP_ACCESS_TOKEN: ${{ secrets.WHATSAPP_ACCESS_TOKEN }}
           WHATSAPP_TO: ${{ secrets.WHATSAPP_TO }}
