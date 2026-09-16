@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Newly Added Products Performance - Kapruka</title>
+  <link rel="icon" type="image/png" href="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #1a0b2e 0%, #3d2461 50%, #5e3a8e 100%);
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    .container { max-width: 1600px; margin: 0 auto; }
+    .header { text-align: center; margin-bottom: 40px; }
+    .kapruka-logo {
+      width: 100px; height: 100px; margin: 0 auto 20px;
+      border-radius: 50%; overflow: hidden;
+      box-shadow: 0 15px 50px rgba(0,0,0,0.5);
+    }
+    .kapruka-logo img { width: 100%; height: 100%; object-fit: cover; }
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 42px;
+      background: linear-gradient(135deg, #FFD700, #FFF, #FFD700);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 10px;
+    }
+    .subtitle { color: rgba(255,255,255,0.8); font-size: 14px; letter-spacing: 2px; text-transform: uppercase; }
+    .back-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.1); color: white;
+      padding: 12px 24px; border-radius: 12px; text-decoration: none;
+      font-weight: 600; transition: all 0.3s; margin-bottom: 30px;
+      border: 2px solid rgba(255,255,255,0.2);
+    }
+    .back-btn:hover { background: rgba(255,215,0,0.2); border-color: #FFD700; transform: translateX(-5px); }
+
+    .panel {
+      background: rgba(255,255,255,0.98);
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      margin-bottom: 30px;
+    }
+
+    .range-toggle { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 20px; }
+    .range-btn {
+      padding: 10px 20px; border-radius: 10px; border: 2px solid #e8e8e8;
+      background: white; color: #5e3a8e; font-weight: 600; font-size: 13px;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .range-btn.active, .range-btn:hover { background: #5e3a8e; color: white; border-color: #5e3a8e; }
+    .refresh-link { margin-left: auto; font-size: 12px; color: #5e3a8e; cursor: pointer; font-weight: 600; }
+    .range-dates { font-size: 12px; color: #888; }
+
+    .warning-banner {
+      display: none;
+      background: #FFF3E0; color: #E65100;
+      padding: 12px 18px; border-radius: 10px;
+      font-size: 13px; margin-bottom: 20px;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 18px;
+      margin-bottom: 30px;
+    }
+    .kpi-tile {
+      padding: 22px; border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      transition: transform 0.2s;
+    }
+    .kpi-tile:hover { transform: translateY(-4px); }
+    .kpi-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+    .kpi-value { font-size: 28px; font-weight: 700; font-family: 'Playfair Display', serif; }
+
+    .chart-wrap { position: relative; height: 340px; margin-bottom: 10px; }
+
+    .filters-row {
+      display: flex; gap: 14px; flex-wrap: wrap; align-items: center;
+      margin: 24px 0 16px;
+    }
+    .filters-row input[type="text"] {
+      flex: 1; min-width: 220px;
+      padding: 12px 16px; border: 2px solid #e8e8e8; border-radius: 10px;
+      font-size: 14px; font-family: 'Inter', sans-serif;
+    }
+    .filters-row input[type="text"]:focus { outline: none; border-color: #FFD700; }
+    .filters-row select {
+      padding: 12px 16px; border: 2px solid #e8e8e8; border-radius: 10px;
+      font-size: 14px; font-family: 'Inter', sans-serif; color: #5e3a8e; font-weight: 600;
+    }
+    .result-count { font-size: 12px; color: #888; margin-left: auto; }
+
+    .table-container { overflow-x: auto; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+    table { width: 100%; border-collapse: collapse; background: white; }
+    th {
+      background: linear-gradient(135deg, #5e3a8e, #3d2461);
+      color: white; padding: 14px 12px; text-align: left;
+      font-weight: 700; font-size: 11px; text-transform: uppercase;
+      letter-spacing: 0.5px; cursor: pointer; white-space: nowrap; user-select: none;
+    }
+    th:hover { background: linear-gradient(135deg, #6f4aa0, #4a2d75); }
+    th .sort-arrow { opacity: 0.6; margin-left: 4px; font-size: 10px; }
+    td { padding: 12px; border-bottom: 1px solid #f0f0f0; font-size: 13px; color: #333; }
+    tr:hover td { background: #faf8ff; }
+
+    .status-badge {
+      display: inline-block; padding: 3px 10px; border-radius: 20px;
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+    }
+    .status-instock { background: #E8F5E9; color: #2E7D32; }
+    .status-oos { background: #FFEBEE; color: #C62828; }
+
+    .product-link { color: #5e3a8e; font-weight: 600; text-decoration: none; }
+    .product-link:hover { text-decoration: underline; }
+
+    .loading {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.85); display: none;
+      align-items: center; justify-content: center; z-index: 9999;
+    }
+    .spinner {
+      width: 60px; height: 60px;
+      border: 5px solid rgba(255,215,0,0.3); border-top-color: #FFD700;
+      border-radius: 50%; animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .empty-row { text-align: center; padding: 40px; color: #999; }
+
+    @media (max-width: 768px) {
+      h1 { font-size: 28px; }
+      .kpi-grid { grid-template-columns: 1fr 1fr; }
+      .filters-row { flex-direction: column; align-items: stretch; }
+      .result-count { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="loading" id="loading"><div class="spinner"></div></div>
+
+  <div class="container">
+    <a href="index.html" class="back-btn">← Back to Home</a>
+
+    <div class="header">
+      <div class="kapruka-logo">
+        <img src="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw" alt="Kapruka">
+      </div>
+      <h1>Newly Added Products Performance</h1>
+      <p class="subtitle">GSC + GA4 · Products added Aug 1 – Sep 11, 2025</p>
+    </div>
+
+    <div id="warningBanner" class="warning-banner"></div>
+
+    <div class="panel">
+      <div class="range-toggle" id="rangeToggle">
+        <button class="range-btn active" data-range="30" onclick="setRange(30)">Last 30 Days</button>
+        <button class="range-btn" data-range="90" onclick="setRange(90)">Last 90 Days</button>
+        <button class="range-btn" data-range="180" onclick="setRange(180)">Last 180 Days</button>
+        <span class="range-dates" id="rangeDates"></span>
+        <span class="refresh-link" onclick="loadData()">↻ Refresh</span>
+      </div>
+
+      <div class="kpi-grid" id="kpiGrid">
+        <div class="kpi-tile" style="background:#E3F2FD;">
+          <div class="kpi-label" style="color:#1565C0;">Clicks</div>
+          <div class="kpi-value" style="color:#0D47A1;" id="kpiClicks">–</div>
+        </div>
+        <div class="kpi-tile" style="background:#E8F5E9;">
+          <div class="kpi-label" style="color:#2E7D32;">Impressions</div>
+          <div class="kpi-value" style="color:#1B5E20;" id="kpiImpressions">–</div>
+        </div>
+        <div class="kpi-tile" style="background:#FFF3E0;">
+          <div class="kpi-label" style="color:#E65100;">Avg CTR</div>
+          <div class="kpi-value" style="color:#BF360C;" id="kpiCtr">–</div>
+        </div>
+        <div class="kpi-tile" style="background:#F3E5F5;">
+          <div class="kpi-label" style="color:#6A1B9A;">Avg Position</div>
+          <div class="kpi-value" style="color:#4A148C;" id="kpiPosition">–</div>
+        </div>
+        <div class="kpi-tile" style="background:#E0F2F1;">
+          <div class="kpi-label" style="color:#00695C;">Page Views</div>
+          <div class="kpi-value" style="color:#004D40;" id="kpiPageViews">–</div>
+        </div>
+        <div class="kpi-tile" style="background:#FCE4EC;">
+          <div class="kpi-label" style="color:#AD1457;">Users</div>
+          <div class="kpi-value" style="color:#880E4F;" id="kpiUsers">–</div>
+        </div>
+        <div class="kpi-tile" style="background:#FFFDE7;">
+          <div class="kpi-label" style="color:#9E7A00;">Sessions</div>
+          <div class="kpi-value" style="color:#6B5900;" id="kpiSessions">–</div>
+        </div>
+      </div>
+
+      <h3 style="color:#5e3a8e;font-size:16px;margin-bottom:10px;">📊 Top 20 Products — Page Views &amp; Clicks</h3>
+      <div class="chart-wrap">
+        <canvas id="topProductsChart"></canvas>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="filters-row">
+        <input type="text" id="searchBox" placeholder="🔍 Search by product name or code..." oninput="applyFilters()">
+        <select id="statusFilter" onchange="applyFilters()">
+          <option value="all">All Statuses</option>
+          <option value="In Stock">In Stock</option>
+          <option value="OOS">Out of Stock</option>
+        </select>
+        <span class="result-count" id="resultCount"></span>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th onclick="setSort('name')">Product<span class="sort-arrow" id="arrow-name"></span></th>
+              <th onclick="setSort('code')">Code<span class="sort-arrow" id="arrow-code"></span></th>
+              <th onclick="setSort('status')">Status<span class="sort-arrow" id="arrow-status"></span></th>
+              <th onclick="setSort('clicks')">Clicks<span class="sort-arrow" id="arrow-clicks"></span></th>
+              <th onclick="setSort('impressions')">Impressions<span class="sort-arrow" id="arrow-impressions"></span></th>
+              <th onclick="setSort('ctr')">CTR<span class="sort-arrow" id="arrow-ctr"></span></th>
+              <th onclick="setSort('position')">Avg Position<span class="sort-arrow" id="arrow-position"></span></th>
+              <th onclick="setSort('pageViews')">Page Views<span class="sort-arrow" id="arrow-pageViews"></span></th>
+              <th onclick="setSort('users')">Users<span class="sort-arrow" id="arrow-users"></span></th>
+              <th onclick="setSort('sessions')">Sessions<span class="sort-arrow" id="arrow-sessions"></span></th>
+              <th>Link</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <tr><td colspan="11" class="empty-row">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script>
+    let currentRange = 30;
+    let allProducts = [];
+    let filteredProducts = [];
+    let sortKey = 'pageViews';
+    let sortDir = 'desc';
+    let topProductsChart = null;
+
+    function showLoading() { document.getElementById('loading').style.display = 'flex'; }
+    function hideLoading() { document.getElementById('loading').style.display = 'none'; }
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function num(n) { return Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 0 }); }
+    function pct(n) { return (Number(n || 0) * 100).toFixed(2) + '%'; }
+    function pos(n) { return Number(n || 0).toFixed(1); }
+
+    function setRange(range) {
+      currentRange = range;
+      document.querySelectorAll('#rangeToggle .range-btn').forEach(b => {
+        b.classList.toggle('active', Number(b.dataset.range) === range);
+      });
+      loadData();
+    }
+
+    function setSort(key) {
+      if (sortKey === key) {
+        sortDir = sortDir === 'desc' ? 'asc' : 'desc';
+      } else {
+        sortKey = key;
+        sortDir = ['name', 'code', 'status'].includes(key) ? 'asc' : 'desc';
+      }
+      updateSortArrows();
+      applyFilters();
+    }
+
+    function updateSortArrows() {
+      document.querySelectorAll('.sort-arrow').forEach(el => el.textContent = '');
+      const arrow = document.getElementById('arrow-' + sortKey);
+      if (arrow) arrow.textContent = sortDir === 'desc' ? '▼' : '▲';
+    }
+
+    async function loadData() {
+      showLoading();
+      document.getElementById('warningBanner').style.display = 'none';
+      try {
+        const res = await fetch('/api/new-products-performance?range=' + currentRange);
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.error || ('Request failed (' + res.status + ')'));
+
+        allProducts = data.products || [];
+        renderKpis(data.totals);
+        renderRangeDates(data.startDate, data.endDate);
+        renderWarnings(data.warnings);
+        renderTopProductsChart(allProducts);
+        updateSortArrows();
+        applyFilters();
+      } catch (e) {
+        document.getElementById('tableBody').innerHTML =
+          '<tr><td colspan="11" class="empty-row">❌ ' + escapeHtml(e.message) + '</td></tr>';
+      } finally {
+        hideLoading();
+      }
+    }
+
+    function renderRangeDates(start, end) {
+      document.getElementById('rangeDates').textContent = start && end ? (start + ' → ' + end) : '';
+    }
+
+    function renderWarnings(warnings) {
+      if (!warnings || !warnings.length) return;
+      const banner = document.getElementById('warningBanner');
+      banner.style.display = 'block';
+      banner.innerHTML = '⚠️ Some data may be incomplete: ' + warnings.map(w => escapeHtml(w)).join(' · ');
+    }
+
+    function renderKpis(totals) {
+      totals = totals || {};
+      document.getElementById('kpiClicks').textContent = num(totals.clicks);
+      document.getElementById('kpiImpressions').textContent = num(totals.impressions);
+      document.getElementById('kpiCtr').textContent = pct(totals.ctr);
+      document.getElementById('kpiPosition').textContent = pos(totals.position);
+      document.getElementById('kpiPageViews').textContent = num(totals.pageViews);
+      document.getElementById('kpiUsers').textContent = num(totals.users);
+      document.getElementById('kpiSessions').textContent = num(totals.sessions);
+    }
+
+    function renderTopProductsChart(products) {
+      const top = products.slice(0, 20);
+      const ctx = document.getElementById('topProductsChart').getContext('2d');
+      if (topProductsChart) topProductsChart.destroy();
+      topProductsChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: top.map(p => p.name.length > 28 ? p.name.slice(0, 28) + '…' : p.name),
+          datasets: [
+            { label: 'Page Views', data: top.map(p => p.pageViews), backgroundColor: '#5e3a8e', borderRadius: 6 },
+            { label: 'Clicks', data: top.map(p => p.clicks), backgroundColor: '#FFD700', borderRadius: 6 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { y: { beginAtZero: true } },
+          plugins: { legend: { position: 'top' } }
+        }
+      });
+    }
+
+    function applyFilters() {
+      const search = document.getElementById('searchBox').value.trim().toLowerCase();
+      const status = document.getElementById('statusFilter').value;
+
+      filteredProducts = allProducts.filter(p => {
+        if (status !== 'all' && p.status !== status) return false;
+        if (search) {
+          const hay = (p.name + ' ' + p.code).toLowerCase();
+          if (!hay.includes(search)) return false;
+        }
+        return true;
+      });
+
+      filteredProducts.sort((a, b) => {
+        let av = a[sortKey], bv = b[sortKey];
+        if (typeof av === 'string') { av = av.toLowerCase(); bv = (bv || '').toLowerCase(); }
+        if (av < bv) return sortDir === 'asc' ? -1 : 1;
+        if (av > bv) return sortDir === 'asc' ? 1 : -1;
+        return 0;
+      });
+
+      renderTable();
+    }
+
+    function renderTable() {
+      document.getElementById('resultCount').textContent =
+        filteredProducts.length.toLocaleString('en-US') + ' of ' + allProducts.length.toLocaleString('en-US') + ' products';
+
+      const tbody = document.getElementById('tableBody');
+      if (!filteredProducts.length) {
+        tbody.innerHTML = '<tr><td colspan="11" class="empty-row">No products match this filter.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = filteredProducts.map(p => `
+        <tr>
+          <td><strong>${escapeHtml(p.name)}</strong></td>
+          <td>${escapeHtml(p.code)}</td>
+          <td><span class="status-badge ${p.status === 'OOS' ? 'status-oos' : 'status-instock'}">${escapeHtml(p.status)}</span></td>
+          <td>${num(p.clicks)}</td>
+          <td>${num(p.impressions)}</td>
+          <td>${pct(p.ctr)}</td>
+          <td>${pos(p.position)}</td>
+          <td>${num(p.pageViews)}</td>
+          <td>${num(p.users)}</td>
+          <td>${num(p.sessions)}</td>
+          <td><a class="product-link" href="${escapeHtml(p.url)}" target="_blank" rel="noopener">View →</a></td>
+        </tr>
+      `).join('');
+    }
+
+    updateSortArrows();
+    loadData();
+  </script>
+</body>
+</html>

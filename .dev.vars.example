@@ -16,6 +16,12 @@ GSC_SITE_URL=https://www.kapruka.com/
 # Rows fetched per page-level request when paginating (default 2500, GSC max 25000).
 GSC_ROW_LIMIT=2500
 
+# ── Newly Added Products Performance (functions/api/new-products-performance.js) ──
+# GA4 Data API — reuses GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET/GSC_REFRESH_TOKEN
+# above as a fallback if the GA4-specific ones below aren't set.
+GA4_PROPERTY_ID=
+GA4_REFRESH_TOKEN=
+
 # ── Post Creative Strategy (functions/api/post-creative-strategy.js) ───────
 # META_PAGE_ACCESS_TOKEN is reused from the ads-push features elsewhere in
 # this repo (needs instagram_basic + page-scoped read access).
