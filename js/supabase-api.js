@@ -344,6 +344,64 @@ function studioPostedLabel(row, verifiedIds) {
   return isUnverifiedPosted(row, verifiedIds) ? STUDIO_LABEL_UNVERIFIED : STUDIO_STATUS_POSTED;
 }
 
+// ── SHARED BADGE FOR "CLAIMS POSTED, CAN'T PROVE IT" ───────────────────
+// The Studio tab isn't the only place a Posted badge is drawn: the content
+// calendar and the ad-requests board render the SAME studio_status, so
+// gating only the admin grid would just move the false claim to a page the
+// same people also read. These two helpers exist so all three pages show
+// one answer instead of three.
+//
+// Colours match .status-unverified / .badge-unverified in admin-dashboard.
+const STUDIO_UNVERIFIED_BADGE = {
+  label: STUDIO_LABEL_UNVERIFIED,
+  cls: 'unverified',
+  icon: '⏳',
+  bg: '#FFE0B2',
+  col: '#E65100',
+  title: 'Marked Posted but no live post link or sheet confirmation is attached — treat as not yet published.'
+};
+
+/**
+ * True for a row that has been through annotatePostedVerification() (or any
+ * loader that sets `posted_verified`) and claims Posted without proof.
+ * Anything not explicitly verified counts as unverified — failing towards
+ * "we can't prove it" is the only safe direction for this particular flag.
+ */
+function isUnverifiedPostedRow(row) {
+  return !!row && row.studio_status === STUDIO_STATUS_POSTED && row.posted_verified !== true;
+}
+
+/**
+ * Stamps `posted_verified` (true/false, or null when the row isn't Posted at
+ * all) onto each row, so a page can render the right badge without every
+ * call site knowing how evidence is stored.
+ *
+ * `slotIdOf(row)` must return the studio_calendar.id for that row — NOT the
+ * page's own row id. content_calendar/ad_requests rows carry their own ids
+ * and the evidence log keys off the studio slot, so the two must not be
+ * confused; a wrong id here would silently "verify" the wrong slot.
+ *
+ * Only Posted rows are looked up, which keeps this to one small extra query.
+ */
+async function annotatePostedVerification(rows, slotIdOf) {
+  const list = rows || [];
+  const posted = list.filter(r => r && r.studio_status === STUDIO_STATUS_POSTED);
+  if (!posted.length) {
+    list.forEach(r => { if (r) r.posted_verified = null; });
+    return list;
+  }
+  // getVerifiedPostedSlotIds never throws — on failure it returns an empty
+  // set, i.e. everything reads as unverified, which is the safe direction.
+  const verified = await getVerifiedPostedSlotIds(posted.map(slotIdOf));
+  list.forEach(r => {
+    if (!r) return;
+    if (r.studio_status !== STUDIO_STATUS_POSTED) { r.posted_verified = null; return; }
+    const slotId = slotIdOf(r);
+    r.posted_verified = slotId != null && verified.has(slotId);
+  });
+  return list;
+}
+
 /**
  * Records proof that a slot went live. Idempotent enough for repeated syncs:
  * callers pass alreadyVerified to skip slots that already have a record.
@@ -1495,7 +1553,7 @@ async function getCalendarData(month, year) {
     try {
       const studioRows = await supabaseQuery(
         `studio_calendar?source_type=eq.content_calendar&date=gte.${startDate}&date=lte.${endDate}` +
-        `&select=source_id,dm_rejection_reason,head_rejection_reason,hold_reason`
+        `&select=id,source_id,dm_rejection_reason,head_rejection_reason,hold_reason`
       );
       const reasonById = {};
       studioRows.forEach(s => { if (s.source_id != null) reasonById[s.source_id] = s; });
@@ -1505,9 +1563,21 @@ async function getCalendarData(month, year) {
           b.dm_rejection_reason   = s.dm_rejection_reason;
           b.head_rejection_reason = s.head_rejection_reason;
           b.hold_reason           = s.hold_reason;
+          // The evidence log keys off studio_calendar.id, and the view only
+          // gives us content_calendar.id — carry the studio id across so the
+          // Posted badge can be checked below.
+          b.studio_slot_id        = s.id;
         }
       });
     } catch (e) { console.warn('Could not merge studio rejection reasons:', e); }
+
+    // A "Posted" badge here is the same claim the Studio tab makes, so it
+    // has to meet the same bar: no evidence → it renders as pending, not as
+    // published. Separate try so a failure only costs the badge, never the
+    // calendar.
+    try {
+      await annotatePostedVerification(bookings, b => b.studio_slot_id);
+    } catch (e) { console.warn('Could not verify posted claims:', e); }
 
     return { themes, categorySlots, bookings };
   } catch (error) {
@@ -1743,14 +1813,22 @@ async function getAdRequestsForMonth(monthYear) {
   if (requests.length === 0) return requests;
 
   const ids = requests.map(r => r.id);
+  // `studio_slot_id:id` is aliased deliberately: spreading the studio row
+  // over the request below would otherwise overwrite the ad_request's own id
+  // and every chip would open the wrong record.
   const studioRows = await supabaseQuery(
     `studio_calendar?source_type=eq.ad_request&source_id=in.(${ids.join(',')})` +
-    `&select=source_id,studio_status,content_link,dm_rejection_reason,head_rejection_reason,hold_reason`
+    `&select=source_id,studio_slot_id:id,studio_status,content_link,dm_rejection_reason,head_rejection_reason,hold_reason`
   );
   const byId = {};
   studioRows.forEach(s => { byId[s.source_id] = s; });
 
-  return requests.map(r => ({ ...r, ...(byId[r.id] || {}) }));
+  const merged = requests.map(r => ({ ...r, ...(byId[r.id] || {}) }));
+  // Same bar as the Studio tab: a Posted chip must be able to prove it.
+  try {
+    await annotatePostedVerification(merged, r => r.studio_slot_id);
+  } catch (e) { console.warn('Could not verify posted claims:', e); }
+  return merged;
 }
 
 async function submitAdRequest(data) {

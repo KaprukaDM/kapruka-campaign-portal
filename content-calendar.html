@@ -39,6 +39,11 @@
       --studio-ready-col:    #15803d;
       --studio-posted-bg:    #ede9fe;
       --studio-posted-col:   #6d28d9;
+      /* "Posted" that nothing backs up. Same amber as .status-unverified /
+         .badge-unverified on the admin Studio tab, so one state looks like
+         one state across the portal. */
+      --unverified-bg:       #FFE0B2;
+      --unverified-col:      #E65100;
     }
 
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -272,6 +277,10 @@
     .slot-preview.pending { background: var(--amber-bg);  color: var(--amber);  border-left: 2px solid var(--amber); }
     .slot-preview.rejected{ background: var(--red-bg);    color: var(--red);    border-left: 2px solid var(--red); text-decoration: line-through; opacity: 0.6; }
     .slot-preview.posted  { background: var(--studio-posted-bg); color: var(--studio-posted-col); border-left: 2px solid var(--studio-posted-col); }
+    /* Claims Posted, nothing proves it went live — deliberately NOT the
+       posted purple, so it can't be mistaken for a published item at a
+       glance. Matches .status-unverified on the admin Studio tab. */
+    .slot-preview.unverified { background: var(--unverified-bg); color: var(--unverified-col); border-left: 2px dashed var(--unverified-col); }
 
     .slot-code {
       font-family: 'DM Mono', monospace;
@@ -299,6 +308,10 @@
     .studio-badge.posted {
       background: var(--studio-posted-bg);
       color: var(--studio-posted-col);
+    }
+    .studio-badge.unverified {
+      background: var(--unverified-bg);
+      color: var(--unverified-col);
     }
 
     /* ── LOADING ─────────────────────────────────────────────── */
@@ -464,6 +477,7 @@
     .legend-dot.booked    { background: var(--green); }
     .legend-dot.pending   { background: var(--amber); }
     .legend-dot.posted    { background: var(--studio-posted-col); }
+    .legend-dot.unverified{ background: var(--unverified-col); }
     .legend-dot.seasonal  { background: #ec4899; }
     .legend-dot.blocked   { background: var(--text-muted); }
 
@@ -526,7 +540,8 @@
         <div class="legend-item"><div class="legend-dot available"></div> Available</div>
         <div class="legend-item"><div class="legend-dot booked"></div> Booked</div>
         <div class="legend-item"><div class="legend-dot pending"></div> Pending</div>
-        <div class="legend-item"><div class="legend-dot posted"></div> Posted</div>
+        <div class="legend-item"><div class="legend-dot posted"></div> Posted (live post confirmed)</div>
+        <div class="legend-item" title="Set to Posted by hand with no link to the live post and no confirmation from the posting sheet."><div class="legend-dot unverified"></div> Pending verification</div>
         <div class="legend-item"><div class="legend-dot seasonal"></div> Seasonal</div>
         <div class="legend-item"><div class="legend-dot blocked"></div> Studio Prep (blocked)</div>
       </div>
@@ -558,11 +573,29 @@
     }
 
     // ── STUDIO STATUS HELPERS ────────────────────────────────
-    // Maps the full internal studio_status to a simplified public label + badge class
-    function getSimplifiedStudioStatus(studioStatus) {
+    // Maps the full internal studio_status to a simplified public label + badge
+    // class.
+    //
+    // `booking` is the row the status came from. "Posted" is the one status
+    // that is NOT taken at face value: it only reads as Posted when the row
+    // carries proof the post actually went live (posted_verified, stamped by
+    // annotatePostedVerification in js/supabase-api.js — evidence is either a
+    // validated permalink or a confirmation from the posting sheet). Without
+    // that it reads "Pending verification", exactly as the admin Studio tab
+    // shows it. Anything else would have this calendar telling people an item
+    // is published when it is still sitting in the schedule.
+    function getSimplifiedStudioStatus(studioStatus, booking) {
       if (!studioStatus) return null;
       const s = studioStatus.toLowerCase();
       if (s === 'posted') {
+        if (booking && isUnverifiedPostedRow(booking)) {
+          return {
+            label: STUDIO_UNVERIFIED_BADGE.label,
+            cls: STUDIO_UNVERIFIED_BADGE.cls,
+            icon: STUDIO_UNVERIFIED_BADGE.icon,
+            title: STUDIO_UNVERIFIED_BADGE.title
+          };
+        }
         return { label: 'Posted', cls: 'posted', icon: '✦' };
       }
       if (s === 'approveddm' || s === 'approved by dm') {
@@ -579,8 +612,13 @@
     }
 
     // Human-readable label for the full internal studio status (shown in popup)
-    function getFullStudioStatusLabel(studioStatus) {
+    function getFullStudioStatusLabel(studioStatus, booking) {
       if (!studioStatus) return null;
+      // Same rule as above — the detail popup must not say "Posted" when the
+      // badge beside it says the claim is unproven.
+      if (booking && isUnverifiedPostedRow(booking)) {
+        return 'Posted (claimed — not verified)';
+      }
       const map = {
         'received':        'Not Started',
         'working':         'Working',
@@ -798,8 +836,15 @@
           slotDiv.dataset.search = [booking.product_code, booking.category, booking.booking_note]
             .filter(Boolean).join(' ').toLowerCase();
 
+          // booking.status is mirrored from studio_status by
+          // syncStudioStatusToRequest(), so it inherits the same unproven
+          // "Posted" claim and gets the same treatment. The slot still counts
+          // as OCCUPIED either way (see activeBookings above) — only what it
+          // is called changes.
+          const unprovenPosted = isUnverifiedPostedRow(booking);
+
           if (booking.status === 'Posted') {
-            slotDiv.classList.add('posted');
+            slotDiv.classList.add(unprovenPosted ? 'unverified' : 'posted');
           } else if (booking.status === 'Approved') {
             slotDiv.classList.add('booked');
           } else if (booking.status === 'Pending') {
@@ -809,7 +854,7 @@
           }
 
           // FIX: correct status icon — Posted shows ✦, not ⏳
-          const statusIcon = booking.status === 'Posted'   ? '\u2726' :
+          const statusIcon = booking.status === 'Posted'   ? (unprovenPosted ? '\u23f3' : '\u2726') :
                             booking.status === 'Approved' ? '\u2713' :
                             booking.status === 'Pending'  ? '\u23f3' : '\u2717';
 
@@ -817,9 +862,9 @@
           const productCodeShort = truncateCode(booking.product_code, 10);
 
           // ── STUDIO STATUS BADGE (inline) ──────────────────
-          const simplified = getSimplifiedStudioStatus(booking.studio_status);
+          const simplified = getSimplifiedStudioStatus(booking.studio_status, booking);
           const studioBadgeHTML = simplified
-            ? `<span class="studio-badge ${simplified.cls}">${simplified.icon} ${simplified.label}</span>`
+            ? `<span class="studio-badge ${simplified.cls}"${simplified.title ? ` title="${simplified.title}"` : ''}>${simplified.icon} ${simplified.label}</span>`
             : '';
 
           slotDiv.innerHTML = `
@@ -893,9 +938,13 @@
         ? themes.map(t => t.theme_name).join(' + ') 
         : themes.theme_name || 'No Theme';
 
+      const unprovenPosted = isUnverifiedPostedRow(booking);
+
       let statusBadge;
       if (booking.status === 'Posted') {
-        statusBadge = '<span style="background:var(--studio-posted-bg);color:var(--studio-posted-col);padding:4px 12px;border-radius:6px;font-size:11px;font-weight:700;">✦ Posted</span>';
+        statusBadge = unprovenPosted
+          ? `<span title="${STUDIO_UNVERIFIED_BADGE.title}" style="background:${STUDIO_UNVERIFIED_BADGE.bg};color:${STUDIO_UNVERIFIED_BADGE.col};padding:4px 12px;border-radius:6px;font-size:11px;font-weight:700;">${STUDIO_UNVERIFIED_BADGE.icon} ${STUDIO_UNVERIFIED_BADGE.label}</span>`
+          : '<span style="background:var(--studio-posted-bg);color:var(--studio-posted-col);padding:4px 12px;border-radius:6px;font-size:11px;font-weight:700;">✦ Posted</span>';
       } else if (booking.status === 'Approved') {
         statusBadge = '<span style="background:var(--green-bg);color:var(--green);padding:4px 12px;border-radius:6px;font-size:11px;font-weight:700;">✓ Approved</span>';
       } else if (booking.status === 'Pending') {
@@ -905,16 +954,28 @@
       }
 
       // ── STUDIO STATUS SECTION (popup) ───────────────────────
-      const simplified = getSimplifiedStudioStatus(booking.studio_status);
-      const fullLabel = getFullStudioStatusLabel(booking.studio_status);
+      const simplified = getSimplifiedStudioStatus(booking.studio_status, booking);
+      const fullLabel = getFullStudioStatusLabel(booking.studio_status, booking);
 
       let studioStatusSection = '';
       if (simplified) {
-        const badgeStyle = simplified.cls === 'posted'
+        const badgeStyle = simplified.cls === 'unverified'
+          ? `background:${STUDIO_UNVERIFIED_BADGE.bg};color:${STUDIO_UNVERIFIED_BADGE.col};`
+          : simplified.cls === 'posted'
           ? 'background:var(--studio-posted-bg);color:var(--studio-posted-col);'
           : simplified.cls === 'ready'
           ? 'background:var(--studio-ready-bg);color:var(--studio-ready-col);'
           : 'background:var(--studio-progress-bg);color:var(--studio-progress-col);';
+
+        // Says WHY it isn't reading as Posted and who can clear it, so the
+        // badge is actionable instead of just confusing.
+        const unverifiedNote = simplified.cls === 'unverified' ? `
+          <div style="margin-top:8px;background:#FFF8E1;border:1px solid #FFE0B2;border-radius:8px;padding:9px 11px;font-size:12px;color:#8a5a00;line-height:1.5;">
+            Someone set this to Posted, but there is no link to the live post and the posting
+            sheet has not confirmed it — so it is <strong>not counted as published</strong>.
+            The studio can clear it by attaching the post link on the admin Studio tab, or by
+            running <em>Verify Posted from sheet</em> there if the posting bot already published it.
+          </div>` : '';
 
         studioStatusSection = `
           <div style="margin-bottom:12px;">
@@ -925,6 +986,7 @@
               </span>
               ${fullLabel ? `<span style="font-size:12px;color:var(--text-muted);">(${fullLabel})</span>` : ''}
             </div>
+            ${unverifiedNote}
           </div>
         `;
       }

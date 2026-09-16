@@ -135,6 +135,9 @@
     .studio-badge.progress { background: var(--studio-progress-bg); color: var(--studio-progress-col); }
     .studio-badge.ready { background: var(--studio-ready-bg); color: var(--studio-ready-col); }
     .studio-badge.posted { background: var(--studio-posted-bg); color: var(--studio-posted-col); }
+    /* Claims Posted with nothing to back it up. Amber, not the posted purple,
+       and identical to .badge-unverified on the admin Studio tab. */
+    .studio-badge.unverified { background: #FFE0B2; color: #E65100; }
 
     .add-request-btn {
       width: 100%; padding: 9px; margin-top: 4px; background: var(--surface2);
@@ -241,18 +244,35 @@
     let requestsByCategory = {};
     let activeCategory = null;
 
-    function getSimplifiedStudioStatus(studioStatus) {
+    // `request` is the row the status came from. "Posted" only reads as
+    // Posted when the row carries proof the post actually went live
+    // (posted_verified, stamped by annotatePostedVerification in
+    // js/supabase-api.js). Without proof it reads "Pending verification" —
+    // the same treatment the admin Studio tab and the content calendar give
+    // it, so the three pages can't disagree about whether something is out.
+    function getSimplifiedStudioStatus(studioStatus, request) {
       if (!studioStatus) return { label: 'Received', cls: 'progress', icon: '◎' };
       const s = studioStatus.toLowerCase();
-      if (s === 'posted') return { label: 'Posted', cls: 'posted', icon: '✦' };
+      if (s === 'posted') {
+        if (request && isUnverifiedPostedRow(request)) {
+          return {
+            label: STUDIO_UNVERIFIED_BADGE.label,
+            cls: STUDIO_UNVERIFIED_BADGE.cls,
+            icon: STUDIO_UNVERIFIED_BADGE.icon,
+            title: STUDIO_UNVERIFIED_BADGE.title
+          };
+        }
+        return { label: 'Posted', cls: 'posted', icon: '✦' };
+      }
       if (s === 'approveddm' || s === 'approved by dm' || s === 'approved' || s === 'approvedhead' || s === 'approved by head') {
         return { label: 'Ready', cls: 'ready', icon: '✓' };
       }
       return { label: 'In Progress', cls: 'progress', icon: '◎' };
     }
 
-    function getFullStudioStatusLabel(studioStatus) {
+    function getFullStudioStatusLabel(studioStatus, request) {
       if (!studioStatus) return 'Not Started';
+      if (request && isUnverifiedPostedRow(request)) return 'Posted (claimed — not verified)';
       const map = {
         'received': 'Not Started', 'working': 'Working',
         'submitted for review': 'Submitted for Review', 'resubmitted for review': 'Resubmitted for Review',
@@ -354,12 +374,12 @@
       else if (filled.length > 0) badgeClass = 'partial';
 
       const chips = filled.map(r => {
-        const s = getSimplifiedStudioStatus(r.studio_status);
+        const s = getSimplifiedStudioStatus(r.studio_status, r);
         const dateTag = r.go_live_date ? ` · ${r.go_live_date}` : '';
         return `
           <div class="request-chip" onclick='showRequestDetails(${r.id})'>
             <span class="chip-angle" title="${(r.angle || '').replace(/"/g, '&quot;')}">${r.angle || '(no angle set)'}${dateTag}</span>
-            <span class="studio-badge ${s.cls}">${s.icon} ${s.label}</span>
+            <span class="studio-badge ${s.cls}"${s.title ? ` title="${s.title}"` : ''}>${s.icon} ${s.label}</span>
           </div>
         `;
       }).join('');
@@ -449,8 +469,17 @@
       }
       if (!found) return;
 
-      const s = getSimplifiedStudioStatus(found.studio_status);
-      const fullLabel = getFullStudioStatusLabel(found.studio_status);
+      const s = getSimplifiedStudioStatus(found.studio_status, found);
+      const fullLabel = getFullStudioStatusLabel(found.studio_status, found);
+      // Says why it isn't reading as Posted and how to clear it, rather than
+      // leaving an amber badge nobody can act on.
+      const unverifiedNote = isUnverifiedPostedRow(found) ? `
+        <div style="margin-top:8px;background:#FFF8E1;border:1px solid #FFE0B2;border-radius:8px;padding:9px 11px;font-size:12px;color:#8a5a00;line-height:1.5;">
+          Set to Posted by hand, but there is no link to the live post and the posting sheet has
+          not confirmed it — so it is <strong>not counted as published</strong>. Attach the post
+          link on the admin Studio tab, or run <em>Verify Posted from sheet</em> there if the
+          posting bot already published it.
+        </div>` : '';
 
       const modal = document.getElementById('modal');
       const content = document.getElementById('modalContent');
@@ -465,7 +494,7 @@
         </div>
         <div class="detail-row">
           <div class="detail-label">🎬 Production Status</div>
-          <div class="detail-value"><span class="studio-badge ${s.cls}">${s.icon} ${s.label}</span> <span style="color:var(--text-muted);font-size:12px;">(${fullLabel})</span></div>
+          <div class="detail-value"><span class="studio-badge ${s.cls}"${s.title ? ` title="${s.title}"` : ''}>${s.icon} ${s.label}</span> <span style="color:var(--text-muted);font-size:12px;">(${fullLabel})</span>${unverifiedNote}</div>
         </div>
         <div class="detail-row">
           <div class="detail-label">Angle</div>
