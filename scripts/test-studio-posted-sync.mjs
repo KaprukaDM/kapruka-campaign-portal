@@ -73,7 +73,10 @@ check('short number rejected',  isValidEvidence('12345'), false);
 // ── 3. The disagreement decision table ─────────────────────────────────────
 // One row of each shape that exists in the real data.
 console.log('\nreconciliation decision table');
-const row = (id, studio_status) => ({ id, studio_status, date: '2026-03-04', page_name: 'Kapruka', content_details: 'x' });
+// Dated AFTER POSTED_EVIDENCE_SINCE, so these rows are judged on evidence
+// alone. The legacy (pre-evidence) case is exercised separately below.
+const row = (id, studio_status, date = '2026-09-04') =>
+  ({ id, studio_status, date, page_name: 'Kapruka', content_details: 'x' });
 const sheet = (id, sheetStatus) => [id, {
   contentId: 'STU-' + id, sheetStatus, mapped: sheetStatusToStudioStatus(sheetStatus)
 }];
@@ -112,6 +115,29 @@ check('stale + orphan are report-only (never in the applied sets)',
   [...r.promoted, ...r.backfilled].some(i => i.id === 3 || i.id === 4), false);
 check('the sheet status is carried into the report so a human can judge it',
   r.stale[0].sheetStatus, 'Approved');
+check('nothing recent is written off as legacy', ids(r.legacy), []);
+
+// ── 4. The pre-evidence backlog ────────────────────────────────────────────
+// Nothing recorded proof before 2026-08-13, so an old Posted row with no
+// sheet row is not a suspect claim — it is simply older than the mechanism.
+// It must NOT be flagged (the reported bug), while a row the sheet actively
+// contradicts stays flagged however old it is.
+console.log('\nlegacy (pre-evidence) rows');
+const legacyById = new Map([
+  [10, row(10, 'Posted', '2026-03-04')],  // old, no sheet row       → LEGACY
+  [11, row(11, 'Posted', '2026-08-12')],  // day before cutover      → LEGACY
+  [12, row(12, 'Posted', '2026-08-13')],  // cutover day itself      → ORPHAN
+  [13, row(13, 'Posted', '2026-03-04')],  // old but sheet says queued → STALE
+  [14, row(14, 'Posted', '2026-03-04')],  // old AND proof on file   → IN SYNC
+]);
+const legacySheet = new Map([sheet(13, 'Approved')]);
+const lr = classifyRows(legacyById, legacySheet, new Set([14]));
+check('old rows with no sheet row are accepted, not flagged', ids(lr.legacy), [10, 11]);
+check('the cutover day itself still needs proof',             ids(lr.orphan), [12]);
+check('a sheet contradiction beats age',                      ids(lr.stale), [13]);
+check('real evidence still wins on an old row',               ids(lr.alreadyInSync), [14]);
+check('legacy rows are never rewritten either',
+  [...lr.promoted, ...lr.backfilled].length, 0);
 
 console.log(`\n${passed} passed, ${failures.length} failed`);
 if (failures.length) { console.error('FAILED: ' + failures.join(', ')); process.exit(1); }

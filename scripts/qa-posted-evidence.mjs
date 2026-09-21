@@ -1,13 +1,17 @@
 // Positive control for the Posted gate.
 //
-// Right now NOTHING in the live DB has usable evidence, so every Posted row
-// correctly reads "Pending verification" — which on its own can't tell a
-// working gate apart from a blanket relabel. This intercepts the evidence
-// lookup (studio_activity_log) and hands back a posted_verified row for the
-// FIRST slot it asks about, so that one slot should flip back to "Posted"
-// while the rest stay pending. Nothing is written to Supabase.
+// This intercepts the evidence lookup (studio_activity_log) and hands back a
+// posted_verified row for the FIRST slot it asks about, so that one slot
+// should read "Posted" while the rest of the month's unproven rows stay
+// pending. Nothing is written to Supabase.
+//
+// Point it at a month AFTER POSTED_EVIDENCE_SINCE (2026-08-13) — August 2026
+// is the mixed one. Before that cutover every Posted row reads Posted anyway
+// (nothing was recording proof yet, see js/supabase-api.js), so the injection
+// would prove nothing there.
 export default async function run(page) {
-  // The page loads the CURRENT month first and March only after the clicks,
+  const TARGET_MONTH = 'August 2026';
+  // The page loads the CURRENT month first and the target only after the clicks,
   // so the first slot of every lookup is injected, not just the first one
   // ever seen — otherwise the evidence lands on a month nobody is looking at.
   const injectedSlots = [];
@@ -33,7 +37,7 @@ export default async function run(page) {
   const back = page.locator('button', { hasText: '←' }).last();
   for (let i = 0; i < 24; i++) {
     const label = (await page.locator('#monthDisplay').innerText()).trim();
-    if (label === 'March 2026') break;
+    if (label === TARGET_MONTH) break;
     await back.click();
     await page.waitForTimeout(1200);
   }

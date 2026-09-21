@@ -71,9 +71,14 @@
 //               studioPostedLabel in js/supabase-api.js), so flagging is
 //               already visible without destroying a human's record of what
 //               they believed happened.
-//    ORPHAN     Supabase says Posted but the sheet has no STU-<id> row at all
-//               (posted outside this pipeline, or pre-dates it) → REPORTED,
+//    ORPHAN     Supabase says Posted, the sheet has no STU-<id> row, and the
+//               slot is recent enough that it should have one → REPORTED,
 //               NOT REWRITTEN. Same reasoning.
+//    LEGACY     Same as ORPHAN but scheduled before POSTED_EVIDENCE_SINCE,
+//               i.e. before anything in this system recorded proof at all.
+//               Counted and returned, but NOT flagged: the UI shows these as
+//               Posted, because "no evidence" here means "no evidence was
+//               being collected", not "this may not have gone out".
 //
 //  Evidence is written into `studio_activity_log` (event_type
 //  'posted_verified'), NOT a new column: studio_calendar has no
@@ -103,6 +108,17 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 const POSTED_VERIFIED_EVENT = 'posted_verified';
 const STUDIO_POSTED = 'Posted';
+// Mirror of POSTED_EVIDENCE_SINCE in js/supabase-api.js (same no-build-step
+// reason as the key above). Slots scheduled before this date pre-date every
+// mechanism that records proof — the sheet does not go back that far and the
+// portal was not writing evidence yet — so reporting them as "claims Posted
+// without proof" was counting the absence of a machine that did not exist.
+// They are reported separately as LEGACY and the UI shows them as Posted.
+const POSTED_EVIDENCE_SINCE = '2026-08-13';
+function isLegacyPostedDate(date) {
+  const d = date ? String(date).slice(0, 10) : '';
+  return !!d && d < POSTED_EVIDENCE_SINCE;
+}
 const SHEET_POSTED_PREFIX = 'Posted';
 const SHEET_SCHEDULED = 'Approved';
 // PostgREST refuses to return more than this per request whatever `limit`
@@ -214,6 +230,10 @@ export function classifyRows(byId, sheetByStudioId, verified) {
   const backfilled = []; // sheet posted, studio posted, no evidence → will be fixed
   const stale = [];      // studio posted, sheet says NOT posted → flagged only
   const orphan = [];     // studio posted, no sheet row at all → flagged only
+  const legacy = [];     // studio posted, no sheet row, pre-dates evidence
+                         //   → accepted as posted, NOT flagged (see
+                         //     POSTED_EVIDENCE_SINCE). Reported so the count
+                         //     is visible, never treated as a problem.
   const alreadyInSync = [];
 
   const summarise = (row, sheetInfo) => ({
@@ -235,15 +255,17 @@ export function classifyRows(byId, sheetByStudioId, verified) {
     } else if (sheetSaysPosted && studioSaysPosted && !verified.has(id)) {
       backfilled.push(summarise(row, sheetInfo));
     } else if (studioSaysPosted && sheetInfo && !sheetSaysPosted) {
+      // The sheet actively contradicts the claim, so this is flagged even if
+      // the row is old: that is evidence AGAINST, not missing evidence.
       stale.push(summarise(row, sheetInfo));
     } else if (studioSaysPosted && !sheetInfo && !verified.has(id)) {
-      orphan.push(summarise(row, sheetInfo));
+      (isLegacyPostedDate(row.date) ? legacy : orphan).push(summarise(row, sheetInfo));
     } else if (studioSaysPosted) {
       alreadyInSync.push(summarise(row, sheetInfo));
     }
   });
 
-  return { promoted, backfilled, stale, orphan, alreadyInSync };
+  return { promoted, backfilled, stale, orphan, legacy, alreadyInSync };
 }
 
 // ── Reconciliation ───────────────────────────────────────────────────────
@@ -321,7 +343,7 @@ async function reconcile(env, { apply, actor }) {
     }
   }
 
-  const { promoted, backfilled, stale, orphan, alreadyInSync } =
+  const { promoted, backfilled, stale, orphan, legacy, alreadyInSync } =
     classifyRows(byId, sheetByStudioId, verified);
 
   let applied = { promoted: 0, backfilled: 0, errors: [] };
@@ -368,6 +390,10 @@ async function reconcile(env, { apply, actor }) {
       backfilled: backfilled.length,
       staleFlagged: stale.length,
       orphanFlagged: orphan.length,
+      // Not a problem count — these are shown as Posted. Reported so the
+      // size of the pre-evidence backlog stays visible.
+      legacyAccepted: legacy.length,
+      legacySince: POSTED_EVIDENCE_SINCE,
       alreadyInSync: alreadyInSync.length
     },
     promoted,
@@ -377,6 +403,7 @@ async function reconcile(env, { apply, actor }) {
     stale,
     orphan: orphan.slice(0, 200),
     orphanTruncated: orphan.length > 200,
+    legacyCount: legacy.length,
     result: applied
   };
 }

@@ -215,6 +215,10 @@ async function getPostedLinksForSlots(slotIds) {
 // the live post attached. A Posted row with no evidence is not treated as
 // posted anywhere in the UI — it reads as "Pending verification".
 //
+// One exception, and only one: rows scheduled before evidence was collected
+// at all (POSTED_EVIDENCE_SINCE, below). Nothing could have proved those,
+// so demanding proof from them flags history instead of problems.
+//
 // Evidence is stored in studio_activity_log (event_type='posted_verified'),
 // NOT in a new column — studio_calendar has no post_link/posted_date column
 // (checked against the live schema), and this repo has no migration tool, so
@@ -223,6 +227,57 @@ async function getPostedLinksForSlots(slotIds) {
 // modal's posted link ends up today.
 const POSTED_VERIFIED_EVENT = 'posted_verified';
 const STUDIO_STATUS_POSTED = 'Posted';
+
+// ── LEGACY POSTS: the window where no proof could ever have existed ────
+//
+// The rule above is right going forward but was being applied backwards in
+// time, which is the bug. Evidence only began to exist on 2026-09-16, the
+// first time the sheet reconciler ran, and the furthest back it can reach is
+// the oldest row the posting sheet still holds — slot date 2026-08-13
+// (measured against the live DB: the earliest slot carrying a
+// `posted_verified` record is dated 2026-08-13). Everything scheduled before
+// that was published by people and bots that recorded nothing anywhere, so
+// no amount of syncing will ever produce proof for it.
+//
+// Measured on the live DB when this was written: 626 rows say Posted, 137
+// carry evidence, and 486 of the remaining 489 are dated before the cutover.
+// Those 486 were reading "Pending verification" permanently, with no action
+// available to clear them — nobody is going to hunt down 486 permalinks from
+// eight months ago. A warning nobody can act on is not a warning, it is
+// noise that hides the three rows that genuinely need looking at.
+//
+// So: absence of evidence only counts against a row if evidence was being
+// collected for that row's date. Before the cutover, "a human marked it
+// Posted" is accepted as the state (route taken deliberately — see the
+// comment in isUnverifiedPosted). From the cutover onwards nothing changes:
+// the modal still refuses Posted without a valid permalink and the
+// reconciler still confirms from the sheet, so a missing record there is a
+// real signal and still reads "Pending verification".
+const POSTED_EVIDENCE_SINCE = '2026-08-13';
+
+/**
+ * The slot's scheduled date, as YYYY-MM-DD. `studio_slot_date` is what the
+ * content-calendar and ad-requests loaders carry across (their own rows have
+ * their own unrelated date columns); `date` is what a raw studio_calendar row
+ * uses. Returns null when neither is present, which makes the row ineligible
+ * for the legacy allowance — unknown date means it is judged on evidence.
+ */
+function studioSlotDate(row) {
+  if (!row) return null;
+  const raw = row.studio_slot_date || row.date || null;
+  return raw ? String(raw).slice(0, 10) : null;
+}
+
+/**
+ * True for a Posted row scheduled before anything captured proof. Note this
+ * also excludes future-dated rows by construction: a slot dated after the
+ * cutover — including one dated next week — never gets the allowance and has
+ * to show real evidence.
+ */
+function isLegacyPosted(row) {
+  const d = studioSlotDate(row);
+  return !!d && d < POSTED_EVIDENCE_SINCE;
+}
 // What an unverified Posted row reads as instead of "Posted". It is still
 // stored as Posted in the DB (nothing is rewritten) — this is the label the
 // user actually sees, so the value stops claiming something it can't back up.
@@ -329,10 +384,26 @@ async function getVerifiedPostedSlotIds(slotIds) {
   }
 }
 
-/** True when the row claims Posted but nothing backs that claim up. */
+/**
+ * True when the row claims Posted, nothing backs that claim up, AND it is
+ * recent enough that something should have. Three ways to read as Posted:
+ *
+ *   1. an evidence record in the activity log (the normal path),
+ *   2. a legacy row from before evidence was collected at all — "marked
+ *      Posted" is accepted as the state for those, because the alternative
+ *      is an amber badge on 486 genuinely-published items that can never be
+ *      cleared by anyone, and
+ *   3. nothing else.
+ *
+ * The warning is kept for exactly the rows it can still mean something for:
+ * scheduled on or after the cutover, no evidence — i.e. the posting sheet
+ * had its chance to confirm them and didn't, so they may really still be
+ * sitting in the schedule.
+ */
 function isUnverifiedPosted(row, verifiedIds) {
   if (!row || row.studio_status !== STUDIO_STATUS_POSTED) return false;
-  return !(verifiedIds && verifiedIds.has(row.id));
+  if (verifiedIds && verifiedIds.has(row.id)) return false;
+  return !isLegacyPosted(row);
 }
 
 /**
@@ -395,9 +466,24 @@ async function annotatePostedVerification(rows, slotIdOf) {
   const verified = await getVerifiedPostedSlotIds(posted.map(slotIdOf));
   list.forEach(r => {
     if (!r) return;
-    if (r.studio_status !== STUDIO_STATUS_POSTED) { r.posted_verified = null; return; }
+    if (r.studio_status !== STUDIO_STATUS_POSTED) {
+      r.posted_verified = null;
+      r.posted_evidence_kind = null;
+      return;
+    }
     const slotId = slotIdOf(r);
-    r.posted_verified = slotId != null && verified.has(slotId);
+    if (slotId != null && verified.has(slotId)) {
+      r.posted_verified = true;
+      r.posted_evidence_kind = 'log';       // a real record points at the post
+    } else if (isLegacyPosted(r)) {
+      // Pre-dates evidence collection entirely — accepted as posted rather
+      // than flagged forever. See POSTED_EVIDENCE_SINCE above.
+      r.posted_verified = true;
+      r.posted_evidence_kind = 'legacy';
+    } else {
+      r.posted_verified = false;
+      r.posted_evidence_kind = null;
+    }
   });
   return list;
 }
@@ -1553,7 +1639,7 @@ async function getCalendarData(month, year) {
     try {
       const studioRows = await supabaseQuery(
         `studio_calendar?source_type=eq.content_calendar&date=gte.${startDate}&date=lte.${endDate}` +
-        `&select=id,source_id,dm_rejection_reason,head_rejection_reason,hold_reason`
+        `&select=id,date,source_id,dm_rejection_reason,head_rejection_reason,hold_reason`
       );
       const reasonById = {};
       studioRows.forEach(s => { if (s.source_id != null) reasonById[s.source_id] = s; });
@@ -1567,6 +1653,9 @@ async function getCalendarData(month, year) {
           // gives us content_calendar.id — carry the studio id across so the
           // Posted badge can be checked below.
           b.studio_slot_id        = s.id;
+          // ...and the slot's own scheduled date, which is what decides
+          // whether this row pre-dates evidence collection.
+          b.studio_slot_date      = s.date;
         }
       });
     } catch (e) { console.warn('Could not merge studio rejection reasons:', e); }
@@ -1818,7 +1907,9 @@ async function getAdRequestsForMonth(monthYear) {
   // and every chip would open the wrong record.
   const studioRows = await supabaseQuery(
     `studio_calendar?source_type=eq.ad_request&source_id=in.(${ids.join(',')})` +
-    `&select=source_id,studio_slot_id:id,studio_status,content_link,dm_rejection_reason,head_rejection_reason,hold_reason`
+    // `studio_slot_date:date` is aliased for the same reason as the id above:
+    // ad_requests rows have their own date columns that must not be clobbered.
+    `&select=source_id,studio_slot_id:id,studio_slot_date:date,studio_status,content_link,dm_rejection_reason,head_rejection_reason,hold_reason`
   );
   const byId = {};
   studioRows.forEach(s => { byId[s.source_id] = s; });
