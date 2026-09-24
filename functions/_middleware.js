@@ -66,6 +66,7 @@ function isValidUser(authHeader, env) {
       'thilini': env.THILINI_PASS,
       'manager': env.MANAGER_PASS,
       'malshi': env.MALSHI_PASS,
+      'satheesh': env.SATHEESH_PASS,
     };
     
     return users[username] && users[username] === password;
