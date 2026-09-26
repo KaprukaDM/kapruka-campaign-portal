@@ -1858,6 +1858,12 @@
               <tbody id="queuedCampaignTable"></tbody>
             </table>
           </div>
+          <!-- Posted + High + Promotion Time Sensitive slots that can't be
+               auto-matched to exactly one post yet (still syncing, or more
+               than one post that day) — collapsed out of the main table
+               above so it only shows rows that are actually pushable now.
+               See buildAutoQueuedAdItems / renderNeedsAttentionList. -->
+          <div id="campaignNeedsAttention" style="display:none;"></div>
         </div>
 
         <!-- ── 2. ORGANIC WINNERS ────────────────────────────────────────── -->
@@ -5231,7 +5237,11 @@
       const alreadyPushed = (winnerGroups || []).length - queuedWinners.length;
 
       // ── 2. Auto-queued posted campaign content (Promotion Time Sensitive) ──
-      const autoItems = await buildAutoQueuedAdItems(groupedPosts || [], pushedKeys, queuedWinners);
+      // `items` are cleanly matched to one real post (pushable now);
+      // `needsAttention` are still syncing or ambiguous (see
+      // buildAutoQueuedAdItems) and render as a small collapsed list instead
+      // of full table rows.
+      const { items: autoItems, needsAttention } = await buildAutoQueuedAdItems(groupedPosts || [], pushedKeys, queuedWinners);
 
       // Two independent tables now (previously one combined, sorted list) —
       // these are two different pipelines with two different ad-set
@@ -5243,10 +5253,12 @@
       const winnersNote = alreadyPushed > 0 ? `${alreadyPushed} other winner(s) already have an ad and are excluded.` : '';
       document.getElementById('queuedWinnersNote').textContent = winnersNote;
       document.getElementById('queuedCampaignNote').textContent = '';
+      renderNeedsAttentionList(needsAttention);
 
       queuedWinnersByKey = {};
       queuedWinners.forEach(p => { queuedWinnersByKey[p.key] = p; });
       autoItems.forEach(it => { queuedWinnersByKey[it.key] = it.skipPayload; });
+      needsAttention.forEach(it => { queuedWinnersByKey[it.key] = it.skipPayload; });
 
       campaignTbody.innerHTML = autoItems.length
         ? autoItems.sort((a, b) => a.sortValue - b.sortValue).map(renderAutoQueuedRow).join('')
@@ -5301,15 +5313,25 @@
     const AUTO_QUEUE_REASON = 'Auto-queued: posted High + Promotion Time Sensitive';
     let autoQueueCandidates = {};
 
+    // Returns { items, needsAttention }: `items` are slots cleanly matched to
+    // exactly one real post — the only ones that belong in the Promotion Time
+    // Sensitive table, since those are the only ones actually pushable right
+    // now. `needsAttention` are Posted slots still waiting on a Facebook/
+    // Instagram sync match (0 candidates) or an ambiguous same-day match (2+
+    // candidates) — these used to show as full rows with a "⏳ Awaiting FB
+    // sync" label or a "Which post?" picker, cluttering the queue with
+    // not-yet-actionable items. They're surfaced as a small collapsed count
+    // instead (see renderQueuedForAds), with the picker still reachable from
+    // there so an ambiguous match can still be resolved by hand.
     async function buildAutoQueuedAdItems(groupedPosts, pushedKeys, queuedWinners) {
       let slots = [];
       try {
         slots = await getAutoQueuedAdSlots();
       } catch (e) {
         console.warn('Auto-queue lookup failed (showing organic winners only):', e.message);
-        return [];
+        return { items: [], needsAttention: [] };
       }
-      if (!slots.length) return [];
+      if (!slots.length) return { items: [], needsAttention: [] };
 
       const links = await getPostedLinksForSlots(slots.map(s => s.id));
       const localDay = (iso) => iso ? new Date(iso).toLocaleDateString('en-CA') : null;
@@ -5318,6 +5340,7 @@
       autoQueueCandidates = {};
       const winnerKeys = new Set((queuedWinners || []).map(w => w.key));
       const items = [];
+      const needsAttention = [];
 
       slots.forEach(slot => {
         const queueKey = campaignQueueKey(slot);
@@ -5347,8 +5370,7 @@
         }
         if (matched && pushedKeys.has(matched.key)) return;
 
-        autoQueueCandidates[slot.id] = sameDay;
-        items.push({
+        const item = {
           kind: 'campaign',
           key: queueKey,
           slot,
@@ -5358,70 +5380,115 @@
           skipPayload: {
             key: queueKey,
             platforms: matched ? matched.platforms : [],
-            message: slot.content_details || slot.format || `Studio slot ${slot.id}`
+            message: matched ? matched.message : (slot.content_details || slot.format || `Studio slot ${slot.id}`)
           }
-        });
+        };
+
+        if (matched) {
+          items.push(item);
+        } else {
+          // Still needs a human (ambiguous) or a sync run (nothing yet) — the
+          // picker for the ambiguous case is rendered from needsAttention too
+          // (see renderNeedsAttentionList), so nothing here loses the ability
+          // to resolve itself, it's just out of the main queue until it does.
+          autoQueueCandidates[slot.id] = sameDay;
+          needsAttention.push(item);
+        }
       });
 
-      return items;
+      return { items, needsAttention };
     }
 
+    // Only ever called with a cleanly matched item now (buildAutoQueuedAdItems
+    // routes unmatched/ambiguous slots to needsAttention instead) — so this
+    // always has a real post to show, no more "Awaiting FB sync" branch here.
     function renderAutoQueuedRow(item) {
       const slot = item.slot;
       const matched = item.matched;
-      const raw = slot.content_details || slot.format || '(no details)';
+      // The actual post's caption (Primary Text) — not the campaign booking's
+      // internal content_details/format text, which is only ever a product
+      // code or note-to-self for whoever booked it, not what customers saw.
+      const raw = matched.message || '(no caption)';
       const excerpt = escapeHtml(raw.slice(0, 80)) + (raw.length > 80 ? '…' : '');
-      const detailCell = matched && matched.permalink_url
+      const detailCell = matched.permalink_url
         ? `<a href="${matched.permalink_url}" target="_blank" style="color:#5e3a8e;">${excerpt}</a>`
         : excerpt;
 
-      const platformCell = matched
-        ? PLATFORM_BADGE_LIST(matched.platforms)
-        : '<span class="badge" style="background:#FFF3E0;color:#E65100;">🎯 Campaign</span>';
-
-      const combined = matched ? (Number(matched.impressions) || 0) + (Number(matched.reach) || 0) : null;
-
-      let actionCell;
-      if (matched) {
-        actionCell = `
-          <button class="btn btn-primary" style="padding:6px 12px;font-size:12px;white-space:nowrap;"
-                  data-group-key="${escapeHtml(matched.key)}" data-push-kind="campaign" onclick="pushOrganicWinnerAd(this)">🚀 Push Now</button>`;
-      } else if (item.candidates.length > 1) {
-        actionCell = `
-          <select id="autoQueuePick-${slot.id}" title="Which of that day's synced posts did this campaign go out as?"
-                  onchange="pickAutoQueuePost(${slot.id})"
-                  style="max-width:150px;padding:5px;font-size:11px;border:1px solid #ddd;border-radius:6px;">
-            <option value="">Which post?</option>
-            ${item.candidates.map((c, i) =>
-              `<option value="${i}">${escapeHtml((c.message || '(no caption)').slice(0, 45))}</option>`).join('')}
-          </select>
-          <button class="btn btn-primary" id="autoQueuePush-${slot.id}" disabled data-push-kind="campaign"
-                  style="padding:6px 12px;font-size:12px;white-space:nowrap;margin-left:4px;opacity:0.5;"
-                  onclick="pushOrganicWinnerAd(this)">🚀 Push Now</button>`;
-      } else {
-        actionCell = `<span style="font-size:11px;color:#888;"
-                            title="Nothing is synced from Facebook for ${escapeHtml(slot.date || '')} yet, so there's no post to build an ad from. This row becomes pushable on its own once the sync catches up.">⏳ Awaiting FB sync</span>`;
-      }
+      const combined = (Number(matched.impressions) || 0) + (Number(matched.reach) || 0);
 
       return `
         <tr data-group-key="${escapeHtml(item.key)}" style="background:#FFFDF7;">
-          <td>${platformCell}</td>
+          <td>${PLATFORM_BADGE_LIST(matched.platforms)}</td>
           <td>${slot.date ? new Date(slot.date + 'T00:00:00').toLocaleDateString() : '-'}</td>
           <td style="max-width:320px;">${detailCell}</td>
-          <td>${combined === null ? '-' : fmtNum(combined)}</td>
-          <td>${matched ? fmtNum(matched.reactions_total) : '-'}</td>
+          <td>${fmtNum(combined)}</td>
+          <td>${fmtNum(matched.reactions_total)}</td>
           <td style="font-size:12px;color:#666;min-width:180px;">
             <span class="badge" style="background:#FFEBEE;color:#C62828;">High</span>
             <span class="badge" style="background:#FFF3E0;color:#E65100;white-space:nowrap;">Promotion Time Sensitive</span>
             <div style="margin-top:4px;font-size:11px;">Auto-queued on Posted</div>
           </td>
           <td style="white-space:nowrap;">
-            ${actionCell}
+            <button class="btn btn-primary" style="padding:6px 12px;font-size:12px;white-space:nowrap;"
+                    data-group-key="${escapeHtml(matched.key)}" data-push-kind="campaign" onclick="pushOrganicWinnerAd(this)">🚀 Push Now</button>
             <button class="btn" style="padding:6px 12px;font-size:12px;white-space:nowrap;background:#eee;color:#666;margin-left:4px;"
                     data-group-key="${escapeHtml(item.key)}" onclick="removeQueuedWinner(this)">✖ Remove</button>
           </td>
         </tr>
       `;
+    }
+
+    // The small collapsed list for slots that are Posted + High + Promotion
+    // Time Sensitive but can't be auto-matched to one post yet — either
+    // nothing has synced from Facebook for that date, or more than one post
+    // synced that day and a human needs to pick which one. Kept out of the
+    // main table (see buildAutoQueuedAdItems) so the queue only shows rows
+    // that are actually pushable right now, but still reachable here so the
+    // ambiguous case can still be resolved by hand.
+    function renderNeedsAttentionList(needsAttention) {
+      const wrap = document.getElementById('campaignNeedsAttention');
+      if (!wrap) return;
+      if (!needsAttention || !needsAttention.length) { wrap.innerHTML = ''; wrap.style.display = 'none'; return; }
+      wrap.style.display = '';
+
+      const rows = needsAttention.map(item => {
+        const slot = item.slot;
+        const dateStr = slot.date ? new Date(slot.date + 'T00:00:00').toLocaleDateString() : '-';
+        const label = escapeHtml((slot.content_details || slot.format || `Studio slot ${slot.id}`).slice(0, 60));
+
+        let control;
+        if (item.candidates.length > 1) {
+          control = `
+            <select id="autoQueuePick-${slot.id}" title="Which of that day's synced posts did this campaign go out as?"
+                    onchange="pickAutoQueuePost(${slot.id})"
+                    style="max-width:180px;padding:4px;font-size:11px;border:1px solid #ddd;border-radius:6px;">
+              <option value="">Which post?</option>
+              ${item.candidates.map((c, i) =>
+                `<option value="${i}">${escapeHtml((c.message || '(no caption)').slice(0, 45))}</option>`).join('')}
+            </select>
+            <button class="btn btn-primary" id="autoQueuePush-${slot.id}" disabled data-push-kind="campaign"
+                    style="padding:5px 10px;font-size:11px;white-space:nowrap;margin-left:4px;opacity:0.5;"
+                    onclick="pushOrganicWinnerAd(this)">🚀 Push Now</button>`;
+        } else {
+          control = `<span style="font-size:11px;color:#888;" title="Nothing is synced from Facebook for ${escapeHtml(slot.date || '')} yet.">⏳ Awaiting FB sync</span>`;
+        }
+
+        return `<div data-attention-row style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 0;border-top:1px solid #eee;">
+          <span style="font-size:12px;color:#666;min-width:80px;">${dateStr}</span>
+          <span style="font-size:12px;color:#333;flex:1;min-width:160px;">${label}</span>
+          <span style="white-space:nowrap;">${control}</span>
+          <button class="btn" style="padding:5px 10px;font-size:11px;white-space:nowrap;background:#eee;color:#666;"
+                  data-group-key="${escapeHtml(item.key)}" onclick="removeQueuedWinner(this)">✖ Remove</button>
+        </div>`;
+      }).join('');
+
+      wrap.innerHTML = `
+        <details style="margin-top:12px;">
+          <summary style="cursor:pointer;font-size:12px;color:#E65100;font-weight:600;">
+            ⚠️ ${needsAttention.length} campaign post(s) awaiting Facebook sync or needing a manual match
+          </summary>
+          ${rows}
+        </details>`;
     }
 
     // Enables Push Now once a human picks which of that day's synced posts
@@ -5552,10 +5619,14 @@
 
       if (!confirm('Remove this from the queue? It won\'t be pushed as an ad by "Push Now" or the Monday automation — but nothing about the original post itself changes.')) return;
 
-      const row = btn.closest('tr');
-      // Which table this row lives in decides which card's count to
-      // decrement — the two queues are independent since the split.
-      const countId = row.closest('#queuedCampaignTable') ? 'queuedCampaignCount' : 'queuedWinnersCount';
+      // A needs-attention row (renderNeedsAttentionList) is a plain <div>,
+      // not a <tr> — and it was never counted in either card's number in the
+      // first place (see buildAutoQueuedAdItems), so there's no count to
+      // decrement for it, only the two real queue tables have one.
+      const row = btn.closest('tr') || btn.closest('[data-attention-row]');
+      const countId = row.closest('#queuedCampaignTable') ? 'queuedCampaignCount'
+        : row.closest('#queuedWinnersTable') ? 'queuedWinnersCount'
+        : null;
       btn.disabled = true;
       const originalText = btn.textContent;
       btn.textContent = '⏳';
@@ -5563,8 +5634,10 @@
         await skipOrganicWinner(group);
         row.style.transition = 'opacity 0.4s';
         row.style.opacity = '0';
-        const countEl = document.getElementById(countId);
-        countEl.textContent = String(Math.max(0, Number(countEl.textContent) - 1));
+        if (countId) {
+          const countEl = document.getElementById(countId);
+          countEl.textContent = String(Math.max(0, Number(countEl.textContent) - 1));
+        }
         setTimeout(() => row.remove(), 400);
       } catch (e) {
         btn.disabled = false;
@@ -5601,7 +5674,10 @@
     // All" can tally results without a thrown error stopping the loop).
     async function doPushWinner(btn) {
       const groupKey = btn.dataset.groupKey;
-      const row = btn.closest('tr');
+      // Usually a <tr> (both queue tables, the perf table) — but a "needs
+      // attention" pick (renderNeedsAttentionList) lives in a plain <div>
+      // row instead, so fall back to that when there's no enclosing <tr>.
+      const row = btn.closest('tr') || btn.closest('[data-attention-row]');
       const actionCell = btn.parentElement;
 
       btn.disabled = true;
@@ -5638,7 +5714,7 @@
           const countEl = document.getElementById(countId);
           countEl.textContent = String(Math.max(0, Number(countEl.textContent) - 1));
         }
-        setTimeout(() => { row.style.transition = 'opacity 0.4s'; row.style.opacity = '0'; setTimeout(() => row.remove(), 400); }, 1500);
+        if (row) setTimeout(() => { row.style.transition = 'opacity 0.4s'; row.style.opacity = '0'; setTimeout(() => row.remove(), 400); }, 1500);
         return true;
       } catch (e) {
         btn.disabled = false;
