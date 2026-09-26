@@ -1,0 +1,33 @@
+name: Rotate Active Ads (5-ad cap)
+
+on:
+  schedule:
+    - cron: '0 */3 * * *'   # every 3 hours, on the hour
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (log everything, activate nothing)'
+        type: boolean
+        default: false
+
+jobs:
+  rotate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Activate queued ads up to the 5-active cap, per ad set
+        env:
+          META_ADS_ACCESS_TOKEN: ${{ secrets.META_ADS_ACCESS_TOKEN }}
+          META_PAGE_ACCESS_TOKEN: ${{ secrets.META_PAGE_ACCESS_TOKEN }}
+          # Optional overrides — default to the same ad sets
+          # weekly-organic-winners-to-ads.js and admin-dashboard.html use.
+          ORGANIC_ADSET_ID: ${{ secrets.ORGANIC_ADSET_ID }}
+          PROMO_ADSET_ID: ${{ secrets.PROMO_ADSET_ID }}
+          MAX_ACTIVE_ADS: ${{ secrets.MAX_ACTIVE_ADS }}
+          DRY_RUN: ${{ github.event.inputs.dry_run }}
+        run: node scripts/rotate-active-ads.js

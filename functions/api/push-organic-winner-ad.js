@@ -281,6 +281,19 @@ async function graphPost(env, path, payload) {
   return body;
 }
 
+// ── Active-ad cap (max 5 ACTIVE ads per ad set at any time) ────────────────
+// Same constant and same check as scripts/weekly-organic-winners-to-ads.js
+// and scripts/rotate-active-ads.js — keep all three in sync if this ever
+// changes. A manual "Push Now" click checks the live count at push time so
+// it can go straight to ACTIVE when a slot is actually free, rather than
+// always creating PAUSED and waiting for the next 3-hourly rotation run.
+const MAX_ACTIVE_ADS_PER_ADSET = 5;
+
+async function countActiveAds(env, adsetId) {
+  const res = await graphGet(env, `${adsetId}/ads`, { fields: 'id', effective_status: '["ACTIVE"]', limit: 500 });
+  return (res.data || []).length;
+}
+
 // ── Page-scoped read access ──────────────────────────────────────────────
 // Almost every push builds its creative from the post's OWN media, and
 // reading a Page/IG post's media REQUIRES a Page-scoped token. Confirmed
@@ -916,11 +929,26 @@ export async function onRequestPost(context) {
     if (!built) built = await buildCreativeFromLivePost(env, group, igUserId, notes);
     if (!built) built = await buildCreativeFromExistingPost(env, group, igUserId, notes);
 
+    // Checked right before creating the ad, not left to the next 3-hourly
+    // rotation run — if this ad set already has 5 active ads, create this
+    // one PAUSED and let scripts/rotate-active-ads.js activate it once a
+    // slot frees up; otherwise it can start delivering immediately.
+    let adStatus = 'ACTIVE';
+    try {
+      const activeCount = await countActiveAds(env, adsetId);
+      if (activeCount >= MAX_ACTIVE_ADS_PER_ADSET) adStatus = 'PAUSED';
+    } catch (e) {
+      console.warn(`Could not check active-ad count for ${adsetId} (${e.message}) — creating ACTIVE as before, uncapped for this one push.`);
+    }
+    if (adStatus === 'PAUSED') {
+      warnings.push(`This ad set already has ${MAX_ACTIVE_ADS_PER_ADSET} active ads — the new ad was created PAUSED and will be activated automatically once a slot frees up (checked every 3 hours).`);
+    }
+
     const ad = await graphPost(env, `${env.META_AD_ACCOUNT_ID}/ads`, {
       name: `Organic Winner - ${group.key.slice(0, 60)}`,
       adset_id: adsetId,
       creative: { creative_id: built.creativeId },
-      status: 'ACTIVE',
+      status: adStatus,
     });
 
     const pushRecord = {

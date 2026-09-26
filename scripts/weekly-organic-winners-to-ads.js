@@ -18,9 +18,16 @@
 //          organic post itself as the ad creative. CTA button = Shop Now,
 //          linking to the Kapruka homepage (the organic post has no
 //          per-product link to borrow).
-//   2. Create the ad in the target ad set, status ACTIVE.
+//   2. Create the ad in the target ad set — status ACTIVE if that ad set has
+//      fewer than MAX_ACTIVE_ADS_PER_ADSET (5) active ads right now,
+//      otherwise PAUSED. A PAUSED one queues in Meta and gets activated
+//      later by scripts/rotate-active-ads.js (runs every 3 hours) once a
+//      slot frees up — see "Active-ad cap" below.
 //   3. Record the push in Supabase (organic_winner_ad_pushes) so the same
 //      post is never promoted twice, even if it's still a winner next week.
+//      This is also how rotate-active-ads.js knows which PAUSED ads in the
+//      ad set are ours to activate, as opposed to one a human paused
+//      deliberately in Ads Manager.
 //
 // Required env vars (GitHub Actions repo secrets):
 //   META_ADS_ACCESS_TOKEN  — token with ads_management scope on the ad
@@ -819,13 +826,43 @@ async function buildCreativeFromExistingPost(group, igUserId) {
 // TARGET_ADSET_ID when the configured ad set's flight has ended.
 let activeAdSetId = TARGET_ADSET_ID;
 
+// ── Active-ad cap (max 5 ACTIVE ads per ad set at any time) ────────────────
+// Shared by every path that creates an ad in one of the two rotation-managed
+// ad sets (this weekly cron, the dashboard's manual push, and the 3-hourly
+// rotate-active-ads.js job that promotes queued ads later). Anything over
+// the cap is created PAUSED instead of ACTIVE, and sits in the ad set as a
+// queued ad until rotate-active-ads.js activates it once a slot frees up
+// (some other ad in that set gets paused, archived, or deleted). See
+// MAX_ACTIVE_ADS_PER_ADSET in rotate-active-ads.js for the same constant.
+const MAX_ACTIVE_ADS_PER_ADSET = 5;
+
+async function countActiveAds(adsetId) {
+  const res = await graphGet(`${adsetId}/ads`, { fields: 'id', effective_status: '["ACTIVE"]', limit: 500 });
+  return (res.data || []).length;
+}
+
 async function createAd(creativeId, name) {
-  if (DRY_RUN) { console.log(`  [dry-run] would create ad "${name}" in ad set ${activeAdSetId} with creative ${creativeId}, status ACTIVE`); return { id: '[dry-run]' }; }
+  if (DRY_RUN) { console.log(`  [dry-run] would create ad "${name}" in ad set ${activeAdSetId} with creative ${creativeId}, status ACTIVE or PAUSED depending on the current active count`); return { id: '[dry-run]' }; }
+
+  // Checked at creation time, not just left to the next 3-hourly rotation
+  // run — if a slot is free right now, the ad should start delivering
+  // immediately rather than sit paused for up to 3 hours for no reason.
+  let status = 'ACTIVE';
+  try {
+    const activeCount = await countActiveAds(activeAdSetId);
+    if (activeCount >= MAX_ACTIVE_ADS_PER_ADSET) {
+      status = 'PAUSED';
+      console.log(`  Ad set ${activeAdSetId} already has ${activeCount} active ads (cap ${MAX_ACTIVE_ADS_PER_ADSET}) — creating this one PAUSED; rotate-active-ads.js will activate it once a slot frees up.`);
+    }
+  } catch (e) {
+    console.warn(`  Could not check active-ad count for ${activeAdSetId} (${e.message}) — creating ACTIVE as before, uncapped for this one push.`);
+  }
+
   return graphPost(`${AD_ACCOUNT_ID}/ads`, {
     name,
     adset_id: activeAdSetId,
     creative: { creative_id: creativeId },
-    status: 'ACTIVE',
+    status,
   });
 }
 
