@@ -1813,34 +1813,34 @@
           </div>
         </div>
 
-        <!-- Preview of scripts/weekly-organic-winners-to-ads.js's next run: this
-             week's Winners not yet pushed to an ad. -->
-        <div class="card" id="queuedAdsCard" style="display:none;">
+        <!-- Preview of scripts/weekly-organic-winners-to-ads.js's next run
+             (organic winners only — see the card below) plus the Promotion
+             Time Sensitive campaign queue. Split into two cards, each with
+             its own destination ad set, so it's visually obvious these are
+             two different pipelines that never share a destination — see
+             the routing note next to each "Push into ad set" line. -->
+
+        <!-- Server-side health of the Page token every push (either card
+             below) needs to read the post's media. Shared: it isn't specific
+             to one pipeline. Without this the only way to find out it was
+             broken was to click Push and read an error that blamed the post
+             instead of the token. -->
+        <div id="adPushHealth" style="display:none;font-size:12px;padding:10px;border-radius:6px;background:#FFEBEE;color:#B71C1C;border:1px solid #F5C6CB;margin-bottom:16px;"></div>
+
+        <!-- ── 1. PROMOTION TIME SENSITIVE (campaign bookings) ──────────── -->
+        <div class="card" id="queuedCampaignCard" style="display:none;border:1px solid #FFCC80;">
           <div class="calendar-header">
-            <h2 style="margin:0;">🚀 Queued for Weekly Ad Push (<span id="queuedAdsCount">0</span>)</h2>
-            <button id="pushAllWinnersBtn" class="btn btn-primary" style="padding:8px 16px;font-size:13px;" onclick="pushAllQueuedWinners()">🚀 Push All</button>
+            <h2 style="margin:0;color:#E65100;">🎯 Promotion Time Sensitive — Queued (<span id="queuedCampaignCount">0</span>)</h2>
+            <button id="pushAllCampaignBtn" class="btn btn-primary" style="padding:8px 16px;font-size:13px;" onclick="pushAllQueued('campaign')">🚀 Push All</button>
           </div>
           <div style="font-size:12px;color:#666;margin-bottom:16px;">
-            🏆 Winners (from the last 100 synced posts) that haven't been pushed to an ad yet, plus 🎯 posted content that was High priority + Promotion Time Sensitive, which is queued here automatically the moment it's marked Posted. Items stay on this list until pushed or removed, regardless of how much time passes.
-            <span id="queuedAdsNote"></span>
+            Campaign-booking content that was High priority + Promotion Time Sensitive, queued here automatically the moment it's marked Posted. Items stay on this list until pushed or removed, regardless of how much time passes.
+            <span id="queuedCampaignNote"></span>
           </div>
-
-          <!-- Destination picker. The old behaviour hardcoded one ad set ID;
-               when that ad set's flight ended, Meta refused every ad and there
-               was no way to point elsewhere without a code change. -->
-          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px;padding:12px;background:#F7F4FB;border:1px solid #E3DAF0;border-radius:8px;">
-            <label for="adDestinationSelect" style="font-size:13px;font-weight:600;color:#5e3a8e;white-space:nowrap;">Push into ad set</label>
-            <select id="adDestinationSelect" onchange="onAdDestinationChange()"
-                    style="flex:1;min-width:260px;max-width:560px;padding:7px 10px;font-size:13px;border:1px solid #ddd;border-radius:6px;">
-              <option value="">Loading ad sets…</option>
-            </select>
-            <button class="btn" style="padding:6px 12px;font-size:12px;background:#eee;color:#666;" onclick="loadAdDestinations(true)">🔄</button>
-            <div id="adDestinationNote" style="flex-basis:100%;font-size:12px;color:#666;"></div>
-            <!-- Server-side health of the Page token every push needs to read
-                 the post's media. Without this the only way to find out it was
-                 broken was to click Push and read an error that blamed the
-                 post instead of the token. -->
-            <div id="adPushHealth" style="display:none;flex-basis:100%;font-size:12px;padding:10px;border-radius:6px;background:#FFEBEE;color:#B71C1C;border:1px solid #F5C6CB;"></div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px;padding:12px;background:#FFF3E0;border:1px solid #FFCC80;border-radius:8px;">
+            <span style="font-size:13px;font-weight:600;color:#E65100;white-space:nowrap;">Push into ad set</span>
+            <span style="font-size:13px;color:#E65100;">🔒 Promotion Time Sensitive (fixed — <code id="promoAdSetIdLabel"></code>)</span>
+            <div style="flex-basis:100%;font-size:12px;color:#666;">Always this ad set — never the dropdown below, and never shared with organic winners.</div>
           </div>
           <div class="table-container">
             <table>
@@ -1855,7 +1855,50 @@
                   <th>Action</th>
                 </tr>
               </thead>
-              <tbody id="queuedAdsTable"></tbody>
+              <tbody id="queuedCampaignTable"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ── 2. ORGANIC WINNERS ────────────────────────────────────────── -->
+        <div class="card" id="queuedWinnersCard" style="display:none;border:1px solid #D1C4E9;">
+          <div class="calendar-header">
+            <h2 style="margin:0;color:#5e3a8e;">🏆 Organic Winners — Queued for Weekly Ad Push (<span id="queuedWinnersCount">0</span>)</h2>
+            <button id="pushAllWinnersBtn" class="btn btn-primary" style="padding:8px 16px;font-size:13px;" onclick="pushAllQueued('winner')">🚀 Push All</button>
+          </div>
+          <div style="font-size:12px;color:#666;margin-bottom:16px;">
+            Winners (from the last 100 synced posts) that haven't been pushed to an ad yet.
+            <span id="queuedWinnersNote"></span>
+          </div>
+
+          <!-- Destination picker. The old behaviour hardcoded one ad set ID;
+               when that ad set's flight ended, Meta refused every ad and there
+               was no way to point elsewhere without a code change. This
+               dropdown only ever governs organic winners — Promotion Time
+               Sensitive pushes above always use their own fixed ad set. -->
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px;padding:12px;background:#F7F4FB;border:1px solid #E3DAF0;border-radius:8px;">
+            <label for="adDestinationSelect" style="font-size:13px;font-weight:600;color:#5e3a8e;white-space:nowrap;">Push into ad set</label>
+            <select id="adDestinationSelect" onchange="onAdDestinationChange()"
+                    style="flex:1;min-width:260px;max-width:560px;padding:7px 10px;font-size:13px;border:1px solid #ddd;border-radius:6px;">
+              <option value="">Loading ad sets…</option>
+            </select>
+            <button class="btn" style="padding:6px 12px;font-size:12px;background:#eee;color:#666;" onclick="loadAdDestinations(true)">🔄</button>
+            <div id="adDestinationNote" style="flex-basis:100%;font-size:12px;color:#666;"></div>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Platform</th>
+                  <th>Date</th>
+                  <th>Post</th>
+                  <th>Views + Reach</th>
+                  <th>Reactions</th>
+                  <th>Reason</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="queuedWinnersTable"></tbody>
             </table>
           </div>
         </div>
@@ -5159,11 +5202,16 @@
     // export endpoint doesn't allow browser-side CORS fetches) — this shows
     // WHICH posts are queued, not which creative each will end up using.
     async function renderQueuedForAds(winnerGroups, groupedPosts) {
-      const card = document.getElementById('queuedAdsCard');
-      const tbody = document.getElementById('queuedAdsTable');
-      if (!card || !tbody) return;
-      card.style.display = '';
-      loadAdDestinations(); // fire-and-forget; the table doesn't wait on it
+      const campaignCard = document.getElementById('queuedCampaignCard');
+      const campaignTbody = document.getElementById('queuedCampaignTable');
+      const winnersCard = document.getElementById('queuedWinnersCard');
+      const winnersTbody = document.getElementById('queuedWinnersTable');
+      if (!campaignCard || !campaignTbody || !winnersCard || !winnersTbody) return;
+      campaignCard.style.display = '';
+      winnersCard.style.display = '';
+      const promoLabel = document.getElementById('promoAdSetIdLabel');
+      if (promoLabel) promoLabel.textContent = PROMOTION_SENSITIVE_ADSET_ID;
+      loadAdDestinations(); // fire-and-forget; the tables don't wait on it
 
       let pushedKeys = new Set();
       try {
@@ -5182,35 +5230,31 @@
       const queuedWinners = (winnerGroups || []).filter(p => !pushedKeys.has(p.key));
       const alreadyPushed = (winnerGroups || []).length - queuedWinners.length;
 
-      // ── 2. Auto-queued posted campaign content ────────────────────────
+      // ── 2. Auto-queued posted campaign content (Promotion Time Sensitive) ──
       const autoItems = await buildAutoQueuedAdItems(groupedPosts || [], pushedKeys, queuedWinners);
 
-      const items = [
-        ...queuedWinners.map(p => ({ kind: 'winner', key: p.key, group: p, sortValue: p.combined })),
-        ...autoItems
-      ];
+      // Two independent tables now (previously one combined, sorted list) —
+      // these are two different pipelines with two different ad-set
+      // destinations, so mixing them in one table made it easy to miss which
+      // row would go where. See the "Push into ad set" line on each card.
+      document.getElementById('queuedCampaignCount').textContent = autoItems.length;
+      document.getElementById('queuedWinnersCount').textContent = queuedWinners.length;
 
-      document.getElementById('queuedAdsCount').textContent = items.length;
-      const notes = [];
-      if (alreadyPushed > 0) notes.push(`${alreadyPushed} other winner(s) already have an ad and are excluded.`);
-      if (autoItems.length > 0) notes.push(`${autoItems.length} auto-queued from posted High + Promotion Time Sensitive content.`);
-      document.getElementById('queuedAdsNote').textContent = notes.join(' ');
+      const winnersNote = alreadyPushed > 0 ? `${alreadyPushed} other winner(s) already have an ad and are excluded.` : '';
+      document.getElementById('queuedWinnersNote').textContent = winnersNote;
+      document.getElementById('queuedCampaignNote').textContent = '';
 
-      if (items.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;">Nothing queued — no winners and no posted time-sensitive campaign content waiting for an ad.</td></tr>';
-        queuedWinnersByKey = {};
-        return;
-      }
-
-      // Auto-queued campaign content sorts above organic winners: it's a
-      // committed, date-bound promotion, so it's the more urgent push.
       queuedWinnersByKey = {};
-      items.forEach(it => { queuedWinnersByKey[it.key] = it.kind === 'winner' ? it.group : it.skipPayload; });
+      queuedWinners.forEach(p => { queuedWinnersByKey[p.key] = p; });
+      autoItems.forEach(it => { queuedWinnersByKey[it.key] = it.skipPayload; });
 
-      tbody.innerHTML = items
-        .sort((a, b) => (b.kind === 'campaign') - (a.kind === 'campaign') || (b.sortValue - a.sortValue))
-        .map(it => it.kind === 'campaign' ? renderAutoQueuedRow(it) : renderWinnerQueueRow(it.group))
-        .join('');
+      campaignTbody.innerHTML = autoItems.length
+        ? autoItems.sort((a, b) => a.sortValue - b.sortValue).map(renderAutoQueuedRow).join('')
+        : '<tr><td colspan="7" style="text-align:center;padding:24px;">Nothing queued — no posted Promotion Time Sensitive campaign content waiting for an ad.</td></tr>';
+
+      winnersTbody.innerHTML = queuedWinners.length
+        ? [...queuedWinners].sort((a, b) => b.combined - a.combined).map(renderWinnerQueueRow).join('')
+        : '<tr><td colspan="7" style="text-align:center;padding:24px;">Nothing queued — no organic winners waiting for an ad.</td></tr>';
     }
 
     function renderWinnerQueueRow(p) {
@@ -5509,6 +5553,9 @@
       if (!confirm('Remove this from the queue? It won\'t be pushed as an ad by "Push Now" or the Monday automation — but nothing about the original post itself changes.')) return;
 
       const row = btn.closest('tr');
+      // Which table this row lives in decides which card's count to
+      // decrement — the two queues are independent since the split.
+      const countId = row.closest('#queuedCampaignTable') ? 'queuedCampaignCount' : 'queuedWinnersCount';
       btn.disabled = true;
       const originalText = btn.textContent;
       btn.textContent = '⏳';
@@ -5516,7 +5563,8 @@
         await skipOrganicWinner(group);
         row.style.transition = 'opacity 0.4s';
         row.style.opacity = '0';
-        document.getElementById('queuedAdsCount').textContent = String(Math.max(0, Number(document.getElementById('queuedAdsCount').textContent) - 1));
+        const countEl = document.getElementById(countId);
+        countEl.textContent = String(Math.max(0, Number(countEl.textContent) - 1));
         setTimeout(() => row.remove(), 400);
       } catch (e) {
         btn.disabled = false;
@@ -5580,7 +5628,16 @@
 
         actionCell.innerHTML = `<span class="badge" style="background:#E8F5E9;color:#1B5E20;">✅ Ad ${escapeHtml(data.adId)}</span>`;
         if (data.warnings && data.warnings.length) console.warn('Ad created with warnings:', data.warnings);
-        document.getElementById('queuedAdsCount').textContent = String(Math.max(0, Number(document.getElementById('queuedAdsCount').textContent) - 1));
+        // Only the two queue tables have a count badge to decrement — a push
+        // from the Organic Social Performance table (pushPerfRowToAds) has
+        // no `row` here in one of those tables, so there's nothing to update.
+        const countId = row?.closest('#queuedCampaignTable') ? 'queuedCampaignCount'
+          : row?.closest('#queuedWinnersTable') ? 'queuedWinnersCount'
+          : null;
+        if (countId) {
+          const countEl = document.getElementById(countId);
+          countEl.textContent = String(Math.max(0, Number(countEl.textContent) - 1));
+        }
         setTimeout(() => { row.style.transition = 'opacity 0.4s'; row.style.opacity = '0'; setTimeout(() => row.remove(), 400); }, 1500);
         return true;
       } catch (e) {
@@ -5591,21 +5648,23 @@
       }
     }
 
-    async function pushAllQueuedWinners() {
-      const buttons = Array.from(document.querySelectorAll('#queuedAdsTable button[onclick^="pushOrganicWinnerAd"]'));
+    // Each table now holds exactly one kind ('campaign' or 'winner'), so
+    // "Push All" never mixes destinations within a single run — the two
+    // cards were split precisely so this never has to reason about a mixed
+    // batch again.
+    const PUSH_ALL_CONFIG = {
+      campaign: { tableId: 'queuedCampaignTable', btnId: 'pushAllCampaignBtn' },
+      winner: { tableId: 'queuedWinnersTable', btnId: 'pushAllWinnersBtn' },
+    };
+
+    async function pushAllQueued(kind) {
+      const cfg = PUSH_ALL_CONFIG[kind];
+      const buttons = Array.from(document.querySelectorAll(`#${cfg.tableId} button[onclick^="pushOrganicWinnerAd"]`));
       if (buttons.length === 0) { alert('Nothing queued to push.'); return; }
 
-      // A "Push All" batch can mix organic 🏆 Winners (→ the dropdown's ad
-      // set) and Promotion Time Sensitive campaign rows (→ the fixed promo
-      // ad set) — say so explicitly instead of naming just one destination.
-      const campaignCount = buttons.filter(b => b.dataset.pushKind === 'campaign').length;
-      const winnerCount = buttons.length - campaignCount;
-      const confirmMsg = (campaignCount > 0 && winnerCount > 0)
-        ? `This creates ${buttons.length} LIVE ad(s), one at a time: ${winnerCount} organic winner(s) → "${selectedAdSet()?.name || 'the server default ad set'}", and ${campaignCount} Promotion Time Sensitive campaign ad(s) → the promo ad set (${PROMOTION_SENSITIVE_ADSET_ID}). Continue?`
-        : pushConfirmText(buttons.length, campaignCount > 0 ? 'campaign' : 'winner');
-      if (!confirm(confirmMsg)) return;
+      if (!confirm(pushConfirmText(buttons.length, kind))) return;
 
-      const allBtn = document.getElementById('pushAllWinnersBtn');
+      const allBtn = document.getElementById(cfg.btnId);
       allBtn.disabled = true;
       let ok = 0, failed = 0;
 
