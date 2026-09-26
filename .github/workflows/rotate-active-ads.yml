@@ -24,9 +24,17 @@ jobs:
         env:
           META_ADS_ACCESS_TOKEN: ${{ secrets.META_ADS_ACCESS_TOKEN }}
           META_PAGE_ACCESS_TOKEN: ${{ secrets.META_PAGE_ACCESS_TOKEN }}
-          # Optional overrides — default to the same ad sets
-          # weekly-organic-winners-to-ads.js and admin-dashboard.html use.
-          ORGANIC_ADSET_ID: ${{ secrets.ORGANIC_ADSET_ID }}
+          # Reuse the SAME secret the weekly cron uses for its destination
+          # (see TARGET_ADSET_ID in weekly-organic-winners-ads.yml) so there
+          # is exactly one place to update if the organic-winners ad set
+          # ever changes again, instead of two secrets silently drifting
+          # apart the way this script's own hardcoded default already did
+          # once (confirmed live: it pointed at an ad set with 0 active ads
+          # while the real one, held only in TARGET_ADSET_ID, had ads
+          # running). ORGANIC_ADSET_ID below is a further override on top of
+          # that, only if this job ever needs to point somewhere different
+          # from the weekly cron.
+          ORGANIC_ADSET_ID: ${{ secrets.ORGANIC_ADSET_ID || secrets.TARGET_ADSET_ID }}
           PROMO_ADSET_ID: ${{ secrets.PROMO_ADSET_ID }}
           MAX_ACTIVE_ADS: ${{ secrets.MAX_ACTIVE_ADS }}
           DRY_RUN: ${{ github.event.inputs.dry_run }}

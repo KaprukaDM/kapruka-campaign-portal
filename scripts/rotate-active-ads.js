@@ -62,10 +62,16 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const ADS_ACCESS_TOKEN = process.env.META_ADS_ACCESS_TOKEN || process.env.META_PAGE_ACCESS_TOKEN;
 const GRAPH_VERSION = 'v21.0';
 
-// Same defaults as weekly-organic-winners-to-ads.js's TARGET_ADSET_ID and
-// admin-dashboard.html's PROMOTION_SENSITIVE_ADSET_ID.
+// Organic Winners default MUST match weekly-organic-winners-to-ads.js's
+// actual TARGET_ADSET_ID at runtime — that script's own hardcoded fallback
+// (52763744155054) is stale (its flight ended; see the comment there) and
+// is NOT what's actually in use: the real destination comes from the
+// TARGET_ADSET_ID repo secret, currently 52816670204854 — confirmed live,
+// this is where the real active organic-winner ads are. Set as an
+// ORGANIC_ADSET_ID repo secret below rather than trusting either script's
+// hardcoded default if this ever changes again.
 const MANAGED_ADSETS = [
-  { key: 'organic', id: process.env.ORGANIC_ADSET_ID || '52763744155054', label: 'Organic Winners' },
+  { key: 'organic', id: process.env.ORGANIC_ADSET_ID || '52816670204854', label: 'Organic Winners' },
   { key: 'promo', id: process.env.PROMO_ADSET_ID || '52829715742254', label: 'Promotion Time Sensitive' },
 ];
 
