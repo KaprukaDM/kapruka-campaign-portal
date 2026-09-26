@@ -5229,7 +5229,7 @@
           <td style="font-size:12px;color:#666;">${p.reasons.join(', ')}</td>
           <td style="white-space:nowrap;">
             <button class="btn btn-primary" style="padding:6px 12px;font-size:12px;white-space:nowrap;"
-                    data-group-key="${escapeHtml(p.key)}" onclick="pushOrganicWinnerAd(this)">🚀 Push Now</button>
+                    data-group-key="${escapeHtml(p.key)}" data-push-kind="winner" onclick="pushOrganicWinnerAd(this)">🚀 Push Now</button>
             <button class="btn" style="padding:6px 12px;font-size:12px;white-space:nowrap;background:#eee;color:#666;margin-left:4px;"
                     data-group-key="${escapeHtml(p.key)}" onclick="removeQueuedWinner(this)">✖ Remove</button>
           </td>
@@ -5341,7 +5341,7 @@
       if (matched) {
         actionCell = `
           <button class="btn btn-primary" style="padding:6px 12px;font-size:12px;white-space:nowrap;"
-                  data-group-key="${escapeHtml(matched.key)}" onclick="pushOrganicWinnerAd(this)">🚀 Push Now</button>`;
+                  data-group-key="${escapeHtml(matched.key)}" data-push-kind="campaign" onclick="pushOrganicWinnerAd(this)">🚀 Push Now</button>`;
       } else if (item.candidates.length > 1) {
         actionCell = `
           <select id="autoQueuePick-${slot.id}" title="Which of that day's synced posts did this campaign go out as?"
@@ -5351,7 +5351,7 @@
             ${item.candidates.map((c, i) =>
               `<option value="${i}">${escapeHtml((c.message || '(no caption)').slice(0, 45))}</option>`).join('')}
           </select>
-          <button class="btn btn-primary" id="autoQueuePush-${slot.id}" disabled
+          <button class="btn btn-primary" id="autoQueuePush-${slot.id}" disabled data-push-kind="campaign"
                   style="padding:6px 12px;font-size:12px;white-space:nowrap;margin-left:4px;opacity:0.5;"
                   onclick="pushOrganicWinnerAd(this)">🚀 Push Now</button>`;
       } else {
@@ -5409,6 +5409,17 @@
     // remembered choice — so the next time a flight ends this is a dropdown
     // change, not a code change.
     const AD_DESTINATION_STORAGE_KEY = 'weeklyAdPushAdSetId';
+    // Promotion Time Sensitive content (campaign bookings — committed,
+    // date-bound promos) always goes to this ad set, never the one chosen
+    // in the dropdown below. That dropdown only ever governed organic 🏆
+    // Winners; auto-queued campaign rows were silently sharing whatever ad
+    // set the dropdown happened to point at, which meant a promo could land
+    // in the same ad set as unrelated organic content (or vice versa) with
+    // no way to tell from the UI. Ad set name: confirm this is still
+    // "Promotion Time Sensitive" (or equivalent) in Ads Manager if it's ever
+    // recreated — there's no live lookup/health-check for this one the way
+    // loadAdDestinations() checks the organic-winner destination.
+    const PROMOTION_SENSITIVE_ADSET_ID = '52829715742254';
     let adDestinations = [];
 
     function selectedAdSet() {
@@ -5515,8 +5526,14 @@
     }
 
     // Names the ad set actually selected rather than a hardcoded ID, and says
-    // plainly whether it will spend right now or sit paused.
-    function pushConfirmText(count) {
+    // plainly whether it will spend right now or sit paused. Promotion Time
+    // Sensitive (campaign-booking) pushes always go to the fixed promo ad
+    // set — pass kind: 'campaign' to describe that instead of the dropdown.
+    function pushConfirmText(count, kind) {
+      if (kind === 'campaign') {
+        const what = count === 1 ? 'a LIVE promotional ad' : `${count} LIVE promotional ad(s), one at a time,`;
+        return `This creates ${what} in the Promotion Time Sensitive ad set (${PROMOTION_SENSITIVE_ADSET_ID}) with real budget, starting immediately. Continue?`;
+      }
       const chosen = selectedAdSet();
       const what = count === 1 ? 'a LIVE ad' : `${count} LIVE ad(s), one at a time,`;
       if (!chosen) return `This creates ${what} using the server's default ad set. Continue?`;
@@ -5526,7 +5543,7 @@
     }
 
     async function pushOrganicWinnerAd(btn) {
-      if (!confirm(pushConfirmText(1))) return;
+      if (!confirm(pushConfirmText(1, btn.dataset.pushKind))) return;
       await doPushWinner(btn);
     }
 
@@ -5542,11 +5559,21 @@
       btn.disabled = true;
       btn.textContent = '⏳ Pushing…';
 
+      // Promotion Time Sensitive rows (campaign bookings, tagged
+      // data-push-kind="campaign" in renderAutoQueuedRow) always go to the
+      // dedicated promo ad set — never the dropdown, which only ever
+      // governed organic 🏆 Winners. Everything else (organic winners, and
+      // any ad-hoc push from the performance table) keeps using the
+      // dropdown's chosen destination, same as before.
+      const adSetId = btn.dataset.pushKind === 'campaign'
+        ? PROMOTION_SENSITIVE_ADSET_ID
+        : (selectedAdSet()?.id || undefined);
+
       try {
         const res = await fetch('/api/push-organic-winner-ad', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ group_key: groupKey, adset_id: selectedAdSet()?.id || undefined }),
+          body: JSON.stringify({ group_key: groupKey, adset_id: adSetId }),
         });
         const data = await res.json();
         if (!res.ok || data.error) throw new Error(data.error || `Request failed (${res.status})`);
@@ -5568,7 +5595,15 @@
       const buttons = Array.from(document.querySelectorAll('#queuedAdsTable button[onclick^="pushOrganicWinnerAd"]'));
       if (buttons.length === 0) { alert('Nothing queued to push.'); return; }
 
-      if (!confirm(pushConfirmText(buttons.length))) return;
+      // A "Push All" batch can mix organic 🏆 Winners (→ the dropdown's ad
+      // set) and Promotion Time Sensitive campaign rows (→ the fixed promo
+      // ad set) — say so explicitly instead of naming just one destination.
+      const campaignCount = buttons.filter(b => b.dataset.pushKind === 'campaign').length;
+      const winnerCount = buttons.length - campaignCount;
+      const confirmMsg = (campaignCount > 0 && winnerCount > 0)
+        ? `This creates ${buttons.length} LIVE ad(s), one at a time: ${winnerCount} organic winner(s) → "${selectedAdSet()?.name || 'the server default ad set'}", and ${campaignCount} Promotion Time Sensitive campaign ad(s) → the promo ad set (${PROMOTION_SENSITIVE_ADSET_ID}). Continue?`
+        : pushConfirmText(buttons.length, campaignCount > 0 ? 'campaign' : 'winner');
+      if (!confirm(confirmMsg)) return;
 
       const allBtn = document.getElementById('pushAllWinnersBtn');
       allBtn.disabled = true;
