@@ -937,6 +937,112 @@
       border-color: #FB8C00;
     }
 
+    .slot-label.label-fixed-app-promotion {
+      background: #E1F5FE;
+      color: #01579B;
+      border-color: #039BE5;
+    }
+
+    .slot-label.label-fixed-linkedin {
+      background: #E8EAF6;
+      color: #1A237E;
+      border-color: #3949AB;
+    }
+
+    /* ── Fixed weekly slot placeholders (App Promotion ×2, LinkedIn ×1) ──
+       Dashed rail so they read as "owed work", not as real booked content. */
+    .slot-item.fixed-weekly {
+      background: #FAFAFF;
+      border-left-style: dashed;
+      border-left-color: #7E57C2;
+      cursor: pointer;
+    }
+
+    .slot-item.fixed-weekly.fixed-app-promotion { border-left-color: #039BE5; }
+    .slot-item.fixed-weekly.fixed-linkedin { border-left-color: #3949AB; }
+
+    /* The type name IS the content of a placeholder, so it must never be
+       ellipsised the way a booked slot's page name is. */
+    .slot-item.fixed-weekly .slot-page {
+      max-width: 100%;
+      white-space: normal;
+      font-size: 11px;
+      color: #4A148C;
+    }
+
+    .slot-item.fixed-weekly.missed {
+      background: #FFF5F5;
+      border-left-color: #E53935;
+    }
+
+    .status-fixed-due { background: #D1C4E9; color: #4527A0; }
+    .status-fixed-missed { background: #FFCDD2; color: #B71C1C; }
+
+    /* Per-week coverage strip above the studio calendar grid */
+    .fixed-weekly-panel {
+      background: #fff;
+      border: 2px solid #EDE7F6;
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .fixed-weekly-head {
+      font-size: 13px;
+      color: #4A148C;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .fixed-weekly-open {
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .fixed-weekly-open.ok { background: #C8E6C9; color: #1B5E20; }
+    .fixed-weekly-open.gap { background: #FFE0B2; color: #A34700; }
+
+    .fixed-weekly-note {
+      font-size: 12px;
+      color: #666;
+      margin: 6px 0 10px;
+    }
+
+    .fixed-week-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 5px 0;
+      border-top: 1px dashed #EDE7F6;
+    }
+
+    .fixed-week-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #5e3a8e;
+      min-width: 160px;
+    }
+
+    .fixed-week-chip {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+    }
+
+    .fixed-week-chip.ok { background: #E8F5E9; color: #1B5E20; border-color: #A5D6A7; }
+    .fixed-week-chip.gap { background: #FFF3E0; color: #A34700; border-color: #FFCC80; }
+
     .slot-number {
       font-weight: 700;
       font-size: 11px;
@@ -1582,6 +1688,8 @@
                   <option value="posted">Posted (confirmed live)</option>
                   <option value="postedunverified">⏳ Pending verification (claims Posted, no proof)</option>
                   <option value="rejecteddm">Rejected by DM</option>
+                  <option value="fixed_app_promotion">📱 App Promotion content (fixed weekly)</option>
+                  <option value="fixed_linkedin">💼 LinkedIn content (fixed weekly)</option>
                 </select>
                 <label style="color:#5e3a8e;font-weight:600;margin-right:10px;margin-left:20px;">Filter by Person:</label>
                 <select id="studioPersonFilter" onchange="applyStudioFilters()" style="padding:10px;border-radius:8px;border:2px solid #e8e8e8;font-size:14px;" aria-label="Filter by person">
@@ -1632,6 +1740,10 @@
                   <span style="color:#666;">Assigned person (when set)</span>
                 </div>
               </div>
+
+              <!-- Hard-coded weekly quota: App Promotion ×2, LinkedIn ×1.
+                   Filled in by renderFixedWeeklySlotSummary(). -->
+              <div class="fixed-weekly-panel" id="fixedWeeklySummary"></div>
 
               <div class="calendar-weekdays">
                 <div class="calendar-day-header">Mon</div>
@@ -2271,6 +2383,10 @@
     // Unfiltered month data + themes, cached so status/person/search filters
     // can re-render instantly without re-fetching.
     let studioMonthRawData = [];
+    // Same rows padded by a week either side of the month — only used to decide
+    // whether the hard-coded weekly slots (App Promotion ×2, LinkedIn ×1) are
+    // already covered in weeks that straddle the month boundary.
+    let studioPaddedRawData = [];
     let studioMonthThemes = [];
     let studioSearchTerm = '';
     let studioSearchTimer = null;
@@ -3456,7 +3572,19 @@
         // Non-fatal and a no-op once everything is already High.
         if (!silent) await backfillCampaignBookingPriority();
 
-        studioMonthRawData = await getStudioCalendarForMonth(currentStudioYear, currentStudioMonth);
+        // Fetch the month padded by a week either side (one query, same as
+        // before) so buildFixedWeeklySlotPlan() can see content sitting in the
+        // other half of a week that straddles the month boundary. The grid
+        // itself still only renders rows inside the month.
+        const monthFirst = `${currentStudioYear}-${String(currentStudioMonth).padStart(2, '0')}-01`;
+        const monthLastDay = new Date(currentStudioYear, currentStudioMonth, 0).getDate();
+        const monthLast = `${currentStudioYear}-${String(currentStudioMonth).padStart(2, '0')}-${monthLastDay}`;
+        const padStart = new Date(`${monthFirst}T00:00:00`); padStart.setDate(padStart.getDate() - 7);
+        const padEnd = new Date(`${monthLast}T00:00:00`); padEnd.setDate(padEnd.getDate() + 7);
+        studioPaddedRawData = await getStudioCalendarForRange(
+          localDateString(padStart), localDateString(padEnd)
+        );
+        studioMonthRawData = studioPaddedRawData.filter(r => r.date >= monthFirst && r.date <= monthLast);
 
         // Which of this month's "Posted" rows can actually prove it. Only the
         // Posted ones are asked about, so this is a small extra query.
@@ -3556,6 +3684,12 @@
         const filterValue = document.getElementById('studioFilter')?.value || 'all';
         if (filterValue !== 'all') {
           data = data.filter(item => {
+            // Fixed weekly types (App Promotion / LinkedIn) — matched by
+            // keyword, same rule the weekly coverage count uses.
+            if (filterValue.indexOf('fixed_') === 0) {
+              const matched = getFixedWeeklySlotType(item);
+              return !!matched && matched.key === filterValue.slice('fixed_'.length);
+            }
             if (filterValue === 'received') return item.studio_status === 'Received';
             if (filterValue === 'working') return item.studio_status === 'Working';
             if (filterValue === 'submitted') return item.studio_status === 'Submitted for Review';
@@ -3664,9 +3798,75 @@
       return `<span class="slot-labels">${pills}</span>`;
     }
 
+    // ── FIXED WEEKLY SLOTS (App Promotion ×2, LinkedIn ×1) ──────────
+    // Definitions + the coverage maths live in js/supabase-api.js
+    // (FIXED_WEEKLY_SLOT_TYPES / buildFixedWeeklySlotPlan). This is only the
+    // rendering: a per-week coverage strip above the grid, and a placeholder
+    // card in each day cell that still owes one.
+    const FIXED_SLOT_LABEL_CLASSES = {
+      app_promotion: 'label-fixed-app-promotion',
+      linkedin: 'label-fixed-linkedin'
+    };
+
+    function fixedWeeklyRuleText() {
+      return FIXED_WEEKLY_SLOT_TYPES.map(def => {
+        const dayNames = def.days.map(d => getDayName(d).slice(0, 3)).join(' + ');
+        return `${def.emoji} <strong>${escapeHtml(def.name)}</strong> ×${def.perWeek}/week (${dayNames})`;
+      }).join(' · ');
+    }
+
+    function renderFixedWeeklySlotSummary(plan) {
+      const el = document.getElementById('fixedWeeklySummary');
+      if (!el) return;
+
+      const weekRows = plan.weeks.map(week => {
+        const types = week.types.filter(t => t.required > 0);
+        if (!types.length) return '';
+        const chips = types.map(t => {
+          const cls = t.missing === 0 ? 'ok' : 'gap';
+          return `<span class="fixed-week-chip ${cls}">${t.emoji} ${escapeHtml(t.name)} ${t.done}/${t.required}</span>`;
+        }).join('');
+        return `
+          <div class="fixed-week-row">
+            <span class="fixed-week-label">Week of ${formatDate(week.weekStart)}</span>
+            ${chips}
+          </div>`;
+      }).filter(Boolean).join('');
+
+      const openCount = plan.weeks.reduce((sum, w) =>
+        sum + w.types.reduce((s, t) => s + t.missing, 0), 0);
+
+      el.innerHTML = `
+        <div class="fixed-weekly-head">
+          📌 Fixed weekly content slots — ${fixedWeeklyRuleText()}
+          <span class="fixed-weekly-open ${openCount === 0 ? 'ok' : 'gap'}">
+            ${openCount === 0 ? 'All covered this month' : `${openCount} still to fill`}
+          </span>
+        </div>
+        <div class="fixed-weekly-note">
+          Counted automatically from real content whose details/page mention the type — add it on any day of the
+          week and the slot closes. Empty ones show as a placeholder card in the calendar; click it to create the content.
+        </div>
+        ${weekRows}
+      `;
+    }
+
     function renderCalendarGrid(data, monthThemes = []) {
       const grid = document.getElementById('studioCalendarGrid');
-      
+
+      // Fixed weekly slots are counted from the UNFILTERED padded month data,
+      // so a status/person filter can never make a week look uncovered.
+      const fixedPlan = buildFixedWeeklySlotPlan(
+        currentStudioYear, currentStudioMonth, studioPaddedRawData
+      );
+      renderFixedWeeklySlotSummary(fixedPlan);
+      // Don't pad day cells with placeholders while a search or filter is
+      // active — same rule the lead-form placeholders follow, so a filtered
+      // view only ever shows real matching content.
+      const showFixedPlaceholders = !studioSearchTerm
+        && (document.getElementById('studioFilter')?.value || 'all') === 'all'
+        && (document.getElementById('studioPersonFilter')?.value || 'all') === 'all';
+
       // Clear entirely (weekdays are now rendered separately)
       grid.innerHTML = '';
 
@@ -3721,6 +3921,30 @@
 
         const slotsContainer = document.createElement('div');
         slotsContainer.className = 'day-slots';
+
+        // Hard-coded weekly slots this day still owes (App Promotion on
+        // Tue/Fri, LinkedIn on Wed). Rendered FIRST so they stay visible in a
+        // busy day cell (.day-slots scrolls, so anything appended last can sit
+        // below the fold). Clicking opens Add Extra Content pre-filled for that
+        // type, and filling it creates ordinary content the matcher counts.
+        if (showFixedPlaceholders) {
+          (fixedPlan.byDate[dateStr] || []).forEach(({ def, state }) => {
+            const slotDiv = document.createElement('div');
+            slotDiv.className = `slot-item fixed-weekly ${def.cssClass} ${state === 'missed' ? 'missed' : ''}`;
+            const badge = state === 'missed'
+              ? '<span class="slot-status status-fixed-missed" title="This week&#39;s fixed slot was never filled.">⚠ Not filled</span>'
+              : '<span class="slot-status status-fixed-due" title="Hard-coded weekly slot — click to create the content.">＋ To fill</span>';
+            slotDiv.innerHTML = `
+              <span class="slot-number">${def.emoji}</span>
+              ${badge}
+              <span class="slot-page">${escapeHtml(def.name)}</span>
+              <span class="slot-labels"><span class="slot-label ${FIXED_SLOT_LABEL_CLASSES[def.key] || ''}">⚡ Fixed weekly</span></span>
+            `;
+            slotDiv.title = `${def.name} — ${def.perWeek}× per week (hard-coded). Click to add this week's content.`;
+            slotDiv.onclick = () => openAddExtraContentModal(dateStr, def.key);
+            slotsContainer.appendChild(slotDiv);
+          });
+        }
 
         const dayData = data.filter(d => d.date === dateStr);
         const schedule = PAGE_SCHEDULE[dayOfWeek];
@@ -5431,14 +5655,26 @@
       loadStudioCalendar();
     }
 
-    function openAddExtraContentModal(prefillDate = null) {
+    // fixedSlotKey (optional) pre-fills the form for one of the hard-coded
+    // weekly slots (see FIXED_WEEKLY_SLOT_TYPES in js/supabase-api.js) and
+    // seeds the details box with that type's tag, so the saved content is
+    // recognised as covering the week.
+    function openAddExtraContentModal(prefillDate = null, fixedSlotKey = null) {
       const pageOptions = PAGE_OPTIONS.map(pg => `
         <option value="${pg}">${pg}</option>
       `).join('');
 
+      const fixedDef = fixedSlotKey ? getFixedWeeklySlotTypeByKey(fixedSlotKey) : null;
+      const fixedBanner = fixedDef ? `
+        <div style="background:#F3E5F5;border-left:4px solid var(--primary-purple);padding:10px 14px;border-radius:10px;margin-bottom:16px;font-size:13px;color:#4A148C;">
+          ${fixedDef.emoji} Filling the fixed weekly <strong>${escapeHtml(fixedDef.name)}</strong> slot
+          (${fixedDef.perWeek}× per week). Keep “${escapeHtml(fixedDef.tag)}” in the details so it counts towards the week.
+        </div>` : '';
+
       const content = `
         <button class="close-modal" onclick="closeModal()">×</button>
         <h3>➕ Add Extra Content</h3>
+        ${fixedBanner}
         <form id="extraContentForm">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
             <div class="form-group">
@@ -5506,6 +5742,24 @@
         if (dateInput) {
           dateInput.value = prefillDate;
           dateInput.disabled = true;
+        }
+      }
+
+      // Pre-fill for a fixed weekly slot. Everything stays editable — the only
+      // thing that matters for the weekly count is the tag in the details.
+      if (fixedDef) {
+        const setVal = (id, value) => {
+          const el = document.getElementById(id);
+          if (el && value) el.value = value;
+        };
+        setVal('extraDepartment', fixedDef.defaults.department);
+        setVal('extraPage', fixedDef.defaults.page_name);
+        setVal('extraFormat', fixedDef.defaults.format);
+        setVal('extraPriority', fixedDef.defaults.priority);
+        const details = document.getElementById('extraDetails');
+        if (details) {
+          details.value = `${fixedDef.tag} `;
+          details.placeholder = `${fixedDef.tag} describe this week's ${fixedDef.name.toLowerCase()}…`;
         }
       }
 

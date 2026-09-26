@@ -77,7 +77,174 @@ function studioPriorityRank(row) {
 function getStudioSlotLabels(row) {
   const labels = [];
   if (isCampaignBookingSlot(row)) labels.push(LABEL_PROMOTION_TIME_SENSITIVE);
+  const fixed = getFixedWeeklySlotType(row);
+  if (fixed) labels.push(fixed.name);
   return labels;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FIXED WEEKLY CONTENT SLOTS (hard-coded quota)
+// ═══════════════════════════════════════════════════════════════
+// Two content types have to be produced EVERY week no matter what else is
+// booked, so they are hard-coded here instead of relying on someone
+// remembering to add them:
+//   • App Promotion      — twice a week (Tuesday + Friday)
+//   • LinkedIn Content   — once a week  (Wednesday)
+//
+// They are NOT extra studio_calendar rows: nothing is inserted, so there is
+// no migration, no duplicate-row risk on re-render, and no cleanup if the
+// quota changes. The calendar derives them at render time and matches them
+// against the REAL content that already exists for that week by keyword
+// (`match` below). So a week counts as covered as soon as content whose
+// details/page say "app promotion" / "LinkedIn" exists for it — on any day of
+// that week, created from anywhere (extra content, campaign booking, content
+// calendar). Unfilled days render as a placeholder that opens the Add Extra
+// Content form pre-filled for that type.
+//
+// To change the cadence, edit perWeek/days here — nothing else needs touching.
+const FIXED_WEEKLY_SLOT_TYPES = [
+  {
+    key: 'app_promotion',
+    name: 'App Promotion',
+    emoji: '📱',
+    perWeek: 2,
+    days: [2, 5],            // JS getDay(): Tue, Fri
+    tag: '[App Promotion]',
+    match: /\bapp\s*(promo|promotion|promotions|download|downloads|install|installs)\b|\bmobile\s*app\b|\bapp\s*campaign\b/i,
+    cssClass: 'fixed-app-promotion',
+    defaults: {
+      department: 'Digital Marketing',
+      page_name: 'Kapruka FB',
+      format: 'Video',
+      priority: 'High'
+    }
+  },
+  {
+    key: 'linkedin',
+    name: 'LinkedIn Content',
+    emoji: '💼',
+    perWeek: 1,
+    days: [3],               // JS getDay(): Wed
+    tag: '[LinkedIn]',
+    match: /\blinked\s*-?\s*in\b/i,
+    cssClass: 'fixed-linkedin',
+    defaults: {
+      department: 'Corporate Marketing',
+      page_name: 'Kapruka FB',
+      format: 'Post',
+      priority: 'Low'
+    }
+  }
+];
+
+// Text a fixed-slot keyword is matched against. Deliberately narrow: only
+// human-written descriptive fields, so an unrelated product code or a
+// person's name can never accidentally satisfy a weekly quota.
+function fixedSlotHaystack(row) {
+  if (!row) return '';
+  return [row.content_details, row.notes, row.format, row.page_name, row.campaign_name]
+    .filter(Boolean).join(' | ');
+}
+
+// Which fixed weekly type (if any) an existing slot counts towards.
+function getFixedWeeklySlotType(row) {
+  if (!row) return null;
+  const haystack = fixedSlotHaystack(row);
+  if (!haystack) return null;
+  return FIXED_WEEKLY_SLOT_TYPES.find(def => def.match.test(haystack)) || null;
+}
+
+function getFixedWeeklySlotTypeByKey(key) {
+  return FIXED_WEEKLY_SLOT_TYPES.find(def => def.key === key) || null;
+}
+
+// Local (not UTC) YYYY-MM-DD — the calendar grid builds its date strings from
+// local date parts, so "today" has to be computed the same way or the two
+// disagree either side of midnight UTC.
+function localDateString(date = new Date()) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+// Monday-start week key for a YYYY-MM-DD date. The calendar grid is
+// Monday-first, so weeks are counted the same way the team reads them.
+function fixedSlotWeekStart(dateStr) {
+  const d = new Date(`${dateStr}T00:00:00`);
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return localDateString(d);
+}
+
+/**
+ * Works out which fixed weekly slots are still missing for a displayed month.
+ *
+ * @param {number} year
+ * @param {number} month            1-12
+ * @param {Array}  rows             studio_calendar rows. Pass a range PADDED by
+ *                                  a week either side of the month so content
+ *                                  sitting in the other half of an edge week
+ *                                  still counts (see getStudioCalendarForRange).
+ * @param {string} [todayStr]       override for tests
+ * @returns {{ byDate: Object, weeks: Array }}
+ *   byDate[dateStr] = [{ def, state }]  placeholders to render on that day
+ *                                       state: 'due' (today/future) | 'missed'
+ *   weeks = per-week coverage, oldest first, for the summary strip
+ */
+function buildFixedWeeklySlotPlan(year, month, rows, todayStr = localDateString()) {
+  const byDate = {};
+  const weeks = new Map();
+  const daysInMonth = new Date(year, month, 0).getDate();
+
+  // Real content, bucketed by week + fixed type.
+  const filled = new Map(); // `${weekStart}|${key}` -> count
+  (rows || []).forEach(row => {
+    if (!row || !row.date) return;
+    const def = getFixedWeeklySlotType(row);
+    if (!def) return;
+    const mapKey = `${fixedSlotWeekStart(row.date)}|${def.key}`;
+    filled.set(mapKey, (filled.get(mapKey) || 0) + 1);
+  });
+
+  // Candidate days inside the displayed month, per week + type.
+  const candidates = new Map(); // `${weekStart}|${key}` -> [dateStr]
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(year, month - 1, day);
+    const dateStr = localDateString(date);
+    const weekStart = fixedSlotWeekStart(dateStr);
+    if (!weeks.has(weekStart)) weeks.set(weekStart, { weekStart, types: [] });
+    FIXED_WEEKLY_SLOT_TYPES.forEach(def => {
+      if (!def.days.includes(date.getDay())) return;
+      const mapKey = `${weekStart}|${def.key}`;
+      if (!candidates.has(mapKey)) candidates.set(mapKey, []);
+      candidates.get(mapKey).push(dateStr);
+    });
+  }
+
+  weeks.forEach(week => {
+    FIXED_WEEKLY_SLOT_TYPES.forEach(def => {
+      const mapKey = `${week.weekStart}|${def.key}`;
+      const dates = candidates.get(mapKey) || [];
+      const done = filled.get(mapKey) || 0;
+      // Only ask for what can still be shown inside this month's cells: an
+      // edge week whose Tuesday belongs to the previous month is that month's
+      // problem, not this one's.
+      const required = Math.min(def.perWeek, dates.length);
+      const missing = Math.max(0, required - done);
+      week.types.push({ key: def.key, name: def.name, emoji: def.emoji, done, required, missing });
+      // Leave the EARLIEST days filled-looking and place the placeholders on
+      // the remaining ones, so a week with 1 of 2 done flags the later day.
+      dates.slice(required - missing).forEach(dateStr => {
+        if (!byDate[dateStr]) byDate[dateStr] = [];
+        byDate[dateStr].push({ def, state: dateStr < todayStr ? 'missed' : 'due' });
+      });
+    });
+  });
+
+  return {
+    byDate,
+    weeks: Array.from(weeks.values()).sort((a, b) => a.weekStart.localeCompare(b.weekStart))
+  };
 }
 
 // ── AUTO-QUEUE FOR THE WEEKLY AD PUSH ──────────────────────────────────
@@ -691,6 +858,15 @@ async function getStudioCalendarForMonth(year, month) {
   const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
   const lastDay = new Date(year, month, 0).getDate();
   const endDate = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
+  return await supabaseQuery(
+    `studio_calendar?date=gte.${startDate}&date=lte.${endDate}&order=date.asc,slot_number.asc`
+  );
+}
+
+// Any date range (inclusive). Used by the studio calendar to fetch the month
+// PLUS a week either side, so the fixed weekly slot check can see content that
+// falls in the other half of a week straddling the month boundary.
+async function getStudioCalendarForRange(startDate, endDate) {
   return await supabaseQuery(
     `studio_calendar?date=gte.${startDate}&date=lte.${endDate}&order=date.asc,slot_number.asc`
   );
