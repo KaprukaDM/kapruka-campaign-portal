@@ -2145,9 +2145,14 @@
           #tab-postingcal input[type=date] { color: #111; color-scheme: light; }
           .pcal-slots { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
           .pcal-slot { border: 1px solid rgba(0,0,0,0.16); border-radius: 100px; padding: 5px 12px; font-size: 12px; font-weight: 600; }
-          .pcal-slot.free { background: #dcfce7; border-color: transparent; color: #137333; }
-          .pcal-slot.taken { background: #fee2e2; border-color: transparent; color: #dc2626; text-decoration: line-through; }
-          .pcal-slot.next { box-shadow: 0 0 0 2px var(--primary-purple); }
+          .pcal-slot.free { background: #dcfce7; border-color: transparent; color: #137333; cursor: pointer; user-select: none; }
+          .pcal-slot.free:hover { box-shadow: 0 0 0 2px rgba(94,58,142,0.35); }
+          .pcal-slot.taken { background: #fee2e2; border-color: transparent; color: #dc2626; text-decoration: line-through; cursor: not-allowed; }
+          /* .next is the existing "this is where it lands" ring — now driven by
+             the user's selection instead of the server's auto-pick. */
+          .pcal-slot.next, .pcal-slot.free.next:hover { box-shadow: 0 0 0 2px var(--primary-purple); font-weight: 700; }
+          .pcal-slot:focus-visible { outline: 2px solid var(--primary-purple); outline-offset: 2px; }
+          @media (max-width: 600px) { .pcal-slot { padding: 9px 14px; font-size: 13px; } }
           .pcal-hint { font-size: 12px; color: #888; margin-top: 8px; }
           .pcal-msg { margin-top: 12px; padding: 10px 12px; border-radius: 10px; font-size: 13px; font-weight: 500; }
           .pcal-msg.ok { background: #dcfce7; color: #137333; }
@@ -6472,6 +6477,10 @@
       pcalSelected = pcalPosts.find(p => p.contentId === id);
       pcalFolderImages = [];
       pcalFolderOrder = [];
+      // New post → drop any slot picked for the previous one; the next
+      // loadPcalSlots() re-applies the default (first free slot).
+      pcalSlotData = null;
+      pcalSelectedSlot = null;
       renderPcalList();
       renderPcalForm();
     }
@@ -6643,27 +6652,80 @@
       renderPcalFolderPicker();
     }
 
+    // ── Time-slot picker ─────────────────────────────────────────
+    // The chips are the actual control for which of the day's five slots the
+    // post goes into — savePcalSchedule() sends pcalSelectedSlot and the API
+    // writes that slot, rather than the server auto-picking from row order.
+    let pcalSlotData = null;        // last /?slotsFor= response for the chosen date
+    let pcalSelectedSlot = null;    // index into pcalSlotData.slots, or null when the day is full
+
     async function loadPcalSlots() {
       const d = document.getElementById('pcalDateInput').value;
       const slotInfo = document.getElementById('pcalSlotInfo');
-      if (!d) { slotInfo.innerHTML = ''; return; }
+      if (!slotInfo) return;
+      if (!d) { pcalSlotData = null; pcalSelectedSlot = null; slotInfo.innerHTML = ''; return; }
       slotInfo.innerHTML = '<div class="pcal-hint">Checking availability…</div>';
       try {
         const res = await fetch('/api/posting-calendar?slotsFor=' + encodeURIComponent(d));
         const info = await res.json();
         if (info.error) throw new Error(info.error);
-        const html = info.slots.map((s, i) => {
-          const cls = s.available ? 'free' : 'taken';
-          const next = i === info.nextAvailableIndex ? ' next' : '';
-          return `<span class="pcal-slot ${cls}${next}">${s.time}</span>`;
-        }).join('');
-        const hint = info.stacking
-          ? 'All 5 slots taken that day — this will stack on the 9:00 PM slot.'
-          : `${info.freeCount} of ${info.slots.length} slots free. Saving lands it in the highlighted slot.`;
-        slotInfo.innerHTML = `<div class="pcal-slots">${html}</div><div class="pcal-hint">${hint}</div>`;
+        pcalSlotData = info;
+        // Keep the user's pick when it's still free on this date; otherwise
+        // fall back to the first free slot — the same default as before, so
+        // nothing changes for someone who never clicks a chip.
+        const keep = pcalSelectedSlot !== null && info.slots[pcalSelectedSlot] && info.slots[pcalSelectedSlot].available;
+        if (!keep) pcalSelectedSlot = info.stacking ? null : info.nextAvailableIndex;
+        renderPcalSlots();
       } catch (error) {
+        pcalSlotData = null;
+        pcalSelectedSlot = null;
         slotInfo.innerHTML = `<div class="pcal-hint">Couldn't check availability: ${pcalEscapeHtml(error.message)}</div>`;
       }
+    }
+
+    function renderPcalSlots() {
+      const slotInfo = document.getElementById('pcalSlotInfo');
+      if (!slotInfo) return;
+      const info = pcalSlotData;
+      if (!info) { slotInfo.innerHTML = ''; return; }
+
+      const html = info.slots.map(s => {
+        const taken = !s.available;
+        const isSelected = !taken && s.index === pcalSelectedSlot;
+        const title = taken
+          ? (s.takenBy ? `${s.time} is already taken by ${s.takenBy}` : `${s.time} is already taken`)
+          : `Schedule this post into ${s.time}`;
+        return `<span class="pcal-slot ${taken ? 'taken' : 'free'}${isSelected ? ' next' : ''}"
+          role="radio" aria-checked="${isSelected}" aria-disabled="${taken}"
+          tabindex="${taken ? '-1' : '0'}" data-slot="${s.index}"
+          title="${pcalEscapeHtml(title)}"
+          onclick="pickPcalSlot(${s.index})" onkeydown="pcalSlotKeydown(event, ${s.index})">${pcalEscapeHtml(s.time)}</span>`;
+      }).join('');
+
+      const selected = pcalSelectedSlot !== null ? info.slots[pcalSelectedSlot] : null;
+      const hint = info.stacking
+        ? 'All 5 slots taken that day — this will stack on the 9:00 PM slot.'
+        : `Scheduling into ${pcalEscapeHtml(selected ? selected.time : '—')}. ${info.freeCount} of ${info.slots.length} slots free.`;
+
+      slotInfo.innerHTML = `<div class="pcal-slots" role="radiogroup" aria-label="Posting time slot">${html}</div><div class="pcal-hint">${hint}</div>`;
+    }
+
+    function pickPcalSlot(index, refocus) {
+      if (!pcalSlotData) return;
+      const slot = pcalSlotData.slots[index];
+      if (!slot || !slot.available) return; // taken chips are inert
+      pcalSelectedSlot = index;
+      renderPcalSlots();
+      if (refocus) {
+        const chip = document.querySelector(`#pcalSlotInfo .pcal-slot[data-slot="${index}"]`);
+        if (chip) chip.focus();
+      }
+    }
+
+    function pcalSlotKeydown(event, index) {
+      if (event.key !== 'Enter' && event.key !== ' ' && event.key !== 'Spacebar') return;
+      event.preventDefault();
+      pickPcalSlot(index, true);
     }
 
     async function savePcalSchedule() {
@@ -6680,13 +6742,28 @@
       try {
         const res = await fetch('/api/posting-calendar', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ studioId: pcalSelected.studioId, date: d, primaryText: text, productName, mediaOrder: pcalSelected.isFolder ? pcalFolderOrder : undefined })
+          body: JSON.stringify({
+            studioId: pcalSelected.studioId, date: d, primaryText: text, productName,
+            // The chip the user picked. null only when the day is already
+            // full, where the API stacks on the last slot as before.
+            slotIndex: pcalSelectedSlot,
+            mediaOrder: pcalSelected.isFolder ? pcalFolderOrder : undefined
+          })
         });
         const result = await res.json();
+        // Someone else took the slot between load and save — show why and put
+        // fresh chips up rather than double-booking the slot.
+        if (res.status === 409 && result.slotConflict) {
+          await loadPcalSlots();
+          await loadPcalCalendar();
+          throw new Error(result.error);
+        }
         if (!res.ok || result.error) throw new Error(result.error || 'Save failed');
         const warn = result.studioSynced === false ? '<br>(Added to the sheet, but couldn\'t update the Studio Calendar status — update it manually.)' : '';
         msg.innerHTML = `<div class="pcal-msg ok">Scheduled for ${result.date} @ ${result.slot}${result.stacked ? ' (stacked)' : ''}.${warn}</div>`;
         pcalSelected = null;
+        pcalSlotData = null;
+        pcalSelectedSlot = null;
         await loadPostingCalendar();
         await loadPcalCalendar();
         document.getElementById('pcalRightPanel').innerHTML = '<div class="pcal-placeholder">Select a Good-to-Go post on the left to schedule it.</div>';

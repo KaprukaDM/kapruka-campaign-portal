@@ -120,9 +120,14 @@
 
   .slots { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
   .slot { border: 1px solid var(--border-strong); border-radius: 100px; padding: 5px 12px; font-size: 12px; font-weight: 600; }
-  .slot.free { background: var(--green-bg); border-color: transparent; color: #137333; }
-  .slot.taken { background: var(--red-bg); border-color: transparent; color: var(--red); text-decoration: line-through; }
-  .slot.next { box-shadow: 0 0 0 2px var(--purple); }
+  .slot.free { background: var(--green-bg); border-color: transparent; color: #137333; cursor: pointer; user-select: none; }
+  .slot.free:hover { box-shadow: 0 0 0 2px rgba(94,58,142,0.35); }
+  .slot.taken { background: var(--red-bg); border-color: transparent; color: var(--red); text-decoration: line-through; cursor: not-allowed; }
+  /* .next is the existing "this is where it lands" ring — now driven by the
+     user's selection instead of the server's auto-pick. */
+  .slot.next, .slot.free.next:hover { box-shadow: 0 0 0 2px var(--purple); font-weight: 700; }
+  .slot:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
+  @media (max-width: 600px) { .slot { padding: 9px 14px; font-size: 13px; } }
   .hint { font-size: 12px; color: var(--text-muted); margin-top: 8px; }
 
   .save-btn {
@@ -272,6 +277,10 @@
     selected = posts.find(p => p.contentId === id);
     folderImages = [];
     folderOrder = [];
+    // New post → drop any slot picked for the previous one; the next
+    // loadSlots() re-applies the default (first free slot).
+    slotData = null;
+    selectedSlot = null;
     renderPosts();
     renderForm();
   }
@@ -358,27 +367,79 @@
     renderFolderPicker();
   }
 
+  // ── Time-slot picker ───────────────────────────────────────────
+  // The chips are the actual control for which of the day's five slots the
+  // post goes into — save() sends selectedSlot and the API writes that slot,
+  // rather than the server auto-picking from row order.
+  let slotData = null;       // last /?slotsFor= response for the chosen date
+  let selectedSlot = null;   // index into slotData.slots, or null when the day is full
+
   async function loadSlots() {
     const d = document.getElementById('dateInput').value;
     const slotInfo = document.getElementById('slotInfo');
-    if (!d) { slotInfo.innerHTML = ''; return; }
+    if (!slotInfo) return;
+    if (!d) { slotData = null; selectedSlot = null; slotInfo.innerHTML = ''; return; }
     slotInfo.innerHTML = '<div class="hint">Checking availability…</div>';
     try {
       const res = await fetch('/api/posting-calendar?slotsFor=' + encodeURIComponent(d));
       const info = await res.json();
       if (info.error) throw new Error(info.error);
-      const html = info.slots.map((s, i) => {
-        const cls = s.available ? 'free' : 'taken';
-        const next = i === info.nextAvailableIndex ? ' next' : '';
-        return `<span class="slot ${cls}${next}">${s.time}</span>`;
-      }).join('');
-      const hint = info.stacking
-        ? 'All 5 slots taken that day — this will stack on the 9:00 PM slot.'
-        : `${info.freeCount} of ${info.slots.length} slots free. Saving lands it in the highlighted slot.`;
-      slotInfo.innerHTML = `<div class="slots">${html}</div><div class="hint">${hint}</div>`;
+      slotData = info;
+      // Keep the user's pick when it's still free on this date; otherwise
+      // fall back to the first free slot — the same default as before.
+      const keep = selectedSlot !== null && info.slots[selectedSlot] && info.slots[selectedSlot].available;
+      if (!keep) selectedSlot = info.stacking ? null : info.nextAvailableIndex;
+      renderSlots();
     } catch (e) {
+      slotData = null;
+      selectedSlot = null;
       slotInfo.innerHTML = `<div class="hint">Couldn't check availability: ${escapeHtml(e.message)}</div>`;
     }
+  }
+
+  function renderSlots() {
+    const slotInfo = document.getElementById('slotInfo');
+    if (!slotInfo) return;
+    const info = slotData;
+    if (!info) { slotInfo.innerHTML = ''; return; }
+
+    const html = info.slots.map(s => {
+      const taken = !s.available;
+      const isSelected = !taken && s.index === selectedSlot;
+      const title = taken
+        ? (s.takenBy ? `${s.time} is already taken by ${s.takenBy}` : `${s.time} is already taken`)
+        : `Schedule this post into ${s.time}`;
+      return `<span class="slot ${taken ? 'taken' : 'free'}${isSelected ? ' next' : ''}"
+        role="radio" aria-checked="${isSelected}" aria-disabled="${taken}"
+        tabindex="${taken ? '-1' : '0'}" data-slot="${s.index}"
+        title="${escapeHtml(title)}"
+        onclick="pickSlot(${s.index})" onkeydown="slotKeydown(event, ${s.index})">${escapeHtml(s.time)}</span>`;
+    }).join('');
+
+    const selected = selectedSlot !== null ? info.slots[selectedSlot] : null;
+    const hint = info.stacking
+      ? 'All 5 slots taken that day — this will stack on the 9:00 PM slot.'
+      : `Scheduling into ${escapeHtml(selected ? selected.time : '—')}. ${info.freeCount} of ${info.slots.length} slots free.`;
+
+    slotInfo.innerHTML = `<div class="slots" role="radiogroup" aria-label="Posting time slot">${html}</div><div class="hint">${hint}</div>`;
+  }
+
+  function pickSlot(index, refocus) {
+    if (!slotData) return;
+    const slot = slotData.slots[index];
+    if (!slot || !slot.available) return; // taken chips are inert
+    selectedSlot = index;
+    renderSlots();
+    if (refocus) {
+      const chip = document.querySelector(`#slotInfo .slot[data-slot="${index}"]`);
+      if (chip) chip.focus();
+    }
+  }
+
+  function slotKeydown(event, index) {
+    if (event.key !== 'Enter' && event.key !== ' ' && event.key !== 'Spacebar') return;
+    event.preventDefault();
+    pickSlot(index, true);
   }
 
   async function save() {
@@ -394,13 +455,28 @@
     try {
       const res = await fetch('/api/posting-calendar', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ studioId: selected.studioId, date: d, primaryText: text, mediaOrder: selected.isFolder ? folderOrder : undefined })
+        body: JSON.stringify({
+          studioId: selected.studioId, date: d, primaryText: text,
+          // The chip the user picked. null only when the day is already full,
+          // where the API stacks on the last slot as before.
+          slotIndex: selectedSlot,
+          mediaOrder: selected.isFolder ? folderOrder : undefined
+        })
       });
       const result = await res.json();
+      // Someone else took the slot between load and save — show why and put
+      // fresh chips up rather than double-booking the slot.
+      if (res.status === 409 && result.slotConflict) {
+        await loadSlots();
+        await loadCalendar();
+        throw new Error(result.error);
+      }
       if (!res.ok || result.error) throw new Error(result.error || 'Save failed');
       const warn = result.studioSynced === false ? '<br>(Added to the sheet, but couldn\'t update the Studio Calendar status — update it manually.)' : '';
       msg.innerHTML = `<div class="msg ok">Scheduled for ${result.date} @ ${result.slot}${result.stacked ? ' (stacked)' : ''}.${warn}</div>`;
       selected = null;
+      slotData = null;
+      selectedSlot = null;
       await loadPosts();
       await loadCalendar();
       document.getElementById('rightPanel').innerHTML = '<div class="placeholder">Select a Good-to-Go post on the left to schedule it.</div>';

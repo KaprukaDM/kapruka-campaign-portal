@@ -29,6 +29,7 @@
 //  Sheet columns (1-based, "Content Approval List" tab — must match Content.gs COL):
 //    A ContentID  B Platform  C MediaType  D MediaURL  E PrimaryText
 //    F Page  G ScheduleDate  H Status  I..O Links  P TT_RESULT
+//    Q Slot  — see "TIME SLOTS" below
 //    Optional "Product Name" field in the scheduling form builds a wa.me
 //      customer-inquiry link, wraps it in a branded short.io link
 //      (kapruka.s.gy — see buildWhatsAppLink() below), and appends it as a
@@ -36,6 +37,22 @@
 //      out as part of the actual published post (Content.gs posts column E
 //      verbatim), not a sheet-only reference column. Left untouched when no
 //      product name is given.
+//
+//  TIME SLOTS  → column Q ("Slot N — H:MM AM/PM").
+//  A day has five posting slots (10am / 12pm / 3pm / 6pm / 9pm). Originally
+//  the sheet stored no time at all and a post's slot was inferred purely
+//  from row order within its date — the Nth occupying row for a date got the
+//  Nth slot. That made the slot un-chooseable: whatever the user picked, the
+//  append order decided where it landed.
+//  Column Q now records the chosen slot explicitly. It is additive: columns
+//  A-P are untouched and Content.gs only ever writes I-P via single-cell
+//  getRange() calls, so nothing downstream is clobbered. Rows written before
+//  this column existed (and any row where Q is blank) still fall back to the
+//  old row-order inference — see assignSlots() — so historical rows keep
+//  exactly the slot the calendar showed for them before.
+//  NOTE: whether the posting bot itself publishes at that wall-clock time is
+//  Content.gs's business (that script lives outside this repo); this column
+//  is the portal's record of the intended slot and what the calendar renders.
 //
 //  SHORT LINKS  → short.io (https://short.io), domain kapruka.s.gy. Chosen
 //      because this app's own Cloudflare account doesn't control the
@@ -70,12 +87,15 @@ const SHEET_NAME = 'Content Approval List';
 const GRAPH_VERSION = 'v21.0';
 const COL = {
   CONTENT_ID: 0, PLATFORM: 1, MEDIA_TYPE: 2, MEDIA_URL: 3, PRIMARY_TEXT: 4,
-  PAGE: 5, SCHEDULE_DATE: 6, STATUS: 7
+  PAGE: 5, SCHEDULE_DATE: 6, STATUS: 7,
+  // Column Q — new, additive. Columns I-P are already spoken for (see the
+  // header comment above) and Content.gs only ever writes those via
+  // single-cell getRange() calls, never a wide range, so a new column here is
+  // safe and won't be touched or clobbered by the posting bot.
+  SLOT: 16
 };
-// Column Q — new, additive. Columns I-P are already spoken for (see the
-// header comment above) and Content.gs only ever writes those via
-// single-cell getRange() calls, never a wide range, so a new column here is
-// safe and won't be touched or clobbered by the posting bot.
+// Every sheet read needs column Q now, not just A:H.
+const READ_RANGE = 'A2:Q';
 const WHATSAPP_NUMBER = '94711222002';
 
 // Builds the raw wa.me customer-inquiry link for a product (the actual
@@ -308,65 +328,146 @@ function detectContentType(contentDetails, mediaUrl) {
   return isVideoUrl(mediaUrl) ? 'Video' : 'Image';
 }
 
-function computeOccupiedSlots(rows, targetKey) {
-  let count = 0;
-  rows.forEach(row => {
-    const st = String(row[COL.STATUS] || '').trim();
-    const occupies = (st === 'Approved' || st.indexOf('Posted') === 0);
-    if (!occupies) return;
-    const d = serialToDate(row[COL.SCHEDULE_DATE]);
-    if (!d) return;
-    if (dateKey(d) === targetKey) count++;
-  });
-  return count;
+// ── Slot bookkeeping ─────────────────────────────────────────────────────
+// Column Q is written as "Slot 3 — 3:00 PM": human-readable in the sheet and,
+// unlike a bare "3:00 PM", not something Sheets' USER_ENTERED parsing turns
+// into a time serial behind our backs. Reading is deliberately forgiving so a
+// value typed by hand in the sheet still counts.
+export function slotCellValue(index) {
+  return `Slot ${index + 1} — ${SLOT_LABELS[index]}`;
+}
+export function parseSlotIndex(value) {
+  if (value === null || value === undefined || value === '') return null;
+  // A hand-typed "3:00 PM" comes back from UNFORMATTED_VALUE as a day fraction.
+  if (typeof value === 'number') {
+    if (value > 0 && value < 1) {
+      const hour = Math.round(value * 24 * 60) / 60;
+      const i = POSTING_SLOTS.findIndex(s => Math.abs(s.hour + s.minute / 60 - hour) < 0.01);
+      return i >= 0 ? i : null;
+    }
+    // A bare number is read as a 1-based slot number ("3" = the 3pm slot).
+    const n = Math.round(value);
+    return n >= 1 && n <= POSTING_SLOTS.length ? n - 1 : null;
+  }
+  const s = String(value).trim();
+  if (!s) return null;
+  const m = s.match(/slot\s*(\d+)/i);
+  if (m) {
+    const n = Number(m[1]);
+    if (n >= 1 && n <= POSTING_SLOTS.length) return n - 1;
+  }
+  const byLabel = SLOT_LABELS.findIndex(l => l.toLowerCase() === s.toLowerCase());
+  if (byLabel >= 0) return byLabel;
+  const n = Number(s);
+  if (Number.isInteger(n) && n >= 1 && n <= POSTING_SLOTS.length) return n - 1;
+  return null;
 }
 
-// Per-day occupancy for a whole month, for the calendar grid view.
-//
-// The sheet has no explicit time-of-day column — a post's slot (10am, 12pm,
-// 3pm, 6pm, 9pm) is never stored, only implied at save-time by how many
-// occupying rows already existed for that date (see slotAvailability/
-// computeOccupiedSlots above, used by the POST handler). Reconstructing it
-// here the same way: since `rows` is sheet-append order and a date's
-// occupying rows keep that relative order, the Nth occupying row for a date
-// is the one that landed in the Nth slot when it was scheduled. 6th+ rows in
-// a day all stack on the last slot (9pm), matching that same save-time logic.
-function monthOccupancy(rows, year, month) {
-  const byDate = {};
+function rowOccupies(row) {
+  const st = String(row[COL.STATUS] || '').trim();
+  return st === 'Approved' || st.indexOf('Posted') === 0;
+}
+
+function occupyingRowsForDate(rows, targetKey) {
+  return rows.filter(row => {
+    if (!rowOccupies(row)) return false;
+    const d = serialToDate(row[COL.SCHEDULE_DATE]);
+    return !!d && dateKey(d) === targetKey;
+  });
+}
+
+// Resolves one date's occupying rows to concrete slot indexes.
+//   1. Rows with an explicit column-Q slot claim it (first row wins a tie).
+//   2. Rows without one — legacy rows, and any row whose claim collided —
+//      fill the remaining slots in sheet order. With no explicit slots
+//      anywhere this is byte-for-byte the old row-order inference, so
+//      historical rows render exactly as they did before column Q existed.
+//   3. Once all five are spoken for, extra rows stack on the last slot (9pm),
+//      matching the pre-existing overflow behaviour.
+export function assignSlots(rowsForDate) {
+  const taken = new Set();
+  const entries = rowsForDate.map(row => ({
+    row,
+    contentId: String(row[COL.CONTENT_ID] || '').trim(),
+    slotIndex: parseSlotIndex(row[COL.SLOT])
+  }));
+  entries.forEach(e => {
+    if (e.slotIndex === null) return;
+    if (taken.has(e.slotIndex)) e.slotIndex = null; // double-claim → re-infer below
+    else taken.add(e.slotIndex);
+  });
+  entries.forEach(e => {
+    if (e.slotIndex !== null) return;
+    let i = 0;
+    while (i < POSTING_SLOTS.length && taken.has(i)) i++;
+    if (i >= POSTING_SLOTS.length) i = POSTING_SLOTS.length - 1; // stack on 9pm
+    else taken.add(i);
+    e.slotIndex = i;
+  });
+  return entries;
+}
+
+// Per-day occupancy for a whole month, for the calendar grid view. Slots come
+// from assignSlots() — explicit column-Q value where there is one, row-order
+// inference where there isn't.
+export function monthOccupancy(rows, year, month) {
+  const rowsByDate = {};
   rows.forEach(row => {
-    const st = String(row[COL.STATUS] || '').trim();
-    const occupies = (st === 'Approved' || st.indexOf('Posted') === 0);
-    if (!occupies) return;
+    if (!rowOccupies(row)) return;
     const d = serialToDate(row[COL.SCHEDULE_DATE]);
     if (!d) return;
     if (d.getFullYear() !== year || d.getMonth() !== month - 1) return;
     const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    if (!byDate[dateStr]) byDate[dateStr] = { date: dateStr, occupied: 0, items: [] };
-    const slotIndex = Math.min(byDate[dateStr].occupied, POSTING_SLOTS.length - 1);
-    byDate[dateStr].occupied++;
-    byDate[dateStr].items.push({
-      contentId: String(row[COL.CONTENT_ID] || '').trim(),
-      page: String(row[COL.PAGE] || '').trim(),
-      posted: st.indexOf('Posted') === 0,
-      time: SLOT_LABELS[slotIndex],
-      primaryText: String(row[COL.PRIMARY_TEXT] || '').trim(),
-      mediaUrl: String(row[COL.MEDIA_URL] || '').trim(),
-      mediaType: String(row[COL.MEDIA_TYPE] || '').trim()
-    });
+    (rowsByDate[dateStr] || (rowsByDate[dateStr] = [])).push(row);
   });
-  return Object.values(byDate);
+
+  return Object.keys(rowsByDate).map(dateStr => {
+    const rowsForDate = rowsByDate[dateStr];
+    const items = assignSlots(rowsForDate).map(entry => {
+      const row = entry.row;
+      const st = String(row[COL.STATUS] || '').trim();
+      return {
+        contentId: entry.contentId,
+        page: String(row[COL.PAGE] || '').trim(),
+        posted: st.indexOf('Posted') === 0,
+        slotIndex: entry.slotIndex,
+        time: SLOT_LABELS[entry.slotIndex],
+        primaryText: String(row[COL.PRIMARY_TEXT] || '').trim(),
+        mediaUrl: String(row[COL.MEDIA_URL] || '').trim(),
+        mediaType: String(row[COL.MEDIA_TYPE] || '').trim()
+      };
+    });
+    return { date: dateStr, occupied: rowsForDate.length, items };
+  });
 }
 
-function slotAvailability(rows, dateStr) {
+// `excludeRowIndex` lets the reschedule path ignore the row being moved, so a
+// post doesn't see its own current slot as "taken" when it stays on the day.
+export function slotAvailability(rows, dateStr, excludeRowIndex) {
   const [y, m, d] = dateStr.split('-').map(Number);
   const targetKey = y + '-' + (m - 1) + '-' + d;
-  const occupied = computeOccupiedSlots(rows, targetKey);
+  const candidates = typeof excludeRowIndex === 'number'
+    ? rows.filter((_, i) => i !== excludeRowIndex)
+    : rows;
+  const assigned = assignSlots(occupyingRowsForDate(candidates, targetKey));
+
+  const heldBy = {};
+  assigned.forEach(e => { if (heldBy[e.slotIndex] === undefined) heldBy[e.slotIndex] = e.contentId || null; });
+  const occupiedSet = new Set(assigned.map(e => e.slotIndex));
+  const firstFree = SLOT_LABELS.findIndex((_, i) => !occupiedSet.has(i));
+  const stacking = firstFree === -1;
+
   return {
-    occupiedCount: occupied,
-    freeCount: Math.max(POSTING_SLOTS.length - occupied, 0),
-    nextAvailableIndex: Math.min(occupied, POSTING_SLOTS.length - 1),
-    slots: SLOT_LABELS.map((time, i) => ({ index: i, time, available: i >= occupied })),
-    stacking: occupied >= POSTING_SLOTS.length
+    occupiedCount: assigned.length,
+    freeCount: POSTING_SLOTS.length - occupiedSet.size,
+    nextAvailableIndex: stacking ? POSTING_SLOTS.length - 1 : firstFree,
+    slots: SLOT_LABELS.map((time, i) => ({
+      index: i,
+      time,
+      available: !occupiedSet.has(i),
+      takenBy: occupiedSet.has(i) ? (heldBy[i] || null) : null
+    })),
+    stacking
   };
 }
 
@@ -422,7 +523,7 @@ export async function onRequestGet(context) {
       return json({ images: files.map(f => ({ id: f.id, name: f.name })) });
     }
 
-    const sheetRows = await sheetsGet(env, token, `${SHEET_NAME}!A2:H`);
+    const sheetRows = await sheetsGet(env, token, `${SHEET_NAME}!${READ_RANGE}`);
 
     const slotsFor = url.searchParams.get('slotsFor');
     if (slotsFor) {
@@ -487,7 +588,7 @@ export async function onRequestGet(context) {
 export async function onRequestPost(context) {
   const { env, request } = context;
   try {
-    const { studioId, date, primaryText, mediaOrder, productName } = await request.json();
+    const { studioId, date, primaryText, mediaOrder, productName, slotIndex } = await request.json();
     if (!studioId || !date) {
       return json({ error: 'studioId and date are required' }, 400);
     }
@@ -500,15 +601,36 @@ export async function onRequestPost(context) {
     }
 
     const token = await getAccessToken(env);
-    const sheetRows = await sheetsGet(env, token, `${SHEET_NAME}!A2:H`);
+    const sheetRows = await sheetsGet(env, token, `${SHEET_NAME}!${READ_RANGE}`);
 
     const contentId = `STU-${item.id}`;
     if (sheetRows.some(r => String(r[COL.CONTENT_ID] || '').trim() === contentId)) {
       return json({ error: 'This item has already been scheduled.' }, 409);
     }
 
+    // Slot the user actually picked in the UI. Omitted (older clients, or the
+    // day being full) → fall back to the original auto-pick, so nothing that
+    // doesn't send a slot changes behaviour.
     const avail = slotAvailability(sheetRows, date);
-    const slotLabel = SLOT_LABELS[avail.nextAvailableIndex];
+    let chosenSlot = avail.nextAvailableIndex;
+    if (slotIndex !== undefined && slotIndex !== null && slotIndex !== '') {
+      const n = Number(slotIndex);
+      if (!Number.isInteger(n) || n < 0 || n >= POSTING_SLOTS.length) {
+        return json({ error: `Invalid slot "${slotIndex}".` }, 400);
+      }
+      // Re-checked here against a sheet read taken moments ago — this is the
+      // race guard. It is not a hard lock (see the comment on the response).
+      if (!avail.slots[n].available) {
+        const holder = avail.slots[n].takenBy;
+        return json({
+          error: `The ${SLOT_LABELS[n]} slot on ${date} was taken${holder ? ` by ${holder}` : ''} while you were editing. Pick another slot.`,
+          slotConflict: true,
+          availability: avail
+        }, 409);
+      }
+      chosenSlot = n;
+    }
+    const slotLabel = SLOT_LABELS[chosenSlot];
 
     let mediaUrl = item.content_link || item.reference_links || '';
     const page = normalizePage(item.page_name);
@@ -537,9 +659,10 @@ export async function onRequestPost(context) {
     const finalPrimaryText = whatsappLink ? `${primaryTextTrimmed}\n${whatsappLink}` : primaryTextTrimmed;
 
     // A ContentID, B Platform, C MediaType, D MediaURL, E PrimaryText, F Page, G ScheduleDate,
-    // H Status, I-P (existing columns, left blank here)
-    await sheetsAppend(env, token, `${SHEET_NAME}!A:P`, [
-      contentId, '', mediaType, mediaUrl, finalPrimaryText, page, date, 'Approved'
+    // H Status, I-P (existing columns, left blank here), Q Slot
+    await sheetsAppend(env, token, `${SHEET_NAME}!A:Q`, [
+      contentId, '', mediaType, mediaUrl, finalPrimaryText, page, date, 'Approved',
+      '', '', '', '', '', '', '', '', slotCellValue(chosenSlot)
     ]);
 
     // Sheet append is the critical step (it's what the posting bot reads) — if this
@@ -551,7 +674,9 @@ export async function onRequestPost(context) {
       studioSynced = false;
     }
 
-    return json({ ok: true, date, slot: slotLabel, stacked: avail.stacking, studioSynced });
+    // `slot` is now the slot actually written to column Q, not a guess at
+    // where row order would have put it.
+    return json({ ok: true, date, slot: slotLabel, slotIndex: chosenSlot, stacked: avail.stacking, studioSynced });
   } catch (e) {
     return json({ error: e.message }, 500);
   }
@@ -563,12 +688,12 @@ export async function onRequestPost(context) {
 export async function onRequestPatch(context) {
   const { env, request } = context;
   try {
-    const { contentId, date, primaryText } = await request.json();
+    const { contentId, date, primaryText, slotIndex } = await request.json();
     if (!contentId) return json({ error: 'contentId is required' }, 400);
     if (!date && typeof primaryText !== 'string') return json({ error: 'date or primaryText is required' }, 400);
 
     const token = await getAccessToken(env);
-    const sheetRows = await sheetsGet(env, token, `${SHEET_NAME}!A2:H`);
+    const sheetRows = await sheetsGet(env, token, `${SHEET_NAME}!${READ_RANGE}`);
     const rowIdx = sheetRows.findIndex(r => String(r[COL.CONTENT_ID] || '').trim() === contentId);
     if (rowIdx === -1) return json({ error: 'Scheduled post not found: ' + contentId }, 404);
 
@@ -590,11 +715,39 @@ export async function onRequestPatch(context) {
 
     await sheetsUpdate(env, token, `${SHEET_NAME}!G${sheetRowNumber}`, [date]);
 
-    // Slot for the response message only — the real slot a post lands in is
-    // always recomputed from row order at read time (see monthOccupancy),
-    // this is just an informational preview.
-    const avail = slotAvailability(sheetRows, date);
-    return json({ ok: true, date, slot: SLOT_LABELS[avail.nextAvailableIndex], stacked: avail.stacking });
+    // Availability on the NEW date, ignoring this row's own current claim.
+    const avail = slotAvailability(sheetRows, date, rowIdx);
+
+    // Keep the slot the post already had if it's free on the new date;
+    // otherwise take the first free one. An explicit slotIndex from the
+    // client wins when it's actually available.
+    const currentSlot = parseSlotIndex(sheetRows[rowIdx][COL.SLOT]);
+    let chosenSlot = null;
+    const requested = (slotIndex === undefined || slotIndex === null || slotIndex === '') ? null : Number(slotIndex);
+    if (requested !== null) {
+      if (!Number.isInteger(requested) || requested < 0 || requested >= POSTING_SLOTS.length) {
+        return json({ error: `Invalid slot "${slotIndex}".` }, 400);
+      }
+      if (!avail.slots[requested].available) {
+        const holder = avail.slots[requested].takenBy;
+        return json({
+          error: `The ${SLOT_LABELS[requested]} slot on ${date} was taken${holder ? ` by ${holder}` : ''} while you were editing. Pick another slot.`,
+          slotConflict: true,
+          availability: avail
+        }, 409);
+      }
+      chosenSlot = requested;
+    } else if (currentSlot !== null && avail.slots[currentSlot].available) {
+      chosenSlot = currentSlot;
+    } else {
+      chosenSlot = avail.nextAvailableIndex;
+    }
+
+    // Write the resolved slot so the moved row carries its own time rather
+    // than a stale claim that could collide on the new date.
+    await sheetsUpdate(env, token, `${SHEET_NAME}!Q${sheetRowNumber}`, [slotCellValue(chosenSlot)]);
+
+    return json({ ok: true, date, slot: SLOT_LABELS[chosenSlot], slotIndex: chosenSlot, stacked: avail.stacking });
   } catch (e) {
     return json({ error: e.message }, 500);
   }
@@ -612,7 +765,7 @@ export async function onRequestDelete(context) {
     if (!contentId) return json({ error: 'contentId is required' }, 400);
 
     const token = await getAccessToken(env);
-    const sheetRows = await sheetsGet(env, token, `${SHEET_NAME}!A2:H`);
+    const sheetRows = await sheetsGet(env, token, `${SHEET_NAME}!${READ_RANGE}`);
     const rowIdx = sheetRows.findIndex(r => String(r[COL.CONTENT_ID] || '').trim() === contentId);
     if (rowIdx === -1) return json({ error: 'Scheduled post not found: ' + contentId }, 404);
 
