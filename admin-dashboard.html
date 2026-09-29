@@ -6528,6 +6528,13 @@
         <button class="btn btn-primary" id="pcalSaveBtn" onclick="savePcalSchedule()">Save schedule</button>
         <div id="pcalMsg"></div>`;
       document.getElementById('pcalDateInput').addEventListener('change', loadPcalSlots);
+      // A slot clicked on the calendar grid before any post was selected was
+      // held; now there's a post to attach it to, so apply the held date and
+      // let loadPcalSlots() re-check the slot and select it.
+      if (pcalPendingSlotPick) {
+        document.getElementById('pcalDateInput').value = pcalPendingSlotPick.date;
+        loadPcalSlots();
+      }
       pcalUpdateWaPreview();
       if (pcalSelected.isFolder) loadPcalFolderPicker();
     }
@@ -6659,6 +6666,13 @@
     let pcalSlotData = null;        // last /?slotsFor= response for the chosen date
     let pcalSelectedSlot = null;    // index into pcalSlotData.slots, or null when the day is full
 
+    // A slot clicked over on the CALENDAR GRID, waiting to be applied: the grid
+    // renders from the cached month payload, so the pick is never trusted from
+    // there — it's re-checked against /?slotsFor= (the same authoritative call
+    // the chips use) and only then becomes the selection. Shaped {date, index}
+    // so a slot picked before any post is selected survives until one is.
+    let pcalPendingSlotPick = null;
+
     async function loadPcalSlots() {
       const d = document.getElementById('pcalDateInput').value;
       const slotInfo = document.getElementById('pcalSlotInfo');
@@ -6670,20 +6684,43 @@
         const info = await res.json();
         if (info.error) throw new Error(info.error);
         pcalSlotData = info;
+
+        // A grid pick for this date gets first say — but only if it's still
+        // free according to this fresh read. If it was taken in between, the
+        // pick is refused BY NAME rather than silently sliding to another slot.
+        let notice = '';
+        if (pcalPendingSlotPick && pcalPendingSlotPick.date === d) {
+          const wanted = pcalPendingSlotPick.index;
+          const slot = info.slots[wanted];
+          pcalPendingSlotPick = null;
+          if (slot && slot.available) {
+            pcalSelectedSlot = wanted;
+            renderPcalSlots();
+            if (pcalCalOpenDate) renderPcalCalDayDetail(pcalCalOpenDate);
+            return;
+          }
+          const label = slot ? slot.time : `slot ${wanted + 1}`;
+          const holder = slot && slot.takenBy ? ` by ${slot.takenBy}` : '';
+          notice = `${label} on ${d} was taken${holder} just now — not booked. Pick another slot below.`;
+        }
+
         // Keep the user's pick when it's still free on this date; otherwise
         // fall back to the first free slot — the same default as before, so
         // nothing changes for someone who never clicks a chip.
         const keep = pcalSelectedSlot !== null && info.slots[pcalSelectedSlot] && info.slots[pcalSelectedSlot].available;
         if (!keep) pcalSelectedSlot = info.stacking ? null : info.nextAvailableIndex;
-        renderPcalSlots();
+        renderPcalSlots(notice);
+        // Keep the grid's slot strip showing the same selection as the chips.
+        if (pcalCalOpenDate) renderPcalCalDayDetail(pcalCalOpenDate);
       } catch (error) {
         pcalSlotData = null;
         pcalSelectedSlot = null;
+        pcalPendingSlotPick = null;
         slotInfo.innerHTML = `<div class="pcal-hint">Couldn't check availability: ${pcalEscapeHtml(error.message)}</div>`;
       }
     }
 
-    function renderPcalSlots() {
+    function renderPcalSlots(notice) {
       const slotInfo = document.getElementById('pcalSlotInfo');
       if (!slotInfo) return;
       const info = pcalSlotData;
@@ -6707,7 +6744,10 @@
         ? 'All 5 slots taken that day — this will stack on the 9:00 PM slot.'
         : `Scheduling into ${pcalEscapeHtml(selected ? selected.time : '—')}. ${info.freeCount} of ${info.slots.length} slots free.`;
 
-      slotInfo.innerHTML = `<div class="pcal-slots" role="radiogroup" aria-label="Posting time slot">${html}</div><div class="pcal-hint">${hint}</div>`;
+      const noticeHtml = notice
+        ? `<div class="pcal-msg err" style="margin-top:8px;">${pcalEscapeHtml(notice)}</div>`
+        : '';
+      slotInfo.innerHTML = `<div class="pcal-slots" role="radiogroup" aria-label="Posting time slot">${html}</div><div class="pcal-hint">${hint}</div>${noticeHtml}`;
     }
 
     function pickPcalSlot(index, refocus) {
@@ -6764,6 +6804,7 @@
         pcalSelected = null;
         pcalSlotData = null;
         pcalSelectedSlot = null;
+        pcalPendingSlotPick = null;
         await loadPostingCalendar();
         await loadPcalCalendar();
         document.getElementById('pcalRightPanel').innerHTML = '<div class="pcal-placeholder">Select a Good-to-Go post on the left to schedule it.</div>';
@@ -6794,6 +6835,7 @@
         const res = await fetch('/api/posting-calendar?month=' + monthStr);
         const data = await res.json();
         if (data.error) throw new Error(data.error);
+        pcalSlotLabels = data.slotLabels || [];
         renderPcalCalendar(data.days, data.slotsPerDay, data.metaScheduled || []);
 
         // Surface Meta sync state — otherwise "not configured" and
@@ -6823,6 +6865,8 @@
 
     let pcalCalByDate = {};      // last-loaded month's per-date sheet items, keyed by date
     let pcalMetaByDate = {};     // last-loaded month's Facebook-Business-Suite-scheduled posts, keyed by date
+    let pcalSlotLabels = [];     // the day's five slot names, straight from the month response
+    let pcalCalOpenDate = null;  // the date whose detail panel is currently open
 
     function renderPcalCalendar(days, slotsPerDay, metaScheduled) {
       const byDate = {};
@@ -6864,7 +6908,111 @@
       }
 
       document.getElementById('pcalCalGrid').innerHTML = html;
-      document.getElementById('pcalCalDayDetail').innerHTML = '';
+
+      // Keep the open day's panel up after a reload (e.g. right after a save)
+      // so its slot strip shows the freshly-taken slot instead of vanishing.
+      const monthPrefix = pcalCalYear + '-' + String(pcalCalMonth).padStart(2, '0') + '-';
+      if (pcalCalOpenDate && pcalCalOpenDate.startsWith(monthPrefix)) {
+        renderPcalCalDayDetail(pcalCalOpenDate);
+      } else {
+        document.getElementById('pcalCalDayDetail').innerHTML = '';
+      }
+    }
+
+    // ── Picking a slot straight off the calendar grid ──────────────────────
+    // Clicking a day opens its detail panel, which leads with a strip of the
+    // day's five slots in the same chip language as the scheduling form:
+    // struck-through red = taken, green = free and clickable, purple ring =
+    // the slot this post will land in.
+    //
+    // WHAT A FREE SLOT CLICK DOES: it targets the Good-to-Go post currently
+    // selected in the left-hand list — it sets that post's schedule date to
+    // this day and its slot to the one clicked, then Save books it. If NO post
+    // is selected yet, the click is remembered (date + slot) and a line in the
+    // panel says so; the moment a post is picked from the list, the held date
+    // and slot are applied to it. It never schedules anything on its own — the
+    // existing Save button is still the only thing that writes.
+    function pcalCalSlotStrip(dateStr) {
+      if (!pcalSlotLabels.length) return '';
+      const info = pcalCalByDate[dateStr];
+      const items = (info && info.items) || [];
+
+      // Taken slots come from the month payload's server-assigned slotIndex —
+      // the same assignSlots() result the chips are derived from, so the grid
+      // and the chips can't disagree about what's free.
+      const takenBy = {};
+      items.forEach(it => {
+        if (typeof it.slotIndex === 'number' && takenBy[it.slotIndex] === undefined) {
+          takenBy[it.slotIndex] = it;
+        }
+      });
+
+      const dateInput = document.getElementById('pcalDateInput');
+      const formDate = dateInput ? dateInput.value : null;
+      const heldHere = pcalPendingSlotPick && pcalPendingSlotPick.date === dateStr
+        ? pcalPendingSlotPick.index : null;
+
+      const chips = pcalSlotLabels.map((label, i) => {
+        const taken = takenBy[i] !== undefined;
+        // Highlight the slot this day would actually get: the live selection
+        // when the form is already on this date, else a held pick.
+        const isSelected = !taken && (heldHere !== null
+          ? i === heldHere
+          : (formDate === dateStr && i === pcalSelectedSlot));
+        const title = taken
+          ? `${label} is taken by ${takenBy[i].contentId || 'another post'}${takenBy[i].posted ? ' (already posted)' : ''}`
+          : (pcalSelected
+            ? `Schedule #${pcalSelected.contentId} into ${label} on ${dateStr}`
+            : `Hold ${label} on ${dateStr} — then pick a Good to Go post`);
+        return `<span class="pcal-slot ${taken ? 'taken' : 'free'}${isSelected ? ' next' : ''}"
+          role="radio" aria-checked="${isSelected}" aria-disabled="${taken}"
+          tabindex="${taken ? '-1' : '0'}" data-cal-slot="${i}"
+          title="${pcalEscapeHtml(title)}"
+          onclick="pickPcalCalSlot('${dateStr}', ${i})" onkeydown="pcalCalSlotKeydown(event, '${dateStr}', ${i})">${pcalEscapeHtml(label)}</span>`;
+      }).join('');
+
+      const freeCount = pcalSlotLabels.length - Object.keys(takenBy).length;
+      let hint;
+      if (!freeCount) {
+        hint = 'All slots taken that day — scheduling another post here stacks it on the last slot.';
+      } else if (heldHere !== null) {
+        hint = `${pcalSlotLabels[heldHere]} held — pick a Good to Go post on the left and it goes into this slot.`;
+      } else if (pcalSelected) {
+        hint = `Click a free slot to put #${pcalEscapeHtml(pcalSelected.contentId)} in it, then Save.`;
+      } else {
+        hint = 'Click a free slot to hold it, then pick a Good to Go post on the left.';
+      }
+
+      return `<div style="font-weight:700;margin-bottom:6px;">🕒 Time slots on ${pcalEscapeHtml(dateStr)}</div>
+        <div class="pcal-slots" role="radiogroup" aria-label="Time slots on ${pcalEscapeHtml(dateStr)}">${chips}</div>
+        <div class="pcal-hint">${hint}</div>`;
+    }
+
+    function pickPcalCalSlot(dateStr, index) {
+      const info = pcalCalByDate[dateStr];
+      const items = (info && info.items) || [];
+      // Taken chips are inert here too — the real refusal is the availability
+      // re-check below (and the API's 409), this just avoids a pointless call.
+      if (items.some(it => it.slotIndex === index)) return;
+
+      pcalPendingSlotPick = { date: dateStr, index };
+
+      const input = document.getElementById('pcalDateInput');
+      if (input) {
+        // A post is selected: put the form on this date and let loadPcalSlots()
+        // re-check the slot against live availability and apply it.
+        input.value = dateStr;
+        loadPcalSlots();
+      }
+      renderPcalCalDayDetail(dateStr);
+    }
+
+    function pcalCalSlotKeydown(event, dateStr, index) {
+      if (event.key !== 'Enter' && event.key !== ' ' && event.key !== 'Spacebar') return;
+      event.preventDefault();
+      pickPcalCalSlot(dateStr, index);
+      const chip = document.querySelector(`#pcalCalDayDetail .pcal-slot[data-cal-slot="${index}"]`);
+      if (chip) chip.focus();
     }
 
     function pickPcalCalDate(dateStr) {
@@ -6873,6 +7021,11 @@
         input.value = dateStr;
         loadPcalSlots();
       }
+      renderPcalCalDayDetail(dateStr);
+    }
+
+    function renderPcalCalDayDetail(dateStr) {
+      pcalCalOpenDate = dateStr;
 
       // Show what's already scheduled that day — date, time, content, page —
       // right below the grid, since hover tooltips don't work on mobile.
@@ -6880,9 +7033,11 @@
       if (!detail) return;
       const info = pcalCalByDate[dateStr];
       const metaItems = pcalMetaByDate[dateStr] || [];
+      // The slot strip leads the panel — it's the point of clicking a day.
+      const slotStrip = pcalCalSlotStrip(dateStr);
 
       if ((!info || !info.items.length) && !metaItems.length) {
-        detail.innerHTML = `<div class="pcal-hint">Nothing scheduled on ${pcalEscapeHtml(dateStr)} yet.</div>`;
+        detail.innerHTML = `${slotStrip}<div class="pcal-hint" style="margin-top:10px;">Nothing scheduled on ${pcalEscapeHtml(dateStr)} yet.</div>`;
         return;
       }
 
@@ -6924,7 +7079,8 @@
         `).join('')}
       ` : '';
 
-      detail.innerHTML = `<div style="font-weight:700;margin-bottom:6px;">📅 Scheduled on ${pcalEscapeHtml(dateStr)}</div>${rows}${metaRows}`;
+      detail.innerHTML = `${slotStrip}
+        <div style="font-weight:700;margin:14px 0 6px;">📅 Scheduled on ${pcalEscapeHtml(dateStr)}</div>${rows}${metaRows}`;
     }
 
     function pcalToggleReschedule(btn) {

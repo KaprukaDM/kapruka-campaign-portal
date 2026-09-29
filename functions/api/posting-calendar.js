@@ -549,7 +549,10 @@ export async function onRequestGet(context) {
         metaConfigured = true; // it must have been configured to reach a real API error
       }
 
-      return json({ days: monthOccupancy(sheetRows, y, m), slotsPerDay: POSTING_SLOTS.length, metaScheduled, metaSyncError, metaConfigured });
+      // slotLabels ships the day's five slot names so the calendar grid can
+      // render FREE slots too (a day's items only name the taken ones), without
+      // the client keeping its own copy of the labels that could drift.
+      return json({ days: monthOccupancy(sheetRows, y, m), slotsPerDay: POSTING_SLOTS.length, slotLabels: SLOT_LABELS, metaScheduled, metaSyncError, metaConfigured });
     }
 
     const studioItems = await supabaseQuery(
