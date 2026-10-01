@@ -1798,6 +1798,11 @@ const CATEGORIES = [
   'Automobile','Petcare','Gift Vouchers & Tickets'
 ];
 
+// A slot that is deliberately NOT tied to a product category — whoever books
+// it picks the product. Stored in category_slots.category, so the string has
+// to stay exactly as it is: the rows already in the table use it.
+const OPEN_CATEGORY = 'Any Category';
+
 async function getCalendarData(month, year) {
   try {
     const startDate = `${year}-${String(month).padStart(2,'0')}-01`;
@@ -1956,17 +1961,32 @@ async function addTheme(themeData) {
       is_seasonal: themeData.isSeasonal || false
     };
     const result = await supabaseQuery('theme_config', 'POST', theme);
-    await generateCategorySlots(themeData.startDate, themeData.endDate, themeData.slotsPerDay, themeData.isSeasonal);
+    await generateCategorySlots(
+      themeData.startDate, themeData.endDate, themeData.slotsPerDay,
+      themeData.isSeasonal,
+      // undefined (not false) when the caller doesn't say, so the old
+      // seasonal-implies-open behaviour is what applies.
+      themeData.openCategory === undefined ? undefined : themeData.openCategory
+    );
     return { success: true, themeId: result[0].id };
   } catch (error) { throw error; }
 }
 
-async function generateCategorySlots(startDate, endDate, slotsPerDay, isSeasonal = false) {
+// `openCategory` decides whether the generated slots are open ("Any Category",
+// booker picks the product) or locked to a rotating product category.
+//
+// It used to be welded to `isSeasonal`, which forced the team to tick
+// "Seasonal" on plain daily-posting themes just to get open slots — and that
+// flag also paints the day pink as a season on the public calendar. The two
+// are now separate switches. Left undefined it falls back to the old rule
+// (seasonal ⇒ open), so every existing caller behaves exactly as before.
+async function generateCategorySlots(startDate, endDate, slotsPerDay, isSeasonal = false, openCategory = undefined) {
   try {
     const start = new Date(startDate);
     const end = new Date(endDate);
     const slots = [];
-    const categoriesToUse = isSeasonal ? ['Any Category'] : [...CATEGORIES].sort(() => Math.random() - 0.5);
+    const useOpenSlots = openCategory === undefined ? !!isSeasonal : !!openCategory;
+    const categoriesToUse = useOpenSlots ? [OPEN_CATEGORY] : [...CATEGORIES].sort(() => Math.random() - 0.5);
     let categoryIndex = 0;
     let currentDate = new Date(start);
     let weekNumber = Math.floor((currentDate.getDate() - 1) / 7) + 1;
@@ -1974,7 +1994,7 @@ async function generateCategorySlots(startDate, endDate, slotsPerDay, isSeasonal
     while (currentDate <= end) {
       const dateStr = currentDate.toISOString().split('T')[0];
       const monthYear = dateStr.substring(0, 7);
-      if (!isSeasonal && currentDate.getDay() === 0 && currentDate > start) {
+      if (!useOpenSlots && currentDate.getDay() === 0 && currentDate > start) {
         categoriesToUse.sort(() => Math.random() - 0.5);
         categoryIndex = 0;
         weekNumber++;
@@ -2009,15 +2029,29 @@ async function deleteTheme(themeId) {
 async function refreshCategorySlotsForMonth(month, year) {
   try {
     const monthYear = `${year}-${String(month).padStart(2,'0')}`;
-    await supabaseQuery(`category_slots?month_year=eq.${monthYear}`, 'DELETE');
     const startDate = `${year}-${String(month).padStart(2,'0')}-01`;
     const lastDay = new Date(year, month, 0).getDate();
     const endDate = `${year}-${String(month).padStart(2,'0')}-${lastDay}`;
+
+    // Whether a slot is open ("Any Category") isn't stored on theme_config, so
+    // read it off the slots that exist before they're deleted. Without this, a
+    // refresh would quietly convert open daily-posting slots into category-
+    // locked ones.
+    let existing = [];
+    try {
+      existing = await supabaseQuery(`category_slots?month_year=eq.${monthYear}&select=date,category`);
+    } catch (e) { console.warn('Could not read existing slots before refresh:', e); }
+    const openByDate = {};
+    existing.forEach(s => { if (s.category === OPEN_CATEGORY) openByDate[s.date] = true; });
+
+    await supabaseQuery(`category_slots?month_year=eq.${monthYear}`, 'DELETE');
     const themes = await supabaseQuery(`theme_config?start_date=lte.${endDate}&end_date=gte.${startDate}`);
     for (const theme of themes) {
       const ts = theme.start_date > startDate ? theme.start_date : startDate;
       const te = theme.end_date < endDate ? theme.end_date : endDate;
-      await generateCategorySlots(ts, te, theme.slots_per_day, theme.is_seasonal);
+      const wasOpen = Object.keys(openByDate).some(d => d >= ts && d <= te);
+      await generateCategorySlots(ts, te, theme.slots_per_day, theme.is_seasonal,
+                                  wasOpen ? true : undefined);
     }
     return { success: true };
   } catch (error) { throw error; }
