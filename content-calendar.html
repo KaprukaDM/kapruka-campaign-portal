@@ -635,6 +635,96 @@
       return map[studioStatus.toLowerCase()] || studioStatus;
     }
 
+    // ── SCHEDULED / POSTED DATE (popup fields) ───────────────
+    // Two things people kept having to infer from the coloured header or from
+    // the badge, now stated outright. What each one reads from:
+    //
+    //   SCHEDULED DATE  content_calendar.date — the slot's booked date, the
+    //     same value the calendar grid places the card on. There is NO time
+    //     component anywhere on the booking: a content_calendar row carries
+    //     date + slot_number (the day's category slot), and neither
+    //     content_calendar nor category_slots has a time column (checked
+    //     against the live schema). The wall-clock posting time lives in the
+    //     posting sheet (column Q, "Slot N — H:MM AM/PM") and is only
+    //     reachable through /api/posting-calendar, which needs Google
+    //     credentials — so the slot number is shown and the absence of a
+    //     stored time is said plainly instead of a time being made up.
+    //
+    //   POSTED DATE  studio_activity_log.created_at of this slot's first
+    //     posted-evidence record, stamped onto the row as `posted_at` by
+    //     annotatePostedVerification. studio_calendar has no posted_at /
+    //     posted_date column at all, so this log record is the only posted
+    //     timestamp that exists in the system. It is the moment the publish
+    //     was CONFIRMED (the sheet reconciler ran, or someone attached a live
+    //     post link) — the sync is periodic, so it lands at or just after the
+    //     real publish. The field says "confirmed" for exactly that reason.
+    //     Not posted → "Not posted yet". Claims Posted with no proof → the
+    //     same "not posted yet" answer this page gives everywhere else,
+    //     because an unproven claim is not a posted date.
+    const DETAIL_LABEL_STYLE =
+      "font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.09em;color:var(--text-muted);margin-bottom:5px;";
+    const DETAIL_VALUE_STYLE = "color:var(--text);font-size:13px;font-family:'DM Mono',monospace;";
+    const DETAIL_SUBNOTE_STYLE = "font-size:11px;color:var(--text-muted);margin-top:3px;line-height:1.45;";
+
+    function formatDateTime(value) {
+      if (!value) return null;
+      const d = new Date(value);
+      return isNaN(d.getTime()) ? null : d.toLocaleString();
+    }
+
+    function renderScheduledDateField(booking, date) {
+      const dateStr = booking.date || date;
+      const d = dateStr ? new Date(String(dateStr).slice(0, 10) + 'T00:00:00') : null;
+      const pretty = d && !isNaN(d.getTime())
+        ? d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+        : 'N/A';
+      return `
+        <div style="margin-bottom:12px;">
+          <div style="${DETAIL_LABEL_STYLE}">Scheduled Date</div>
+          <div style="${DETAIL_VALUE_STYLE}">📆 ${pretty}</div>
+          <div style="${DETAIL_SUBNOTE_STYLE}">
+            Slot ${booking.slot_number ?? '—'} · no posting time is stored on the booking (the time of day is set in the posting sheet)
+          </div>
+        </div>`;
+    }
+
+    function renderPostedDateField(booking) {
+      const label = `<div style="${DETAIL_LABEL_STYLE}">Posted Date</div>`;
+      const notPosted = (text, note) => `
+        <div style="margin-bottom:12px;">
+          ${label}
+          <div style="${DETAIL_VALUE_STYLE}color:var(--text-muted);">⬜ ${text}</div>
+          ${note ? `<div style="${DETAIL_SUBNOTE_STYLE}">${note}</div>` : ''}
+        </div>`;
+
+      if (booking.studio_status !== 'Posted') {
+        return notPosted('Not posted yet');
+      }
+      if (isUnverifiedPostedRow(booking)) {
+        return notPosted('Not posted yet',
+          'Marked Posted, but no live post link or posting-sheet confirmation is attached — so there is no posted date to show.');
+      }
+      const when = formatDateTime(booking.posted_at);
+      if (!when) {
+        // Verified only by the legacy allowance (slot scheduled before
+        // 2026-08-13, when nothing recorded proof) — posted, but no record
+        // exists to date it, and a fake date is worse than saying so.
+        return `
+          <div style="margin-bottom:12px;">
+            ${label}
+            <div style="${DETAIL_VALUE_STYLE}color:var(--studio-posted-col);">✦ Posted — date not recorded</div>
+            <div style="${DETAIL_SUBNOTE_STYLE}">This slot pre-dates posted-date tracking (before 2026-08-13), so no timestamp was ever stored.</div>
+          </div>`;
+      }
+      const by = booking.posted_confirmed_by ? ` by ${booking.posted_confirmed_by}` : '';
+      return `
+        <div style="margin-bottom:12px;">
+          ${label}
+          <div style="${DETAIL_VALUE_STYLE}color:var(--studio-posted-col);">✦ ${when}</div>
+          <div style="${DETAIL_SUBNOTE_STYLE}">Confirmed published${by} — taken from the posting-sheet confirmation, so it is at or just after the real publish time.</div>
+        </div>`;
+    }
+
     // ── CALENDAR FUNCTIONS ──────────────────────────────────
     function showLoading() {
       document.getElementById('loading').style.display = 'flex';
@@ -1061,6 +1151,10 @@
             </div>
           </div>
           ` : ''}
+
+          ${renderScheduledDateField(booking, date)}
+
+          ${renderPostedDateField(booking)}
 
           <div style="margin-bottom:12px;">
             <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.09em;color:var(--text-muted);margin-bottom:5px;">Submitted By</div>

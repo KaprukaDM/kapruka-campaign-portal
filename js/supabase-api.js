@@ -495,13 +495,25 @@ function parsePostEvidence(raw) {
 }
 
 /**
- * Slot ids that have real evidence of being published, out of the ones asked
- * about. Two things count:
+ * Every slot that has real evidence of being published, out of the ones asked
+ * about, mapped to WHEN that evidence was recorded. Two things count:
  *   1. a `posted_verified` activity-log entry (written by the sheet
  *      reconciler, or by a hand-entry that passed parsePostEvidence), and
  *   2. a legacy "Marked as Posted — <url>" entry whose URL still validates —
  *      those were real evidence before this event type existed, so they are
  *      honoured rather than thrown away.
+ *
+ * Returns Map<slotId, { at, actor, detail }>:
+ *   at     the FIRST evidence record's created_at — i.e. the earliest moment
+ *          this system could show the post was live. This is a
+ *          confirmed-posted timestamp, NOT the publish instant: nothing in
+ *          this portal observes a publish (see the header comment above), and
+ *          there is no posted_at column anywhere to read one from. The sheet
+ *          reconciler runs on a schedule, so `at` is the publish time rounded
+ *          up to the next sync. Earliest record is used precisely to keep
+ *          that gap as small as the data allows.
+ *   actor  who/what recorded it ('Sheet Sync (auto)' for the reconciler).
+ *
  * Never throws: the calendar must still render if the log table is
  * unreachable (it just shows everything as unverified, which is the safe
  * direction to fail in).
@@ -518,16 +530,23 @@ const POSTED_EVIDENCE_FILTER =
   `or=(event_type.eq.${POSTED_VERIFIED_EVENT},detail.ilike.*Marked as Posted*)`;
 const SUPABASE_PAGE_SIZE = 1000;
 
-async function getVerifiedPostedSlotIds(slotIds) {
+async function getPostedEvidenceBySlot(slotIds) {
   const ids = [...new Set((slotIds || []).filter(Boolean))];
-  if (!ids.length) return new Set();
-  const verified = new Set();
+  if (!ids.length) return new Map();
+  const evidence = new Map();
+  // First record per slot wins — rows come back id.asc, so the earliest
+  // confirmation is kept and later re-syncs of the same slot don't push the
+  // posted date forward.
+  const keep = (r) => {
+    if (evidence.has(r.slot_id)) return;
+    evidence.set(r.slot_id, { at: r.created_at || null, actor: r.actor || null, detail: r.detail || '' });
+  };
   const consider = (r) => {
-    if (r.event_type === POSTED_VERIFIED_EVENT) { verified.add(r.slot_id); return; }
+    if (r.event_type === POSTED_VERIFIED_EVENT) { keep(r); return; }
     const detail = r.detail || '';
     if (!/Marked as Posted/i.test(detail)) return;
     const match = detail.match(/https?:\/\/[^\s)]+/);
-    if (match && parsePostEvidence(match[0]).ok) verified.add(r.slot_id);
+    if (match && parsePostEvidence(match[0]).ok) keep(r);
   };
   try {
     // Chunked by slot id (the id list rides in the URL, so it can't be
@@ -537,18 +556,26 @@ async function getVerifiedPostedSlotIds(slotIds) {
       for (let offset = 0; ; offset += SUPABASE_PAGE_SIZE) {
         const rows = await supabaseQuery(
           `studio_activity_log?slot_id=in.(${chunk.join(',')})&${POSTED_EVIDENCE_FILTER}` +
-          `&select=slot_id,event_type,detail&order=id.asc` +
+          `&select=slot_id,event_type,detail,actor,created_at&order=id.asc` +
           `&limit=${SUPABASE_PAGE_SIZE}&offset=${offset}`
         );
         rows.forEach(consider);
         if (rows.length < SUPABASE_PAGE_SIZE) break;
       }
     }
-    return verified;
+    return evidence;
   } catch (error) {
-    console.warn('getVerifiedPostedSlotIds failed (non-fatal, treating all as unverified):', error.message);
-    return new Set();
+    console.warn('getPostedEvidenceBySlot failed (non-fatal, treating all as unverified):', error.message);
+    return new Map();
   }
+}
+
+/**
+ * The ids only — kept as its own function because the admin Studio tab asks
+ * exactly this question and only needs membership.
+ */
+async function getVerifiedPostedSlotIds(slotIds) {
+  return new Set((await getPostedEvidenceBySlot(slotIds)).keys());
 }
 
 /**
@@ -614,6 +641,18 @@ function isUnverifiedPostedRow(row) {
  * all) onto each row, so a page can render the right badge without every
  * call site knowing how evidence is stored.
  *
+ * Also stamps the posted timestamp, for pages that show a "Posted date"
+ * field:
+ *   posted_at          ISO string from the slot's first posted-evidence log
+ *                      record, or null when there is none (unverified rows,
+ *                      and legacy rows that pre-date evidence collection —
+ *                      no proof means no date, never a guessed one).
+ *   posted_confirmed_by  the actor on that record.
+ * posted_at is the time the publish was CONFIRMED (sheet reconciler run or
+ * hand-entry), not the publish instant — nothing in this portal observes a
+ * publish and studio_calendar has no posted_at column. Call sites must label
+ * it as such rather than presenting it as the exact moment it went live.
+ *
  * `slotIdOf(row)` must return the studio_calendar.id for that row — NOT the
  * page's own row id. content_calendar/ad_requests rows carry their own ids
  * and the evidence log keys off the studio slot, so the two must not be
@@ -623,33 +662,46 @@ function isUnverifiedPostedRow(row) {
  */
 async function annotatePostedVerification(rows, slotIdOf) {
   const list = rows || [];
+  const clear = (r) => {
+    r.posted_verified = null;
+    r.posted_evidence_kind = null;
+    r.posted_at = null;
+    r.posted_confirmed_by = null;
+  };
   const posted = list.filter(r => r && r.studio_status === STUDIO_STATUS_POSTED);
   if (!posted.length) {
-    list.forEach(r => { if (r) r.posted_verified = null; });
+    list.forEach(r => { if (r) clear(r); });
     return list;
   }
-  // getVerifiedPostedSlotIds never throws — on failure it returns an empty
-  // set, i.e. everything reads as unverified, which is the safe direction.
-  const verified = await getVerifiedPostedSlotIds(posted.map(slotIdOf));
+  // getPostedEvidenceBySlot never throws — on failure it returns an empty
+  // map, i.e. everything reads as unverified, which is the safe direction.
+  const evidence = await getPostedEvidenceBySlot(posted.map(slotIdOf));
   list.forEach(r => {
     if (!r) return;
     if (r.studio_status !== STUDIO_STATUS_POSTED) {
-      r.posted_verified = null;
-      r.posted_evidence_kind = null;
+      clear(r);
       return;
     }
     const slotId = slotIdOf(r);
-    if (slotId != null && verified.has(slotId)) {
+    const proof = slotId != null ? evidence.get(slotId) : null;
+    if (proof) {
       r.posted_verified = true;
       r.posted_evidence_kind = 'log';       // a real record points at the post
+      r.posted_at = proof.at || null;
+      r.posted_confirmed_by = proof.actor || null;
     } else if (isLegacyPosted(r)) {
       // Pre-dates evidence collection entirely — accepted as posted rather
-      // than flagged forever. See POSTED_EVIDENCE_SINCE above.
+      // than flagged forever. See POSTED_EVIDENCE_SINCE above. No record
+      // exists, so there is no date to show and none is invented.
       r.posted_verified = true;
       r.posted_evidence_kind = 'legacy';
+      r.posted_at = null;
+      r.posted_confirmed_by = null;
     } else {
       r.posted_verified = false;
       r.posted_evidence_kind = null;
+      r.posted_at = null;
+      r.posted_confirmed_by = null;
     }
   });
   return list;
