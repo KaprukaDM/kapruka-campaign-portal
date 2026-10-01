@@ -30,6 +30,7 @@
 //    A ContentID  B Platform  C MediaType  D MediaURL  E PrimaryText
 //    F Page  G ScheduleDate  H Status  I..O Links  P TT_RESULT
 //    Q Slot  — see "TIME SLOTS" below
+//  G holds the COMBINED date+time stamp — see "SCHEDULED DATE+TIME" below.
 //    Optional "Product Name" field in the scheduling form builds a wa.me
 //      customer-inquiry link, wraps it in a branded short.io link
 //      (kapruka.s.gy — see buildWhatsAppLink() below), and appends it as a
@@ -53,6 +54,20 @@
 //  NOTE: whether the posting bot itself publishes at that wall-clock time is
 //  Content.gs's business (that script lives outside this repo); this column
 //  is the portal's record of the intended slot and what the calendar renders.
+//
+//  SCHEDULED DATE+TIME  → column G, one cell, "DD/MM/YYYY HH:mm:ss".
+//  Scheduling used to write a bare "YYYY-MM-DD" into G and leave the
+//  wall-clock time only in column Q, so the sheet carried the date in one
+//  cell and "9:00 PM" as separate text in another. G now carries the whole
+//  stamp (e.g. 02/07/2026 21:00:00) and column Q keeps recording WHICH slot
+//  (identity, for availability bookkeeping) — both derived from the one slot
+//  the user picked, and G's own time is what the readers below trust first,
+//  so there is a single source of truth for the scheduled time.
+//  Day-first (DD/MM) is both what was asked for and what the live sheet
+//  already uses: column G's own number format is "d/m/yyyy hh:mm:ss" and
+//  existing cells read back as 31/07/2026 and 5/5/2026 18:30:00.
+//  See scheduleSerial()/applyStampFormat() for why it is written as a real
+//  datetime VALUE plus an explicit number format rather than as text.
 //
 //  SHORT LINKS  → short.io (https://short.io), domain kapruka.s.gy. Chosen
 //      because this app's own Cloudflare account doesn't control the
@@ -163,6 +178,12 @@ const SLOT_LABELS = ['10:00 AM', '12:00 PM', '3:00 PM', '6:00 PM', '9:00 PM'];
 const SHEETS_API = 'https://sheets.googleapis.com/v4/spreadsheets';
 const EXCEL_EPOCH_MS = Date.UTC(1899, 11, 30);
 
+// Number format applied to column G on every row this app writes, so the
+// combined stamp DISPLAYS as "02/07/2026 21:00:00" instead of inheriting
+// whatever format the row above happened to carry (the rows written before
+// this change carry a date-only format, which would hide the time).
+const SHEET_DATETIME_PATTERN = 'dd/MM/yyyy HH:mm:ss';
+
 // Same public anon key already embedded in js/supabase-api.js — read-only
 // on studio_calendar for this app's usage pattern, not a secret we're adding.
 const SUPABASE_URL = 'https://ivllhheqqiseagmctfyp.supabase.co';
@@ -261,9 +282,10 @@ async function sheetsAppend(env, token, range, values) {
   return body;
 }
 
-// Single-cell/row write (e.g. rescheduling — writes the new date the same
-// way sheetsAppend originally wrote it, so USER_ENTERED lets Sheets parse a
-// plain "YYYY-MM-DD" string into a real date serial itself).
+// Single-cell/row write (e.g. rescheduling). USER_ENTERED matches how
+// sheetsAppend writes, so a formula or a typed value behaves identically on
+// both paths; the scheduled date+time goes through as a numeric serial, which
+// USER_ENTERED stores as-is — no locale date parsing involved.
 async function sheetsUpdate(env, token, range, values) {
   const url = `${SHEETS_API}/${env.CONTENT_SHEET_ID}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`;
   const res = await fetch(url, {
@@ -274,6 +296,46 @@ async function sheetsUpdate(env, token, range, values) {
   const body = await res.json();
   if (!res.ok) throw new Error('Sheets update failed: ' + JSON.stringify(body));
   return body;
+}
+
+// "'Content Approval List'!A523:Q523" → 523, the row the append landed on.
+export function appendedRowNumber(appendResponse) {
+  const range = appendResponse && appendResponse.updates && appendResponse.updates.updatedRange;
+  const m = String(range || '').match(/![A-Z]+(\d+)/);
+  return m ? Number(m[1]) : null;
+}
+
+// Stamps column G of one row with the DD/MM/YYYY HH:mm:ss number format. The
+// VALUE written there is already a complete datetime serial; this is only what
+// makes the cell SHOW the time instead of inheriting a date-only format from
+// the row above. Deliberately non-fatal — a schedule that reached the sheet
+// must not be reported as failed because its display format didn't take, so
+// the caller surfaces it as stampFormatted:false instead.
+async function applyStampFormat(env, token, sheetRowNumber) {
+  if (!sheetRowNumber) return false;
+  try {
+    const gid = await getSheetGid(env, token, SHEET_NAME);
+    const res = await fetch(`${SHEETS_API}/${env.CONTENT_SHEET_ID}:batchUpdate`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        requests: [{
+          repeatCell: {
+            range: {
+              sheetId: gid,
+              startRowIndex: sheetRowNumber - 1, endRowIndex: sheetRowNumber,
+              startColumnIndex: COL.SCHEDULE_DATE, endColumnIndex: COL.SCHEDULE_DATE + 1
+            },
+            cell: { userEnteredFormat: { numberFormat: { type: 'DATE_TIME', pattern: SHEET_DATETIME_PATTERN } } },
+            fields: 'userEnteredFormat.numberFormat'
+          }
+        }]
+      })
+    });
+    return res.ok;
+  } catch (e) {
+    return false;
+  }
 }
 
 // Numeric internal sheetId (gid) for a tab, needed by batchUpdate's
@@ -309,11 +371,80 @@ async function sheetsDeleteRow(env, token, sheetGid, rowIndexInGrid) {
   return body;
 }
 
+// Rounded to whole seconds on purpose: now that column G carries a time, the
+// serials coming back are fractional (46205.416666666664 for 10:00 AM) and raw
+// float arithmetic lands a millisecond short — 09:59:59.999, i.e. the wrong
+// hour and, at midnight, the wrong DAY.
 function serialToDate(serial) {
   if (typeof serial !== 'number') return null;
-  return new Date(EXCEL_EPOCH_MS + serial * 86400000);
+  return new Date(EXCEL_EPOCH_MS + Math.round(serial * 86400) * 1000);
 }
-function dateKey(d) { return d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate(); }
+// serialToDate() builds its Date from UTC epoch arithmetic, so it must be read
+// back with the UTC getters. With the local ones, a 9:00 PM stamp read on a
+// machine ahead of UTC (Sri Lanka is +5:30) came out as 02:30 the NEXT day and
+// the post moved a day in the calendar. Cloudflare runs workers in UTC so
+// production was safe, but the tests and any other host were not.
+function dateKey(d) { return d.getUTCFullYear() + '-' + d.getUTCMonth() + '-' + d.getUTCDate(); }
+
+function pad2(n) { return String(n).padStart(2, '0'); }
+
+// Splits the UI's "YYYY-MM-DD" into plain numbers. No Date parsing anywhere in
+// the write path: the Y/M/D digits the user picked are the digits that reach
+// the sheet, so no timezone can shift a 9:00 PM slot onto the next day.
+function splitDateStr(dateStr) {
+  const parts = String(dateStr || '').slice(0, 10).split('-').map(Number);
+  if (parts.length !== 3 || parts.some(n => !Number.isFinite(n))) return null;
+  return parts;
+}
+
+// Chosen date + chosen slot → the Sheets datetime serial written to column G.
+//
+// Written as a NUMBER rather than as the text "02/07/2026 21:00:00" because:
+//   • a numeric write cannot be misread — Sheets parses typed dates by
+//     SPREADSHEET LOCALE, so the text form risks an en_US sheet reading
+//     "02/07/2026" as 7 February;
+//   • all 500 existing column-G cells are real datetime values, and keeping it
+//     a value (not text) is what keeps sorting, Content.gs's date handling and
+//     this file's own serial reads working;
+//   • the DD/MM/YYYY HH:mm:ss appearance is then guaranteed by the explicit
+//     number format applied in applyStampFormat(), not left to locale luck.
+export function scheduleSerial(dateStr, slotIndex) {
+  const parts = splitDateStr(dateStr);
+  const slot = POSTING_SLOTS[slotIndex];
+  if (!parts || !slot) return null;
+  const [y, m, d] = parts;
+  const days = (Date.UTC(y, m - 1, d) - EXCEL_EPOCH_MS) / 86400000;
+  return days + (slot.hour * 3600 + slot.minute * 60) / 86400;
+}
+
+// The literal text that serial displays as in the cell — reported back to the
+// UI and shown by the Content Calendar, so everything quotes the same string.
+export function scheduleStamp(dateStr, slotIndex) {
+  const parts = splitDateStr(dateStr);
+  const slot = POSTING_SLOTS[slotIndex];
+  if (!parts || !slot) return null;
+  const [y, m, d] = parts;
+  return `${pad2(d)}/${pad2(m)}/${y} ${pad2(slot.hour)}:${pad2(slot.minute)}:00`;
+}
+
+// Same stamp, rebuilt from a serial read back out of the sheet.
+export function serialToStamp(serial) {
+  const d = serialToDate(serial);
+  if (!d) return null;
+  return `${pad2(d.getUTCDate())}/${pad2(d.getUTCMonth() + 1)}/${d.getUTCFullYear()} ` +
+    `${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}:${pad2(d.getUTCSeconds())}`;
+}
+
+// The slot a column-G stamp itself names, or null when G carries no slot time.
+// Only an exact slot time counts: the hand-filled legacy rows (18:30, 09:30)
+// and every date-only row (00:00) return null and keep falling back to column
+// Q / row order, so nothing historical moves.
+export function slotIndexFromSerial(serial) {
+  if (typeof serial !== 'number' || !isFinite(serial)) return null;
+  const secs = ((Math.round(serial * 86400) % 86400) + 86400) % 86400;
+  const i = POSTING_SLOTS.findIndex(s => s.hour * 3600 + s.minute * 60 === secs);
+  return i >= 0 ? i : null;
+}
 
 function isVideoUrl(url) {
   return ['.mp4', '.mov', '.avi', '.mkv', '.wmv', '.flv', '.webm', '.m4v', '.mpeg', '.3gp']
@@ -377,6 +508,9 @@ function occupyingRowsForDate(rows, targetKey) {
 }
 
 // Resolves one date's occupying rows to concrete slot indexes.
+//   0. The time in the row's own column-G stamp wins when it names a slot —
+//      that cell is the single source of truth for the scheduled time, so a
+//      column Q that somehow disagreed could never move the post.
 //   1. Rows with an explicit column-Q slot claim it (first row wins a tie).
 //   2. Rows without one — legacy rows, and any row whose claim collided —
 //      fill the remaining slots in sheet order. With no explicit slots
@@ -389,7 +523,7 @@ export function assignSlots(rowsForDate) {
   const entries = rowsForDate.map(row => ({
     row,
     contentId: String(row[COL.CONTENT_ID] || '').trim(),
-    slotIndex: parseSlotIndex(row[COL.SLOT])
+    slotIndex: slotIndexFromSerial(row[COL.SCHEDULE_DATE]) ?? parseSlotIndex(row[COL.SLOT])
   }));
   entries.forEach(e => {
     if (e.slotIndex === null) return;
@@ -416,8 +550,8 @@ export function monthOccupancy(rows, year, month) {
     if (!rowOccupies(row)) return;
     const d = serialToDate(row[COL.SCHEDULE_DATE]);
     if (!d) return;
-    if (d.getFullYear() !== year || d.getMonth() !== month - 1) return;
-    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    if (d.getUTCFullYear() !== year || d.getUTCMonth() !== month - 1) return;
+    const dateStr = `${year}-${String(month).padStart(2, '0')}-${pad2(d.getUTCDate())}`;
     (rowsByDate[dateStr] || (rowsByDate[dateStr] = [])).push(row);
   });
 
@@ -426,12 +560,17 @@ export function monthOccupancy(rows, year, month) {
     const items = assignSlots(rowsForDate).map(entry => {
       const row = entry.row;
       const st = String(row[COL.STATUS] || '').trim();
+      // scheduledStamp is the literal column-G cell value ("02/07/2026
+      // 21:00:00") and is null for rows whose G holds no time — the Content
+      // Calendar reads this rather than keeping its own idea of the time.
+      const gSlot = slotIndexFromSerial(row[COL.SCHEDULE_DATE]);
       return {
         contentId: entry.contentId,
         page: String(row[COL.PAGE] || '').trim(),
         posted: st.indexOf('Posted') === 0,
         slotIndex: entry.slotIndex,
         time: SLOT_LABELS[entry.slotIndex],
+        scheduledStamp: gSlot === null ? null : serialToStamp(row[COL.SCHEDULE_DATE]),
         primaryText: String(row[COL.PRIMARY_TEXT] || '').trim(),
         mediaUrl: String(row[COL.MEDIA_URL] || '').trim(),
         mediaType: String(row[COL.MEDIA_TYPE] || '').trim()
@@ -661,12 +800,20 @@ export async function onRequestPost(context) {
     const primaryTextTrimmed = String(primaryText || '').trim();
     const finalPrimaryText = whatsappLink ? `${primaryTextTrimmed}\n${whatsappLink}` : primaryTextTrimmed;
 
+    // Column G gets the chosen date AND the chosen slot's time as one value:
+    // "02/07/2026 21:00:00" in the cell. Built from the picked date's digits
+    // plus the slot hour — no timezone step, so 9:00 PM stays on its own day.
+    const scheduledSerial = scheduleSerial(date, chosenSlot);
+    const scheduledStamp = scheduleStamp(date, chosenSlot);
+    if (scheduledSerial === null) return json({ error: `Invalid date "${date}".` }, 400);
+
     // A ContentID, B Platform, C MediaType, D MediaURL, E PrimaryText, F Page, G ScheduleDate,
     // H Status, I-P (existing columns, left blank here), Q Slot
-    await sheetsAppend(env, token, `${SHEET_NAME}!A:Q`, [
-      contentId, '', mediaType, mediaUrl, finalPrimaryText, page, date, 'Approved',
+    const appendRes = await sheetsAppend(env, token, `${SHEET_NAME}!A:Q`, [
+      contentId, '', mediaType, mediaUrl, finalPrimaryText, page, scheduledSerial, 'Approved',
       '', '', '', '', '', '', '', '', slotCellValue(chosenSlot)
     ]);
+    const stampFormatted = await applyStampFormat(env, token, appendedRowNumber(appendRes));
 
     // Sheet append is the critical step (it's what the posting bot reads) — if this
     // status update fails, don't fail the whole request, just flag it in the response.
@@ -678,8 +825,12 @@ export async function onRequestPost(context) {
     }
 
     // `slot` is now the slot actually written to column Q, not a guess at
-    // where row order would have put it.
-    return json({ ok: true, date, slot: slotLabel, slotIndex: chosenSlot, stacked: avail.stacking, studioSynced });
+    // where row order would have put it; `scheduledAt` is the literal combined
+    // stamp in column G.
+    return json({
+      ok: true, date, slot: slotLabel, slotIndex: chosenSlot, scheduledAt: scheduledStamp,
+      stacked: avail.stacking, studioSynced, stampFormatted
+    });
   } catch (e) {
     return json({ error: e.message }, 500);
   }
@@ -716,7 +867,9 @@ export async function onRequestPatch(context) {
 
     if (!date) return json({ ok: true, primaryText });
 
-    await sheetsUpdate(env, token, `${SHEET_NAME}!G${sheetRowNumber}`, [date]);
+    // Column G is written AFTER the slot is resolved below, because it now
+    // carries the date and the time together — writing the date first would
+    // leave the cell momentarily holding a stamp whose time is a leftover.
 
     // Availability on the NEW date, ignoring this row's own current claim.
     const avail = slotAvailability(sheetRows, date, rowIdx);
@@ -724,7 +877,8 @@ export async function onRequestPatch(context) {
     // Keep the slot the post already had if it's free on the new date;
     // otherwise take the first free one. An explicit slotIndex from the
     // client wins when it's actually available.
-    const currentSlot = parseSlotIndex(sheetRows[rowIdx][COL.SLOT]);
+    const currentSlot = slotIndexFromSerial(sheetRows[rowIdx][COL.SCHEDULE_DATE])
+      ?? parseSlotIndex(sheetRows[rowIdx][COL.SLOT]);
     let chosenSlot = null;
     const requested = (slotIndex === undefined || slotIndex === null || slotIndex === '') ? null : Number(slotIndex);
     if (requested !== null) {
@@ -746,11 +900,20 @@ export async function onRequestPatch(context) {
       chosenSlot = avail.nextAvailableIndex;
     }
 
-    // Write the resolved slot so the moved row carries its own time rather
-    // than a stale claim that could collide on the new date.
+    // New date + resolved slot as one combined stamp in G, then the slot
+    // identity in Q, so the moved row carries its own time rather than a stale
+    // claim that could collide on the new date.
+    const scheduledSerial = scheduleSerial(date, chosenSlot);
+    const scheduledStamp = scheduleStamp(date, chosenSlot);
+    if (scheduledSerial === null) return json({ error: `Invalid date "${date}".` }, 400);
+    await sheetsUpdate(env, token, `${SHEET_NAME}!G${sheetRowNumber}`, [scheduledSerial]);
+    const stampFormatted = await applyStampFormat(env, token, sheetRowNumber);
     await sheetsUpdate(env, token, `${SHEET_NAME}!Q${sheetRowNumber}`, [slotCellValue(chosenSlot)]);
 
-    return json({ ok: true, date, slot: SLOT_LABELS[chosenSlot], slotIndex: chosenSlot, stacked: avail.stacking });
+    return json({
+      ok: true, date, slot: SLOT_LABELS[chosenSlot], slotIndex: chosenSlot,
+      scheduledAt: scheduledStamp, stacked: avail.stacking, stampFormatted
+    });
   } catch (e) {
     return json({ error: e.message }, 500);
   }

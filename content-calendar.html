@@ -639,16 +639,20 @@
     // Two things people kept having to infer from the coloured header or from
     // the badge, now stated outright. What each one reads from:
     //
-    //   SCHEDULED DATE  content_calendar.date — the slot's booked date, the
-    //     same value the calendar grid places the card on. There is NO time
-    //     component anywhere on the booking: a content_calendar row carries
-    //     date + slot_number (the day's category slot), and neither
-    //     content_calendar nor category_slots has a time column (checked
-    //     against the live schema). The wall-clock posting time lives in the
-    //     posting sheet (column Q, "Slot N — H:MM AM/PM") and is only
-    //     reachable through /api/posting-calendar, which needs Google
-    //     credentials — so the slot number is shown and the absence of a
-    //     stored time is said plainly instead of a time being made up.
+    //   SCHEDULED DATE  the posting sheet's own Schedule Date cell when this
+    //     item has been scheduled — one combined "DD/MM/YYYY HH:mm:ss" stamp
+    //     (e.g. 02/07/2026 21:00:00) written by the Posting Calendar's Save
+    //     schedule. That cell is the single source of truth for the scheduled
+    //     time: this field reads it through /api/posting-calendar (keyed by
+    //     STU-<studio_calendar.id>, the same record) rather than keeping a
+    //     second copy of the time here that could disagree.
+    //     Falls back to content_calendar.date — the slot's booked date, the
+    //     same value the calendar grid places the card on — when the item is
+    //     not scheduled in the sheet yet, or when the sheet can't be read
+    //     (that endpoint needs Google credentials, so a local run has none).
+    //     A content_calendar row itself carries only date + slot_number and
+    //     neither it nor category_slots has a time column, so in that fallback
+    //     the absence of a stored time is still said plainly.
     //
     //   POSTED DATE  studio_activity_log.created_at of this slot's first
     //     posted-evidence record, stamped onto the row as `posted_at` by
@@ -672,7 +676,45 @@
       return isNaN(d.getTime()) ? null : d.toLocaleString();
     }
 
+    // contentId ("STU-<studio_calendar.id>") → the posting sheet's combined
+    // Schedule Date stamp, filled by loadPostingSheetStamps() below. Empty
+    // whenever the posting API is unreachable, which is why every read of it
+    // falls back instead of assuming a stamp exists.
+    let postingSheetStamps = {};
+
+    async function loadPostingSheetStamps(month, year) {
+      postingSheetStamps = {};
+      try {
+        const res = await fetch(`/api/posting-calendar?month=${year}-${String(month).padStart(2, '0')}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        (data.days || []).forEach(day => {
+          (day.items || []).forEach(item => {
+            if (item.contentId && item.scheduledStamp) postingSheetStamps[item.contentId] = item.scheduledStamp;
+          });
+        });
+      } catch (e) {
+        // Needs Google credentials — a failure here only costs the exact time,
+        // never the calendar, so the booking date remains the fallback.
+        console.warn('Could not read posting-sheet schedule times:', e);
+      }
+    }
+
     function renderScheduledDateField(booking, date) {
+      // The sheet's own cell wins when this item is scheduled — same record,
+      // one stored value, quoted verbatim so the portal and the sheet can't
+      // show different times.
+      const stamp = booking.studio_slot_id ? postingSheetStamps['STU-' + booking.studio_slot_id] : null;
+      if (stamp) {
+        return `
+        <div style="margin-bottom:12px;">
+          <div style="${DETAIL_LABEL_STYLE}">Scheduled Date</div>
+          <div style="${DETAIL_VALUE_STYLE}">📆 ${stamp}</div>
+          <div style="${DETAIL_SUBNOTE_STYLE}">
+            Slot ${booking.slot_number ?? '—'} · date and posting time exactly as stored in the posting sheet (Schedule Date column), which is what the posting bot reads
+          </div>
+        </div>`;
+      }
       const dateStr = booking.date || date;
       const d = dateStr ? new Date(String(dateStr).slice(0, 10) + 'T00:00:00') : null;
       const pretty = d && !isNaN(d.getTime())
@@ -683,7 +725,7 @@
           <div style="${DETAIL_LABEL_STYLE}">Scheduled Date</div>
           <div style="${DETAIL_VALUE_STYLE}">📆 ${pretty}</div>
           <div style="${DETAIL_SUBNOTE_STYLE}">
-            Slot ${booking.slot_number ?? '—'} · no posting time is stored on the booking (the time of day is set in the posting sheet)
+            Slot ${booking.slot_number ?? '—'} · no posting time stored yet — the time of day is set when this is scheduled in the Posting Calendar
           </div>
         </div>`;
     }
@@ -755,6 +797,9 @@
         document.getElementById('monthDisplay').textContent = `${monthNames[currentMonth - 1]} ${currentYear}`;
 
         calendarData = await getCalendarData(currentMonth, currentYear);
+        // The scheduled date+time shown in a booking's popup comes from the
+        // posting sheet, so pull this month's stamps alongside the bookings.
+        await loadPostingSheetStamps(currentMonth, currentYear);
         console.log('Calendar Data:', calendarData);
         renderCalendar();
 

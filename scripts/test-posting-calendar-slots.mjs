@@ -25,7 +25,10 @@ import { dirname, join } from 'node:path';
 const here = dirname(fileURLToPath(import.meta.url));
 const src = readFileSync(join(here, '..', 'functions', 'api', 'posting-calendar.js'), 'utf8');
 const mod = await import('data:text/javascript;charset=utf-8,' + encodeURIComponent(src));
-const { parseSlotIndex, assignSlots, slotAvailability, monthOccupancy, slotCellValue } = mod;
+const {
+  parseSlotIndex, assignSlots, slotAvailability, monthOccupancy, slotCellValue,
+  scheduleSerial, scheduleStamp, serialToStamp, slotIndexFromSerial, appendedRowNumber
+} = mod;
 
 let passed = 0;
 const failures = [];
@@ -151,6 +154,89 @@ check('the chosen 6:00 PM shows as 6:00 PM', oct1.items.find(i => i.contentId ==
 check('the legacy row still infers 10:00 AM', oct1.items.find(i => i.contentId === 'STU-2').time, '10:00 AM');
 check('occupied counts rows, not slots', oct1.occupied, 2);
 check('a Posted row is flagged posted', month.find(d => d.date === '2026-10-05').items[0].posted, true);
+
+// ── 5. The combined date+time stamp in column G ────────────────────────────
+// Column G now holds ONE value: the chosen date and the chosen slot's time,
+// displayed as DD/MM/YYYY HH:mm:ss. Day-first is both what was asked for and
+// what the live sheet already uses (its column format is "d/m/yyyy hh:mm:ss").
+console.log('\nscheduleStamp — the literal cell value');
+check('9:00 PM on 2 July 2026',   scheduleStamp('2026-07-02', 4), '02/07/2026 21:00:00');
+check('10:00 AM is zero-padded',  scheduleStamp('2026-07-02', 0), '02/07/2026 10:00:00');
+check('12:00 PM is noon, not 00', scheduleStamp('2026-07-02', 1), '02/07/2026 12:00:00');
+check('3:00 PM is 15:00:00',      scheduleStamp('2026-07-02', 2), '02/07/2026 15:00:00');
+check('6:00 PM is 18:00:00',      scheduleStamp('2026-07-02', 3), '02/07/2026 18:00:00');
+check('day-first, not month-first', scheduleStamp('2026-12-05', 2), '05/12/2026 15:00:00');
+check('a bad date yields no stamp', scheduleStamp('', 0), null);
+
+console.log('\nscheduleSerial — a real datetime value, written as a number');
+check('it is a number',           typeof scheduleSerial('2026-07-02', 4), 'number');
+check('9pm is .875 of a day past the date',
+  scheduleSerial('2026-07-02', 4) - serial('2026-07-02'), 0.875);
+check('the whole-day part is the picked date, every slot',
+  [0, 1, 2, 3, 4].map(i => Math.floor(scheduleSerial('2026-07-02', i)) === serial('2026-07-02')),
+  [true, true, true, true, true]);
+
+console.log('\nserialToStamp — reading the stamp back out of the sheet');
+check('round-trips all five slots',
+  [0, 1, 2, 3, 4].map(i => serialToStamp(scheduleSerial('2026-07-02', i))),
+  ['02/07/2026 10:00:00', '02/07/2026 12:00:00', '02/07/2026 15:00:00',
+   '02/07/2026 18:00:00', '02/07/2026 21:00:00']);
+// The float for 10:00 AM is 0.41666666666666663 of a day — a millisecond short
+// without rounding, which read back as 09:59:59 (and at midnight, the day before).
+check('10am does not read back as 09:59',
+  serialToStamp(serial('2026-07-02') + 10 / 24), '02/07/2026 10:00:00');
+check('9pm never rolls onto the 3rd',
+  serialToStamp(scheduleSerial('2026-07-02', 4)).slice(0, 10), '02/07/2026');
+check('a date-only legacy serial reads as midnight',
+  serialToStamp(serial('2026-07-02')), '02/07/2026 00:00:00');
+
+console.log('\nslotIndexFromSerial — the time column G itself names');
+check('9pm stamp → the 9pm slot',   slotIndexFromSerial(scheduleSerial('2026-07-02', 4)), 4);
+check('10am stamp → the 10am slot', slotIndexFromSerial(scheduleSerial('2026-07-02', 0)), 0);
+check('date-only row names no slot', slotIndexFromSerial(serial('2026-07-02')), null);
+check('a legacy 18:30 row names no slot',
+  slotIndexFromSerial(serial('2026-05-05') + (18 * 60 + 30) / 1440), null);
+check('a non-number is no slot',    slotIndexFromSerial('2026-07-02'), null);
+
+// A row as the app writes it now: combined stamp in G, slot label still in Q.
+function stampedRow(contentId, dateStr, slotIndex, status) {
+  const r = row(contentId, dateStr, status || 'Approved', slotCellValue(slotIndex));
+  r[6] = scheduleSerial(dateStr, slotIndex);
+  return r;
+}
+
+console.log('\nstamped rows behave exactly like column-Q rows');
+check('a 9pm stamp holds the 9pm chip',
+  times(slotAvailability([stampedRow('STU-1', '2026-10-01', 4)], '2026-10-01')),
+  ['10:00 AM', '12:00 PM', '3:00 PM', '6:00 PM', 'X9:00 PM']);
+check('a 9pm stamp does not occupy the next day',
+  slotAvailability([stampedRow('STU-1', '2026-10-01', 4)], '2026-10-02').freeCount, 5);
+// Single source of truth: if column Q ever disagreed with the stamp, the stamp
+// (the cell the posting bot reads) decides — Q never moves the post.
+check('column G wins over a disagreeing column Q', (() => {
+  const r = stampedRow('STU-1', '2026-10-01', 4);
+  r[SLOT_COL] = slotCellValue(0);
+  return assignSlots([r]).map(e => e.slotIndex);
+})(), [4]);
+
+console.log('\nappendedRowNumber — which row the stamp format gets applied to');
+check('quoted tab name',   appendedRowNumber({ updates: { updatedRange: "'Content Approval List'!A523:Q523" } }), 523);
+check('unquoted tab name', appendedRowNumber({ updates: { updatedRange: 'Sheet1!A7:Q7' } }), 7);
+check('no range → nothing to format', appendedRowNumber({}), null);
+
+console.log('\nmonthOccupancy exposes the stamp (what the Content Calendar reads)');
+const stampedMonth = monthOccupancy([
+  stampedRow('STU-1', '2026-10-01', 4),            // 9pm — the UTC-roll case
+  row('STU-2', '2026-10-01', 'Approved'),          // legacy, date-only
+], 2026, 10);
+const sOct1 = stampedMonth.find(d => d.date === '2026-10-01');
+check('the 9pm post stays on 1 October', stampedMonth.map(d => d.date), ['2026-10-01']);
+check('the stamp is reported verbatim',
+  sOct1.items.find(i => i.contentId === 'STU-1').scheduledStamp, '01/10/2026 21:00:00');
+check('its slot still reads 9:00 PM',
+  sOct1.items.find(i => i.contentId === 'STU-1').time, '9:00 PM');
+check('a legacy row reports no stamp rather than a made-up midnight',
+  sOct1.items.find(i => i.contentId === 'STU-2').scheduledStamp, null);
 
 console.log(`\n${passed} passed, ${failures.length} failed`);
 if (failures.length) { failures.forEach(f => console.log('  - ' + f)); process.exit(1); }

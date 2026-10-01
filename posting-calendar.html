@@ -472,14 +472,24 @@
         throw new Error(result.error);
       }
       if (!res.ok || result.error) throw new Error(result.error || 'Save failed');
-      const warn = result.studioSynced === false ? '<br>(Added to the sheet, but couldn\'t update the Studio Calendar status — update it manually.)' : '';
-      msg.innerHTML = `<div class="msg ok">Scheduled for ${result.date} @ ${result.slot}${result.stacked ? ' (stacked)' : ''}.${warn}</div>`;
+      let warn = result.studioSynced === false ? '<br>(Added to the sheet, but couldn\'t update the Studio Calendar status — update it manually.)' : '';
+      // The stamp is the literal cell value written to the sheet's Schedule
+      // Date column, so what's confirmed here is exactly what landed there.
+      if (result.stampFormatted === false) warn += '<br>(Saved, but the cell\'s date+time format couldn\'t be applied — the stored value is correct, the cell may display it differently.)';
+      const stamp = result.scheduledAt ? `${result.scheduledAt} (${result.slot})` : `${result.date} @ ${result.slot}`;
+      const okHtml = `<div class="msg ok">Scheduled for ${escapeHtml(stamp)}${result.stacked ? ' (stacked)' : ''}.${warn}</div>`;
+      msg.innerHTML = okHtml;
       selected = null;
       slotData = null;
       selectedSlot = null;
       await loadPosts();
       await loadCalendar();
-      document.getElementById('rightPanel').innerHTML = '<div class="placeholder">Select a Good-to-Go post on the left to schedule it.</div>';
+      // The panel reset throws away the #msg element the confirmation was just
+      // written into, so it has to be re-rendered alongside the placeholder —
+      // otherwise the line stating what landed in the sheet is wiped out the
+      // instant the save succeeds, which is exactly when it matters.
+      document.getElementById('rightPanel').innerHTML =
+        okHtml + '<div class="placeholder">Select a Good-to-Go post on the left to schedule it.</div>';
     } catch (e) {
       btn.disabled = false;
       msg.innerHTML = `<div class="msg err">${escapeHtml(e.message)}</div>`;

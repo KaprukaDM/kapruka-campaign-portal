@@ -6814,15 +6814,25 @@
           throw new Error(result.error);
         }
         if (!res.ok || result.error) throw new Error(result.error || 'Save failed');
-        const warn = result.studioSynced === false ? '<br>(Added to the sheet, but couldn\'t update the Studio Calendar status — update it manually.)' : '';
-        msg.innerHTML = `<div class="pcal-msg ok">Scheduled for ${result.date} @ ${result.slot}${result.stacked ? ' (stacked)' : ''}.${warn}</div>`;
+        let warn = result.studioSynced === false ? '<br>(Added to the sheet, but couldn\'t update the Studio Calendar status — update it manually.)' : '';
+        // result.scheduledAt is the literal combined value written to the
+        // sheet's Schedule Date cell ("02/07/2026 21:00:00"), so the
+        // confirmation quotes exactly what landed there.
+        if (result.stampFormatted === false) warn += '<br>(Saved, but the cell\'s date+time format couldn\'t be applied — the stored value is correct, the cell may display it differently.)';
+        const stamp = result.scheduledAt ? `${result.scheduledAt} (${result.slot})` : `${result.date} @ ${result.slot}`;
+        const okHtml = `<div class="pcal-msg ok">Scheduled for ${stamp}${result.stacked ? ' (stacked)' : ''}.${warn}</div>`;
+        msg.innerHTML = okHtml;
         pcalSelected = null;
         pcalSlotData = null;
         pcalSelectedSlot = null;
         pcalPendingSlotPick = null;
         await loadPostingCalendar();
         await loadPcalCalendar();
-        document.getElementById('pcalRightPanel').innerHTML = '<div class="pcal-placeholder">Select a Good-to-Go post on the left to schedule it.</div>';
+        // The panel reset throws away the element the confirmation was written
+        // into, so it is re-rendered with the placeholder — otherwise the line
+        // stating what landed in the sheet disappears the instant it succeeds.
+        document.getElementById('pcalRightPanel').innerHTML =
+          okHtml + '<div class="pcal-placeholder">Select a Good-to-Go post on the left to schedule it.</div>';
       } catch (error) {
         btn.disabled = false;
         msg.innerHTML = `<div class="pcal-msg err">${pcalEscapeHtml(error.message)}</div>`;
