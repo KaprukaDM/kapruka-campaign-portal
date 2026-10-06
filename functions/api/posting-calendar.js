@@ -716,7 +716,17 @@ export async function onRequestGet(context) {
           primaryText: item.content_details || '',
           mediaUrl,
           isFolder,
-          productCode: item.product_code || ''
+          productCode: item.product_code || '',
+          // Same priority the Studio Calendar grid shows — see
+          // getStudioSlotPriority() in js/supabase-api.js. Campaign bookings
+          // are paid/committed slots and are always rendered High there, so
+          // the rule is mirrored here rather than trusting an older row that
+          // may still say Low/null. Lets the Good-to-Go list be filtered by
+          // priority without a second Supabase round-trip from the page.
+          priority: item.source_type === 'campaign_booking'
+            ? 'High'
+            : (item.priority || ''),
+          sourceType: item.source_type || ''
         };
       })
       .filter(p => !alreadyScheduled.has(p.contentId));

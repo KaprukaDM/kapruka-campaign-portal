@@ -2130,6 +2130,17 @@
             display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
           }
           .pcal-empty { color: #888; font-size: 13px; padding: 20px 0; text-align: center; }
+          .pcal-filter { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+          .pcal-filter-btn {
+            border: 1px solid rgba(0,0,0,0.16); background: #fff; color: #555;
+            border-radius: 100px; padding: 4px 12px; font-size: 11.5px; font-weight: 700;
+            cursor: pointer; font-family: inherit;
+          }
+          .pcal-filter-btn:hover { border-color: var(--primary-purple); color: var(--primary-purple); }
+          .pcal-filter-btn.active { background: var(--primary-purple); border-color: var(--primary-purple); color: #fff; }
+          .pcal-prio { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 100px; color: #fff; }
+          .pcal-prio.High { background: #E53935; }
+          .pcal-prio.Low { background: #78909C; }
           .pcal-preview-box { margin: 14px 0; }
           .pcal-preview-img {
             width: 100%; max-height: 320px; object-fit: contain; border-radius: 12px;
@@ -2201,6 +2212,7 @@
               🟢 Good to Go
               <span style="font-size:12px;font-weight:500;color:var(--primary-purple);cursor:pointer;" onclick="loadPostingCalendar()">↻ Refresh</span>
             </h2>
+            <div id="pcalFilter" class="pcal-filter"></div>
             <div id="pcalList" class="pcal-list"><div class="pcal-empty">Loading…</div></div>
           </div>
 
@@ -6452,20 +6464,72 @@
       }
     }
 
+    // Priority filter for the Good-to-Go list. The priority itself comes
+    // straight from the Studio Calendar row (studio_calendar.priority, with
+    // campaign bookings forced to High — see the API), so what's filtered here
+    // matches the 🔴 High / Low badges on the Studio Calendar grid.
+    let pcalPriorityFilter = 'all';
+
+    function pcalPriorityOf(p) {
+      return p.priority === 'High' ? 'High' : (p.priority === 'Low' ? 'Low' : '');
+    }
+    function pcalVisiblePosts() {
+      if (pcalPriorityFilter === 'all') return pcalPosts;
+      if (pcalPriorityFilter === 'none') return pcalPosts.filter(p => !pcalPriorityOf(p));
+      return pcalPosts.filter(p => pcalPriorityOf(p) === pcalPriorityFilter);
+    }
+    function setPcalPriorityFilter(value) {
+      pcalPriorityFilter = value;
+      renderPcalList();
+    }
+
+    function renderPcalFilter() {
+      const bar = document.getElementById('pcalFilter');
+      if (!bar) return;
+      const count = v => v === 'all'
+        ? pcalPosts.length
+        : v === 'none'
+          ? pcalPosts.filter(p => !pcalPriorityOf(p)).length
+          : pcalPosts.filter(p => pcalPriorityOf(p) === v).length;
+      const options = [
+        { value: 'all', label: 'All' },
+        { value: 'High', label: '🔴 High' },
+        { value: 'Low', label: 'Low' },
+        { value: 'none', label: 'No priority' }
+      ];
+      bar.innerHTML = options
+        // "No priority" is noise when every item has one — only offer it when
+        // such rows actually exist (or it's the active filter).
+        .filter(o => o.value !== 'none' || count('none') > 0 || pcalPriorityFilter === 'none')
+        .map(o => `<button type="button" class="pcal-filter-btn${pcalPriorityFilter === o.value ? ' active' : ''}" onclick="setPcalPriorityFilter('${o.value}')">${o.label} (${count(o.value)})</button>`)
+        .join('');
+    }
+
     function renderPcalList() {
       const list = document.getElementById('pcalList');
+      renderPcalFilter();
       if (!pcalPosts.length) {
         list.innerHTML = '<div class="pcal-empty">No Good to Go posts right now.</div>';
         return;
       }
-      list.innerHTML = pcalPosts.map(p => {
+      const posts = pcalVisiblePosts();
+      if (!posts.length) {
+        list.innerHTML = '<div class="pcal-empty">No Good to Go posts at this priority.</div>';
+        return;
+      }
+      list.innerHTML = posts.map(p => {
         const thumbUrl = pcalDriveThumbUrl(p.mediaUrl);
         const thumb = thumbUrl ? `<img class="pcal-thumb" src="${thumbUrl}" loading="lazy" onerror="this.style.display='none'">` : '';
+        const prio = pcalPriorityOf(p);
+        const prioBadge = prio ? `<span class="pcal-prio ${prio}">${prio === 'High' ? '🔴 High' : 'Low'}</span>` : '';
         return `
         <div class="pcal-post${pcalSelected && pcalSelected.contentId === p.contentId ? ' selected' : ''}" onclick="selectPcalPost('${p.contentId}')">
           <div class="pcal-row1">
             <span>#${pcalEscapeHtml(p.contentId)} · ${pcalEscapeHtml(p.page)}</span>
-            <span class="pcal-badge ${p.contentType}">${p.contentType}</span>
+            <span style="display:flex;gap:5px;align-items:center;">
+              ${prioBadge}
+              <span class="pcal-badge ${p.contentType}">${p.contentType}</span>
+            </span>
           </div>
           <div class="pcal-row2">
             ${thumb}
