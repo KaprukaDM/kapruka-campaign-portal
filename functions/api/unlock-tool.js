@@ -2,7 +2,7 @@
 // Server-side gate for the restricted tool cards. The password lives in the
 // TOOLS_PASSWORD secret and the tool URLs are only returned on a correct match,
 // so neither appears in the page source.
-// Optional per-tool secret name; falls back to TOOLS_PASSWORD.
+// Tools listed here use only their own secret (no fallback to TOOLS_PASSWORD).
 const SECRET_NAME = { pcagent: 'PRICELENS_PASSWORD' };
 
 const TOOLS = {
@@ -39,7 +39,7 @@ export const onRequestPost = async ({ request, env }) => {
   try { data = await request.json(); } catch { return json({ error: 'Bad request' }, 400); }
   const { tool, password } = data || {};
   if (!TOOLS[tool]) return json({ error: 'Unknown tool' }, 404);
-  const expected = env[SECRET_NAME[tool]] || env.TOOLS_PASSWORD;
+  const expected = SECRET_NAME[tool] ? env[SECRET_NAME[tool]] : env.TOOLS_PASSWORD;
   if (!expected || typeof password !== 'string' || !(await safeEqual(password, expected))) {
     return json({ error: 'Incorrect password' }, 401);
   }
