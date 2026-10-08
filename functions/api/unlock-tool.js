@@ -3,10 +3,10 @@
 // TOOLS_PASSWORD secret and the tool URLs are only returned on a correct match,
 // so neither appears in the page source.
 // Optional per-tool secret name; falls back to TOOLS_PASSWORD.
-const SECRET_NAME = { pricelens: 'PRICELENS_PASSWORD' };
+const SECRET_NAME = { pcagent: 'PRICELENS_PASSWORD' };
 
 const TOOLS = {
-  pricelens: [{ label: 'PriceLens', url: 'https://pricelens.lanka.info/' }],
+  pcagent: [{ label: 'PC Agent', url: 'http://23.111.183.110:5011/' }],
   seo: [
     { label: '📊 Kapruka SEO Dashboard', url: 'http://23.111.183.110:8094/' },
     { label: '🔧 SEO Boost Tool', url: 'http://23.111.183.110:8093/' },
