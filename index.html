@@ -245,28 +245,10 @@
       <div class="option-card" onclick="openPasswordModal('seo')" style="cursor:pointer;">
         <div class="lock-badge">🔒 Restricted Access</div>
         <div class="option-title">🚀 SEO Boost</div>
-        <div class="option-desc">SEO tools in one place — the Kapruka SEO Dashboard plus its companion tool.</div>
+        <div class="option-desc">SEO tools in one place — all Kapruka SEO tools in one place.</div>
         <div class="option-features">
           <div class="feature-item"><div class="feature-icon">✓</div><span>Kapruka SEO Dashboard</span></div>
-          <div class="feature-item"><div class="feature-icon">✓</div><span>Companion SEO tool from the same menu</span></div>
-        </div>
-      </div>
-
-      <div class="option-card" onclick="openPasswordModal('tool8092')" style="cursor:pointer;">
-        <div class="lock-badge">🔒 Restricted Access</div>
-        <div class="option-title">🛠️ SEO Tool (8092)</div>
-        <div class="option-desc">Additional tool hosted on the Kapruka server.</div>
-        <div class="option-features">
-          <div class="feature-item"><div class="feature-icon">✓</div><span>Opens in a new tab</span></div>
-        </div>
-      </div>
-
-      <div class="option-card" onclick="openPasswordModal('opportunity')" style="cursor:pointer;">
-        <div class="lock-badge">🔒 Restricted Access</div>
-        <div class="option-title">💡 Opportunity Tool</div>
-        <div class="option-desc">Kapruka Opportunity Tool — spot and track growth opportunities.</div>
-        <div class="option-features">
-          <div class="feature-item"><div class="feature-icon">✓</div><span>Opens in a new tab</span></div>
+          <div class="feature-item"><div class="feature-icon">✓</div><span>SEO Boost Tool, SEO Tool and Opportunity Tool</span></div>
         </div>
       </div>
 
@@ -341,8 +323,8 @@
       daraz:    '8055',
       avurudhu: '207'
     };
-    // seo / tool8092 / opportunity / revenue are verified server-side (/api/unlock-tool).
-    const SERVER_GATED = ['pricelens', 'seo', 'tool8092', 'opportunity', 'revenue'];
+    // pricelens / seo / revenue are verified server-side (/api/unlock-tool).
+    const SERVER_GATED = ['pricelens', 'seo', 'revenue'];
 
     const URLS = {
       ads:      'https://docs.google.com/forms/d/e/1FAIpQLSfGSObGAIJz46oQd0xN3oISjS46SEkFtL0_ZGkIfh6ansvqPQ/viewform',
@@ -403,8 +385,6 @@
         avurudhu: '🌸 Season Checklist',
         pricelens: '🏷️ PriceLens',
         seo:      '🚀 SEO Boost',
-        tool8092: '🛠️ SEO Tool',
-        opportunity: '💡 Opportunity Tool',
         revenue:  '💰 Revenue Breakdown Report'
       };
       document.getElementById('modalTitle').textContent = titles[section] || '🔒 Access Required';
