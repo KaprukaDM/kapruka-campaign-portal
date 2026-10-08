@@ -233,6 +233,43 @@
         </div>
       </div>
 
+      <div class="option-card" onclick="openPasswordModal('seo')" style="cursor:pointer;">
+        <div class="lock-badge">🔒 Restricted Access</div>
+        <div class="option-title">🚀 SEO Boost</div>
+        <div class="option-desc">SEO tools in one place — the Kapruka SEO Dashboard plus its companion tool.</div>
+        <div class="option-features">
+          <div class="feature-item"><div class="feature-icon">✓</div><span>Kapruka SEO Dashboard</span></div>
+          <div class="feature-item"><div class="feature-icon">✓</div><span>Companion SEO tool from the same menu</span></div>
+        </div>
+      </div>
+
+      <div class="option-card" onclick="openPasswordModal('tool8092')" style="cursor:pointer;">
+        <div class="lock-badge">🔒 Restricted Access</div>
+        <div class="option-title">🛠️ SEO Tool (8092)</div>
+        <div class="option-desc">Additional tool hosted on the Kapruka server.</div>
+        <div class="option-features">
+          <div class="feature-item"><div class="feature-icon">✓</div><span>Opens in a new tab</span></div>
+        </div>
+      </div>
+
+      <div class="option-card" onclick="openPasswordModal('opportunity')" style="cursor:pointer;">
+        <div class="lock-badge">🔒 Restricted Access</div>
+        <div class="option-title">💡 Opportunity Tool</div>
+        <div class="option-desc">Kapruka Opportunity Tool — spot and track growth opportunities.</div>
+        <div class="option-features">
+          <div class="feature-item"><div class="feature-icon">✓</div><span>Opens in a new tab</span></div>
+        </div>
+      </div>
+
+      <div class="option-card" onclick="openPasswordModal('revenue')" style="cursor:pointer;">
+        <div class="lock-badge">🔒 Restricted Access</div>
+        <div class="option-title">💰 Revenue Breakdown Report (GA4)</div>
+        <div class="option-desc">GA4 revenue breakdown report. Tool sign-in is required after the portal password.</div>
+        <div class="option-features">
+          <div class="feature-item"><div class="feature-icon">✓</div><span>Opens in a new tab</span></div>
+        </div>
+      </div>
+
     </div>
 
     <div class="footer">
@@ -263,6 +300,18 @@
     </div>
   </div>
 
+  <!-- SEO Boost submenu (shown after password) -->
+  <div class="country-modal" id="seoModal">
+    <div class="country-box">
+      <h2>🚀 SEO Boost</h2>
+      <p>Choose a tool</p>
+      <div class="country-list">
+        <div id="seoLinks"></div>
+      </div>
+      <button class="country-cancel" onclick="closeSeoModal()">Cancel</button>
+    </div>
+  </div>
+
   <!-- Shared Password Modal -->
   <div class="password-modal" id="passwordModal">
     <div class="password-box">
@@ -283,6 +332,8 @@
       daraz:    '8055',
       avurudhu: '207'
     };
+    // seo / tool8092 / opportunity / revenue are verified server-side (/api/unlock-tool).
+    const SERVER_GATED = ['seo', 'tool8092', 'opportunity', 'revenue'];
 
     const URLS = {
       ads:      'https://docs.google.com/forms/d/e/1FAIpQLSfGSObGAIJz46oQd0xN3oISjS46SEkFtL0_ZGkIfh6ansvqPQ/viewform',
@@ -317,6 +368,22 @@
       if (event.target === this) closeCountryModal();
     });
 
+    function openSeoModal(links) {
+      const box = document.getElementById('seoLinks');
+      box.textContent = '';
+      links.forEach((l) => {
+        const d = document.createElement('div');
+        d.className = 'country-option';
+        d.style.marginBottom = '10px';
+        d.textContent = l.label;
+        d.onclick = () => { window.open(l.url, '_blank', 'noopener'); closeSeoModal(); };
+        box.appendChild(d);
+      });
+      document.getElementById('seoModal').classList.add('active');
+    }
+    function closeSeoModal() { document.getElementById('seoModal').classList.remove('active'); }
+    document.getElementById('seoModal').addEventListener('click', function(e) { if (e.target === this) closeSeoModal(); });
+
     let currentSection = '';
 
     function openPasswordModal(section) {
@@ -324,7 +391,11 @@
       const titles = {
         ads:      '🎯 Ads Manager Access',
         daraz:    '🛒 Daraz Market Agent',
-        avurudhu: '🌸 Season Checklist'
+        avurudhu: '🌸 Season Checklist',
+        seo:      '🚀 SEO Boost',
+        tool8092: '🛠️ SEO Tool',
+        opportunity: '💡 Opportunity Tool',
+        revenue:  '💰 Revenue Breakdown Report'
       };
       document.getElementById('modalTitle').textContent = titles[section] || '🔒 Access Required';
       document.getElementById('modalSubtitle').textContent = 'Enter password to continue';
@@ -343,15 +414,43 @@
       currentSection = '';
     }
 
+    function showPasswordError() {
+      document.getElementById('passwordError').classList.add('active');
+      document.getElementById('passwordInput').value = '';
+      document.getElementById('passwordInput').focus();
+    }
+
+    async function checkServerPassword() {
+      const section = currentSection;
+      const password = document.getElementById('passwordInput').value;
+      // Open the tab synchronously so popup blockers allow it, then point it at the URL.
+      const single = section !== 'seo' ? window.open('', '_blank') : null;
+      try {
+        const res = await fetch('/api/unlock-tool', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tool: section, password })
+        });
+        if (!res.ok) throw new Error('denied');
+        const { links } = await res.json();
+        closePasswordModal();
+        if (section === 'seo') openSeoModal(links);
+        else if (single) single.location.href = links[0].url;
+      } catch (e) {
+        if (single) single.close();
+        showPasswordError();
+      }
+    }
+
     function checkPassword() {
+      if (SERVER_GATED.includes(currentSection)) { checkServerPassword(); return; }
       const input = document.getElementById('passwordInput').value;
       if (input === PASSWORDS[currentSection]) {
-        window.open(URLS[currentSection], '_blank');
+        const section = currentSection;
         closePasswordModal();
+        window.open(URLS[section], '_blank');
       } else {
-        document.getElementById('passwordError').classList.add('active');
-        document.getElementById('passwordInput').value = '';
-        document.getElementById('passwordInput').focus();
+        showPasswordError();
       }
     }
 

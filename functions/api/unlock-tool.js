@@ -1,0 +1,42 @@
+// POST /api/unlock-tool  { tool, password }
+// Server-side gate for the restricted tool cards. The password lives in the
+// TOOLS_PASSWORD secret and the tool URLs are only returned on a correct match,
+// so neither appears in the page source.
+const TOOLS = {
+  seo: [
+    { label: '📊 Kapruka SEO Dashboard', url: 'http://23.111.183.110:8094/' },
+    { label: '🔧 SEO Boost Tool', url: 'http://23.111.183.110:8093/' },
+  ],
+  tool8092: [{ label: 'SEO Tool', url: 'http://23.111.183.110:8092/' }],
+  opportunity: [{ label: 'Opportunity Tool', url: 'http://23.111.183.110:5002/' }],
+  revenue: [{ label: 'Revenue Breakdown Report', url: 'http://23.111.183.110:8095/login' }],
+};
+
+const json = (body, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+  });
+
+async function safeEqual(a, b) {
+  const enc = new TextEncoder();
+  const [ha, hb] = await Promise.all([
+    crypto.subtle.digest('SHA-256', enc.encode(a)),
+    crypto.subtle.digest('SHA-256', enc.encode(b)),
+  ]);
+  const x = new Uint8Array(ha), y = new Uint8Array(hb);
+  let diff = 0;
+  for (let i = 0; i < x.length; i++) diff |= x[i] ^ y[i];
+  return diff === 0;
+}
+
+export const onRequestPost = async ({ request, env }) => {
+  let data;
+  try { data = await request.json(); } catch { return json({ error: 'Bad request' }, 400); }
+  const { tool, password } = data || {};
+  if (!TOOLS[tool]) return json({ error: 'Unknown tool' }, 404);
+  if (!env.TOOLS_PASSWORD || typeof password !== 'string' || !(await safeEqual(password, env.TOOLS_PASSWORD))) {
+    return json({ error: 'Incorrect password' }, 401);
+  }
+  return json({ links: TOOLS[tool] });
+};
