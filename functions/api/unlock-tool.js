@@ -9,9 +9,6 @@ const TOOLS = {
   pcagent: [{ label: 'PC Agent', url: 'http://23.111.183.110:5011/' }],
   seo: [
     { label: '📊 Kapruka SEO Dashboard', url: 'http://23.111.183.110:8094/' },
-    { label: '🔧 SEO Boost Tool', url: 'http://23.111.183.110:8093/' },
-    { label: '🛠️ SEO Tool', url: 'http://23.111.183.110:8092/' },
-    { label: '💡 Opportunity Tool', url: 'http://23.111.183.110:5002/' },
   ],
   revenue: [{ label: 'Revenue Breakdown Report', url: 'http://23.111.183.110:8095/login' }],
 };

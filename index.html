@@ -245,10 +245,10 @@
       <div class="option-card" onclick="openPasswordModal('seo')" style="cursor:pointer;">
         <div class="lock-badge">🔒 Restricted Access</div>
         <div class="option-title">🚀 SEO Boost</div>
-        <div class="option-desc">SEO tools in one place — all Kapruka SEO tools in one place.</div>
+        <div class="option-desc">Kapruka SEO Dashboard, with all SEO tools inside.</div>
         <div class="option-features">
           <div class="feature-item"><div class="feature-icon">✓</div><span>Kapruka SEO Dashboard</span></div>
-          <div class="feature-item"><div class="feature-icon">✓</div><span>SEO Boost Tool, SEO Tool and Opportunity Tool</span></div>
+          <div class="feature-item"><div class="feature-icon">✓</div><span>Opens in a new tab</span></div>
         </div>
       </div>
 
@@ -288,18 +288,6 @@
       <div class="country-list" id="countryList"></div>
       <div class="country-option-more">More countries coming soon</div>
       <button class="country-cancel" onclick="closeCountryModal()">Cancel</button>
-    </div>
-  </div>
-
-  <!-- SEO Boost submenu (shown after password) -->
-  <div class="country-modal" id="seoModal">
-    <div class="country-box">
-      <h2>🚀 SEO Boost</h2>
-      <p>Choose a tool</p>
-      <div class="country-list">
-        <div id="seoLinks"></div>
-      </div>
-      <button class="country-cancel" onclick="closeSeoModal()">Cancel</button>
     </div>
   </div>
 
@@ -359,22 +347,6 @@
       if (event.target === this) closeCountryModal();
     });
 
-    function openSeoModal(links) {
-      const box = document.getElementById('seoLinks');
-      box.textContent = '';
-      links.forEach((l) => {
-        const d = document.createElement('div');
-        d.className = 'country-option';
-        d.style.marginBottom = '10px';
-        d.textContent = l.label;
-        d.onclick = () => { window.open(l.url, '_blank', 'noopener'); closeSeoModal(); };
-        box.appendChild(d);
-      });
-      document.getElementById('seoModal').classList.add('active');
-    }
-    function closeSeoModal() { document.getElementById('seoModal').classList.remove('active'); }
-    document.getElementById('seoModal').addEventListener('click', function(e) { if (e.target === this) closeSeoModal(); });
-
     let currentSection = '';
 
     function openPasswordModal(section) {
@@ -414,7 +386,7 @@
       const section = currentSection;
       const password = document.getElementById('passwordInput').value;
       // Open the tab synchronously so popup blockers allow it, then point it at the URL.
-      const single = section !== 'seo' ? window.open('', '_blank') : null;
+      const single = window.open('', '_blank');
       try {
         const res = await fetch('/api/unlock-tool', {
           method: 'POST',
@@ -424,8 +396,7 @@
         if (!res.ok) throw new Error('denied');
         const { links } = await res.json();
         closePasswordModal();
-        if (section === 'seo') openSeoModal(links);
-        else if (single) single.location.href = links[0].url;
+        if (single) single.location.href = links[0].url;
       } catch (e) {
         if (single) single.close();
         showPasswordError();
