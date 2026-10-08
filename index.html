@@ -145,6 +145,15 @@
         </div>
       </a>
 
+      <div class="option-card" onclick="openPasswordModal('pricelens')" style="cursor:pointer;">
+        <div class="lock-badge">🔒 Restricted Access</div>
+        <div class="option-title">🏷️ PriceLens</div>
+        <div class="option-desc">Price intelligence tool hosted at pricelens.lanka.info.</div>
+        <div class="option-features">
+          <div class="feature-item"><div class="feature-icon">✓</div><span>Opens in a new tab</span></div>
+        </div>
+      </div>
+
       <a href="new-products-performance.html" class="option-card">
         <div class="option-title">🆕 Newly Added Products</div>
         <div class="option-desc">GSC + GA4 performance for products added Aug 1 – Sep 11: page views, users, clicks, impressions, and more.</div>
@@ -333,7 +342,7 @@
       avurudhu: '207'
     };
     // seo / tool8092 / opportunity / revenue are verified server-side (/api/unlock-tool).
-    const SERVER_GATED = ['seo', 'tool8092', 'opportunity', 'revenue'];
+    const SERVER_GATED = ['pricelens', 'seo', 'tool8092', 'opportunity', 'revenue'];
 
     const URLS = {
       ads:      'https://docs.google.com/forms/d/e/1FAIpQLSfGSObGAIJz46oQd0xN3oISjS46SEkFtL0_ZGkIfh6ansvqPQ/viewform',
@@ -392,6 +401,7 @@
         ads:      '🎯 Ads Manager Access',
         daraz:    '🛒 Daraz Market Agent',
         avurudhu: '🌸 Season Checklist',
+        pricelens: '🏷️ PriceLens',
         seo:      '🚀 SEO Boost',
         tool8092: '🛠️ SEO Tool',
         opportunity: '💡 Opportunity Tool',
