@@ -1,76 +1,45 @@
 // functions/_middleware.js
+// Site-wide gate. Replaces the old 25-hardcoded-username Basic Auth with the
+// per-user session system (see functions/_lib/auth.js, functions/api/login.js).
+import { readSession } from './_lib/auth.js';
+
+const PUBLIC_PATHS = ['/login.html', '/api/login', '/api/logout'];
+
 export const onRequest = async (context) => {
   const { request, env, next } = context;
-  
-  // Skip authentication for static assets (CSS, JS, images)
   const url = new URL(request.url);
-  if (url.pathname.startsWith('/css/') ||
-      url.pathname.startsWith('/js/') ||
-      url.pathname.endsWith('.jpg') ||
-      url.pathname.endsWith('.png') ||
-      url.pathname.endsWith('.ico')) {
+
+  // Static assets and the login page/API itself are always reachable.
+  if (
+    url.pathname.startsWith('/css/') ||
+    url.pathname.startsWith('/js/') ||
+    url.pathname.endsWith('.jpg') ||
+    url.pathname.endsWith('.png') ||
+    url.pathname.endsWith('.ico') ||
+    PUBLIC_PATHS.includes(url.pathname)
+  ) {
     return await next();
   }
 
-  // Get authentication header
-  const auth = request.headers.get('Authorization');
-  
-  // Check if user is authenticated
-  if (!auth || !isValidUser(auth, env)) {
-    return new Response('Authentication Required - Kapruka Campaign Portal', {
-      status: 401,
-      headers: {
-        'WWW-Authenticate': 'Basic realm="Kapruka Campaign Portal"',
-        'Cache-Control': 'no-store',
-        'Content-Type': 'text/html'
-      }
-    });
+  if (!env.SESSION_SECRET) {
+    return new Response('Server not configured (missing SESSION_SECRET)', { status: 500 });
   }
-  
-  // User authenticated, proceed to page
+
+  const session = await readSession(request, env.SESSION_SECRET);
+  if (!session) {
+    // API callers get a 401; browser navigations get redirected to the login page.
+    if (url.pathname.startsWith('/api/')) {
+      return new Response(JSON.stringify({ error: 'Not logged in' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+      });
+    }
+    const redirect = new URL('/login.html', url.origin);
+    redirect.searchParams.set('next', url.pathname + url.search);
+    return Response.redirect(redirect.toString(), 302);
+  }
+
   const response = await next();
   response.headers.set('Cache-Control', 'no-store, must-revalidate');
   return response;
 };
-
-function isValidUser(authHeader, env) {
-  try {
-    const [scheme, encoded] = authHeader.split(' ');
-    if (scheme !== 'Basic') return false;
-    
-    const decoded = atob(encoded);
-    const [username, password] = decoded.split(':');
-    
-    const users = {
-      'lahiru': env.LAHIRU_PASS,
-      'ruwini': env.RUWINI_PASS,
-      'iresha': env.IRESHA_PASS,
-      'ushara': env.USHARA_PASS,
-      'dinesh': env.DINESH_PASS,
-      'kaveesha': env.KAVEESHA_PASS,
-      'madara': env.MADARA_PASS,
-      'ashani': env.ASHANI_PASS,
-      'kavindya': env.KAVINDYA_PASS,
-      'piumi': env.PIUMI_PASS,
-      'sudarson': env.SUDARSON_PASS,
-      'cham': env.CHAM_PASS,
-      'harshani': env.HARSHANI_PASS,
-      'himali': env.HIMALI_PASS,
-      'shanaka': env.SHANAKA_PASS,
-      'suresh': env.SURESH_PASS,
-      'danoj': env.DANOJ_PASS,
-      'kasun': env.KASUN_PASS,
-      'ishara': env.ISHARA_PASS,
-      'upul': env.UPUL_PASS,
-      'corporate': env.CORPORATE_PASS,
-      'thilini': env.THILINI_PASS,
-      'manager': env.MANAGER_PASS,
-      'malshi': env.MALSHI_PASS,
-      'satheesh': env.SATHEESH_PASS,
-    };
-    
-    return users[username] && users[username] === password;
-  } catch (e) {
-    return false;
-  }
-}
