@@ -90,9 +90,32 @@
       .ads-manager-btn .icon, .avurudhu-btn .icon { font-size: 18px; }
       .password-box { padding: 30px 20px; }
     }
+
+    /* ── Session bar (who's logged in) ── */
+    .session-bar {
+      display: flex; align-items: center; justify-content: flex-end; gap: 14px;
+      max-width: 1100px; margin: 0 auto 10px; padding: 0 20px; color: #aaa; font-size: 13px;
+    }
+    .session-bar .who { color: #ddd; }
+    .session-bar .who b { color: #fff; }
+    .session-bar a.logout-link { color: #ff8fb3; text-decoration: none; cursor: pointer; }
+    .session-bar a.logout-link:hover { text-decoration: underline; }
+    .session-bar a.admin-link { color: #9c7bd8; text-decoration: none; cursor: pointer; }
+    .session-bar a.admin-link:hover { text-decoration: underline; }
+
+    /* Cards hidden until /api/me says whether to show them (avoids a flash of
+       restricted cards before the grant check resolves). */
+    [data-tool] { display: none; }
+    [data-tool].tool-visible { display: flex; }
+    .option-card[data-tool].tool-visible { display: block; }
   </style>
 </head>
 <body>
+  <div class="session-bar" id="sessionBar" style="display:none;">
+    <span class="who">Signed in as <b id="sessionUser"></b></span>
+    <a class="admin-link" id="adminLink" href="admin-dashboard.html" style="display:none;">Admin</a>
+    <a class="logout-link" id="logoutLink">Log out</a>
+  </div>
   <div class="container">
     <div class="header">
       <div class="kapruka-logo">
@@ -145,7 +168,7 @@
         </div>
       </a>
 
-      <div class="option-card" onclick="openPasswordModal('pcagent')" style="cursor:pointer;">
+      <div class="option-card" data-tool="pcagent" onclick="openTool('pcagent')" style="cursor:pointer;">
         <div class="lock-badge">🔒 Restricted Access</div>
         <div class="option-title">🤖 PC Agent</div>
         <div class="option-desc">PC Agent tool hosted on the Kapruka server.</div>
@@ -231,7 +254,7 @@
       <!-- Product Video Search card intentionally not surfaced here: still live at
            product-video-search/product-search.html via its direct URL. -->
 
-      <div class="option-card" onclick="openDarazModal()" style="cursor:pointer;">
+      <div class="option-card" data-tool="daraz" onclick="openTool('daraz')" style="cursor:pointer;">
         <div class="lock-badge">🔒 Restricted Access</div>
         <div class="option-title">🛒 Daraz Market Agent</div>
         <div class="option-desc">AI-powered product & supplier intelligence for Daraz.lk. Scrapes trending products and top local suppliers daily.</div>
@@ -242,7 +265,7 @@
         </div>
       </div>
 
-      <div class="option-card" onclick="openPasswordModal('seo')" style="cursor:pointer;">
+      <div class="option-card" data-tool="seo" onclick="openTool('seo')" style="cursor:pointer;">
         <div class="lock-badge">🔒 Restricted Access</div>
         <div class="option-title">🚀 SEO Boost</div>
         <div class="option-desc">Kapruka SEO Dashboard, with all SEO tools inside.</div>
@@ -252,7 +275,7 @@
         </div>
       </div>
 
-      <div class="option-card" onclick="openPasswordModal('revenue')" style="cursor:pointer;">
+      <div class="option-card" data-tool="revenue" onclick="openTool('revenue')" style="cursor:pointer;">
         <div class="lock-badge">🔒 Restricted Access</div>
         <div class="option-title">💰 Revenue Breakdown Report (GA4)</div>
         <div class="option-desc">GA4 revenue breakdown report. Tool sign-in is required after the portal password.</div>
@@ -269,13 +292,13 @@
   </div>
 
   <!-- Floating Buttons -->
-  <div class="ads-manager-btn" onclick="openPasswordModal('ads')">
+  <div class="ads-manager-btn" data-tool="ads" onclick="openTool('ads')">
     <span class="icon">🎯</span>
     <span class="label">Ads Manager</span>
   </div>
 
   <!-- Avurudhu / Season Checklist -->
-  <div class="avurudhu-btn" onclick="openPasswordModal('avurudhu')">
+  <div class="avurudhu-btn" data-tool="avurudhu" onclick="openTool('avurudhu')">
     <span class="icon">🌸</span>
     <span class="label">Season Checklist</span>
   </div>
@@ -291,34 +314,23 @@
     </div>
   </div>
 
-  <!-- Shared Password Modal -->
-  <div class="password-modal" id="passwordModal">
-    <div class="password-box">
-      <h2 id="modalTitle">🔒 Access Required</h2>
-      <p id="modalSubtitle">Enter password to continue</p>
-      <input type="password" class="password-input" id="passwordInput" placeholder="Enter password..." onkeypress="handleEnterKey(event)">
-      <div class="password-buttons">
-        <button class="password-cancel" onclick="closePasswordModal()">Cancel</button>
-        <button class="password-submit" onclick="checkPassword()">Access</button>
-      </div>
-      <div class="password-error" id="passwordError">❌ Incorrect password. Please try again.</div>
-    </div>
-  </div>
-
   <script>
-    const PASSWORDS = {
-      ads:      'Fari',
-      daraz:    '8055',
-      avurudhu: '207'
-    };
-    // pcagent / seo / revenue are verified server-side (/api/unlock-tool).
-    const SERVER_GATED = ['pcagent', 'seo', 'revenue'];
-
-    const URLS = {
+    // Each restricted card now opens directly for a user who's been granted
+    // that tool — no password prompt. Access is decided by /api/me (session +
+    // Supabase user_tool_access), not a shared secret. See
+    // functions/api/admin-users.js and the User Management admin screen for
+    // how grants are assigned.
+    //
+    // ads/daraz/avurudhu open a fixed external URL (no sub-tool choice);
+    // pcagent/revenue are single Kapruka-server tools; seo opens the SEO
+    // dashboard directly (functions/api/unlock-tool.js still resolves the
+    // URL server-side, keeping it out of this page's source).
+    const FIXED_URLS = {
       ads:      'https://docs.google.com/forms/d/e/1FAIpQLSfGSObGAIJz46oQd0xN3oISjS46SEkFtL0_ZGkIfh6ansvqPQ/viewform',
       daraz:    'https://daraz-agent.onrender.com',
       avurudhu: 'https://kaprukadm.github.io/kapruka-campaign-portal/season_checklist.html'
     };
+    const SERVER_RESOLVED = ['pcagent', 'seo', 'revenue']; // URL comes from /api/unlock-tool
 
     // Add another entry here when a new country goes live — see
     // src/uae-compare/countries.js in the Price Analysis repo.
@@ -347,81 +359,59 @@
       if (event.target === this) closeCountryModal();
     });
 
-    let currentSection = '';
-
-    function openPasswordModal(section) {
-      currentSection = section;
-      const titles = {
-        ads:      '🎯 Ads Manager Access',
-        daraz:    '🛒 Daraz Market Agent',
-        avurudhu: '🌸 Season Checklist',
-        pcagent: '🤖 PC Agent',
-        seo:      '🚀 SEO Boost',
-        revenue:  '💰 Revenue Breakdown Report'
-      };
-      document.getElementById('modalTitle').textContent = titles[section] || '🔒 Access Required';
-      document.getElementById('modalSubtitle').textContent = 'Enter password to continue';
-      document.getElementById('passwordModal').classList.add('active');
-      document.getElementById('passwordInput').focus();
-      document.getElementById('passwordError').classList.remove('active');
-      document.getElementById('passwordInput').value = '';
-    }
-
-    function openDarazModal() { openPasswordModal('daraz'); }
-
-    function closePasswordModal() {
-      document.getElementById('passwordModal').classList.remove('active');
-      document.getElementById('passwordInput').value = '';
-      document.getElementById('passwordError').classList.remove('active');
-      currentSection = '';
-    }
-
-    function showPasswordError() {
-      document.getElementById('passwordError').classList.add('active');
-      document.getElementById('passwordInput').value = '';
-      document.getElementById('passwordInput').focus();
-    }
-
-    async function checkServerPassword() {
-      const section = currentSection;
-      const password = document.getElementById('passwordInput').value;
-      // Open the tab synchronously so popup blockers allow it, then point it at the URL.
-      const single = window.open('', '_blank');
+    async function openTool(tool) {
+      if (!SERVER_RESOLVED.includes(tool)) {
+        window.open(FIXED_URLS[tool], '_blank', 'noopener');
+        return;
+      }
+      // Open the tab synchronously so popup blockers allow it, then point it
+      // at the real URL once /api/unlock-tool resolves it. The grant itself
+      // was already checked before this card was ever shown (loadSession()),
+      // but unlock-tool re-checks server-side too — see that file.
+      const tab = window.open('', '_blank');
       try {
         const res = await fetch('/api/unlock-tool', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tool: section, password })
+          body: JSON.stringify({ tool })
         });
         if (!res.ok) throw new Error('denied');
         const { links } = await res.json();
-        closePasswordModal();
-        if (single) single.location.href = links[0].url;
+        if (tab) tab.location.href = links[0].url;
       } catch (e) {
-        if (single) single.close();
-        showPasswordError();
+        if (tab) tab.close();
+        alert('Could not open this tool. Your access may have changed — try reloading the page.');
       }
     }
 
-    function checkPassword() {
-      if (SERVER_GATED.includes(currentSection)) { checkServerPassword(); return; }
-      const input = document.getElementById('passwordInput').value;
-      if (input === PASSWORDS[currentSection]) {
-        const section = currentSection;
-        closePasswordModal();
-        window.open(URLS[section], '_blank');
-      } else {
-        showPasswordError();
+    // ── Session: who's logged in, which tools they can see, logout ─────────
+    async function loadSession() {
+      try {
+        const res = await fetch('/api/me');
+        if (!res.ok) { window.location.href = '/login.html'; return; }
+        const me = await res.json();
+
+        document.getElementById('sessionBar').style.display = 'flex';
+        document.getElementById('sessionUser').textContent = me.username;
+        if (me.role === 'admin' || me.role === 'superadmin') {
+          document.getElementById('adminLink').style.display = 'inline';
+        }
+
+        const granted = new Set(me.tools || []);
+        document.querySelectorAll('[data-tool]').forEach((el) => {
+          if (granted.has(el.getAttribute('data-tool'))) el.classList.add('tool-visible');
+        });
+      } catch (e) {
+        window.location.href = '/login.html';
       }
     }
 
-    function handleEnterKey(event) {
-      if (event.key === 'Enter') checkPassword();
-    }
-
-    document.getElementById('passwordModal').addEventListener('click', function(event) {
-      if (event.target === this) closePasswordModal();
+    document.getElementById('logoutLink').addEventListener('click', async () => {
+      try { await fetch('/api/logout', { method: 'POST' }); } catch (e) {}
+      window.location.href = '/login.html';
     });
+
+    loadSession();
   </script>
 </body>
 </html>

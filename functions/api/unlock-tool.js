@@ -1,9 +1,14 @@
-// POST /api/unlock-tool  { tool, password }
-// Server-side gate for the restricted tool cards. The password lives in the
-// TOOLS_PASSWORD secret and the tool URLs are only returned on a correct match,
-// so neither appears in the page source.
-// Tools listed here use only their own secret (no fallback to TOOLS_PASSWORD).
-const SECRET_NAME = { pcagent: 'PRICELENS_PASSWORD' };
+// POST /api/unlock-tool  { tool }
+// Server-side resolver for the tool cards whose real URL shouldn't sit in
+// index.html's source (pcagent, seo, revenue — all raw IP:port addresses on
+// the Kapruka server). Access is now based on the caller's session + their
+// Supabase user_tool_access grant (see sql/users_and_tool_access.sql), not a
+// shared password — the old TOOLS_PASSWORD/PRICELENS_PASSWORD scheme is
+// retired. index.html only shows a card once /api/me already says the user
+// has the grant, but this endpoint re-checks independently: it must never
+// trust that the card was hidden client-side.
+import { readSession } from '../_lib/auth.js';
+import { sbSelect } from '../_lib/supabase-admin.js';
 
 const TOOLS = {
   pcagent: [{ label: 'PC Agent', url: 'http://23.111.183.110:5011/' }],
@@ -19,26 +24,25 @@ const json = (body, status = 200) =>
     headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
   });
 
-async function safeEqual(a, b) {
-  const enc = new TextEncoder();
-  const [ha, hb] = await Promise.all([
-    crypto.subtle.digest('SHA-256', enc.encode(a)),
-    crypto.subtle.digest('SHA-256', enc.encode(b)),
-  ]);
-  const x = new Uint8Array(ha), y = new Uint8Array(hb);
-  let diff = 0;
-  for (let i = 0; i < x.length; i++) diff |= x[i] ^ y[i];
-  return diff === 0;
-}
-
 export const onRequestPost = async ({ request, env }) => {
   let data;
   try { data = await request.json(); } catch { return json({ error: 'Bad request' }, 400); }
-  const { tool, password } = data || {};
+  const { tool } = data || {};
   if (!TOOLS[tool]) return json({ error: 'Unknown tool' }, 404);
-  const expected = SECRET_NAME[tool] ? env[SECRET_NAME[tool]] : env.TOOLS_PASSWORD;
-  if (!expected || typeof password !== 'string' || !(await safeEqual(password, expected))) {
-    return json({ error: 'Incorrect password' }, 401);
+
+  if (!env.SESSION_SECRET) return json({ error: 'Server not configured' }, 500);
+  const session = await readSession(request, env.SESSION_SECRET);
+  if (!session) return json({ error: 'Not logged in' }, 401);
+
+  // admin/superadmin can open anything; a plain user needs an explicit grant.
+  if (session.role !== 'admin' && session.role !== 'superadmin') {
+    const rows = await sbSelect(
+      env,
+      'user_tool_access',
+      `user_id=eq.${session.uid}&tool_key=eq.${encodeURIComponent(tool)}&select=tool_key&limit=1`
+    );
+    if (!rows.length) return json({ error: 'Not granted' }, 403);
   }
+
   return json({ links: TOOLS[tool] });
 };

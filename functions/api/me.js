@@ -17,13 +17,22 @@ export const onRequestGet = async ({ request, env }) => {
   const session = await readSession(request, env.SESSION_SECRET);
   if (!session) return json({ error: 'Not logged in' }, 401);
 
+  // admin/superadmin see every tool card without needing explicit grants
+  // (matches the same bypass in functions/api/unlock-tool.js).
+  const isElevated = session.role === 'admin' || session.role === 'superadmin';
+
   let tools = [];
   try {
-    const rows = await sbSelect(env, 'user_tool_access', `user_id=eq.${session.uid}&select=tool_key`);
-    tools = rows.map((r) => r.tool_key);
+    if (isElevated) {
+      const rows = await sbSelect(env, 'tools', 'select=key');
+      tools = rows.map((r) => r.key);
+    } else {
+      const rows = await sbSelect(env, 'user_tool_access', `user_id=eq.${session.uid}&select=tool_key`);
+      tools = rows.map((r) => r.tool_key);
+    }
   } catch {
-    // If Supabase is briefly unavailable, fail closed on tool grants but
-    // still report identity — admins/superadmins aren't tool-gated anyway.
+    // If Supabase is briefly unavailable, fail closed on tool grants rather
+    // than silently granting everything, but still report identity.
     tools = [];
   }
 
