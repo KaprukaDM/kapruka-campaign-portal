@@ -35,7 +35,7 @@ export const onRequestPost = async ({ request, env }) => {
   const user = rows[0];
   // Always run verifyPassword, even on a missing user, against a dummy hash
   // so the response time doesn't reveal whether the username exists.
-  const DUMMY_HASH = 'pbkdf2$210000$AAAAAAAAAAAAAAAAAAAAAA==$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
+  const DUMMY_HASH = 'pbkdf2$100000$AAAAAAAAAAAAAAAAAAAAAA==$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
   const ok = await verifyPassword(password, user ? user.password_hash : DUMMY_HASH);
 
   if (!user || !user.active || !ok) {

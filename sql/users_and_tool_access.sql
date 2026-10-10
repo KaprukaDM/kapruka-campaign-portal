@@ -15,10 +15,12 @@
 -- `wrangler pages secret put SUPABASE_SERVICE_ROLE_KEY`. It must never be
 -- put in js/*.js or any file served to the browser.
 --
--- users.password_hash is PBKDF2-SHA256 (210,000 iterations, random 16-byte
+-- users.password_hash is PBKDF2-SHA256 (100,000 iterations, random 16-byte
 -- salt), computed with Web Crypto in functions/api/login.js — chosen over
 -- bcrypt/scrypt because Cloudflare Workers' SubtleCrypto doesn't support
--- those, and over plain SHA-256 because that's crackable at scale.
+-- those, and over plain SHA-256 because that's crackable at scale. 100,000 is
+-- also the hard ceiling Workers' crypto.subtle enforces for PBKDF2 — anything
+-- higher throws NotSupportedError at runtime (confirmed the hard way).
 -- Format stored: "pbkdf2$<iterations>$<base64 salt>$<base64 hash>".
 
 create table if not exists users (

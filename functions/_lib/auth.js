@@ -10,7 +10,11 @@
 // and the `_lib`/`_`-prefixed convention) maps to a URL, so anything under
 // `_lib/` is import-only, never publicly fetchable.
 
-const PBKDF2_ITERATIONS = 210000;
+// Cloudflare Workers' crypto.subtle hard-caps PBKDF2 at 100,000 iterations
+// (requests above that throw NotSupportedError) — confirmed by a live 500 on
+// this exact code path. 100,000 is still within OWASP's historical PBKDF2-
+// SHA256 guidance; it's the ceiling here, not an arbitrary choice.
+const PBKDF2_ITERATIONS = 100000;
 const SESSION_COOKIE = 'kapruka_session';
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 12; // 12 hours
 
