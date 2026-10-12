@@ -2470,7 +2470,7 @@
             </div>
             <div class="form-group">
               <label>Portal Tools to Grant</label>
-              <div id="newUserToolsList" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:6px;">Loading…</div>
+              <div id="newUserToolsList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:4px;margin-top:6px;">Loading…</div>
             </div>
             <button type="submit" class="btn btn-primary">Create User</button>
           </form>
@@ -6515,12 +6515,10 @@
         }
 
         tbody.innerHTML = data.users.map((u) => {
-          const toolChecks = allToolDefs.map((t) => `
-            <label style="display:inline-flex;align-items:center;gap:4px;margin:2px 8px 2px 0;font-size:12px;font-weight:400;">
-              <input type="checkbox" data-user-id="${u.id}" data-tool-key="${escapeAttr(t.key)}" ${u.tools.includes(t.key) ? 'checked' : ''}
-                     onchange="toggleUserTool(${u.id}, '${escapeAttr(t.key)}', this.checked)">
-              ${escapeAttr(t.label)}
-            </label>`).join('');
+          const grantedLabels = allToolDefs.filter((t) => u.tools.includes(t.key)).map((t) => t.label);
+          const toolsSummary = grantedLabels.length
+            ? escapeAttr(grantedLabels.join(', '))
+            : '<span style="color:#999;">None</span>';
 
           return `
           <tr>
@@ -6540,7 +6538,10 @@
                 <option value="full" ${u.dashboardView === 'full' ? 'selected' : ''}>Full</option>
               </select>
             </td>
-            <td style="max-width:260px;">${toolChecks || '<span style="color:#999;">No tools defined</span>'}</td>
+            <td style="max-width:220px;">
+              <div style="font-size:12px;color:#555;margin-bottom:6px;">${toolsSummary}</div>
+              <button class="btn" style="font-size:12px;padding:6px 10px;" onclick="openToolsModal(${u.id}, '${escapeAttr(u.username)}')">Manage Tools</button>
+            </td>
             <td>
               <label style="display:inline-flex;align-items:center;gap:6px;">
                 <input type="checkbox" ${u.active ? 'checked' : ''} onchange="updateUserField(${u.id}, 'active', this.checked)">
@@ -6559,13 +6560,60 @@
       }
     }
 
+    let toolsModalUserId = null;
+    let toolsModalGranted = new Set();
+
+    function openToolsModal(userId, username) {
+      toolsModalUserId = userId;
+      // Re-read current grants from the table's last loaded data rather than
+      // the DOM, since the table cell no longer holds individual checkboxes.
+      fetch('/api/admin-users').then((r) => r.json()).then((data) => {
+        const user = data.users.find((u) => u.id === userId);
+        toolsModalGranted = new Set(user ? user.tools : []);
+        const rows = allToolDefs.map((t) => `
+          <label style="display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid #f0f0f0;font-weight:400;cursor:pointer;">
+            <input type="checkbox" style="width:18px;height:18px;" value="${escapeAttr(t.key)}"
+                   class="tools-modal-checkbox" ${toolsModalGranted.has(t.key) ? 'checked' : ''}>
+            <span>${escapeAttr(t.label)}</span>
+          </label>`).join('');
+
+        showModal(`
+          <h3 style="margin-bottom:4px;">Tools for "${escapeAttr(username)}"</h3>
+          <p style="color:#666;font-size:13px;margin-bottom:16px;">Check the tool cards this person should see on the portal homepage.</p>
+          <div style="max-height:50vh;overflow-y:auto;">${rows || '<p style="color:#999;">No tools defined.</p>'}</div>
+          <div style="display:flex;gap:10px;margin-top:24px;">
+            <button class="btn" onclick="closeModal()" style="flex:1;">Cancel</button>
+            <button class="btn btn-primary" onclick="saveToolsModal()" style="flex:1;">Save</button>
+          </div>
+        `);
+      }).catch((err) => alert('Error loading tools: ' + err.message));
+    }
+
+    async function saveToolsModal() {
+      const tools = Array.from(document.querySelectorAll('.tools-modal-checkbox:checked')).map((el) => el.value);
+      try {
+        const res = await fetch('/api/admin-users?id=' + toolsModalUserId, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tools }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Update failed');
+        closeModal();
+        loadUsers();
+      } catch (error) {
+        alert('Error: ' + error.message);
+      }
+    }
+
     function renderNewUserToolsCheckboxes() {
       const box = document.getElementById('newUserToolsList');
       if (!box) return;
       if (!allToolDefs.length) { box.textContent = 'No tools defined yet.'; return; }
       box.innerHTML = allToolDefs.map((t) => `
-        <label style="display:inline-flex;align-items:center;gap:6px;font-weight:400;">
-          <input type="checkbox" class="new-user-tool-checkbox" value="${escapeAttr(t.key)}"> ${escapeAttr(t.label)}
+        <label style="display:flex;align-items:center;gap:8px;font-weight:400;padding:6px 4px;">
+          <input type="checkbox" class="new-user-tool-checkbox" value="${escapeAttr(t.key)}" style="width:16px;height:16px;flex-shrink:0;">
+          <span>${escapeAttr(t.label)}</span>
         </label>`).join('');
     }
 
@@ -6616,31 +6664,6 @@
       } catch (error) {
         alert('Error: ' + error.message);
         loadUsers(); // revert the control to the server's actual value
-      }
-    }
-
-    async function toggleUserTool(id, toolKey, granted) {
-      // Fetch the user's current grant set fresh rather than trust whatever
-      // the table last rendered, then PATCH the full replacement set — the
-      // API replaces (not merges) the tools array on PATCH.
-      try {
-        const res = await fetch('/api/admin-users');
-        const data = await res.json();
-        const user = data.users.find((u) => u.id === id);
-        if (!user) throw new Error('User not found');
-        let tools = user.tools.filter((t) => t !== toolKey);
-        if (granted) tools.push(toolKey);
-
-        const patchRes = await fetch('/api/admin-users?id=' + id, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tools }),
-        });
-        const patchData = await patchRes.json();
-        if (!patchRes.ok) throw new Error(patchData.error || 'Update failed');
-      } catch (error) {
-        alert('Error: ' + error.message);
-        loadUsers();
       }
     }
 
