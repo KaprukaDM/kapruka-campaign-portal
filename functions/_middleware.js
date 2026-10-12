@@ -3,7 +3,11 @@
 // per-user session system (see functions/_lib/auth.js, functions/api/login.js).
 import { readSession } from './_lib/auth.js';
 
-const PUBLIC_PATHS = ['/login.html', '/api/login', '/api/logout'];
+// Cloudflare Pages auto-redirects /login.html -> /login (it strips .html
+// from every page on the site), so both spellings must be public or that
+// redirect loops forever against the auth check below. Confirmed the hard
+// way: a real browser following /login.html hit ERR_TOO_MANY_REDIRECTS.
+const PUBLIC_PATHS = ['/login.html', '/login', '/api/login', '/api/logout'];
 
 export const onRequest = async (context) => {
   const { request, env, next } = context;
