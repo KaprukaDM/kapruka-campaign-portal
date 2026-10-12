@@ -555,6 +555,7 @@
     let calendarData = null;
     let selectedDate = null;
     let selectedSlot = null;
+    let currentSeasonalNames = '';
     let calendarSearchTerm = '';
 
     // ── STUDIO PREP-TIME BLOCK ────────────────────────────────
@@ -568,7 +569,10 @@
     }
     const TODAY_STR = dateStrFromOffset(0);
     const BLOCKED_UNTIL_STR = dateStrFromOffset(BLOCKED_DAYS - 1);
+    // Dates exempt from the prep-time block (opened manually for booking).
+    const UNBLOCKED_DATES = ['2026-10-13'];
     function isDateBlocked(dateStr) {
+      if (UNBLOCKED_DATES.includes(dateStr)) return false;
       return dateStr >= TODAY_STR && dateStr <= BLOCKED_UNTIL_STR;
     }
 
@@ -1236,6 +1240,9 @@
       const themeNames = Array.isArray(themes) 
         ? themes.map(t => t.theme_name).join(' + ') 
         : themes.theme_name;
+      const seasonalNames = (Array.isArray(themes) ? themes : [themes])
+        .filter(t => t.is_seasonal).map(t => t.theme_name).join(' + ');
+      currentSeasonalNames = seasonalNames;
 
       content.innerHTML = `
         <div class="modal-header">
@@ -1260,6 +1267,13 @@
             <label>🔗 Product Link (Optional)</label>
             <input type="url" id="productLink" placeholder="https://www.kapruka.com/...">
           </div>
+          ${seasonalNames ? `
+          <div class="form-group" id="themeVerifyBox" style="background:var(--orange-bg, #FFF4E5);border:1px solid #E67E22;border-radius:8px;padding:12px;">
+            <label>✅ Verification *</label>
+            <div style="margin:6px 0;">Is this <strong>${seasonalNames}</strong> related content?</div>
+            <label style="display:inline-flex;gap:6px;margin-right:16px;font-weight:500;"><input type="radio" name="themePromo" value="Yes"> Yes</label>
+            <label style="display:inline-flex;gap:6px;font-weight:500;"><input type="radio" name="themePromo" value="No"> No</label>
+          </div>` : ''}
           <div class="form-group">
             <label>📝 Booking Note / Description (Optional)</label>
             <textarea id="bookingNote" rows="7" style="min-height:150px;resize:vertical;" placeholder="Add any notes, special instructions, or content description for the studio team..."></textarea>
@@ -1353,8 +1367,23 @@
         return;
       }
 
+      let promoAnswer = '';
+      if (currentSeasonalNames) {
+        const checked = document.querySelector('input[name="themePromo"]:checked');
+        if (!checked) {
+          alert('Please verify: is this ' + currentSeasonalNames + ' related content? (Yes / No)');
+          return;
+        }
+        promoAnswer = checked.value;
+      }
+
       try {
         showLoading();
+
+        const userNote = document.getElementById('bookingNote').value.trim();
+        const noteWithPromo = promoAnswer
+          ? `[${currentSeasonalNames} related content: ${promoAnswer}]` + (userNote ? '\n' + userNote : '')
+          : userNote;
 
         const bookingData = {
           date: selectedDate,
@@ -1362,7 +1391,7 @@
           category: selectedSlot.category,
           productCode: productCode,
           productLink: document.getElementById('productLink').value.trim(),
-          bookingNote: document.getElementById('bookingNote').value.trim(),
+          bookingNote: noteWithPromo,
           submittedBy: 'User'
         };
 
