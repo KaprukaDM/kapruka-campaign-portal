@@ -22,23 +22,27 @@ export const onRequestGet = async ({ request, env }) => {
   const isElevated = session.role === 'admin' || session.role === 'superadmin';
 
   let tools = [];
+  let dashboardView = 'none';
   try {
-    if (isElevated) {
-      const rows = await sbSelect(env, 'tools', 'select=key');
-      tools = rows.map((r) => r.key);
-    } else {
-      const rows = await sbSelect(env, 'user_tool_access', `user_id=eq.${session.uid}&select=tool_key`);
-      tools = rows.map((r) => r.tool_key);
-    }
+    const [toolRows, userRows] = await Promise.all([
+      isElevated
+        ? sbSelect(env, 'tools', 'select=key')
+        : sbSelect(env, 'user_tool_access', `user_id=eq.${session.uid}&select=tool_key`),
+      sbSelect(env, 'users', `id=eq.${session.uid}&select=dashboard_view&limit=1`),
+    ]);
+    tools = isElevated ? toolRows.map((r) => r.key) : toolRows.map((r) => r.tool_key);
+    dashboardView = userRows[0]?.dashboard_view || 'none';
   } catch {
-    // If Supabase is briefly unavailable, fail closed on tool grants rather
-    // than silently granting everything, but still report identity.
+    // If Supabase is briefly unavailable, fail closed on both rather than
+    // silently granting everything, but still report identity.
     tools = [];
+    dashboardView = 'none';
   }
 
   return json({
     username: session.username,
     role: session.role,
     tools,
+    dashboardView,
   });
 };
