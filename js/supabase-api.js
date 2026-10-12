@@ -9,6 +9,13 @@ window.SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 const SUPABASE_URL = window.SUPABASE_URL;
 const SUPABASE_KEY = window.SUPABASE_KEY;
 
+// ADMIN_PASSWORD / SUPERADMIN_PASSWORD and verifySuperAdminPassword() /
+// verifyAdminPassword() (further down this file) are DEAD CODE as of the
+// per-user login system (functions/api/login.js + admin-dashboard.html's new
+// /api/me-driven DOMContentLoaded handler). Left in place rather than
+// deleted blind from a file this large — safe to remove in a follow-up pass.
+// HEAD_APPROVAL_PASSWORD is UNRELATED and still live (department-head status
+// approvals elsewhere in this file) — do not touch it.
 const ADMIN_PASSWORD = 'Kapruka2026!Admin';
 const HEAD_APPROVAL_PASSWORD = '207';
 const SUPERADMIN_PASSWORD = 'Superadmin';

@@ -1,0 +1,23 @@
+{
+  "name": "kapruka-campaign-portal",
+  "version": "1.0.0",
+  "description": "Kapruka Digital Marketing Portal — static site + Cloudflare Pages Functions",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KaprukaDM/kapruka-campaign-portal.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/KaprukaDM/kapruka-campaign-portal/issues"
+  },
+  "homepage": "https://github.com/KaprukaDM/kapruka-campaign-portal#readme",
+  "devDependencies": {
+    "wrangler": "^4.149.0"
+  }
+}

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kapruka Digital Marketing Portal — Login</title>
+  <link rel="icon" type="image/png" href="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #1a0b2e 0%, #2d1b4e 100%);
+      font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+    }
+    .login-card {
+      background: rgba(255,255,255,0.04); border: 2px solid rgba(220,38,127,0.3);
+      border-radius: 20px; padding: 40px; width: 90%; max-width: 380px;
+      box-shadow: 0 20px 60px rgba(220,38,127,0.25); text-align: center;
+    }
+    .login-card img { width: 64px; height: 64px; border-radius: 12px; margin-bottom: 14px; }
+    .login-card h1 { color: #fff; font-size: 20px; margin: 0 0 4px; }
+    .login-card p.sub { color: #aaa; font-size: 13px; margin: 0 0 26px; }
+    .field { text-align: left; margin-bottom: 16px; }
+    .field label { display: block; color: #ccc; font-size: 13px; margin-bottom: 6px; }
+    .field input {
+      width: 100%; padding: 13px 14px; border-radius: 10px; border: 2px solid rgba(220,38,127,0.3);
+      background: rgba(255,255,255,0.05); color: #fff; font-size: 15px; outline: none;
+    }
+    .field input:focus { border-color: #dc267f; box-shadow: 0 0 16px rgba(220,38,127,0.3); }
+    button {
+      width: 100%; padding: 13px; border: none; border-radius: 10px; font-weight: 700; font-size: 15px;
+      cursor: pointer; background: linear-gradient(135deg, #dc267f, #9c27b0); color: #fff; margin-top: 6px;
+    }
+    button:disabled { opacity: 0.6; cursor: default; }
+    .error { color: #ff6b6b; font-size: 13px; margin-top: 14px; min-height: 16px; }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <img src="https://play-lh.googleusercontent.com/XPaIW4RsTkd8au1rBlcwAtdyynz9pZyPVn3QPK4gXbboroWxFI3hpVhn18IrIBrUtztj=w240-h480-rw" alt="Kapruka">
+    <h1>Digital Marketing Portal</h1>
+    <p class="sub">Kapruka Holdings PLC — sign in to continue</p>
+    <form id="loginForm">
+      <div class="field">
+        <label for="username">Username</label>
+        <input type="text" id="username" autocomplete="username" required autofocus>
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" autocomplete="current-password" required>
+      </div>
+      <button type="submit" id="submitBtn">Sign in</button>
+      <div class="error" id="error"></div>
+    </form>
+  </div>
+
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      const errEl = document.getElementById('error');
+      errEl.textContent = '';
+      btn.disabled = true;
+      btn.textContent = 'Signing in…';
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: document.getElementById('username').value,
+            password: document.getElementById('password').value,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Login failed');
+        const params = new URLSearchParams(location.search);
+        location.href = params.get('next') || '/';
+      } catch (err) {
+        errEl.textContent = err.message || 'Login failed';
+        btn.disabled = false;
+        btn.textContent = 'Sign in';
+      }
+    });
+  </script>
+</body>
+</html>

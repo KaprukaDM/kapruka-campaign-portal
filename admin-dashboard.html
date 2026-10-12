@@ -1338,17 +1338,12 @@
       <p class="subtitle">Campaign Management</p>
     </div>
 
-    <!-- Login Screen -->
-    <div id="loginScreen" class="login-card">
-      <h2>🔐 Admin Login</h2>
-      <form id="loginForm">
-        <div class="form-group">
-          <label>Password</label>
-          <input type="password" id="adminPassword" required placeholder="Enter admin password">
-        </div>
-        <button type="submit" class="btn btn-primary" style="width:100%;">Login</button>
-      </form>
-    </div>
+    <!-- No in-page login screen: functions/_middleware.js redirects anyone
+         without a valid session to /login.html before this page's JS ever
+         runs, so by the time we get here the visitor is already logged in.
+         #loginScreen is kept as an empty, always-hidden element purely
+         because some existing JS still toggles its display style. -->
+    <div id="loginScreen" style="display:none;"></div>
 
     <!-- Admin Content -->
     <div id="adminContent" class="admin-content">
@@ -1361,6 +1356,7 @@
         <button class="tab-btn" onclick="switchTab('postingcal')">🗓️ Posting Calendar</button>
         <button class="tab-btn" onclick="switchTab('seo')">🔍 SEO Performance</button>
         <button class="tab-btn" onclick="switchTab('creativestrategy')">🎯 Post Creative Strategy</button>
+        <button class="tab-btn" id="usersTabBtn" style="display:none;" onclick="switchTab('users')">👤 User Management</button>
         <button class="tab-btn" style="margin-left:auto;background:#d32f2f;" onclick="logout()">Logout</button>
       </div>
 
@@ -2429,6 +2425,80 @@
           </details>
         </div>
       </div>
+
+      <!-- USER MANAGEMENT TAB -->
+      <div id="tab-users" class="tab-content">
+        <div class="card">
+          <h2>➕ Add User</h2>
+          <p style="color:#666;font-size:13px;margin-bottom:16px;">
+            Creates a real login (used on the portal homepage and here). Pick which tool cards
+            this person sees on the portal, and whether they get into this dashboard.
+          </p>
+          <form id="userForm">
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px;">
+              <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="newUserUsername" required placeholder="e.g., lahiru" pattern="[a-z0-9._-]+"
+                       title="lowercase letters, numbers, dot, underscore, hyphen only">
+              </div>
+              <div class="form-group">
+                <label>Display Name</label>
+                <input type="text" id="newUserDisplayName" required placeholder="e.g., Lahiru Perera">
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px;">
+              <div class="form-group">
+                <label>Password</label>
+                <input type="text" id="newUserPassword" required minlength="8" placeholder="At least 8 characters">
+              </div>
+              <div class="form-group">
+                <label>Portal Role</label>
+                <select id="newUserRole">
+                  <option value="user">User (only sees granted tools)</option>
+                  <option value="admin">Admin (sees everything, can manage users)</option>
+                  <option value="superadmin">Superadmin (same as Admin, plus can grant Superadmin)</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Dashboard Access (this admin dashboard, separate from the role above)</label>
+              <select id="newUserDashboardView">
+                <option value="none">None — can't open this dashboard</option>
+                <option value="studio_only">Studio Calendar only</option>
+                <option value="full">Full dashboard access</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Portal Tools to Grant</label>
+              <div id="newUserToolsList" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:6px;">Loading…</div>
+            </div>
+            <button type="submit" class="btn btn-primary">Create User</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <h2>👥 Existing Users</h2>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Username</th>
+                  <th>Display Name</th>
+                  <th>Portal Role</th>
+                  <th>Dashboard Access</th>
+                  <th>Tools</th>
+                  <th>Active</th>
+                  <th>Last Login</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="usersTable">
+                <tr><td colspan="8" style="text-align:center;padding:40px;">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -2644,81 +2714,73 @@
     // ═══════════════════════════════════════════════════════════
     // LOGIN & NAVIGATION
     // ═══════════════════════════════════════════════════════════
-    window.addEventListener('DOMContentLoaded', function() {
-      let loggedIn = null, role = null;
+    // Portal role (user/admin/superadmin) + per-tool grants, for the User
+    // Management tab. Separate from dashboardView below — see
+    // sql/users_add_dashboard_view.sql.
+    let currentUser = null; // { username, role } once /api/me resolves
+
+    window.addEventListener('DOMContentLoaded', async function() {
+      let me;
       try {
-        loggedIn = sessionStorage.getItem('adminLoggedIn');
-        role = sessionStorage.getItem('adminRole');
-      } catch(e) { /* sessionStorage blocked in sandboxed iframe - ignore */ }
+        const res = await fetch('/api/me');
+        if (!res.ok) { window.location.href = '/login.html'; return; }
+        me = await res.json();
+      } catch (e) {
+        window.location.href = '/login.html';
+        return;
+      }
 
-      if (loggedIn === 'true') {
-        isLoggedIn = true;
-        isSuperAdmin = (role === 'superadmin');
+      currentUser = { username: me.username, role: me.role };
+
+      // dashboardView: 'none' | 'studio_only' | 'full' — see
+      // sql/users_add_dashboard_view.sql. 'none' means this login has no
+      // business in admin-dashboard.html at all (most portal users).
+      if (me.dashboardView === 'none') {
         document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('adminContent').style.display = 'block';
+        document.getElementById('adminContent').style.display = 'none';
+        document.body.innerHTML = '<div style="color:#fff;text-align:center;padding:80px 20px;font-family:sans-serif;">'
+          + '<h2>No dashboard access</h2><p>Your account isn\'t set up to view this dashboard. Contact an admin if you think this is wrong.</p>'
+          + '<p><a href="index.html" style="color:#b892ff;">&larr; Back to the portal</a></p></div>';
+        return;
+      }
 
-        if (isSuperAdmin) {
-          setupStudioOnlyView();
-          switchTab('studio');
-          loadStudioCalendar();
-        } else {
-          loadAllData();
+      isLoggedIn = true;
+      isSuperAdmin = (me.dashboardView === 'studio_only');
 
-          setTimeout(() => {
-            const hash = window.location.hash.substring(1);
-            if (hash && ['requests', 'products', 'content', 'studio', 'dmapprovals', 'hotproducts', 'departments', 'postingcal', 'seo'].includes(hash)) {
-              switchTab(hash);
-            }
-          }, 300);
-        }
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('adminContent').style.display = 'block';
+
+      // Only an admin/superadmin portal role can manage users — show the tab
+      // for them regardless of dashboardView (so a portal admin whose
+      // dashboardView is 'full' still sees it; a studio_only reviewer won't,
+      // since setupStudioOnlyView() hides every non-studio tab anyway).
+      if (me.role === 'admin' || me.role === 'superadmin') {
+        const btn = document.getElementById('usersTabBtn');
+        if (btn) btn.style.display = '';
+      }
+
+      if (isSuperAdmin) {
+        setupStudioOnlyView();
+        switchTab('studio');
+        loadStudioCalendar();
+      } else {
+        loadAllData();
+
+        setTimeout(() => {
+          const hash = window.location.hash.substring(1);
+          if (hash && ['requests', 'products', 'content', 'studio', 'dmapprovals', 'hotproducts', 'departments', 'postingcal', 'seo', 'users'].includes(hash)) {
+            switchTab(hash);
+          }
+        }, 300);
       }
 
       // ensure scroll state is correct on load (recover from any stuck overlay state)
       try { _updateBodyOverflowBasedOnOverlays(); } catch (err) { /* ignore */ }
     });
 
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const password = document.getElementById('adminPassword').value;
-
-      if (verifySuperAdminPassword(password)) {
-        isLoggedIn = true;
-        isSuperAdmin = true;
-        try { sessionStorage.setItem('adminLoggedIn', 'true'); sessionStorage.setItem('adminRole', 'superadmin'); } catch(e) {}
-
-        document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('adminContent').style.display = 'block';
-
-        setupStudioOnlyView();
-        switchTab('studio');
-        loadStudioCalendar();
-      } else if (verifyAdminPassword(password)) {
-        isLoggedIn = true;
-        isSuperAdmin = false;
-        try { sessionStorage.setItem('adminLoggedIn', 'true'); sessionStorage.setItem('adminRole', 'admin'); } catch(e) {}
-
-        document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('adminContent').style.display = 'block';
-
-        loadAllData();
-      } else {
-        alert('Invalid password');
-      }
-    });
-
-    function logout() {
-      isLoggedIn = false;
-      isSuperAdmin = false;
-      seoUnlocked = false;
-      try {
-        sessionStorage.removeItem('adminLoggedIn');
-        sessionStorage.removeItem('adminRole');
-        sessionStorage.removeItem('seoUnlocked');
-      } catch(e) {}
-      document.getElementById('loginScreen').style.display = 'block';
-      document.getElementById('adminContent').style.display = 'none';
-      document.getElementById('adminPassword').value = '';
-      window.location.hash = '';
+    async function logout() {
+      try { await fetch('/api/logout', { method: 'POST' }); } catch (e) {}
+      window.location.href = '/login.html';
     }
 
     function setupStudioOnlyView() {
@@ -2761,7 +2823,8 @@
             (tab === 'departments' && btnText.includes('department')) ||
             (tab === 'dmapprovals' && btnText.includes('dm')) ||
             (tab === 'postingcal' && btnText.includes('posting')) ||
-            (tab === 'creativestrategy' && btnText.includes('creative strategy'))) {
+            (tab === 'creativestrategy' && btnText.includes('creative strategy')) ||
+            (tab === 'users' && btnText.includes('user management'))) {
           btn.classList.add('active');
         }
       });
@@ -2790,6 +2853,8 @@
         loadPcalCalendar();
       } else if (tab === 'seo') {
         checkSeoGate();
+      } else if (tab === 'users') {
+        loadUsers();
       }
     }
     
@@ -6417,6 +6482,199 @@
         hideLoading();
         alert('Department deleted');
         loadDepartments();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // USER MANAGEMENT — real per-user logins + portal tool grants
+    // (functions/api/admin-users.js). See sql/users_and_tool_access.sql and
+    // sql/users_add_dashboard_view.sql for the schema this talks to.
+    // ═══════════════════════════════════════════════════════════
+    let allToolDefs = []; // [{key, label}, ...] from the tools table
+
+    function escapeAttr(s) {
+      return String(s == null ? '' : s).replace(/"/g, '&quot;');
+    }
+
+    async function loadUsers() {
+      const tbody = document.getElementById('usersTable');
+      try {
+        const res = await fetch('/api/admin-users');
+        if (!res.ok) throw new Error((await res.json()).error || 'Failed to load users');
+        const data = await res.json();
+        allToolDefs = data.tools;
+
+        renderNewUserToolsCheckboxes();
+
+        if (!data.users.length) {
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;">No users yet</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = data.users.map((u) => {
+          const toolChecks = allToolDefs.map((t) => `
+            <label style="display:inline-flex;align-items:center;gap:4px;margin:2px 8px 2px 0;font-size:12px;font-weight:400;">
+              <input type="checkbox" data-user-id="${u.id}" data-tool-key="${escapeAttr(t.key)}" ${u.tools.includes(t.key) ? 'checked' : ''}
+                     onchange="toggleUserTool(${u.id}, '${escapeAttr(t.key)}', this.checked)">
+              ${escapeAttr(t.label)}
+            </label>`).join('');
+
+          return `
+          <tr>
+            <td>${escapeAttr(u.username)}</td>
+            <td>${escapeAttr(u.displayName)}</td>
+            <td>
+              <select onchange="updateUserField(${u.id}, 'role', this.value)" style="font-size:13px;">
+                <option value="user" ${u.role === 'user' ? 'selected' : ''}>User</option>
+                <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin</option>
+                <option value="superadmin" ${u.role === 'superadmin' ? 'selected' : ''}>Superadmin</option>
+              </select>
+            </td>
+            <td>
+              <select onchange="updateUserField(${u.id}, 'dashboardView', this.value)" style="font-size:13px;">
+                <option value="none" ${u.dashboardView === 'none' ? 'selected' : ''}>None</option>
+                <option value="studio_only" ${u.dashboardView === 'studio_only' ? 'selected' : ''}>Studio only</option>
+                <option value="full" ${u.dashboardView === 'full' ? 'selected' : ''}>Full</option>
+              </select>
+            </td>
+            <td style="max-width:260px;">${toolChecks || '<span style="color:#999;">No tools defined</span>'}</td>
+            <td>
+              <label style="display:inline-flex;align-items:center;gap:6px;">
+                <input type="checkbox" ${u.active ? 'checked' : ''} onchange="updateUserField(${u.id}, 'active', this.checked)">
+                ${u.active ? 'Active' : 'Disabled'}
+              </label>
+            </td>
+            <td style="font-size:12px;color:#666;">${u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : 'Never'}</td>
+            <td>
+              <button class="btn btn-danger" onclick="deleteUser(${u.id}, '${escapeAttr(u.username)}')">Delete</button>
+              <button class="btn" onclick="resetUserPassword(${u.id}, '${escapeAttr(u.username)}')">Reset Password</button>
+            </td>
+          </tr>`;
+        }).join('');
+      } catch (error) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:#d32f2f;">Error: ' + error.message + '</td></tr>';
+      }
+    }
+
+    function renderNewUserToolsCheckboxes() {
+      const box = document.getElementById('newUserToolsList');
+      if (!box) return;
+      if (!allToolDefs.length) { box.textContent = 'No tools defined yet.'; return; }
+      box.innerHTML = allToolDefs.map((t) => `
+        <label style="display:inline-flex;align-items:center;gap:6px;font-weight:400;">
+          <input type="checkbox" class="new-user-tool-checkbox" value="${escapeAttr(t.key)}"> ${escapeAttr(t.label)}
+        </label>`).join('');
+    }
+
+    document.getElementById('userForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const tools = Array.from(document.querySelectorAll('.new-user-tool-checkbox:checked')).map((el) => el.value);
+      const payload = {
+        username: document.getElementById('newUserUsername').value.trim().toLowerCase(),
+        displayName: document.getElementById('newUserDisplayName').value.trim(),
+        password: document.getElementById('newUserPassword').value,
+        role: document.getElementById('newUserRole').value,
+        dashboardView: document.getElementById('newUserDashboardView').value,
+        tools,
+      };
+
+      try {
+        showLoading();
+        const res = await fetch('/api/admin-users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        hideLoading();
+        if (!res.ok) throw new Error(data.error || 'Failed to create user');
+        alert('User "' + payload.username + '" created.');
+        document.getElementById('userForm').reset();
+        renderNewUserToolsCheckboxes();
+        loadUsers();
+      } catch (error) {
+        hideLoading();
+        alert('Error: ' + error.message);
+      }
+    });
+
+    async function updateUserField(id, field, value) {
+      const patch = {};
+      patch[field] = value;
+      try {
+        const res = await fetch('/api/admin-users?id=' + id, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(patch),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Update failed');
+        loadUsers();
+      } catch (error) {
+        alert('Error: ' + error.message);
+        loadUsers(); // revert the control to the server's actual value
+      }
+    }
+
+    async function toggleUserTool(id, toolKey, granted) {
+      // Fetch the user's current grant set fresh rather than trust whatever
+      // the table last rendered, then PATCH the full replacement set — the
+      // API replaces (not merges) the tools array on PATCH.
+      try {
+        const res = await fetch('/api/admin-users');
+        const data = await res.json();
+        const user = data.users.find((u) => u.id === id);
+        if (!user) throw new Error('User not found');
+        let tools = user.tools.filter((t) => t !== toolKey);
+        if (granted) tools.push(toolKey);
+
+        const patchRes = await fetch('/api/admin-users?id=' + id, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tools }),
+        });
+        const patchData = await patchRes.json();
+        if (!patchRes.ok) throw new Error(patchData.error || 'Update failed');
+      } catch (error) {
+        alert('Error: ' + error.message);
+        loadUsers();
+      }
+    }
+
+    async function resetUserPassword(id, username) {
+      const newPassword = prompt('New password for "' + username + '" (8+ characters):');
+      if (newPassword === null) return;
+      if (newPassword.length < 8) { alert('Password must be at least 8 characters.'); return; }
+      try {
+        const res = await fetch('/api/admin-users?id=' + id, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: newPassword }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Reset failed');
+        alert('Password updated for "' + username + '".');
+      } catch (error) {
+        alert('Error: ' + error.message);
+      }
+    }
+
+    async function deleteUser(id, username) {
+      if (!confirm('Delete user "' + username + '"? This cannot be undone and removes their tool grants.')) return;
+      if (currentUser && currentUser.username === username) {
+        alert("You can't delete the account you're logged in as.");
+        return;
+      }
+      try {
+        showLoading();
+        const res = await fetch('/api/admin-users?id=' + id, { method: 'DELETE' });
+        const data = await res.json();
+        hideLoading();
+        if (!res.ok) throw new Error(data.error || 'Delete failed');
+        loadUsers();
       } catch (error) {
         hideLoading();
         alert('Error: ' + error.message);
