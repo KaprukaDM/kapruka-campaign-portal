@@ -109,6 +109,27 @@
     .p-mid  { background: var(--gold); }
     .p-low  { background: var(--text-faint); }
     .urgent-strip { background: var(--red-bg); border: 1px solid var(--red-border); border-radius: 9px; padding: 10px 14px; margin-bottom: 16px; font-size: 12px; color: var(--red); display: flex; align-items: center; gap: 8px; }
+
+    /* ── Keyword SEO Profiles table (Event Page SEO subsection) ── */
+    .kw-profiles { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--border-strong); }
+    .kw-profiles-title { font-size: 12px; font-weight: 700; color: var(--purple); margin-bottom: 10px; }
+    .kw-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; }
+    .kw-table { width: 100%; border-collapse: collapse; min-width: 640px; }
+    .kw-table th {
+      background: var(--surface2); color: var(--text-muted); text-align: left;
+      font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+      padding: 9px 10px; border-bottom: 1px solid var(--border);
+    }
+    .kw-table td { padding: 4px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    .kw-table tr:last-child td { border-bottom: none; }
+    .kw-table input {
+      width: 100%; border: 1px solid transparent; border-radius: 7px; padding: 8px 9px;
+      font-family: 'DM Sans', sans-serif; font-size: 12.5px; color: var(--text);
+      background: transparent; transition: border-color .15s, background .15s;
+    }
+    .kw-table input:hover { background: var(--surface2); }
+    .kw-table input:focus { outline: none; border-color: var(--purple); background: var(--surface); }
+    .kw-table input::placeholder { color: var(--text-faint); }
     footer { text-align: center; padding: 24px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; color: var(--text-faint); }
     @media (max-width: 600px) {
       header { padding: 14px 16px; }
@@ -371,7 +392,31 @@
           <li><input type="checkbox" id="s5"><label for="s5"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Submit updated sitemap to Google Search Console<em class="item-note">Include campaign landing page, new collection URLs, and updated product pages</em></span></label></li>
           <li><input type="checkbox" id="s6"><label for="s6"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Request indexing of all seasonal pages in Google Search Console<em class="item-note">Use "Inspect URL → Request Indexing" for all new campaign pages</em></span></label></li>
           <li><input type="checkbox" id="s7"><label for="s7"><span class="priority p-mid"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">GSC poor ranking pages — identify &amp; improve keyword-weak pages<em class="item-note">Pull pages ranking pos. 8–20 in GSC; refresh content, meta, &amp; internal links to push up</em></span></label></li>
+          <li><input type="checkbox" id="s8"><label for="s8"><span class="priority p-high"></span><span class="check-box"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="item-text">Create SEO profiles for top search keywords <span class="tag red">SEO</span><em class="item-note">Fill in the table below — one profile per top-performing seasonal keyword</em></span></label></li>
         </ul>
+
+        <!-- Keyword SEO Profiles table — fills in alongside item s8 above.
+             Fixed at 5 rows, plain text inputs, state saved in the same
+             localStorage blob as the rest of this checklist (see
+             saveKeywordProfiles()/loadKeywordProfiles() below). -->
+        <div class="kw-profiles">
+          <div class="kw-profiles-title">🔑 Top Keyword SEO Profiles</div>
+          <div class="kw-table-wrap">
+            <table class="kw-table" id="kwProfileTable">
+              <thead>
+                <tr>
+                  <th>Keyword</th>
+                  <th>Target Page</th>
+                  <th>Title Tag</th>
+                  <th>Meta Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- 5 fixed rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -538,6 +583,61 @@
   document.getElementById('checklistRoot').addEventListener('change', updateProgress);
   loadProgress();
   updateProgress();
+
+  // ── Keyword SEO Profiles table (checklist item s8) ──────────────────────
+  // Separate localStorage key from the checkbox state above — different
+  // shape of data (text fields, not booleans), and keeping it independent
+  // means a future checklist reset doesn't silently need to know about it.
+  const KW_ROWS = 5;
+  const KW_STORAGE_KEY = 'kapruka_season_checklist_kw_profiles';
+  const KW_FIELDS = ['keyword', 'page', 'title', 'meta'];
+
+  function buildKeywordTable() {
+    const tbody = document.querySelector('#kwProfileTable tbody');
+    const placeholders = {
+      keyword: 'e.g. avurudu gift hampers',
+      page: 'e.g. /avurudu-gifts',
+      title: 'e.g. Avurudu Gift Hampers | Kapruka',
+      meta: 'Short description for search results…',
+    };
+    let rowsHtml = '';
+    for (let i = 0; i < KW_ROWS; i++) {
+      rowsHtml += '<tr>' + KW_FIELDS.map((f) =>
+        `<td><input type="text" data-kw-row="${i}" data-kw-field="${f}" placeholder="${placeholders[f]}"></td>`
+      ).join('') + '</tr>';
+    }
+    tbody.innerHTML = rowsHtml;
+  }
+
+  function saveKeywordProfiles() {
+    const rows = [];
+    for (let i = 0; i < KW_ROWS; i++) {
+      const row = {};
+      KW_FIELDS.forEach((f) => {
+        const el = document.querySelector(`[data-kw-row="${i}"][data-kw-field="${f}"]`);
+        row[f] = el ? el.value : '';
+      });
+      rows.push(row);
+    }
+    localStorage.setItem(KW_STORAGE_KEY, JSON.stringify(rows));
+  }
+
+  function loadKeywordProfiles() {
+    const saved = localStorage.getItem(KW_STORAGE_KEY);
+    if (!saved) return;
+    let rows;
+    try { rows = JSON.parse(saved); } catch { return; }
+    rows.forEach((row, i) => {
+      KW_FIELDS.forEach((f) => {
+        const el = document.querySelector(`[data-kw-row="${i}"][data-kw-field="${f}"]`);
+        if (el && row[f]) el.value = row[f];
+      });
+    });
+  }
+
+  buildKeywordTable();
+  loadKeywordProfiles();
+  document.getElementById('kwProfileTable').addEventListener('input', saveKeywordProfiles);
 </script>
 </body>
 </html>
