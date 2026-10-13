@@ -249,6 +249,41 @@ function graphError(method, path, error) {
   return err;
 }
 
+// Meta code 100 / subcode 3858793: "<xx> is not a valid value for language codes".
+function isLanguageCodeError(e) {
+  const g = e?.graph;
+  return !!g && (g.error_subcode === 3858793 || /not a valid value for language codes/i.test(g.error_user_msg || g.message || ''));
+}
+
+// Creates an image-ad creative, retrying when Meta rejects it with the
+// "<xx> is not a valid value for language codes" error. Meta infers that code
+// itself (we never send one), so the retries remove what it can infer from:
+// first its automatic creative enhancements/translations, then any non-Latin
+// characters in the caption. Only fires on that exact error.
+async function graphPostImageCreative(env, path, payload, notes = []) {
+  try {
+    return await graphPost(env, path, payload);
+  } catch (e) {
+    if (!isLanguageCodeError(e)) throw e;
+    notes.push(`Meta rejected the creative's language detection (${e.message}) — retried with auto-enhancements off.`);
+  }
+  const optedOut = {
+    ...payload,
+    degrees_of_freedom_spec: { creative_features_spec: { standard_enhancements: { enroll_status: 'OPT_OUT' } } },
+  };
+  try {
+    return await graphPost(env, path, optedOut);
+  } catch (e) {
+    if (!isLanguageCodeError(e)) throw e;
+    notes.push('Still rejected — retried with the caption reduced to plain Latin text.');
+  }
+  const linkData = optedOut.object_story_spec?.link_data;
+  const plain = linkData
+    ? { ...optedOut, object_story_spec: { ...optedOut.object_story_spec, link_data: { ...linkData, message: (linkData.message || '').replace(/[^\x20-\x7E\n]/g, '').replace(/[ \t]{2,}/g, ' ').trim() } } }
+    : optedOut;
+  return graphPost(env, path, plain);
+}
+
 // Meta's "you are not allowed to read this object" family. (#10) is the
 // Pages permission error, and code 100 / subcode 33 is the "Unsupported get
 // request… does not exist, cannot be loaded due to missing permissions"
@@ -556,6 +591,15 @@ async function buildCreativeFromSheetRow(env, googleToken, row, igUserId, notes 
           name: `Organic Winner (sheet video, FB-only) - ${row['Content ID'] || driveFileId}`,
           object_story_spec: { page_id: env.META_PAGE_ID, video_data: { ...videoData, message } },
         });
+      } else if (isLanguageCodeError(e)) {
+        notes.push(`Meta rejected the video's language metadata (${e.message}) — built an image ad from its thumbnail instead.`);
+        creative = await graphPost(env, `${env.META_AD_ACCOUNT_ID}/adcreatives`, {
+          name: `Organic Winner (sheet video thumbnail) - ${row['Content ID'] || driveFileId}`,
+          object_story_spec: {
+            page_id: env.META_PAGE_ID,
+            link_data: { message, link: ctaLink, image_hash: videoData.image_hash, call_to_action: videoData.call_to_action },
+          },
+        });
       } else {
         throw e;
       }
@@ -573,19 +617,19 @@ async function buildCreativeFromSheetRow(env, googleToken, row, igUserId, notes 
 
   let creative;
   try {
-    creative = await graphPost(env, `${env.META_AD_ACCOUNT_ID}/adcreatives`, {
+    creative = await graphPostImageCreative(env, `${env.META_AD_ACCOUNT_ID}/adcreatives`, {
       name: `Organic Winner (sheet) - ${row['Content ID'] || driveFileId}`,
       object_story_spec: { page_id: env.META_PAGE_ID, ...(igUserId ? { instagram_actor_id: igUserId } : {}), link_data: linkData },
-    });
+    }, notes);
   } catch (e) {
     // The ad account not being connected to the IG account in Business
     // Manager (a config issue, not something code can fix) shows up as this
     // exact error — fall back to Facebook-only rather than losing the whole ad.
     if (igUserId && /instagram_actor_id/i.test(e.message)) {
-      creative = await graphPost(env, `${env.META_AD_ACCOUNT_ID}/adcreatives`, {
+      creative = await graphPostImageCreative(env, `${env.META_AD_ACCOUNT_ID}/adcreatives`, {
         name: `Organic Winner (sheet, FB-only) - ${row['Content ID'] || driveFileId}`,
         object_story_spec: { page_id: env.META_PAGE_ID, link_data: linkData },
-      });
+      }, notes);
     } else {
       throw e;
     }
@@ -707,6 +751,19 @@ async function buildCreativeFromLivePost(env, group, igUserId, notes = []) {
           name: `Organic Winner (live video, FB-only) - ${postId}`,
           object_story_spec: { page_id: env.META_PAGE_ID, video_data: { ...videoData, message } },
         });
+      } else if (isLanguageCodeError(e)) {
+        // Meta rejected the video's language metadata (e.g. "wy is not a valid
+        // value for language codes"). Nothing in our payload sets a language —
+        // it's read off the uploaded video — so retry as an image ad built from
+        // the video's thumbnail rather than failing the whole push.
+        notes.push(`Meta rejected the video's language metadata (${e.message}) — built an image ad from its thumbnail instead.`);
+        creative = await graphPost(env, `${env.META_AD_ACCOUNT_ID}/adcreatives`, {
+          name: `Organic Winner (live video thumbnail) - ${postId}`,
+          object_story_spec: {
+            page_id: env.META_PAGE_ID,
+            link_data: { message, link: ctaLink, image_hash: videoData.image_hash, call_to_action: videoData.call_to_action },
+          },
+        });
       } else {
         throw e;
       }
@@ -735,16 +792,16 @@ async function buildCreativeFromLivePost(env, group, igUserId, notes = []) {
 
   let creative;
   try {
-    creative = await graphPost(env, `${env.META_AD_ACCOUNT_ID}/adcreatives`, {
+    creative = await graphPostImageCreative(env, `${env.META_AD_ACCOUNT_ID}/adcreatives`, {
       name: `Organic Winner (live image) - ${postId}`,
       object_story_spec: { page_id: env.META_PAGE_ID, ...(igUserId ? { instagram_actor_id: igUserId } : {}), link_data: linkData },
-    });
+    }, notes);
   } catch (e) {
     if (igUserId && /instagram_actor_id/i.test(e.message)) {
-      creative = await graphPost(env, `${env.META_AD_ACCOUNT_ID}/adcreatives`, {
+      creative = await graphPostImageCreative(env, `${env.META_AD_ACCOUNT_ID}/adcreatives`, {
         name: `Organic Winner (live image, FB-only) - ${postId}`,
         object_story_spec: { page_id: env.META_PAGE_ID, link_data: linkData },
-      });
+      }, notes);
     } else {
       throw e;
     }
