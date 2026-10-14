@@ -105,6 +105,114 @@
 
     /* FORM */
     .form-card { display: none; }
+    .form-card.just-opened { animation: formPop 0.35s ease; }
+    @keyframes formPop {
+      0%   { transform: translateY(10px); box-shadow: 0 0 0 0 rgba(94,58,142,0); }
+      60%  { box-shadow: 0 0 0 4px rgba(94,58,142,0.14); }
+      100% { transform: translateY(0); box-shadow: 0 0 0 0 rgba(94,58,142,0); }
+    }
+
+    /* ── SELECTED SLOT SUMMARY ── */
+    .slot-summary {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+      background: var(--purple-light); border: 1px solid rgba(94,58,142,0.22);
+      border-left: 4px solid var(--purple);
+      border-radius: 14px; padding: 14px 18px; margin-bottom: 20px;
+    }
+    .slot-summary .ss-main {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      font-size: 14px; font-weight: 600; color: var(--purple);
+    }
+    .slot-summary .ss-chip {
+      background: var(--surface); border: 1px solid rgba(94,58,142,0.18);
+      border-radius: 8px; padding: 4px 10px; font-size: 13px; font-weight: 600;
+      color: var(--purple);
+    }
+    .slot-summary .ss-label {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+      font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;
+    }
+    .slot-summary .ss-change {
+      background: var(--surface); color: var(--purple);
+      border: 1px solid rgba(94,58,142,0.3); border-radius: 9px;
+      padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer;
+      font-family: 'DM Sans', sans-serif; transition: background 0.15s, color 0.15s;
+    }
+    .slot-summary .ss-change:hover { background: var(--purple); color: #fff; }
+
+    /* ── BOOKING PROGRESS STEPPER ── */
+    .booking-progress { margin-bottom: 24px; }
+    .booking-progress .bp-track {
+      height: 6px; border-radius: 999px; background: var(--surface2);
+      overflow: hidden; margin-bottom: 14px;
+    }
+    .booking-progress .bp-fill {
+      height: 100%; width: 33.33%; border-radius: 999px;
+      background: linear-gradient(90deg, var(--purple), var(--gold));
+      transition: width 0.3s ease;
+    }
+    .booking-progress .bp-steps {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+    }
+    .bp-step {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: 12px;
+      background: var(--surface2); border: 1px solid var(--border);
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .bp-step .bp-dot {
+      width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 800;
+      background: var(--surface); color: var(--text-faint);
+      border: 1px solid var(--border-strong);
+    }
+    .bp-step .bp-text { min-width: 0; }
+    .bp-step .bp-title {
+      font-size: 12px; font-weight: 700; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .bp-step .bp-value {
+      font-size: 12px; color: var(--text-faint); font-weight: 500;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .bp-step.active {
+      background: var(--gold-bg); border-color: var(--gold-border);
+    }
+    .bp-step.active .bp-dot {
+      background: var(--gold); color: #fff; border-color: var(--gold);
+    }
+    .bp-step.active .bp-title { color: var(--text); }
+    .bp-step.active .bp-value { color: var(--amber); }
+    .bp-step.done {
+      background: var(--green-bg); border-color: rgba(22,163,74,0.25);
+    }
+    .bp-step.done .bp-dot {
+      background: var(--green); color: #fff; border-color: var(--green);
+    }
+    .bp-step.done .bp-title { color: var(--green); }
+    .bp-step.done .bp-value { color: var(--text); }
+
+    /* ── FORM STEP SECTIONS ── */
+    .form-step { position: relative; }
+    .form-step .step-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 10px; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--text-muted);
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 6px; padding: 2px 7px; margin-right: 8px;
+    }
+    .form-step.done .step-tag {
+      background: var(--green-bg); color: var(--green); border-color: rgba(22,163,74,0.25);
+    }
+
+    /* ── SUBMIT HINT ── */
+    .submit-hint {
+      text-align: center; font-size: 13px; font-weight: 600;
+      color: var(--text-muted); margin-top: 10px;
+    }
+    .submit-hint.ready { color: var(--green); }
 
     /* ── GO-LIVE CALENDAR ── */
     .golive-calendar { margin-bottom: 20px; }
@@ -204,6 +312,9 @@
       .dept-header { flex-direction: column; align-items: flex-start; gap: 12px; }
       .slot-grid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; }
       .month-grid { grid-template-columns: 1fr; }
+      .booking-progress .bp-steps { grid-template-columns: 1fr; }
+      .slot-summary { flex-direction: column; align-items: flex-start; }
+      .slot-summary .ss-change { width: 100%; }
     }
   </style>
 </head>
@@ -242,19 +353,63 @@
 
     <div class="card form-card" id="formCard">
       <h2>✨ Campaign Details</h2>
+
+      <!-- SELECTED SLOT SUMMARY -->
+      <div class="slot-summary" id="slotSummary">
+        <div>
+          <span class="ss-label">Booking this slot</span>
+          <div class="ss-main">
+            <span id="ssDept">—</span>
+            <span class="ss-chip" id="ssSlot">—</span>
+            <span class="ss-chip" id="ssMonth">—</span>
+          </div>
+        </div>
+        <button type="button" class="ss-change" onclick="changeSlot()">↺ Change slot</button>
+      </div>
+
+      <!-- PROGRESS STEPPER -->
+      <div class="booking-progress" id="bookingProgress">
+        <div class="bp-track"><div class="bp-fill" id="bpFill"></div></div>
+        <div class="bp-steps">
+          <div class="bp-step done" id="bpStep1">
+            <div class="bp-dot">✓</div>
+            <div class="bp-text">
+              <div class="bp-title">1 · Slot</div>
+              <div class="bp-value" id="bpSlotValue">—</div>
+            </div>
+          </div>
+          <div class="bp-step" id="bpStep2">
+            <div class="bp-dot">2</div>
+            <div class="bp-text">
+              <div class="bp-title">2 · Details</div>
+              <div class="bp-value" id="bpDetailsValue">Describe the campaign</div>
+            </div>
+          </div>
+          <div class="bp-step" id="bpStep3">
+            <div class="bp-dot">3</div>
+            <div class="bp-text">
+              <div class="bp-title">3 · Go-Live</div>
+              <div class="bp-value" id="bpDateValue">Pick a date</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <form id="campaignForm">
-        <div class="form-group">
-          <label>📝 Campaign Details <span class="required">*</span></label>
-          <textarea id="campaign" required placeholder="Describe your campaign..."></textarea>
+        <div class="form-group form-step" id="formStepDetails">
+          <label><span class="step-tag">Step 2</span>📝 Campaign Details <span class="required">*</span></label>
+          <textarea id="campaign" required placeholder="Describe your campaign..."
+                    oninput="updateBookingProgress()"></textarea>
         </div>
         <div class="form-group">
           <label>⏱️ Duration (days)</label>
-          <input type="number" id="duration" value="7" min="1" max="31" required>
+          <input type="number" id="duration" value="7" min="1" max="31" required
+                 oninput="updateBookingProgress()">
         </div>
 
         <!-- GO-LIVE DATE CALENDAR -->
-        <div class="form-group">
-          <label>📅 Select Go-Live Date <span class="required">*</span></label>
+        <div class="form-group form-step" id="formStepDate">
+          <label><span class="step-tag">Step 3</span>📅 Select Go-Live Date <span class="required">*</span></label>
           <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">
             Next 4 days are blocked for preparation. Pick any available date after.
           </p>
@@ -284,7 +439,8 @@
           <input type="hidden" id="goLiveDate" required>
         </div>
 
-        <button type="submit" class="btn btn-primary" id="submitBtn">🚀 Submit Request</button>
+        <button type="submit" class="btn btn-primary" id="submitBtn" disabled>🚀 Submit Request</button>
+        <div class="submit-hint" id="submitHint">Fill in the campaign details to continue</div>
       </form>
     </div>
   </div>
@@ -301,6 +457,7 @@
     let calViewMonth = new Date().getMonth();
     let calViewYear = new Date().getFullYear();
     let pickedGoLiveDate = null;
+    let pickedGoLiveLabel = '';
 
     const BUFFER_DAYS = 4; // next 4 days blocked
 
@@ -378,11 +535,14 @@
       const dateObj = new Date(year, month, day);
       const dayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][dateObj.getDay()];
 
+      pickedGoLiveLabel = `${dayName}, ${months[month]} ${day}, ${year}`;
+
       const display = document.getElementById('selectedDateDisplay');
-      display.textContent = `🎯 Go-Live: ${dayName}, ${months[month]} ${day}, ${year}`;
+      display.textContent = `🎯 Go-Live: ${pickedGoLiveLabel}`;
       display.style.display = 'block';
 
       renderGoLiveCalendar(); // re-render to update picked styling
+      updateBookingProgress();
     }
 
     document.getElementById('calPrev').onclick = () => {
@@ -562,6 +722,72 @@
       countEl.textContent = term ? `${total} slot${total === 1 ? '' : 's'}` : '';
     }
 
+    // ── BOOKING PROGRESS ────────────────────────────────────
+    // Three steps: slot picked → campaign details filled → go-live date picked.
+    // Submit stays disabled (with a hint saying what's missing) until all three
+    // are done, so nobody gets an alert after filling half the form.
+    function updateBookingProgress() {
+      if (!selectedSlot) return;
+
+      const campaign = document.getElementById('campaign').value.trim();
+      const duration = parseInt(document.getElementById('duration').value, 10);
+      const durationOk = Number.isFinite(duration) && duration >= 1 && duration <= 31;
+      const detailsDone = campaign.length > 0 && durationOk;
+      const dateDone = !!pickedGoLiveDate;
+
+      // Step 1 — slot
+      document.getElementById('bpSlotValue').textContent = `${selectedDept} · ${selectedSlot}`;
+
+      // Step 2 — details
+      const step2 = document.getElementById('bpStep2');
+      step2.classList.toggle('done', detailsDone);
+      step2.classList.toggle('active', !detailsDone);
+      step2.querySelector('.bp-dot').textContent = detailsDone ? '✓' : '2';
+      document.getElementById('bpDetailsValue').textContent =
+        detailsDone ? (campaign.length > 38 ? campaign.slice(0, 38) + '…' : campaign)
+        : (campaign.length === 0 ? 'Describe the campaign' : 'Duration must be 1–31 days');
+      document.getElementById('formStepDetails').classList.toggle('done', detailsDone);
+
+      // Step 3 — go-live date
+      const step3 = document.getElementById('bpStep3');
+      step3.classList.toggle('done', dateDone);
+      step3.classList.toggle('active', detailsDone && !dateDone);
+      step3.querySelector('.bp-dot').textContent = dateDone ? '✓' : '3';
+      document.getElementById('bpDateValue').textContent = dateDone ? pickedGoLiveLabel : 'Pick a date';
+      document.getElementById('formStepDate').classList.toggle('done', dateDone);
+
+      // Bar + submit gate
+      const doneCount = 1 + (detailsDone ? 1 : 0) + (dateDone ? 1 : 0);
+      document.getElementById('bpFill').style.width = `${(doneCount / 3) * 100}%`;
+
+      const hint = document.getElementById('submitHint');
+      const btn = document.getElementById('submitBtn');
+      const ready = detailsDone && dateDone;
+      btn.disabled = !ready;
+      hint.classList.toggle('ready', ready);
+      hint.textContent = ready ? 'All set — ready to submit 🚀'
+        : !detailsDone ? 'Fill in the campaign details to continue'
+        : 'Pick a go-live date to continue';
+    }
+
+    function clearSlotSelection() {
+      if (selectedElement) {
+        selectedElement.classList.remove('selected');
+        selectedElement.classList.add('available');
+        const label = selectedElement.querySelector('.slot-label');
+        if (label) label.textContent = 'Available';
+      }
+      selectedDept = null; selectedSlot = null; selectedElement = null;
+      document.getElementById('formCard').style.display = 'none';
+    }
+
+    function changeSlot() {
+      const previous = selectedElement;
+      clearSlotSelection();
+      const target = previous || document.getElementById('deptContainer');
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
     function pickSlot(dept, slotName, element) {
       if (selectedElement && selectedElement !== element) {
         selectedElement.classList.remove('selected');
@@ -570,11 +796,7 @@
       }
 
       if (element.classList.contains('selected')) {
-        element.classList.remove('selected');
-        element.classList.add('available');
-        element.querySelector('.slot-label').textContent = 'Available';
-        selectedDept = null; selectedSlot = null; selectedElement = null;
-        document.getElementById('formCard').style.display = 'none';
+        clearSlotSelection();
       } else {
         element.classList.remove('available');
         element.classList.add('selected');
@@ -583,14 +805,25 @@
 
         // Reset calendar
         pickedGoLiveDate = null;
+        pickedGoLiveLabel = '';
         document.getElementById('goLiveDate').value = '';
         document.getElementById('selectedDateDisplay').style.display = 'none';
         calViewMonth = new Date().getMonth();
         calViewYear = new Date().getFullYear();
         renderGoLiveCalendar();
 
-        document.getElementById('formCard').style.display = 'block';
-        document.getElementById('formCard').scrollIntoView({ behavior: 'smooth' });
+        // Selection summary + progress
+        document.getElementById('ssDept').textContent = dept;
+        document.getElementById('ssSlot').textContent = slotName;
+        document.getElementById('ssMonth').textContent = selectedMonth || '';
+        updateBookingProgress();
+
+        const formCard = document.getElementById('formCard');
+        formCard.style.display = 'block';
+        formCard.classList.remove('just-opened');
+        void formCard.offsetWidth; // restart the open animation
+        formCard.classList.add('just-opened');
+        formCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     }
 
@@ -623,8 +856,11 @@
       }
 
       const btn = document.getElementById('submitBtn');
+      const hint = document.getElementById('submitHint');
       btn.disabled = true;
       btn.textContent = 'Submitting...';
+      hint.classList.remove('ready');
+      hint.textContent = 'Sending your request to the Studio Calendar…';
       showLoading();
 
       try {
@@ -638,7 +874,6 @@
         };
 
         const result = await submitCampaignRequest(formData);
-        btn.disabled = false;
         btn.textContent = '🚀 Submit Request';
         hideLoading();
 
@@ -658,12 +893,16 @@
         document.getElementById('campaignForm').reset();
         document.getElementById('formCard').style.display = 'none';
         pickedGoLiveDate = null;
+        pickedGoLiveLabel = '';
         document.getElementById('selectedDateDisplay').style.display = 'none';
+        // Next slot pick re-opens the form at step 2 with submit gated again.
+        btn.disabled = true;
+        hint.textContent = 'Fill in the campaign details to continue';
 
       } catch (error) {
-        btn.disabled = false;
         btn.textContent = '🚀 Submit Request';
         hideLoading();
+        updateBookingProgress();
         alert('Error: ' + error.message);
         selectMonth(selectedMonth);
       }
