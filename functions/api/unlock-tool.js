@@ -11,11 +11,11 @@ import { readSession } from '../_lib/auth.js';
 import { sbSelect } from '../_lib/supabase-admin.js';
 
 const TOOLS = {
-  pcagent: [{ label: 'PC Agent', url: 'http://23.111.183.110:5011/' }],
+  pcagent: [{ label: 'PC Agent', url: 'https://pricelens.lanka.info/pcagent/' }],
   seo: [
-    { label: '📊 Kapruka SEO Dashboard', url: 'http://23.111.183.110:8094/' },
+    { label: '🚀 SEO Boost', url: 'https://pricelens.lanka.info/master/' },
   ],
-  revenue: [{ label: 'Revenue Breakdown Report', url: 'http://23.111.183.110:8095/login' }],
+  revenue: [{ label: 'Revenue Breakdown Report', url: 'https://pricelens.lanka.info/sales/' }],
   ads: [{ label: 'Ads Manager', url: 'https://docs.google.com/forms/d/e/1FAIpQLSfGSObGAIJz46oQd0xN3oISjS46SEkFtL0_ZGkIfh6ansvqPQ/viewform' }],
   daraz: [{ label: 'Daraz Market Agent', url: 'https://daraz-agent.onrender.com' }],
   avurudhu: [{ label: 'Season Checklist', url: 'https://kaprukadm.github.io/kapruka-campaign-portal/season_checklist.html' }],
@@ -23,10 +23,21 @@ const TOOLS = {
   'content-calendar': [{ label: 'Content Calendar', url: 'content-calendar.html' }],
   'hot-products': [{ label: 'Hot Products', url: 'hot-products.html' }],
   'new-products': [{ label: 'Newly Added Products', url: 'new-products-performance.html' }],
-  'price-checker': [{ label: 'Price Checker', url: 'http://23.111.183.110:3000' }],
-  'business-scout': [{ label: 'Business Scout', url: 'http://23.111.183.110:5055/' }],
-  'page-hygiene': [{ label: 'Page Hygiene Dashboard', url: 'http://23.111.183.110:8090' }],
-  'oos-dashboard': [{ label: 'Out of Stock Dashboard', url: 'http://23.111.183.110:8091' }],
+  'price-checker': [
+    { label: 'Price Checker', url: 'https://pricelens.lanka.info/tools/index.html' },
+    // Sub-tools, all reachable from the hub above (openTool opens links[0]).
+    { label: 'Checker', url: 'https://pricelens.lanka.info/tools/checker.html' },
+    { label: 'Compare', url: 'https://pricelens.lanka.info/tools/compare.html' },
+    { label: 'Partner Overpriced', url: 'https://pricelens.lanka.info/tools/partner-overpriced.html' },
+    { label: 'All Products Overpriced', url: 'https://pricelens.lanka.info/tools/all-products-overpriced.html' },
+    { label: 'UAE Compare', url: 'https://pricelens.lanka.info/tools/uae-compare/?country=UAE' },
+    { label: 'Out of Stock', url: 'https://pricelens.lanka.info/tools/out-of-stock.html' },
+    { label: 'Price Changes', url: 'https://pricelens.lanka.info/tools/price-changes.html' },
+    { label: 'Discovered Sites', url: 'https://pricelens.lanka.info/tools/discovered-sites.html' },
+  ],
+  'business-scout': [{ label: 'Business Scout', url: 'https://pricelens.lanka.info/scout/' }],
+  'page-hygiene': [{ label: 'Page Hygiene Dashboard', url: 'https://pricelens.lanka.info/hygiene/' }],
+  'oos-dashboard': [{ label: 'Out of Stock Dashboard', url: 'https://pricelens.lanka.info/oos/' }],
   'homepage-slots': [{ label: 'Homepage Slot Manager', url: 'homepage-booking-portal.html' }],
 };
 
