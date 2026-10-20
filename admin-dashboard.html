@@ -3961,7 +3961,33 @@
       }).join(' · ');
     }
 
-    function renderFixedWeeklySlotSummary(plan) {
+    // Per-theme coverage rows for the four seasonal content types
+    // (see SEASONAL_THEME_CONTENT_TYPES in js/supabase-api.js).
+    function renderSeasonalThemeSummary(seasonalPlan) {
+      if (!seasonalPlan || !seasonalPlan.themes.length) return '';
+      const rows = seasonalPlan.themes.map(({ theme, types }) => {
+        const chips = types.map(t =>
+          `<span class="fixed-week-chip ${t.missing === 0 ? 'ok' : 'gap'}">${t.emoji} ${escapeHtml(t.name)} ${t.done}/1</span>`
+        ).join('');
+        return `
+          <div class="fixed-week-row">
+            <span class="fixed-week-label" style="color:${escapeHtml(theme.theme_color || '#4A148C')};">🎉 ${escapeHtml(theme.theme_name)}</span>
+            ${chips}
+          </div>`;
+      }).join('');
+      return `
+        <div class="fixed-weekly-head" style="margin-top:12px;">
+          🎉 Seasonal theme content — every seasonal theme needs
+          ${SEASONAL_THEME_CONTENT_TYPES.map(d => `${d.emoji} <strong>${escapeHtml(d.name)}</strong>`).join(' · ')}
+        </div>
+        <div class="fixed-weekly-note">
+          One of each per seasonal theme, counted from real content inside the theme dates whose details mention the type.
+          Empty ones show as a placeholder card in the calendar; click it to create the content.
+        </div>
+        ${rows}`;
+    }
+
+    function renderFixedWeeklySlotSummary(plan, seasonalPlan) {
       const el = document.getElementById('fixedWeeklySummary');
       if (!el) return;
 
@@ -3994,6 +4020,7 @@
           week and the slot closes. Empty ones show as a placeholder card in the calendar; click it to create the content.
         </div>
         ${weekRows}
+        ${renderSeasonalThemeSummary(seasonalPlan)}
       `;
     }
 
@@ -4005,7 +4032,12 @@
       const fixedPlan = buildFixedWeeklySlotPlan(
         currentStudioYear, currentStudioMonth, studioPaddedRawData
       );
-      renderFixedWeeklySlotSummary(fixedPlan);
+      const seasonalPlan = buildSeasonalThemeSlotPlan(
+        monthThemes, studioPaddedRawData,
+        `${currentStudioYear}-${String(currentStudioMonth).padStart(2, '0')}-01`,
+        `${currentStudioYear}-${String(currentStudioMonth).padStart(2, '0')}-${String(new Date(currentStudioYear, currentStudioMonth, 0).getDate()).padStart(2, '0')}`
+      );
+      renderFixedWeeklySlotSummary(fixedPlan, seasonalPlan);
       // Don't pad day cells with placeholders while a search or filter is
       // active — same rule the lead-form placeholders follow, so a filtered
       // view only ever shows real matching content.
@@ -4088,6 +4120,28 @@
             `;
             slotDiv.title = `${def.name} — ${def.perWeek}× per week (hard-coded). Click to add this week's content.`;
             slotDiv.onclick = () => openAddExtraContentModal(dateStr, def.key);
+            slotsContainer.appendChild(slotDiv);
+          });
+        }
+
+        // Seasonal-theme content (New Arrivals / Gift Ideas / Poll-Quiz / Tag a
+        // Friend) still owed by a seasonal theme running on this day.
+        if (showFixedPlaceholders) {
+          (seasonalPlan.byDate[dateStr] || []).forEach(({ def, theme, state }) => {
+            const slotDiv = document.createElement('div');
+            slotDiv.className = `slot-item fixed-weekly ${def.cssClass} ${state === 'missed' ? 'missed' : ''}`;
+            slotDiv.style.borderLeftColor = state === 'missed' ? '' : (theme.theme_color || '#EC4899');
+            const badge = state === 'missed'
+              ? '<span class="slot-status status-fixed-missed" title="This seasonal slot was never filled.">⚠ Not filled</span>'
+              : '<span class="slot-status status-fixed-due" title="Seasonal theme slot — click to create the content.">＋ To fill</span>';
+            slotDiv.innerHTML = `
+              <span class="slot-number">${def.emoji}</span>
+              ${badge}
+              <span class="slot-page">${escapeHtml(def.title(theme.theme_name))}</span>
+              <span class="slot-labels"><span class="slot-label label-promo-time-sensitive">🎉 Seasonal</span></span>
+            `;
+            slotDiv.title = `${def.title(theme.theme_name)} — required once per seasonal theme. Click to create the content.`;
+            slotDiv.onclick = () => openAddExtraContentModal(dateStr, null, { key: def.key, themeName: theme.theme_name });
             slotsContainer.appendChild(slotDiv);
           });
         }
@@ -5926,13 +5980,20 @@
     // weekly slots (see FIXED_WEEKLY_SLOT_TYPES in js/supabase-api.js) and
     // seeds the details box with that type's tag, so the saved content is
     // recognised as covering the week.
-    function openAddExtraContentModal(prefillDate = null, fixedSlotKey = null) {
+    // seasonal (optional) = { key, themeName } does the same for one of the
+    // four per-seasonal-theme content types (SEASONAL_THEME_CONTENT_TYPES).
+    function openAddExtraContentModal(prefillDate = null, fixedSlotKey = null, seasonal = null) {
       const pageOptions = PAGE_OPTIONS.map(pg => `
         <option value="${pg}">${pg}</option>
       `).join('');
 
-      const fixedDef = fixedSlotKey ? getFixedWeeklySlotTypeByKey(fixedSlotKey) : null;
-      const fixedBanner = fixedDef ? `
+      const seasonalDef = seasonal ? getSeasonalContentTypeByKey(seasonal.key) : null;
+      const fixedDef = seasonalDef || (fixedSlotKey ? getFixedWeeklySlotTypeByKey(fixedSlotKey) : null);
+      const fixedBanner = seasonalDef ? `
+        <div style="background:#FCE4EC;border-left:4px solid #EC4899;padding:10px 14px;border-radius:10px;margin-bottom:16px;font-size:13px;color:#880E4F;">
+          ${seasonalDef.emoji} Filling <strong>${escapeHtml(seasonalDef.title(seasonal.themeName))}</strong>
+          (once per seasonal theme). Keep “${escapeHtml(seasonalDef.tag)}” in the details so it counts.
+        </div>` : fixedDef ? `
         <div style="background:#F3E5F5;border-left:4px solid var(--primary-purple);padding:10px 14px;border-radius:10px;margin-bottom:16px;font-size:13px;color:#4A148C;">
           ${fixedDef.emoji} Filling the fixed weekly <strong>${escapeHtml(fixedDef.name)}</strong> slot
           (${fixedDef.perWeek}× per week). Keep “${escapeHtml(fixedDef.tag)}” in the details so it counts towards the week.
@@ -6025,8 +6086,10 @@
         setVal('extraPriority', fixedDef.defaults.priority);
         const details = document.getElementById('extraDetails');
         if (details) {
-          details.value = `${fixedDef.tag} `;
-          details.placeholder = `${fixedDef.tag} describe this week's ${fixedDef.name.toLowerCase()}…`;
+          details.value = seasonalDef
+            ? `${fixedDef.tag} ${seasonalDef.title(seasonal.themeName)} — `
+            : `${fixedDef.tag} `;
+          details.placeholder = `${fixedDef.tag} describe this ${seasonalDef ? 'seasonal ' : "week's "}${fixedDef.name.toLowerCase()}…`;
         }
       }
 

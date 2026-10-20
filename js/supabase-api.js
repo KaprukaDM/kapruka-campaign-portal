@@ -254,6 +254,111 @@ function buildFixedWeeklySlotPlan(year, month, rows, todayStr = localDateString(
   };
 }
 
+// ═══════════════════════════════════════════════════════════════
+// SEASONAL THEME CONTENT SLOTS (hard-coded, once per seasonal theme)
+// ═══════════════════════════════════════════════════════════════
+// Every theme flagged is_seasonal must carry these four content types, once
+// each, somewhere inside its date range. Same approach as the fixed weekly
+// slots above: nothing is inserted into studio_calendar — the calendar derives
+// the placeholders at render time and closes one as soon as real content
+// matching the type's keyword exists on a day inside the theme window.
+//   • New Arrivals       — opens the season
+//   • Gift Ideas        — "{Seasonal} Gift Ideas"
+//   • Poll / Quiz       — interactive engagement post
+//   • Tag a Friend      — "Tag a Friend – {Seasonal} Edition"
+// `at` is where in the theme window (0 = first day, 1 = last day) the
+// placeholder sits, so the four don't all pile onto one day.
+const SEASONAL_THEME_CONTENT_TYPES = [
+  {
+    key: 'new_arrivals',
+    name: 'New Arrivals',
+    emoji: '🆕',
+    at: 0,
+    tag: '[New Arrivals]',
+    title: s => `New Arrivals for ${s}`,
+    match: /\bnew\s*arrivals?\b/i,
+    cssClass: 'seasonal-new-arrivals',
+    defaults: { department: 'Kapruka Product', page_name: 'Kapruka FB', format: 'Carousel', priority: 'High' }
+  },
+  {
+    key: 'gift_ideas',
+    name: 'Gift Ideas',
+    emoji: '🎁',
+    at: 0.25,
+    tag: '[Gift Ideas]',
+    title: s => `${s} Gift Ideas`,
+    match: /\bgift\s*ideas?\b/i,
+    cssClass: 'seasonal-gift-ideas',
+    defaults: { department: 'Digital Marketing', page_name: 'Kapruka FB', format: 'Carousel', priority: 'High' }
+  },
+  {
+    key: 'poll_quiz',
+    name: 'Poll / Quiz',
+    emoji: '📊',
+    at: 0.5,
+    tag: '[Poll Quiz]',
+    title: s => `${s} Poll / Quiz`,
+    match: /\b(poll|quiz)\b/i,
+    cssClass: 'seasonal-poll-quiz',
+    defaults: { department: 'Digital Marketing', page_name: 'Kapruka FB', format: 'Post', priority: 'Low' }
+  },
+  {
+    key: 'tag_a_friend',
+    name: 'Tag a Friend',
+    emoji: '🏷️',
+    at: 0.75,
+    tag: '[Tag a Friend]',
+    title: s => `Tag a Friend – ${s} Edition`,
+    match: /\btag\s*a\s*friend\b/i,
+    cssClass: 'seasonal-tag-a-friend',
+    defaults: { department: 'Digital Marketing', page_name: 'Kapruka FB', format: 'Post', priority: 'Low' }
+  }
+];
+
+function getSeasonalContentTypeByKey(key) {
+  return SEASONAL_THEME_CONTENT_TYPES.find(def => def.key === key) || null;
+}
+
+/**
+ * Which seasonal-theme content slots are still missing for a displayed month.
+ *
+ * @param {Array}  themes   theme_config rows overlapping the month (non-seasonal ones are ignored)
+ * @param {Array}  rows     studio_calendar rows (padded range, see buildFixedWeeklySlotPlan)
+ * @param {string} monthFirst / monthLast  YYYY-MM-DD bounds of the displayed month
+ * @returns {{ byDate: Object, themes: Array }}
+ *   byDate[dateStr] = [{ def, theme, state }]  placeholders to render ('due' | 'missed')
+ *   themes = per-theme coverage for the summary strip
+ */
+function buildSeasonalThemeSlotPlan(themes, rows, monthFirst, monthLast, todayStr = localDateString()) {
+  const byDate = {};
+  const out = [];
+
+  (themes || []).filter(t => t && t.is_seasonal).forEach(theme => {
+    const start = new Date(`${theme.start_date}T00:00:00`);
+    const end = new Date(`${theme.end_date}T00:00:00`);
+    const spanDays = Math.max(0, Math.round((end - start) / 86400000));
+    const themeRows = (rows || []).filter(r => r && r.date >= theme.start_date && r.date <= theme.end_date);
+
+    const types = SEASONAL_THEME_CONTENT_TYPES.map(def => {
+      const done = themeRows.some(r => def.match.test(fixedSlotHaystack(r))) ? 1 : 0;
+      const d = new Date(start);
+      d.setDate(d.getDate() + Math.round(spanDays * def.at));
+      const dateStr = localDateString(d);
+      const missing = done ? 0 : 1;
+      // Only placeholder what can be drawn in this month's cells.
+      if (missing && dateStr >= monthFirst && dateStr <= monthLast) {
+        if (!byDate[dateStr]) byDate[dateStr] = [];
+        byDate[dateStr].push({ def, theme, state: dateStr < todayStr ? 'missed' : 'due' });
+      }
+      return { key: def.key, name: def.name, emoji: def.emoji, done, missing, date: dateStr };
+    });
+
+    out.push({ theme, types });
+  });
+
+  return { byDate, themes: out };
+}
+
 // ── AUTO-QUEUE FOR THE WEEKLY AD PUSH ──────────────────────────────────
 // Posted campaign content that is BOTH high priority and time sensitive is
 // queued for the weekly ad push automatically — no manual "add to queue"
