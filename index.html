@@ -264,10 +264,20 @@
     <span class="label">Ads Manager</span>
   </div>
 
-  <!-- Avurudhu / Season Checklist -->
+  <!-- Avurudhu / Seasonal Audit (asks: Manual checklist or Automated audit) -->
   <div class="avurudhu-btn" data-tool="avurudhu" onclick="openTool('avurudhu')">
     <span class="icon">🌸</span>
-    <span class="label">Season Checklist</span>
+    <span class="label">Seasonal Audit</span>
+  </div>
+
+  <!-- Chooser modal (Seasonal Audit: Manual or Automated) -->
+  <div class="country-modal" id="chooseModal">
+    <div class="country-box" style="max-width:460px">
+      <h2>🌸 Seasonal Audit</h2>
+      <p>How do you want to run it?</p>
+      <div class="country-list" id="chooseList"></div>
+      <button class="country-cancel" onclick="closeChooser()">Cancel</button>
+    </div>
   </div>
 
   <!-- Country Picker Modal (International Gifting Price Checker) -->
@@ -317,6 +327,22 @@
       if (event.target === this) closeCountryModal();
     });
 
+    function closeChooser() { document.getElementById('chooseModal').classList.remove('active'); }
+    document.getElementById('chooseModal').addEventListener('click', function (e) { if (e.target === this) closeChooser(); });
+    function showChooser(links) {
+      const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+      document.getElementById('chooseList').innerHTML = links.map((l, i) =>
+        `<div class="country-option" data-i="${i}" style="text-align:left;display:block">
+           <div style="font-size:17px;font-weight:700">${l.icon || ''} ${esc(l.label)}</div>
+           <div style="font-size:12.5px;color:#bbb;margin-top:4px;font-weight:400;line-height:1.4">${esc(l.desc || '')}</div>
+         </div>`).join('');
+      // window.open here is inside a real click, so popup blockers allow it.
+      document.querySelectorAll('#chooseList .country-option').forEach((el) => {
+        el.onclick = () => { window.open(links[Number(el.dataset.i)].url, '_blank', 'noopener'); closeChooser(); };
+      });
+      document.getElementById('chooseModal').classList.add('active');
+    }
+
     async function openTool(tool) {
       // Open the tab synchronously so popup blockers allow it, then point it
       // at the real URL once /api/unlock-tool resolves it.
@@ -328,7 +354,12 @@
           body: JSON.stringify({ tool })
         });
         if (!res.ok) throw new Error('denied');
-        const { links } = await res.json();
+        const { links, choose } = await res.json();
+        if (choose && links.length > 1) {          // e.g. Seasonal Audit: Manual or Automated
+          if (tab) tab.close();
+          showChooser(links);
+          return;
+        }
         const url = links[0].url;
         // Internal pages are relative paths (e.g. "hot-products.html"); external
         // tools are full URLs — both work the same way via location.href.

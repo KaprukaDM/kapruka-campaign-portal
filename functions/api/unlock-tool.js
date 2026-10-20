@@ -18,7 +18,15 @@ const TOOLS = {
   revenue: [{ label: 'Revenue Breakdown Report', url: 'https://pricelens.lanka.info/sales/' }],
   ads: [{ label: 'Ads Manager', url: 'https://docs.google.com/forms/d/e/1FAIpQLSfGSObGAIJz46oQd0xN3oISjS46SEkFtL0_ZGkIfh6ansvqPQ/viewform' }],
   daraz: [{ label: 'Daraz Market Agent', url: 'https://daraz-agent.onrender.com' }],
-  avurudhu: [{ label: 'Season Checklist', url: 'season_checklist.html' }],
+  // Seasonal Audit asks which way to go (see CHOOSE below): the manual checklist, or the
+  // automated audit, whose UI lives at pricelens.lanka.info/season/ but whose Claude CLI runs
+  // on the user's own laptop (never on the VPS).
+  avurudhu: [
+    { label: 'Manual', icon: '📝', url: 'season_checklist.html',
+      desc: 'Work through the season checklist yourself and tick items off.' },
+    { label: 'Automated', icon: '🤖', url: 'https://pricelens.lanka.info/season/',
+      desc: 'An AI agent audits the season page, keywords, search and hygiene, then builds a PDF report. Runs on your laptop.' },
+  ],
   'campaign-booking': [{ label: 'Book Campaign Slot', url: 'campaign-booking.html' }],
   'content-calendar': [{ label: 'Content Calendar', url: 'content-calendar.html' }],
   'hot-products': [{ label: 'Hot Products', url: 'hot-products.html' }],
@@ -40,6 +48,9 @@ const TOOLS = {
   'oos-dashboard': [{ label: 'Out of Stock Dashboard', url: 'https://pricelens.lanka.info/oos/' }],
   'homepage-slots': [{ label: 'Homepage Slot Manager', url: 'homepage-booking-portal.html' }],
 };
+
+// Tools whose card should ask which link to open instead of opening the first one.
+const CHOOSE = new Set(['avurudhu']);
 
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -67,5 +78,5 @@ export const onRequestPost = async ({ request, env }) => {
     if (!rows.length) return json({ error: 'Not granted' }, 403);
   }
 
-  return json({ links: TOOLS[tool] });
+  return json({ links: TOOLS[tool], choose: CHOOSE.has(tool) });
 };
