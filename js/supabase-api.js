@@ -1382,6 +1382,13 @@ async function updateStudioStatus(id, statusData) {
     } else {
       payload.approval_status = 'Submitted for Review';
     }
+    // A prior Head approval no longer applies once the slot re-enters review
+    // (e.g. after a Hold) — without this, head_approved/head_approved_at stay
+    // stale and the UI shows "Head Approved" on a slot that's back for review.
+    if (current.length && current[0].head_approved) {
+      payload.head_approved = false;
+      payload.head_approved_at = null;
+    }
   } else if (statusData.studio_status === 'Working') {
     payload.approval_status = 'Working';
   } else if (statusData.studio_status === 'Received') {
@@ -1429,6 +1436,11 @@ async function updateStudioStatus(id, statusData) {
     payload.approval_status = 'On Hold';
     payload.hold_reason = statusData.hold_reason;
     payload.hold_at = new Date().toISOString();
+    // Putting a slot on Hold reopens it for changes, so any earlier Head
+    // approval must not keep showing as current — see the matching reset
+    // in the 'Submitted for Review' branch above.
+    payload.head_approved = false;
+    payload.head_approved_at = null;
   }
 
   // ── Posted is evidence-gated (see the POSTED VERIFICATION block above) ──
