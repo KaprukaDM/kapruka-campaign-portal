@@ -6940,7 +6940,9 @@
         <div class="form-group">
           <label>Primary text</label>
           <button type="button" class="btn" style="padding:6px 12px;font-size:12px;background:#F3E5F5;color:#6A1B9A;margin-bottom:8px;" id="pcalCopywriterBtn" onclick="pcalGenerateHeadlines()">✍️ Copywriter</button>
+          <button type="button" class="btn" style="padding:6px 12px;font-size:12px;background:#E3F2FD;color:#0D47A1;margin-bottom:8px;" id="pcalSocialSeoBtn" onclick="pcalGenerateSocialSeo()" title="Cake, flowers and gift posts: writes the hook, on-screen text, caption and hashtags from what people in Sri Lanka actually search on TikTok, Instagram and Facebook">🔎 Search-ranked post</button>
           <div id="pcalCopywriterPanel" style="display:none;margin-bottom:10px;padding:12px;background:#faf7fd;border-radius:8px;font-size:12px;"></div>
+          <div id="pcalSocialSeoPanel" style="display:none;margin-bottom:10px;padding:12px;background:#f4f9ff;border-radius:8px;font-size:12px;"></div>
           <textarea id="pcalPrimaryText" rows="6" style="width:100%;color:#111;background:#fff;">${pcalEscapeHtml(pcalSelected.primaryText)}</textarea>
         </div>
         <div class="form-group">
@@ -7017,6 +7019,107 @@
 
     function pcalUseHeadline(btn) {
       document.getElementById('pcalPrimaryText').value = btn.dataset.headline;
+    }
+
+    // ── 🔎 Search-ranked post ────────────────────────────────────
+    // Cake / flowers / gift posts only. The server reads the image, works out
+    // the category, and builds 3 packages around exact phrases people in Sri
+    // Lanka type into TikTok/Instagram/Facebook search (keyword bank in
+    // functions/_lib/social-search-terms.js). "Use caption" fills the Primary
+    // text box; the spoken hook and on-screen text are for whoever edits the
+    // video. Nothing is saved until "Save schedule".
+    let pcalSocialSeoPackages = [];
+
+    async function pcalGenerateSocialSeo() {
+      const btn = document.getElementById('pcalSocialSeoBtn');
+      const panel = document.getElementById('pcalSocialSeoPanel');
+      const textarea = document.getElementById('pcalPrimaryText');
+      const productName = (document.getElementById('pcalProductName') || {}).value || '';
+      if (!pcalSelected?.mediaUrl) {
+        panel.style.display = '';
+        panel.innerHTML = '<span style="color:#dc2626;">No image on this item, so there is nothing to scan.</span>';
+        return;
+      }
+
+      btn.disabled = true;
+      panel.style.display = '';
+      panel.innerHTML = '⏳ Checking whether this is a cake, flowers or gift post, then writing search-ranked copy…';
+
+      try {
+        const res = await fetch('/api/generate-social-seo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mediaUrl: pcalSelected.mediaUrl, existingText: textarea.value, productName }),
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.error || `Request failed (${res.status})`);
+
+        const a = data.analysis || {};
+        const regen = `<button type="button" class="btn" style="padding:6px 12px;font-size:11px;margin-top:10px;background:#eee;color:#333;" onclick="pcalGenerateSocialSeo()">🔄 Regenerate</button>`;
+
+        if (data.category === 'other') {
+          pcalSocialSeoPackages = [];
+          panel.innerHTML = `<div><strong>Detected:</strong> ${pcalEscapeHtml(a.product || '—')}</div>
+            <div style="margin-top:6px;color:#555;">${pcalEscapeHtml(data.message || '')}</div>${regen}`;
+          return;
+        }
+
+        pcalSocialSeoPackages = data.packages || [];
+        const catLabel = { cake: '🎂 Cake', flowers: '💐 Flowers', gift: '🎁 Gift' }[data.category] || data.category;
+        const tick = ok => ok ? '<span style="color:#2e7d32;">✓</span>' : '<span style="color:#c62828;" title="Phrase not found word for word, so edit before using">✗</span>';
+        const copyBtn = (i, field) => `<button type="button" class="btn" style="padding:2px 8px;font-size:10px;background:#fff;color:#0D47A1;border:1px solid #BBDEFB;" onclick="pcalCopySocialSeo(this, ${i}, '${field}')">Copy</button>`;
+
+        const header = `
+          <div style="margin-bottom:8px;line-height:1.5;">
+            <div><strong>Category:</strong> ${catLabel} · <strong>Product:</strong> ${pcalEscapeHtml(a.product || '—')}</div>
+            <div style="color:#666;">Occasion: ${pcalEscapeHtml(a.occasion || '—')} · For: ${pcalEscapeHtml(a.recipient || '—')}${a.visible_price ? ` · Price seen: ${pcalEscapeHtml(a.visible_price)}` : ''}</div>
+            <div style="color:#888;font-size:11px;">Search terms collected from Sri Lanka on ${pcalEscapeHtml(data.collected || '')}. Put the phrase in all four places below.</div>
+          </div>`;
+
+        const cards = pcalSocialSeoPackages.map((p, i) => `
+          <div style="padding:10px 0;border-top:1px solid #dbe8f5;">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;">
+              <div><span style="background:#0D47A1;color:#fff;border-radius:10px;padding:2px 8px;font-size:11px;">"${pcalEscapeHtml(p.phrase)}"</span>
+                <span style="color:#888;font-size:11px;"> TikTok rank #${p.rank}${p.theme ? ' · ' + pcalEscapeHtml(p.theme) : ''}</span></div>
+              <button type="button" class="btn btn-primary" style="padding:4px 10px;font-size:11px;white-space:nowrap;" onclick="pcalUseSocialSeo(${i})">Use caption</button>
+            </div>
+            <div style="display:grid;grid-template-columns:120px 1fr auto;gap:4px 8px;align-items:start;">
+              <span style="color:#666;">${tick(p.checks?.spoken)} Say (first 3s)</span><span>${pcalEscapeHtml(p.spoken_hook)}</span>${copyBtn(i, 'spoken_hook')}
+              <span style="color:#666;">${tick(p.checks?.on_screen)} On-screen text</span><span>${pcalEscapeHtml(p.on_screen_text)}</span>${copyBtn(i, 'on_screen_text')}
+              <span style="color:#666;">${tick(true)} Caption</span><span style="white-space:pre-wrap;">${pcalEscapeHtml(pcalSocialSeoCaption(p))}</span>${copyBtn(i, 'caption')}
+              ${p.facebook_line ? `<span style="color:#666;">Facebook line</span><span>${pcalEscapeHtml(p.facebook_line)}</span>${copyBtn(i, 'facebook_line')}` : ''}
+            </div>
+          </div>`).join('');
+
+        panel.innerHTML = header + cards + regen;
+      } catch (e) {
+        panel.innerHTML = `<span style="color:#dc2626;">❌ ${pcalEscapeHtml(e.message)}</span>
+          <button type="button" class="btn" style="padding:6px 12px;font-size:11px;margin-top:10px;background:#eee;color:#333;" onclick="pcalGenerateSocialSeo()">🔄 Try again</button>`;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function pcalSocialSeoCaption(p) {
+      return [p.caption_line1, p.caption_body].filter(Boolean).join('\n') + '\n\n' + (p.hashtags || []).join(' ');
+    }
+
+    function pcalUseSocialSeo(i) {
+      const p = pcalSocialSeoPackages[i];
+      if (p) document.getElementById('pcalPrimaryText').value = pcalSocialSeoCaption(p);
+    }
+
+    async function pcalCopySocialSeo(btn, i, field) {
+      const p = pcalSocialSeoPackages[i];
+      if (!p) return;
+      const text = field === 'caption' ? pcalSocialSeoCaption(p) : p[field];
+      try {
+        await navigator.clipboard.writeText(text || '');
+        btn.textContent = 'Copied';
+      } catch (e) {
+        btn.textContent = 'Copy failed';
+      }
+      setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
     }
 
     // Mirrors buildWhatsAppLink() in functions/api/posting-calendar.js — for
