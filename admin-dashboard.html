@@ -2115,6 +2115,10 @@
           .pcal-post:hover { border-color: var(--primary-purple); }
           .pcal-post.selected { border-color: var(--primary-purple); background: rgba(94,58,142,0.07); }
           .pcal-post .pcal-row1 { display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 700; }
+          .pcal-remove-btn { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 100px; border: 1px solid #f3c2c2; background: #fff; color: #c62828; cursor: pointer; }
+          .pcal-remove-btn:hover { background: #fdecea; }
+          .pcal-remove-btn.confirm { background: #c62828; color: #fff; border-color: #c62828; }
+          .pcal-remove-btn:disabled { opacity: 0.6; cursor: default; }
           .pcal-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 100px; text-transform: uppercase; }
           .pcal-badge.Image { background: #f3eeff; color: var(--primary-purple-dark); }
           .pcal-badge.Video { background: #fef3c7; color: #b45309; }
@@ -6873,6 +6877,7 @@
             <span style="display:flex;gap:5px;align-items:center;">
               ${prioBadge}
               <span class="pcal-badge ${p.contentType}">${p.contentType}</span>
+              <button type="button" class="pcal-remove-btn" title="Remove from Good to Go (puts it on Hold in the Studio Calendar)" onclick="event.stopPropagation(); pcalRemoveGoodToGo(this, '${p.contentId}')">✕ Remove</button>
             </span>
           </div>
           <div class="pcal-row2">
@@ -6881,6 +6886,48 @@
           </div>
         </div>`;
       }).join('');
+    }
+
+    // ✕ Remove on a Good to Go card. First click arms it ("Confirm?"), second
+    // click within 4s removes. Server moves the Studio Calendar item to Hold
+    // (not deleted), so it can be brought back from the Studio Calendar.
+    async function pcalRemoveGoodToGo(btn, contentId) {
+      if (!btn.classList.contains('confirm')) {
+        btn.classList.add('confirm');
+        btn.textContent = 'Confirm?';
+        clearTimeout(btn._resetTimer);
+        btn._resetTimer = setTimeout(() => {
+          btn.classList.remove('confirm');
+          btn.textContent = '✕ Remove';
+        }, 4000);
+        return;
+      }
+      clearTimeout(btn._resetTimer);
+      const post = pcalPosts.find(p => p.contentId === contentId);
+      if (!post) return;
+      btn.disabled = true;
+      btn.textContent = 'Removing…';
+      try {
+        const res = await fetch('/api/posting-calendar', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ studioId: post.studioId }),
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.error || `Request failed (${res.status})`);
+        pcalPosts = pcalPosts.filter(p => p.contentId !== contentId);
+        if (pcalSelected && pcalSelected.contentId === contentId) {
+          pcalSelected = null;
+          document.getElementById('pcalRightPanel').innerHTML =
+            '<div class="pcal-empty">Removed from Good to Go. It is now on Hold in the Studio Calendar; set it back to "Good to Go" there to restore it.</div>';
+        }
+        renderPcalList();
+      } catch (e) {
+        btn.disabled = false;
+        btn.classList.remove('confirm');
+        btn.textContent = 'Failed, retry';
+        btn.title = 'Remove failed: ' + e.message;
+      }
     }
 
     function pcalDriveFileId(url) {

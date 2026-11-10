@@ -808,7 +808,7 @@ export async function onRequestPost(context) {
     // verbatim) — not a separate sheet-only column. '' when no Product Name
     // was given leaves Primary Text completely untouched.
     const primaryTextTrimmed = String(primaryText || '').trim();
-    const finalPrimaryText = whatsappLink ? `${primaryTextTrimmed}\n${whatsappLink}` : primaryTextTrimmed;
+    const finalPrimaryText = whatsappLink ? insertLinkBeforeHashtags(primaryTextTrimmed, whatsappLink) : primaryTextTrimmed;
 
     // Column G gets the chosen date AND the chosen slot's time as one value:
     // "02/07/2026 21:00:00" in the cell. Built from the picked date's digits
@@ -937,7 +937,26 @@ export async function onRequestPatch(context) {
 export async function onRequestDelete(context) {
   const { env, request } = context;
   try {
-    const { contentId } = await request.json();
+    const { contentId, studioId, reason } = await request.json();
+
+    // Remove an UNSCHEDULED item from the Good to Go list. Doesn't delete the
+    // Studio Calendar row: it moves it to "Hold" with a reason, which the
+    // Studio Calendar already shows (hold badge + reason) and which can be
+    // undone there by setting the status back to "Good to Go".
+    if (studioId && !contentId) {
+      const items = await supabaseQuery(`studio_calendar?id=eq.${encodeURIComponent(studioId)}`);
+      if (!items.length) return json({ error: 'Studio Calendar item not found: ' + studioId }, 404);
+      if (String(items[0].studio_status || '').trim() !== 'Good to Go') {
+        return json({ error: `This item is no longer Good to Go (current status: "${items[0].studio_status}"). Refresh and try again.` }, 409);
+      }
+      const holdReason = String(reason || '').trim().slice(0, 500) || 'Removed from Posting Calendar (Good to Go)';
+      await supabaseQuery(`studio_calendar?id=eq.${encodeURIComponent(studioId)}`, 'PATCH', {
+        studio_status: 'Hold',
+        hold_reason: holdReason,
+      });
+      return json({ ok: true, removed: true });
+    }
+
     if (!contentId) return json({ error: 'contentId is required' }, 400);
 
     const token = await getAccessToken(env);
@@ -967,6 +986,19 @@ export async function onRequestDelete(context) {
   } catch (e) {
     return json({ error: e.message }, 500);
   }
+}
+
+// If the caption ends in a hashtag-only block (as 🔎 Search-ranked post
+// captions do), put the WhatsApp link above it so the link isn't buried
+// under the tags. Otherwise append it as the last line, as before.
+function insertLinkBeforeHashtags(text, link) {
+  const lines = text.split('\n');
+  let i = lines.length;
+  while (i > 0 && /^\s*(#[^\s#]+\s*)+$/.test(lines[i - 1])) i--;
+  if (i === lines.length || i === 0) return `${text}\n${link}`;
+  const body = lines.slice(0, i).join('\n').replace(/\s+$/, '');
+  const tags = lines.slice(i).join('\n');
+  return `${body}\n${link}\n\n${tags}`;
 }
 
 function json(data, status = 200) {
