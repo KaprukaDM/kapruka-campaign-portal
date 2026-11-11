@@ -1017,7 +1017,6 @@ async function upsertStudioCalendarEntry(entry) {
     department: entry.department || null,
     source_type: entry.source_type,
     source_id: entry.source_id || null,
-    product_code: entry.product_code || null,
     page_name: entry.page_name || null,
     format: entry.format || null,
     content_details: entry.content_details || '',
@@ -1029,6 +1028,11 @@ async function upsertStudioCalendarEntry(entry) {
     approval_status: 'Received',
     booking_note: entry.booking_note || null
   };
+
+  // Only set product_code when the caller passes the key, so an edit that has
+  // no product field (Extra Content edits) cannot wipe a code a promo
+  // suggestion stored. Callers that pass null still clear it, as before.
+  if (entry.product_code !== undefined) payload.product_code = entry.product_code || null;
 
   // Only touch priority when explicitly provided, so unrelated re-upserts
   // (e.g. content edits) don't wipe an existing High/Low label.
@@ -1628,14 +1632,17 @@ async function addExtraContent(extra) {
   const result = await supabaseQuery('extra_content', 'POST', row);
   const saved = result[0];
 
-  await upsertStudioCalendarEntry({
+  // product_code is stored on the studio_calendar row only (extra_content has
+  // no such column). Promo suggestions pass it so the calendar knows which
+  // product a slot features; the plain Add Extra Content form leaves it empty.
+  const studioId = await upsertStudioCalendarEntry({
     date: saved.date, department: saved.department, source_type: 'extra_content',
-    source_id: saved.id, product_code: null, page_name: saved.page_name,
+    source_id: saved.id, product_code: extra.product_code || null, page_name: saved.page_name,
     format: saved.format, content_details: saved.content_details,
     reference_links: saved.reference_links, slot_type: 'content_calendar',
     booking_status: 'booked', priority: extra.priority || 'Low'
   });
-  return saved;
+  return { ...saved, studio_id: studioId };
 }
 
 async function updateExtraContent(id, extra) {
@@ -1648,7 +1655,7 @@ async function updateExtraContent(id, extra) {
 
   await upsertStudioCalendarEntry({
     date: extra.date, department: extra.department, source_type: 'extra_content',
-    source_id: id, product_code: null, page_name: extra.page_name,
+    source_id: id, page_name: extra.page_name,
     format: extra.format, content_details: extra.content_details,
     reference_links: extra.reference_links, slot_type: 'content_calendar',
     booking_status: 'booked'

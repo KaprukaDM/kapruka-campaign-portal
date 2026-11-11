@@ -1321,6 +1321,86 @@
       color: #2e7d32;
       font-weight: 600;
     }
+    /* ── Promo suggestions panel (js/promo-suggestions.js) ── */
+    .ps-sub { font-size: 13px; font-weight: 500; color: #888; margin-left: 8px; }
+    .ps-status { font-size: 13px; padding: 8px 12px; border-radius: 8px; background: #f5f5f5; color: #555; margin: 4px 0 14px; }
+    .ps-status.on { background: #E8F5E9; color: #1B5E20; }
+    .ps-status.off { background: #FFF3E0; color: #8a4b00; }
+    .ps-weekbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+    .ps-nav { border: 2px solid #5e3a8e; background: #fff; color: #5e3a8e; border-radius: 8px; padding: 4px 10px; cursor: pointer; font-weight: 700; }
+    .ps-mut { color: #888; font-size: 13px; }
+    .ps-slots { display: grid; grid-template-columns: repeat(7, minmax(110px, 1fr)); gap: 8px; margin-bottom: 14px; }
+    .ps-day { background: #faf8fd; border: 1px solid #ece6f5; border-radius: 10px; padding: 8px; min-width: 0; }
+    .ps-day.past { opacity: .5; }
+    .ps-dayhead { font-weight: 700; font-size: 13px; color: #4a2d70; display: flex; justify-content: space-between; margin-bottom: 6px; }
+    .ps-dayhead span { font-weight: 500; color: #888; }
+    .ps-cell { font-size: 11.5px; border-radius: 6px; padding: 5px 7px; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ps-cell.taken { background: #ede7f6; color: #4a2d70; }
+    .ps-cell.reserved { background: #FFF8E1; color: #8a6d00; }
+    .ps-cell.free { background: #fff; border: 1px dashed #b9a6d6; color: #5e3a8e; text-align: center; }
+    .ps-go { width: 100%; font-size: 15px; padding: 12px; }
+    .ps-go:disabled { opacity: .55; cursor: not-allowed; }
+    .ps-running { margin-top: 12px; padding: 12px; background: #F3E5F5; border-radius: 10px; color: #4a2d70; font-size: 14px; }
+    .ps-spin { display: inline-block; width: 12px; height: 12px; border: 2px solid #b9a6d6; border-top-color: #5e3a8e; border-radius: 50%; animation: psspin .8s linear infinite; vertical-align: -1px; }
+    @keyframes psspin { to { transform: rotate(360deg); } }
+    .ps-steps { margin: 8px 0 0 18px; font-size: 12.5px; color: #555; }
+    .ps-error { margin-top: 12px; padding: 10px 12px; background: #FFEBEE; color: #B71C1C; border-radius: 8px; font-size: 13px; }
+    .ps-context { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 6px; }
+    .ps-chip { font-size: 12.5px; background: #f1eef7; color: #4a2d70; padding: 6px 10px; border-radius: 999px; }
+    .ps-chip.occ { background: #FCE4EC; color: #880E4F; font-weight: 600; }
+    .ps-note { width: 100%; margin: 6px 0 0; font-size: 14px; color: #333; }
+    .ps-mix { font-size: 13px; color: #4a2d70; font-weight: 600; margin: 12px 0 8px; }
+    .ps-h4 { margin: 14px 0 6px; color: #4a2d70; font-size: 14px; }
+    .ps-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px; }
+    .ps-card { display: flex; gap: 12px; border: 1px solid #ece6f5; border-radius: 12px; padding: 12px; background: #fff; }
+    .ps-card.approved { border-color: #81C784; box-shadow: 0 0 0 2px #E8F5E9; }
+    .ps-card.scheduled { background: #fbfffb; }
+    .ps-card.rejected { opacity: .5; }
+    .ps-card img, .ps-noimg { width: 96px; height: 96px; object-fit: cover; border-radius: 10px; flex: none; background: #f0f0f0; }
+    .ps-body { flex: 1; min-width: 0; }
+    .ps-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px; }
+    .ps-tag { font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 999px; background: #f1eef7; color: #4a2d70; }
+    .ps-tag.t-winner { background: #E8F5E9; color: #1B5E20; }
+    .ps-tag.t-lookalike { background: #FFF3E0; color: #8a4b00; }
+    .ps-tag.t-novel { background: #F3E5F5; color: #6A1B9A; }
+    .ps-tag.gift { background: #FCE4EC; color: #880E4F; }
+    .ps-tag.self { background: #E3F2FD; color: #0D47A1; }
+    .ps-name { font-weight: 700; color: #222; text-decoration: none; display: block; }
+    .ps-meta { font-size: 12px; color: #777; margin: 2px 0 6px; }
+    .ps-hook { font-size: 13px; color: #4a2d70; font-style: italic; margin-bottom: 6px; }
+    .ps-why { background: #faf8fd; border-radius: 8px; padding: 8px 10px; font-size: 12.5px; }
+    .ps-why b { color: #4a2d70; }
+    .ps-why p { margin: 3px 0 4px; color: #333; }
+    .ps-why ul { margin: 0; padding-left: 16px; color: #555; }
+    .ps-actions { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .ps-btn { border: none; border-radius: 8px; padding: 7px 14px; font-weight: 600; cursor: pointer; font-size: 13px; }
+    .ps-btn.ok { background: #2E7D32; color: #fff; }
+    .ps-btn.no { background: #fff; color: #B71C1C; border: 1px solid #EF9A9A; }
+    .ps-link { background: none; border: none; color: #888; text-decoration: underline; cursor: pointer; font-size: 12px; }
+    .ps-pick { font-size: 12.5px; color: #333; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; width: 100%; }
+    .ps-slot { border: 1px solid #b9a6d6; background: #fff; color: #4a2d70; border-radius: 8px; padding: 5px 9px; cursor: pointer; font-size: 12.5px; font-weight: 600; }
+    .ps-slot small { font-weight: 400; color: #888; }
+    .ps-slot.best { border-color: #2E7D32; background: #E8F5E9; }
+    .ps-slot:disabled { opacity: .5; }
+    .ps-done { font-size: 13px; color: #1B5E20; font-weight: 600; }
+    .ps-outcome { font-size: 12.5px; margin-top: 4px; }
+    .ps-outcome.good { color: #1B5E20; font-weight: 600; }
+    .ps-outcome.bad { color: #B71C1C; }
+    .ps-outcome.mid, .ps-outcome.mut { color: #777; }
+    .ps-dropped { margin-top: 10px; font-size: 12.5px; color: #777; }
+    .ps-learn { margin-top: 16px; border-top: 1px dashed #e0e0e0; padding-top: 12px; }
+    .ps-learn summary { cursor: pointer; font-weight: 700; color: #4a2d70; }
+    .ps-stats { display: flex; gap: 10px; flex-wrap: wrap; margin: 10px 0; }
+    .ps-stats div { background: #faf8fd; border-radius: 10px; padding: 8px 14px; font-size: 12px; color: #666; }
+    .ps-stats b { display: block; font-size: 20px; color: #5e3a8e; }
+    .ps-tables { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 14px; align-items: start; }
+    .ps-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    .ps-table th, .ps-table td { text-align: left; padding: 5px 6px; border-bottom: 1px solid #eee; }
+    .ps-table th { color: #888; font-weight: 600; }
+    .v-working { color: #1B5E20; font-weight: 600; }
+    .v-weak { color: #B71C1C; font-weight: 600; }
+    .v-mixed, .v-too-few-posts { color: #999; }
+    @media (max-width: 900px) { .ps-slots { grid-template-columns: repeat(2, 1fr); } }
   </style>
 </head>
 <body>
@@ -1544,66 +1624,6 @@
         </div>
 
         <div class="card">
-          <h2>🗂️ Content Bookings Approval</h2>
-          
-          <!-- Filters -->
-          <div class="filters-container">
-            <div class="filter-group">
-              <label>🔍 Search</label>
-              <input type="text" id="contentSearch" placeholder="Search..." oninput="filterContentBookings()">
-            </div>
-            <div class="filter-group">
-              <label>📊 Status</label>
-              <select id="contentStatus" onchange="filterContentBookings()">
-                <option value="">All Statuses</option>
-                <option value="Pending">Pending</option>
-                <option value="Approved">Approved</option>
-                <option value="Rejected">Rejected</option>
-              </select>
-            </div>
-            <div class="filter-group">
-              <label>📅 Date Filter</label>
-              <select id="contentDateFilter" onchange="handleContentDateFilter()">
-                <option value="">All Dates</option>
-                <option value="today">Today</option>
-                <option value="yesterday">Yesterday</option>
-                <option value="3days">Last 3 Days</option>
-                <option value="custom">Custom Range</option>
-              </select>
-            </div>
-          </div>
-          <div class="date-range-inputs" id="contentDateRange">
-            <div class="filter-group">
-              <label>From Date</label>
-              <input type="date" id="contentDateFrom" onchange="filterContentBookings()">
-            </div>
-            <div class="filter-group">
-              <label>To Date</label>
-              <input type="date" id="contentDateTo" onchange="filterContentBookings()">
-            </div>
-          </div>
-
-          <div class="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Slot</th>
-                  <th>Category</th>
-                  <th>Product Code</th>
-                  <th>Status</th>
-                  <th>Go Live</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="contentTable">
-                <tr><td colspan="7" style="text-align:center;padding:40px;">Loading...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="card">
           <h2>🎨 Themes</h2>
           <div class="table-container">
             <table>
@@ -1627,6 +1647,31 @@
 
       <!-- STUDIO CALENDAR TAB -->
       <div id="tab-studio" class="tab-content">
+        <!-- Promo suggestions: Claude Code on the marketing PC researches products
+             for this week's free slots (js/promo-suggestions.js). -->
+        <div class="card" id="promoPanel">
+          <div class="calendar-header">
+            <h2 style="margin:0;">✨ Promo Suggestions <span class="ps-sub">Claude + Kapruka MCP + sales learnings</span></h2>
+            <button class="btn btn-primary" id="promoRefresh" type="button">🔄 Refresh</button>
+          </div>
+          <div id="promoServiceStatus" class="ps-status">Checking the suggestion service…</div>
+          <div class="ps-weekbar">
+            <button type="button" class="ps-nav" id="promoPrev" aria-label="Previous week">◀</button>
+            <b id="promoWeekLabel"></b>
+            <button type="button" class="ps-nav" id="promoNext" aria-label="Next week">▶</button>
+            <span class="ps-mut"><b id="promoFreeCount">0</b> free slots (3 posts a day, minus booked posts and the weekly App Promotion / Corporate slots still owed)</span>
+          </div>
+          <div class="ps-slots" id="promoSlots"></div>
+          <button type="button" class="btn btn-success ps-go" id="promoSuggestBtn" disabled>✨ Suggest products</button>
+          <div id="promoProgress" hidden></div>
+          <div class="ps-context" id="promoContext"></div>
+          <div id="promoItems"></div>
+          <details id="promoLearnWrap" class="ps-learn">
+            <summary>📊 What kind of promotion sells — learned from every post</summary>
+            <div id="promoLearnings"><p class="ps-mut">Loading…</p></div>
+          </details>
+        </div>
+
         <div class="card">
           <div class="calendar-header">
             <h2 style="margin:0;">🎬 Studio Calendar</h2>
@@ -2508,6 +2553,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
   <script src="js/supabase-api.js"></script>
+  <script src="js/promo-suggestions.js"></script>
   <script>
     // ═══════════════════════════════════════════════════════════
     // TEAM MEMBERS LIST
@@ -2837,6 +2883,7 @@
 
       if (tab === 'studio') {
         startStudioAutoRefresh();
+        if (window.initPromoSuggestions) initPromoSuggestions();
       } else {
         stopStudioAutoRefresh();
       }
@@ -3368,7 +3415,9 @@
     // CONTENT CALENDAR - WITH FILTERS & APPROVAL FIX
     // ═══════════════════════════════════════════════════════════
     async function loadContentData() {
-      loadContentBookings();
+      // The "Content Bookings Approval" card was removed on request (Nov 2026):
+      // bookings already reach the Studio calendar when they are made, so the
+      // approval table added no value. The booking functions below are unused.
       loadThemes();
     }
 
