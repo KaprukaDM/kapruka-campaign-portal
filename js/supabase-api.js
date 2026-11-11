@@ -1999,6 +1999,17 @@ const CATEGORIES = [
 // to stay exactly as it is: the rows already in the table use it.
 const OPEN_CATEGORY = 'Any Category';
 
+// Rewrites open ("Any Category") slot-1 rows on Wed/Fri to the fixed weekly
+// category. Mutates and returns the array.
+function applyFixedWeeklyToSlots(slots) {
+  (slots || []).forEach(s => {
+    if (s.category !== OPEN_CATEGORY) return;
+    const fixed = fixedWeeklyCategoryForSlot(s.date, s.slot_number);
+    if (fixed) s.category = fixed;
+  });
+  return slots;
+}
+
 async function getCalendarData(month, year) {
   try {
     const startDate = `${year}-${String(month).padStart(2,'0')}-01`;
@@ -2045,6 +2056,10 @@ async function getCalendarData(month, year) {
       await annotatePostedVerification(bookings, b => b.studio_slot_id);
     } catch (e) { console.warn('Could not verify posted claims:', e); }
 
+    // Apply the fixed weekly rule (App Promotion Wed / Corporate Fri on slot 1)
+    // at read time, so it holds even for slots stored as "Any Category".
+    applyFixedWeeklyToSlots(categorySlots);
+
     return { themes, categorySlots, bookings };
   } catch (error) {
     console.error('getCalendarData error:', error);
@@ -2061,7 +2076,8 @@ async function getThemeForDate(date) {
 
 async function getCategorySlotsForDate(date) {
   try {
-    return await supabaseQuery(`category_slots?date=eq.${date}&order=slot_number.asc`);
+    return applyFixedWeeklyToSlots(
+      await supabaseQuery(`category_slots?date=eq.${date}&order=slot_number.asc`));
   } catch (error) { return []; }
 }
 
