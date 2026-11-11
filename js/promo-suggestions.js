@@ -120,9 +120,10 @@
     const total = state.slots.reduce((n, s) => n + s.free, 0);
     $('promoFreeCount').textContent = total;
     $('promoSuggestBtn').disabled = !state.online || total === 0 || !!state.run && state.run.status === 'running';
-    $('promoSuggestBtn').textContent = total
-      ? `✨ Suggest products for the ${Math.min(total, 15)} free slot${total === 1 ? '' : 's'}`
-      : 'No free slots this week';
+    const open = openPicks().length;
+    $('promoSuggestBtn').textContent = !total ? 'No free slots this week'
+      : open ? `🔄 New suggestions for the ${Math.min(total, 15)} free slots (replaces the ${open} below)`
+        : `✨ Suggest products for the ${Math.min(total, 15)} free slot${total === 1 ? '' : 's'}`;
     box.innerHTML = state.slots.map(s => {
       const cells = [];
       s.booked.forEach(r => cells.push(`<div class="ps-cell taken" title="${esc(r.content_details || '')}">${esc((r.content_details || r.page_name || 'Booked').slice(0, 38))}</div>`));
@@ -144,6 +145,7 @@
       ${c.weather ? `<div class="ps-chip">🌦 ${esc(c.weather.note)}</div>` : ''}
       ${c.payday ? `<div class="ps-chip">💰 ${esc(c.payday)}</div>` : ''}
       ${run.sales_asof ? `<div class="ps-chip">Sales data to ${fmtDate(run.sales_asof)}</div>` : ''}
+      ${c.search && c.search.ok ? `<div class="ps-chip">🔍 ${Number(c.search.total).toLocaleString('en')} site searches in 30 days · top: ${esc(c.search.top.slice(0, 5).join(', '))}</div>` : ''}
       ${run.week_note ? `<p class="ps-note">${esc(run.week_note)}</p>` : ''}`;
   }
 
@@ -175,8 +177,15 @@
 
   // Three numbers per pick, short enough to read at a glance. Built from the
   // pick's own data (sales) and its evidence lines, so old items render too.
+  function searchChip(it) {
+    const m = it.search;
+    if (!m) return '';
+    const failed = (it.evidence || []).some(e => e.includes('found nothing on the site'));
+    return `<span class="ps-chipn ${failed ? 'warn' : 'srch'}" title="${esc(`Searched "${m.term}" on kapruka.com`)}">🔍 ${Number(m.n30).toLocaleString('en')} searches ${esc(m.change)}${failed ? ' · site found nothing' : ''}</span>`;
+  }
+
   function chips(it) {
-    const out = [];
+    const out = [searchChip(it)];
     const s = it.sales || {};
     if (isCat(it)) {
       if (it.category_products != null) out.push(`<span class="ps-chipn">${it.category_products} products</span>`);
@@ -340,7 +349,14 @@
     }, POLL_MS);
   }
 
+  // This week's picks a new run replaces: everything not yet added to Studio.
+  function openPicks() {
+    return state.items.filter(i => i.week_start === state.weekStart && i.status !== 'scheduled');
+  }
+
   async function suggest() {
+    const open = openPicks().length;
+    if (open && !confirm(`New suggestions will replace the ${open} current picks for this week (picks already added to Studio stay). Continue?`)) return;
     await loadSlots();
     const slots = state.slots.filter(s => s.free > 0).map(s => ({ date: s.date, weekday: s.weekday, free: s.free }));
     if (!slots.length) { renderSlots(); return; }
