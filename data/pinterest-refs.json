@@ -37,19 +37,19 @@
     ],
     "chocolates": [
       {
-        "url": "https://www.pinterest.com/pin/1078471442036475761/",
-        "style": "Cover slide",
-        "note": "Cross-product (jewellery/lifestyle): a burgundy-and-gold collage cover with a rich, expensive palette that suits chocolate. Cover slide with the logo kept near the top."
+        "url": "https://www.pinterest.com/pin/1124211125774265989/",
+        "style": "Carousel cover",
+        "note": "The Cacao Pods: a 7-slide carousel whose cover shows gift boxes with a short, confident headline (\"The kind of gift you don't forget\"). Same product type as ours (boxed chocolates) and the right carousel structure."
+      },
+      {
+        "url": "https://www.pinterest.com/pin/1057290450036487539/",
+        "style": "Gifting moment + CTA",
+        "note": "Hands opening a gold chocolate box with a warm line and an \"Order Now\" button. A human gifting slide that sells the occasion, not just the box."
       },
       {
         "url": "https://www.pinterest.com/pin/651262796157866413/",
-        "style": "Single-product slide",
-        "note": "Cross-product (beauty): one product on a soft background with name and price, clean and premium. Layout for one gift box per slide with its price."
-      },
-      {
-        "url": "https://www.pinterest.com/pin/905505068807521157/",
-        "style": "Multi-product slide",
-        "note": "Cross-product (jewellery line sheet): a tidy grid of items with names and prices on cream. Structure for showing 5-6 real products across slides, no seasonal styling."
+        "style": "Single product + price",
+        "note": "Cross-product (beauty gift guide): one product on a soft background with its name and price. Layout for one gift box per slide showing Rs price."
       }
     ]
   }
