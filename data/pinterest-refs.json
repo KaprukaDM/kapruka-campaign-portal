@@ -1,4 +1,56 @@
 {
   "_readme": "Hand-picked Pinterest inspiration for Promo Suggestions. Key = product code (e.g. cake00KA001234), or the lower-cased pick name / category path. Each pin: url (https://www.pinterest.com/pin/<id>/), style (Poster | Editorial | Metaphor | Flat-lay | Festive | Lifestyle ...), note (why it fits, one line). Aim for 2-3 pins per pick and MIX styles - never three of the same look.",
-  "refs": {}
+  "refs": {
+    "ef_pc_home0v1624p00003": [
+      {
+        "url": "https://www.pinterest.com/pin/341147740546846021/",
+        "style": "Poster",
+        "note": "Gold ornaments arranged into a tree on deep green: bold, giftable poster layout"
+      },
+      {
+        "url": "https://www.pinterest.com/pin/245024035972223297/",
+        "style": "Editorial",
+        "note": "Moody close-up of a handmade ornament on dark fir in soft light: makes handmade feel premium"
+      },
+      {
+        "url": "https://www.pinterest.com/pin/844002786461454218/",
+        "style": "Minimal",
+        "note": "Bare twig tree on a stone base with neutral ornaments: quiet, modern Christmas"
+      }
+    ],
+    "crochet christmas tree decorations set": [
+      {
+        "url": "https://www.pinterest.com/pin/341147740546846021/",
+        "style": "Poster",
+        "note": "Gold ornaments arranged into a tree on deep green: bold, giftable poster layout"
+      },
+      {
+        "url": "https://www.pinterest.com/pin/245024035972223297/",
+        "style": "Editorial",
+        "note": "Moody close-up of a handmade ornament on dark fir in soft light: makes handmade feel premium"
+      },
+      {
+        "url": "https://www.pinterest.com/pin/844002786461454218/",
+        "style": "Minimal",
+        "note": "Bare twig tree on a stone base with neutral ornaments: quiet, modern Christmas"
+      }
+    ],
+    "chocolates": [
+      {
+        "url": "https://www.pinterest.com/pin/758926974754775039/",
+        "style": "Editorial",
+        "note": "Navy gift box of chocolates on silk: premium gifting feel"
+      },
+      {
+        "url": "https://www.pinterest.com/pin/678284393924227591/",
+        "style": "Poster",
+        "note": "3x3 brand moodboard grid with gold foil and pouring chocolate: carousel or collage look"
+      },
+      {
+        "url": "https://www.pinterest.com/pin/526287906426767846/",
+        "style": "Metaphor",
+        "note": "Truffles balanced on a cinnamon stick like scales: clever idea-led ad layout"
+      }
+    ]
+  }
 }
