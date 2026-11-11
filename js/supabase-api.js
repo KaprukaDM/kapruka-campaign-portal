@@ -97,7 +97,7 @@ function getStudioSlotLabels(row) {
 // remembering to add them:
 //   • App Promotion      — once a week  (Wednesday)
 //   • Corporate Content  — once a week  (Friday)
-// Every day carries DAILY_POSTS_PER_DAY (3) posts; on those two weekdays one
+// Every day carries DAILY_POSTS_PER_DAY (2, or 3 in season) posts; on those two weekdays one
 // of the 3 is the fixed type. category_slots (content-calendar booking) is
 // generated from the same table via fixedWeeklyCategoryForSlot(), so the
 // booking front-end and the Studio calendar cannot disagree.
@@ -113,7 +113,17 @@ function getStudioSlotLabels(row) {
 // Content form pre-filled for that type.
 //
 // To change the cadence, edit perWeek/days here — nothing else needs touching.
-const DAILY_POSTS_PER_DAY = 3;
+// Normal days hold 2 posts; days inside a seasonal theme (theme_config.is_seasonal)
+// hold up to 3. Used by BOTH the booking page and the Studio calendar.
+const DAILY_POSTS_PER_DAY = 2;
+const SEASONAL_POSTS_PER_DAY = 3;
+
+// themes: theme_config rows (any that overlap the date). Seasonal if any
+// seasonal theme covers the date.
+function dailyPostCap(date, themes) {
+  const seasonal = (themes || []).some(t => t.is_seasonal && t.start_date <= date && t.end_date >= date);
+  return seasonal ? SEASONAL_POSTS_PER_DAY : DAILY_POSTS_PER_DAY;
+}
 
 const FIXED_WEEKLY_SLOT_TYPES = [
   {
@@ -992,8 +1002,8 @@ async function bookProductSlot(productId, slotDate, slotNumber, pageName) {
 // STUDIO CALENDAR CORE
 // ═══════════════════════════════════════════════════════════════
 
-// Hard cap: the Studio calendar holds at most DAILY_POSTS_PER_DAY (3) posts on
-// any given date. Empty placeholder slots don't count. Throws when the day is
+// Hard cap: the Studio calendar holds at most 2 posts on a normal day (3 in a
+// seasonal theme) on any given date. Empty placeholder slots don't count. Throws when the day is
 // full. Callers that insert a source row first (content_calendar, extra_content,
 // request_log, ad_requests) call this BEFORE the insert so nothing is orphaned;
 // upsertStudioCalendarEntry calls it again as the final backstop.
@@ -1004,9 +1014,11 @@ async function assertStudioDayHasRoom(date, ignoreStudioId = null) {
   );
   // Filtered here, not in the query: PostgREST's neq drops NULL rows.
   const count = rows.filter(r => r.id !== ignoreStudioId && r.booking_status !== 'empty').length;
-  if (count >= DAILY_POSTS_PER_DAY) {
+  const themes = await supabaseQuery(`theme_config?start_date=lte.${date}&end_date=gte.${date}`);
+  const cap = dailyPostCap(date, themes);
+  if (count >= cap) {
     throw new Error(
-      `${date} already has ${DAILY_POSTS_PER_DAY} posts (the daily maximum). Please pick another date.`
+      `${date} already has ${cap} posts (the daily maximum${cap === DAILY_POSTS_PER_DAY ? '; more are only allowed during a season' : ''}). Please pick another date.`
     );
   }
 }
@@ -2079,6 +2091,18 @@ async function getCalendarData(month, year) {
       });
     } catch (e) { console.warn('Could not merge studio rejection reasons:', e); }
 
+    // Trim open slots beyond the day's cap (2, or 3 in season). A slot that
+    // already has a booking is always kept so nothing disappears.
+    {
+      const booked = new Set(bookings.map(b => b.date + '#' + b.slot_number));
+      for (let i = categorySlots.length - 1; i >= 0; i--) {
+        const sl = categorySlots[i];
+        if (sl.slot_number > dailyPostCap(sl.date, themes) && !booked.has(sl.date + '#' + sl.slot_number)) {
+          categorySlots.splice(i, 1);
+        }
+      }
+    }
+
     // ADMIN → USER sync. Content added on the admin side (extra content,
     // campaign bookings, ad requests, suggestions…) lives only in
     // studio_calendar, so without this the public booking calendar would
@@ -2281,7 +2305,8 @@ async function generateCategorySlots(startDate, endDate, slotsPerDay, isSeasonal
         categoryIndex = 0;
         weekNumber++;
       }
-      for (let slotNum = 1; slotNum <= slotsPerDay; slotNum++) {
+      const perDay = Math.min(parseInt(slotsPerDay), isSeasonal ? SEASONAL_POSTS_PER_DAY : DAILY_POSTS_PER_DAY);
+      for (let slotNum = 1; slotNum <= perDay; slotNum++) {
         // Fixed weekly rule (App Promotion Wed / Corporate Fri) owns slot 1.
         const fixedCategory = fixedWeeklyCategoryForSlot(dateStr, slotNum);
         slots.push({

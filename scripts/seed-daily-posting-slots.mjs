@@ -26,7 +26,7 @@
 // Options
 //   --from YYYY-MM-DD   first day (default: today)
 //   --to   YYYY-MM-DD   last day inclusive (default: 31 Dec of --from's year)
-//   --slots N           slots per day (default 3)
+//   --slots N           slots per day (default 2)
 //   --name "..."        theme name (default "Daily Post")
 //   --color #RRGGBB     theme colour (default #422B73, the portal purple)
 //   --no-theme          only write category_slots, skip the theme_config row
@@ -53,7 +53,7 @@ const has = name => process.argv.includes('--' + name);
 
 const DRY_RUN   = has('dry-run');
 const NO_THEME  = has('no-theme');
-const SLOTS     = parseInt(arg('slots', '3'), 10);
+const SLOTS     = parseInt(arg('slots', '2'), 10);
 const NAME      = arg('name', 'Daily Post');
 const COLOR     = arg('color', '#422B73');
 

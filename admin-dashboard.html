@@ -4185,16 +4185,17 @@
           dayDiv.appendChild(themeName);
         }
 
-        // Daily target: DAILY_POSTS_PER_DAY (3) posts per day. Counted from the
+        // Daily cap: 2 posts per day, 3 inside a seasonal theme (dailyPostCap). Counted from the
         // same studio rows the booking calendar writes, so the two stay in sync.
         const postsToday = (studioMonthRawData || []).filter(d => d.date === dateStr
           && d.booking_status !== 'empty').length;
+        const dayCap = dailyPostCap(dateStr, studioMonthThemes);
         const dailyBadge = document.createElement('div');
         dailyBadge.className = 'daily-post-count';
         dailyBadge.style.cssText = 'font-size:10px;font-weight:700;text-align:center;margin-bottom:4px;color:' +
-          (postsToday >= DAILY_POSTS_PER_DAY ? '#2E7D32' : '#8d6e00') + ';';
-        dailyBadge.textContent = '📅 ' + postsToday + '/' + DAILY_POSTS_PER_DAY + ' posts';
-        dailyBadge.title = DAILY_POSTS_PER_DAY + ' posts per day target';
+          (postsToday >= dayCap ? '#2E7D32' : '#8d6e00') + ';';
+        dailyBadge.textContent = '📅 ' + postsToday + '/' + dayCap + ' posts';
+        dailyBadge.title = dayCap + ' posts max per day' + (dayCap > DAILY_POSTS_PER_DAY ? ' (seasonal)' : '');
         dayDiv.appendChild(dailyBadge);
 
         const slotsContainer = document.createElement('div');
