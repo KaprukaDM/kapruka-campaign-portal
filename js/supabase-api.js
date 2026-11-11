@@ -992,6 +992,24 @@ async function bookProductSlot(productId, slotDate, slotNumber, pageName) {
 // STUDIO CALENDAR CORE
 // ═══════════════════════════════════════════════════════════════
 
+// Hard cap: the Studio calendar holds at most DAILY_POSTS_PER_DAY (3) posts on
+// any given date. Empty placeholder slots don't count. Throws when the day is
+// full. Callers that insert a source row first (content_calendar, extra_content,
+// request_log, ad_requests) call this BEFORE the insert so nothing is orphaned;
+// upsertStudioCalendarEntry calls it again as the final backstop.
+async function assertStudioDayHasRoom(date, ignoreStudioId = null) {
+  if (!date) return;
+  const rows = await supabaseQuery(
+    `studio_calendar?date=eq.${date}&booking_status=neq.empty&select=id`
+  );
+  const count = rows.filter(r => r.id !== ignoreStudioId).length;
+  if (count >= DAILY_POSTS_PER_DAY) {
+    throw new Error(
+      `${date} already has ${DAILY_POSTS_PER_DAY} posts (the daily maximum). Please pick another date.`
+    );
+  }
+}
+
 async function upsertStudioCalendarEntry(entry) {
   const payload = {
     date: entry.date,
@@ -1026,11 +1044,14 @@ async function upsertStudioCalendarEntry(entry) {
     );
     if (existing.length > 0) {
       const id = existing[0].id;
+      // Moving a post to another date must respect that date's cap too.
+      if (existing[0].date !== entry.date) await assertStudioDayHasRoom(entry.date, id);
       await supabaseQuery(`studio_calendar?id=eq.${id}`, 'PATCH', payload);
       return id;
     }
   }
 
+  await assertStudioDayHasRoom(entry.date);
   const result = await supabaseQuery('studio_calendar', 'POST', payload);
   const newId = result[0].id;
   const label = entry.content_details || entry.page_name || entry.product_code || entry.slot_type || 'slot';
@@ -1602,6 +1623,7 @@ async function addExtraContent(extra) {
     format: extra.format || '', content_details: extra.content_details,
     reference_links: extra.reference_links || '', created_by: extra.created_by || ''
   };
+  await assertStudioDayHasRoom(extra.date);
   const result = await supabaseQuery('extra_content', 'POST', row);
   const saved = result[0];
 
@@ -1725,6 +1747,7 @@ async function submitCampaignRequest(formData) {
     status: 'Received'
   };
 
+  await assertStudioDayHasRoom(formData.goLiveDate);
   const result = await supabaseQuery('request_log', 'POST', requestData);
   const savedRequest = result[0];
 
@@ -2048,6 +2071,45 @@ async function getCalendarData(month, year) {
       });
     } catch (e) { console.warn('Could not merge studio rejection reasons:', e); }
 
+    // ADMIN → USER sync. Content added on the admin side (extra content,
+    // campaign bookings, ad requests, suggestions…) lives only in
+    // studio_calendar, so without this the public booking calendar would
+    // still offer those day's slots as free. Each such row is surfaced as a
+    // synthetic booking that occupies a free slot, so both screens always
+    // show the same 3-per-day picture.
+    try {
+      const adminRows = await supabaseQuery(
+        `studio_calendar?source_type=neq.content_calendar&booking_status=neq.empty` +
+        `&date=gte.${startDate}&date=lte.${endDate}&order=date.asc,created_at.asc`
+      );
+      const takenByDate = {};
+      bookings.forEach(b => {
+        if (b.status === 'Rejected') return;
+        (takenByDate[b.date] = takenByDate[b.date] || new Set()).add(b.slot_number);
+      });
+      adminRows.forEach(r => {
+        const taken = (takenByDate[r.date] = takenByDate[r.date] || new Set());
+        const free = categorySlots
+          .filter(s => s.date === r.date && !taken.has(s.slot_number))
+          .map(s => s.slot_number).sort((a, b) => b - a);
+        const slotNumber = free.length ? free[0] : null;
+        if (slotNumber !== null) taken.add(slotNumber);
+        const fixed = getFixedWeeklySlotType(r);
+        bookings.push({
+          id: `studio-${r.id}`, synthetic: true, date: r.date,
+          slot_number: slotNumber,
+          category: (fixed && fixed.name) || r.department || r.format || 'Admin content',
+          product_code: r.product_code || null,
+          status: r.studio_status === 'Posted' ? 'Posted' : 'Approved',
+          studio_status: r.studio_status, approval_status: r.approval_status,
+          studio_slot_id: r.id, studio_slot_date: r.date,
+          page_name: r.page_name, booking_note: r.booking_note || r.content_details || null,
+          dm_rejection_reason: r.dm_rejection_reason,
+          head_rejection_reason: r.head_rejection_reason, hold_reason: r.hold_reason
+        });
+      });
+    } catch (e) { console.warn('Could not merge admin-side content:', e); }
+
     // A "Posted" badge here is the same claim the Studio tab makes, so it
     // has to meet the same bar: no evidence → it renders as pending, not as
     // published. Separate try so a failure only costs the badge, never the
@@ -2089,6 +2151,7 @@ async function submitContentBooking(bookingData) {
     if (existing.some(b => b.status === 'Pending' || b.status === 'Approved')) {
       throw new Error('This slot is already booked');
     }
+    await assertStudioDayHasRoom(bookingData.date);
     const themes = await supabaseQuery(`theme_config?start_date=lte.${bookingData.date}&end_date=gte.${bookingData.date}`);
     const themeName = themes.length > 0 ? themes[0].theme_name : 'Daily Post';
 
@@ -2358,6 +2421,7 @@ async function submitAdRequest(data) {
     status: 'Received',
     go_live_date: data.goLiveDate || null
   };
+  await assertStudioDayHasRoom(data.goLiveDate || `${data.monthYear}-01`);
   const result = await supabaseQuery('ad_requests', 'POST', payload);
   const saved = result[0];
 
