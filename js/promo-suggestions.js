@@ -62,6 +62,37 @@
     return data;
   }
 
+  // ------------------------------------------------------- pinterest refs
+  // Hand-picked inspiration pins (data/pinterest-refs.json), looked up by
+  // product code, then pick id, then lower-cased name / category path.
+  let pinRefs = {};
+  async function loadPinRefs() {
+    try {
+      const res = await fetch('data/pinterest-refs.json?v=' + Date.now());
+      if (res.ok) pinRefs = (await res.json()).refs || {};
+    } catch (e) { console.warn('pinterest refs unavailable', e); }
+  }
+  function pinsFor(item) {
+    const keys = [item.code, item.id, item.name, item.category_path]
+      .filter(Boolean).map(k => String(k).toLowerCase());
+    const lower = Object.fromEntries(Object.entries(pinRefs).map(([k, v]) => [k.toLowerCase(), v]));
+    for (const k of keys) if (Array.isArray(lower[k]) && lower[k].length) return lower[k];
+    return [];
+  }
+  function pinsHtml(it) {
+    const pins = pinsFor(it);
+    if (!pins.length) return '';
+    return '<div class="ps-pins">📌 ' + pins.map(p =>
+      '<a href="' + esc(p.url) + '" target="_blank" rel="noopener" title="' + esc(p.note || '') + '">' + esc(p.style || 'Pin') + '</a>').join(' · ') + '</div>';
+  }
+  // Appended after safeDetails so the URLs are never reworded.
+  function pinLines(item) {
+    const pins = pinsFor(item);
+    if (!pins.length) return '';
+    return String.fromCharCode(10) + 'Pinterest inspiration:' + String.fromCharCode(10) +
+      pins.map(p => '- ' + (p.style || 'Pin') + ': ' + p.url + (p.note ? ' (' + p.note + ')' : '')).join(String.fromCharCode(10));
+  }
+
   // ---------------------------------------------------------------- slots
   // Free = the daily cap minus booked posts, minus any fixed weekly slot
   // (App Promotion Wed / Corporate Fri) the week still owes, so a promo pick
@@ -107,7 +138,7 @@
         `Hook: ${item.angle || ''}`,
         `Why promote: ${item.reason || ''}`,
         `${TIER_LABEL[item.tier] || item.tier} · ${item.intent === 'self' ? 'Self-purchase' : 'Gift'} · ${item.format || 'Carousel'}`
-      ].join('\n'));
+      ].join('\n')) + pinLines(item);
     }
     const lines = [
       `[Promo pick] ${item.name} (${item.code})${item.price ? ' — ' + money(item.price) : ''}`,
@@ -116,7 +147,7 @@
       `Evidence: ${(item.evidence || []).join(' ')}`,
       `${TIER_LABEL[item.tier] || item.tier} · ${item.intent === 'self' ? 'Self-purchase' : 'Gift'} · ${item.format || 'Post'}`
     ];
-    return safeDetails(lines.join('\n'));
+    return safeDetails(lines.join('\n')) + pinLines(item);
   }
 
   // ---------------------------------------------------------------- render
@@ -251,7 +282,7 @@
         <div class="ps-meta">${isCat(it) ? `${esc(LEVEL_LABEL[it.category_level] || 'Category')} page · e.g. ${esc((it.examples || []).map(e => e.name).slice(0, 2).join(', '))}` : `${money(it.price)} · ${esc(it.group)}`}</div></td>
       <td class="ps-type">${isCat(it) ? `<span class="ps-tag cat-lvl">${esc(LEVEL_LABEL[it.category_level] || 'Category')}</span>` : ''}<span class="ps-tag t-${esc(it.tier)}">${esc(TIER_LABEL[it.tier] || it.tier)}</span>
         <span class="ps-tag ${it.intent === 'self' ? 'self' : 'gift'}">${it.intent === 'self' ? 'Self' : 'Gift'}</span></td>
-      <td class="ps-whycell"><div class="ps-why1" title="${esc(it.reason)}">${esc(shortWhy(it.reason))}</div><div class="ps-chips">${chips(it)}</div></td>
+      <td class="ps-whycell"><div class="ps-why1" title="${esc(it.reason)}">${esc(shortWhy(it.reason))}</div><div class="ps-chips">${chips(it)}</div>${pinsHtml(it)}</td>
       <td class="ps-act">${action}</td>
     </tr>`;
   }
@@ -475,7 +506,7 @@
     $('promoSuggestBtn').onclick = suggest;
     root.addEventListener('click', onClick);
     $('promoLearnWrap').addEventListener('toggle', toggleLearnings);
-    loadWeek();
+    loadPinRefs().then(loadWeek);
   };
 
   // Exposed for the harness/tests only.
