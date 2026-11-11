@@ -65,6 +65,7 @@
   // ------------------------------------------------------- pinterest refs
   // Hand-picked inspiration pins (data/pinterest-refs.json), looked up by
   // product code, then pick id, then lower-cased name / category path.
+  const PINS_PER_POST = 3;
   let pinRefs = {};
   async function loadPinRefs() {
     try {
@@ -81,8 +82,8 @@
   }
   function pinsHtml(it) {
     const pins = pinsFor(it);
-    if (!pins.length) return '';
-    return '<div class="ps-pins">📌 ' + pins.map(p =>
+    if (!pins.length) return '<div class="ps-pins ps-pins-missing">📌 0/' + PINS_PER_POST + ' references yet</div>';
+    return '<div class="ps-pins">📌 ' + pins.length + '/' + PINS_PER_POST + ' · ' + pins.map(p =>
       '<a href="' + esc(p.url) + '" target="_blank" rel="noopener" title="' + esc(p.note || '') + '">' + esc(p.style || 'Pin') + '</a>').join(' · ') + '</div>';
   }
   // Appended after safeDetails so the URLs are never reworded.
@@ -440,8 +441,12 @@
     }
   }
 
-  async function addItem(id, date) {
+  async function addItem(id, date, silent) {
     const item = state.items.find(i => i.id === id);
+    if (!silent && item && pinsFor(item).length < PINS_PER_POST &&
+        !confirm(`"${item.name}" has ${pinsFor(item).length} of ${PINS_PER_POST} Pinterest references. Add it to the Studio calendar anyway?`)) {
+      return;
+    }
     if (item && item.status !== 'approved') {
       await api(`/suggestions/${id}/decide`, { method: 'POST', body: { status: 'approved' } });
       item.status = 'approved';
@@ -458,7 +463,7 @@
     for (const it of open) {
       const day = left[it.best_day] > 0 ? it.best_day : Object.keys(left).find(d => left[d] > 0);
       if (!day) { skipped++; continue; }
-      try { await addItem(it.id, day); left[day]--; added++; } catch (e) { skipped++; }
+      try { await addItem(it.id, day, true); left[day]--; added++; } catch (e) { skipped++; }
     }
     if (skipped) alert(`Added ${added}. ${skipped} could not be added (no free day left).`);
   }
