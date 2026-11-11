@@ -4104,8 +4104,7 @@
         // Daily target: DAILY_POSTS_PER_DAY (3) posts per day. Counted from the
         // same studio rows the booking calendar writes, so the two stay in sync.
         const postsToday = (studioMonthRawData || []).filter(d => d.date === dateStr
-          && d.booking_status !== 'empty'
-          && (d.source_type === 'content_calendar' || getFixedWeeklySlotType(d))).length;
+          && d.booking_status !== 'empty').length;
         const dailyBadge = document.createElement('div');
         dailyBadge.className = 'daily-post-count';
         dailyBadge.style.cssText = 'font-size:10px;font-weight:700;text-align:center;margin-bottom:4px;color:' +

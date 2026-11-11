@@ -1000,9 +1000,10 @@ async function bookProductSlot(productId, slotDate, slotNumber, pageName) {
 async function assertStudioDayHasRoom(date, ignoreStudioId = null) {
   if (!date) return;
   const rows = await supabaseQuery(
-    `studio_calendar?date=eq.${date}&booking_status=neq.empty&select=id`
+    `studio_calendar?date=eq.${date}&select=id,booking_status`
   );
-  const count = rows.filter(r => r.id !== ignoreStudioId).length;
+  // Filtered here, not in the query: PostgREST's neq drops NULL rows.
+  const count = rows.filter(r => r.id !== ignoreStudioId && r.booking_status !== 'empty').length;
   if (count >= DAILY_POSTS_PER_DAY) {
     throw new Error(
       `${date} already has ${DAILY_POSTS_PER_DAY} posts (the daily maximum). Please pick another date.`
@@ -2078,10 +2079,9 @@ async function getCalendarData(month, year) {
     // synthetic booking that occupies a free slot, so both screens always
     // show the same 3-per-day picture.
     try {
-      const adminRows = await supabaseQuery(
-        `studio_calendar?source_type=neq.content_calendar&booking_status=neq.empty` +
-        `&date=gte.${startDate}&date=lte.${endDate}&order=date.asc,created_at.asc`
-      );
+      const adminRows = (await supabaseQuery(
+        `studio_calendar?date=gte.${startDate}&date=lte.${endDate}&order=date.asc,created_at.asc`
+      )).filter(r => r.source_type !== 'content_calendar' && r.booking_status !== 'empty');
       const takenByDate = {};
       bookings.forEach(b => {
         if (b.status === 'Rejected') return;
