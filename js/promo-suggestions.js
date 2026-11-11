@@ -9,12 +9,14 @@
 //  lands on the Studio calendar through the normal addExtraContent() path
 //  (so the 3-posts-a-day cap and every existing rule still apply).
 //
-//  WHY A LOCAL SERVICE: this page runs in the browser from Cloudflare, and a
-//  web page cannot start programs. The Post -> Sales Monitor app on the
-//  marketing PC (http://127.0.0.1:5300, start.bat) runs `claude -p` and keeps
-//  the learning record. If it is not running, the panel says so and nothing
-//  else breaks. Override the address with
-//    localStorage.setItem('promoServiceUrl', 'http://127.0.0.1:5300')
+//  WHERE CLAUDE RUNS: a web page cannot start programs, so the Post -> Sales
+//  Monitor service runs `claude -p` and keeps the learning record. The panel
+//  tries, in order:
+//    1. /api/promo -- the portal's own relay (functions/api/promo/[[path]].js),
+//       which forwards to the service on the VPS. Works for every teammate.
+//    2. http://127.0.0.1:5300/api/promo -- the service on this PC (the
+//       marketing PC), used when the relay is not configured or not answering.
+//  Force one address with localStorage.setItem('promoServiceUrl', '<base url>').
 //
 //  LEARNING LOOP: every suggestion that goes into a slot is tracked. When the
 //  post goes out, the monitor reads Ninja sales for the next 5 days and marks
@@ -26,7 +28,11 @@
 //  DAILY_POSTS_PER_DAY, localDateString, fixedSlotWeekStart.
 // ============================================================================
 (function () {
-  const SERVICE = (localStorage.getItem('promoServiceUrl') || 'http://127.0.0.1:5300').replace(/\/$/, '') + '/api/promo';
+  const FORCED = localStorage.getItem('promoServiceUrl');
+  const CANDIDATES = FORCED ? [FORCED.replace(/\/$/, '') + '/api/promo']
+    : ['/api/promo', 'http://127.0.0.1:5300/api/promo'];
+  let SERVICE = CANDIDATES[0];
+  let serviceWhere = '';
   const POLL_MS = 3000;
   const DAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const TIER_LABEL = { winner: 'Proven seller', lookalike: 'Looks like a winner', novel: 'New & unusual' };
@@ -302,19 +308,27 @@
     if (state.run && state.run.status === 'running') startPolling(state.run.id);
   }
 
+  // Use the first service address that answers (relay to the VPS, then this PC).
   async function checkService() {
     const el = $('promoServiceStatus');
-    try {
-      const h = await api('/health');
-      state.online = !!h.claude;
-      el.className = 'ps-status ' + (h.claude ? 'on' : 'off');
-      el.textContent = h.claude ? `● Claude ready on this PC (${h.model}) · sales data to ${h.sales_asof || '?'}`
-        : '● The service is running but Claude Code was not found on this PC';
-    } catch (e) {
-      state.online = false;
-      el.className = 'ps-status off';
-      el.innerHTML = '● Not connected. Start the <b>Post → Sales monitor</b> on the marketing PC (double-click start.bat in PostSalesMonitor), then press Refresh. If Chrome asks to allow local network access, allow it.';
+    let lastErr = '';
+    for (const base of CANDIDATES) {
+      try {
+        const res = await fetch(base + '/health');
+        const h = await res.json().catch(() => ({}));
+        if (!res.ok) { lastErr = h.error || `HTTP ${res.status}`; continue; }
+        SERVICE = base;
+        serviceWhere = base.startsWith('/') ? 'the server' : 'this PC';
+        state.online = !!h.claude;
+        el.className = 'ps-status ' + (h.claude ? 'on' : 'off');
+        el.textContent = h.claude ? `● Claude ready on ${serviceWhere} (${h.model}) · sales data to ${h.sales_asof || '?'}`
+          : `● The service on ${serviceWhere} is running, but Claude Code is not installed there`;
+        return;
+      } catch (e) { lastErr = e.message; }
     }
+    state.online = false;
+    el.className = 'ps-status off';
+    el.innerHTML = `● The suggestion service is not reachable right now (${esc(lastErr)}). It runs on the server; if it is down, ask the marketing team to restart the <b>Post → Sales monitor</b>.`;
   }
 
   async function loadWeek() {
