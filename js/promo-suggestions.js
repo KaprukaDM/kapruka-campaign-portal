@@ -30,6 +30,8 @@
   const POLL_MS = 3000;
   const DAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const TIER_LABEL = { winner: 'Proven seller', lookalike: 'Looks like a winner', novel: 'New & unusual' };
+  const LEVEL_LABEL = { root: 'Category', sub: 'Sub-category', subsub: 'Sub-sub-category' };
+  const isCat = it => it.type === 'category';
   const OUTCOME_LABEL = {
     likely: ['Lifted sales', 'good'], normal: ['Sold, no lift', 'mid'], no_sale: ['No sale', 'bad'],
     waiting: ['Waiting for the post', 'mut'], no_post_found: ['No post found', 'bad'], open: ['Too early to judge', 'mut']
@@ -91,6 +93,16 @@
   }
 
   function detailsFor(item) {
+    if (isCat(item)) {
+      return safeDetails([
+        `[Promo pick: ${LEVEL_LABEL[item.category_level] || 'Category'}] ${item.category_path}`,
+        `Page: ${item.category_url}`,
+        `Show: ${(item.examples || []).map(e => `${e.name} (${e.code})`).join(', ')}`,
+        `Hook: ${item.angle || ''}`,
+        `Why promote: ${item.reason || ''}`,
+        `${TIER_LABEL[item.tier] || item.tier} · ${item.intent === 'self' ? 'Self-purchase' : 'Gift'} · ${item.format || 'Carousel'}`
+      ].join('\n'));
+    }
     const lines = [
       `[Promo pick] ${item.name} (${item.code})${item.price ? ' — ' + money(item.price) : ''}`,
       `Hook: ${item.angle || ''}`,
@@ -161,59 +173,95 @@
     return `<div class="ps-outcome ${cls}">Result: ${label}${extra}</div>`;
   }
 
-  function slotChips(item) {
-    return state.slots.filter(s => s.free > 0).map(s =>
-      `<button type="button" class="ps-slot${s.date === item.best_day ? ' best' : ''}" data-act="place" data-id="${esc(item.id)}" data-date="${s.date}">
-        ${fmtDate(s.date)} <small>${s.free} free${s.date === item.best_day ? ' · suggested' : ''}</small></button>`).join('')
-      || '<span class="ps-mut">No free slots left this week. Pick another week above.</span>';
+  // Three numbers per pick, short enough to read at a glance. Built from the
+  // pick's own data (sales) and its evidence lines, so old items render too.
+  function chips(it) {
+    const out = [];
+    const s = it.sales || {};
+    if (isCat(it)) {
+      if (it.category_products != null) out.push(`<span class="ps-chipn">${it.category_products} products</span>`);
+      out.push(`<span class="ps-chipn${s.u60 ? '' : ' mut'}">Examples sold ${s.u60 || 0} / 60d</span>`);
+      out.push('<span class="ps-chipn new">First category post</span>');
+      return out.join('');
+    }
+    if (s.u60) {
+      let t = '';
+      if (s.p30) { const ch = Math.round(100 * (s.u30 - s.p30) / s.p30); t = ` ${ch >= 0 ? '↑' : '↓'}${Math.abs(ch)}%`; }
+      out.push(`<span class="ps-chipn">${s.u60} sold / 60d${t}</span>`);
+    } else {
+      out.push('<span class="ps-chipn mut">No sales yet</span>');
+    }
+    const ev = (it.evidence || []).join(' ');
+    const posted = ev.match(/Posted (\d+) time\(s\) before[^;]*; (\d+) of those lifted/);
+    out.push(posted ? `<span class="ps-chipn">Posted ${posted[1]}×, lifted ${posted[2]}×</span>`
+      : '<span class="ps-chipn new">Never posted</span>');
+    const cat = (it.evidence || []).find(e => e.startsWith(`${it.group} posts lifted`));
+    const pct = cat && cat.match(/([\d.]+)% of the time/);
+    if (pct) out.push(`<span class="ps-chipn ${Number(pct[1]) >= 20 ? 'good' : 'weak'}">${esc(it.group)} posts lift ${Math.round(pct[1])}%</span>`);
+    return out.join('');
   }
 
-  function itemCard(it) {
+  // One sentence of "why", cut at a word. The full reasoning sits in the tooltip.
+  function shortWhy(text) {
+    const first = String(text || '').split(/(?<=[.!?])\s/)[0];
+    return first.length > 120 ? first.slice(0, first.lastIndexOf(' ', 117)) + '…' : first;
+  }
+
+  function daySelect(it) {
+    const free = state.slots.filter(s => s.free > 0);
+    if (!free.length) return '<span class="ps-mut">No free day</span>';
+    const pick = free.some(s => s.date === it.best_day) ? it.best_day : free[0].date;
+    return `<select class="ps-day-sel" data-id="${esc(it.id)}" aria-label="Day for ${esc(it.name)}">
+      ${free.map(s => `<option value="${s.date}"${s.date === pick ? ' selected' : ''}>${fmtDate(s.date)}${s.date === it.best_day ? ' ★' : ''}</option>`).join('')}
+    </select>`;
+  }
+
+  function itemRow(it) {
     const st = it.status;
-    const actions = st === 'suggested'
-      ? `<button class="ps-btn ok" data-act="approve" data-id="${esc(it.id)}">✓ Approve</button>
-         <button class="ps-btn no" data-act="reject" data-id="${esc(it.id)}">✕ Reject</button>`
-      : st === 'approved'
-        ? `<div class="ps-pick">Pick a slot: ${slotChips(it)}</div><button class="ps-link" data-act="undo" data-id="${esc(it.id)}">Undo approval</button>`
-        : st === 'scheduled'
-          ? `<div class="ps-done">✅ In the Studio calendar on ${fmtDate(it.slot_date)}</div>${outcomeHtml(it.outcome)}`
-          : `<div class="ps-mut">Rejected</div><button class="ps-link" data-act="undo" data-id="${esc(it.id)}">Undo</button>`;
-    const s = it.sales || {};
-    return `<div class="ps-card ${st}">
-      ${it.image ? `<a href="${esc(it.url)}" target="_blank" rel="noopener"><img src="${esc(it.image)}" alt="" loading="lazy"></a>` : '<div class="ps-noimg"></div>'}
-      <div class="ps-body">
-        <div class="ps-tags"><span class="ps-tag t-${esc(it.tier)}">${esc(TIER_LABEL[it.tier] || it.tier)}</span>
-          <span class="ps-tag ${it.intent === 'self' ? 'self' : 'gift'}">${it.intent === 'self' ? '🛍 Self-purchase' : '🎁 Gift'}</span>
-          <span class="ps-tag cat">${esc(it.group)}</span><span class="ps-tag cat">${esc(it.format || 'Post')}</span></div>
-        <a class="ps-name" href="${esc(it.url)}" target="_blank" rel="noopener">${esc(it.name)}</a>
-        <div class="ps-meta">${money(it.price)} · ${esc(it.code)} · ${s.u60 ? `${s.u60} sold in 60 days` : 'no sales in 60 days'}${it.best_day ? ` · best day ${fmtDate(it.best_day)}` : ''}</div>
-        <div class="ps-hook">“${esc(it.angle)}”</div>
-        <div class="ps-why"><b>Why promote it</b><p>${esc(it.reason)}</p>
-          <ul>${(it.evidence || []).map(e => `<li>${esc(e)}</li>`).join('')}${it.why_now ? `<li>This week: ${esc(it.why_now)}</li>` : ''}</ul></div>
-        <div class="ps-actions">${actions}</div>
-      </div></div>`;
+    let action;
+    if (st === 'scheduled') {
+      const o = it.outcome;
+      const [label, cls] = o ? (OUTCOME_LABEL[o.state] || [o.state, 'mut']) : ['', ''];
+      action = `<span class="ps-done">✅ ${fmtDate(it.slot_date)}</span>${o ? `<span class="ps-outcome ${cls}">${label}${o.credited ? ` +${o.credited}` : ''}</span>` : ''}`;
+    } else if (st === 'rejected') {
+      action = `<span class="ps-mut">Rejected</span> <button class="ps-link" data-act="undo" data-id="${esc(it.id)}">Undo</button>`;
+    } else {
+      action = `${daySelect(it)}
+        <button class="ps-btn ok" data-act="add" data-id="${esc(it.id)}">Add</button>
+        <button class="ps-btn no" data-act="reject" data-id="${esc(it.id)}" title="Reject">✕</button>`;
+    }
+    return `<tr class="ps-row ${st}">
+      <td class="ps-img">${it.image ? `<a href="${esc(it.url)}" target="_blank" rel="noopener"><img src="${esc(it.image)}" alt="" loading="lazy"></a>` : ''}</td>
+      <td class="ps-prod"><a class="ps-name" href="${esc(it.url)}" target="_blank" rel="noopener" title="${esc(it.name)}">${isCat(it) ? '📂 ' : ''}${esc(it.name)}</a>
+        <div class="ps-meta">${isCat(it) ? `${esc(LEVEL_LABEL[it.category_level] || 'Category')} page · e.g. ${esc((it.examples || []).map(e => e.name).slice(0, 2).join(', '))}` : `${money(it.price)} · ${esc(it.group)}`}</div></td>
+      <td class="ps-type">${isCat(it) ? `<span class="ps-tag cat-lvl">${esc(LEVEL_LABEL[it.category_level] || 'Category')}</span>` : ''}<span class="ps-tag t-${esc(it.tier)}">${esc(TIER_LABEL[it.tier] || it.tier)}</span>
+        <span class="ps-tag ${it.intent === 'self' ? 'self' : 'gift'}">${it.intent === 'self' ? 'Self' : 'Gift'}</span></td>
+      <td class="ps-whycell"><div class="ps-why1" title="${esc(it.reason)}">${esc(shortWhy(it.reason))}</div><div class="ps-chips">${chips(it)}</div></td>
+      <td class="ps-act">${action}</td>
+    </tr>`;
   }
 
   function renderItems() {
     const box = $('promoItems');
     if (!box) return;
     const week = state.items.filter(i => i.week_start === state.weekStart);
-    const carry = state.items.filter(i => i.week_start !== state.weekStart && i.status === 'approved');
-    if (!week.length && !carry.length) {
-      box.innerHTML = state.online
-        ? '<p class="ps-mut">No suggestions for this week yet. Press the button above.</p>' : '';
+    if (!week.length) {
+      box.innerHTML = state.online ? '<p class="ps-mut">No suggestions for this week yet. Press the button above.</p>' : '';
       return;
     }
-    const order = { approved: 0, suggested: 1, scheduled: 2, rejected: 3 };
+    const order = { approved: 0, suggested: 0, scheduled: 1, rejected: 2 };
     week.sort((a, b) => (order[a.status] - order[b.status]) || (a.best_day || '').localeCompare(b.best_day || ''));
-    const mix = { gift: 0, self: 0 }, cats = new Set();
-    week.filter(i => i.status !== 'rejected').forEach(i => { mix[i.intent === 'self' ? 'self' : 'gift']++; cats.add(i.group); });
+    const open = week.filter(i => i.status === 'suggested' || i.status === 'approved');
+    const placed = week.filter(i => i.status === 'scheduled').length;
+    const live = week.filter(i => i.status !== 'rejected');
+    const self = live.filter(i => i.intent === 'self').length;
     box.innerHTML = `
-      <div class="ps-mix">${week.length} suggestions · ${mix.gift} gift / ${mix.self} self-purchase · ${cats.size} categories ·
-        ${week.filter(i => i.status === 'approved').length} approved, ${week.filter(i => i.status === 'scheduled').length} in slots</div>
-      ${carry.length ? `<h4 class="ps-h4">Approved earlier, not placed yet</h4><div class="ps-grid">${carry.map(itemCard).join('')}</div>` : ''}
-      <div class="ps-grid">${week.map(itemCard).join('')}</div>
-      ${state.run && state.run.dropped && state.run.dropped.length ? `<details class="ps-dropped"><summary>${state.run.dropped.length} picks dropped or flagged by the checks</summary><ul>${state.run.dropped.map(d => `<li>${esc(d)}</li>`).join('')}</ul></details>` : ''}`;
+      <div class="ps-listhead">
+        <span class="ps-mix">${live.length} picks (${live.filter(isCat).length} category) · ${live.length - self} gift / ${self} self · ${new Set(live.map(i => i.group)).size} categories · ${placed} added</span>
+        ${open.length ? `<button class="ps-btn ok" data-act="addall">Add all ${open.length} to their ★ days</button>` : ''}
+      </div>
+      <table class="ps-list"><tbody>${week.map(itemRow).join('')}</tbody></table>
+      <p class="ps-mut ps-foot">★ = suggested day. Hover a reason for the full explanation.</p>`;
   }
 
   function renderLearnings() {
@@ -319,7 +367,7 @@
       const saved = await addExtraContent({
         date, department: 'Digital Marketing', page_name: 'Kapruka FB', format: item.format || 'Post',
         priority: 'Low', content_details: detailsFor(item), reference_links: item.url || '',
-        created_by: 'Promo suggestions (Claude)', product_code: item.code
+        created_by: 'Promo suggestions (Claude)', product_code: isCat(item) ? null : item.code
       });
       await api(`/suggestions/${id}/schedule`, { method: 'POST', body: { slot_date: date, studio_id: saved.studio_id || null } });
       await loadSlots();
@@ -331,18 +379,47 @@
     }
   }
 
+  async function addItem(id, date) {
+    const item = state.items.find(i => i.id === id);
+    if (item && item.status !== 'approved') {
+      await api(`/suggestions/${id}/decide`, { method: 'POST', body: { status: 'approved' } });
+      item.status = 'approved';
+    }
+    await place(id, date);
+  }
+
+  async function addAll() {
+    const open = state.items.filter(i => i.week_start === state.weekStart && (i.status === 'suggested' || i.status === 'approved'));
+    if (!open.length || !confirm(`Add ${open.length} posts to the Studio calendar on their suggested days?`)) return;
+    await loadSlots();
+    const left = Object.fromEntries(state.slots.map(s => [s.date, s.free]));
+    let added = 0, skipped = 0;
+    for (const it of open) {
+      const day = left[it.best_day] > 0 ? it.best_day : Object.keys(left).find(d => left[d] > 0);
+      if (!day) { skipped++; continue; }
+      try { await addItem(it.id, day); left[day]--; added++; } catch (e) { skipped++; }
+    }
+    if (skipped) alert(`Added ${added}. ${skipped} could not be added (no free day left).`);
+  }
+
   async function onClick(e) {
     const b = e.target.closest('[data-act]');
     if (!b) return;
     const { act, id } = b.dataset;
+    b.disabled = true;
     try {
-      if (act === 'approve') await api(`/suggestions/${id}/decide`, { method: 'POST', body: { status: 'approved' } });
-      else if (act === 'reject') await api(`/suggestions/${id}/decide`, { method: 'POST', body: { status: 'rejected' } });
+      if (act === 'add') {
+        const sel = document.querySelector(`.ps-day-sel[data-id="${id}"]`);
+        if (!sel) throw new Error('No free day left this week.');
+        await addItem(id, sel.value);
+        return;
+      }
+      if (act === 'addall') { await addAll(); await refreshItems(); renderAll(); return; }
+      if (act === 'reject') await api(`/suggestions/${id}/decide`, { method: 'POST', body: { status: 'rejected' } });
       else if (act === 'undo') await api(`/suggestions/${id}/decide`, { method: 'POST', body: { status: 'suggested' } });
-      else if (act === 'place') { b.disabled = true; await place(id, b.dataset.date); return; }
       await refreshItems();
       renderItems();
-    } catch (err) { alert(err.message); }
+    } catch (err) { alert(err.message); b.disabled = false; }
   }
 
   async function toggleLearnings() {
@@ -372,5 +449,5 @@
   };
 
   // Exposed for the harness/tests only.
-  window.__promoTest = { computeSlots, safeDetails, detailsFor, itemCard, state, renderAll };
+  window.__promoTest = { computeSlots, safeDetails, detailsFor, itemRow, state, renderAll };
 })();

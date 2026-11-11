@@ -1401,6 +1401,31 @@
     .v-weak { color: #B71C1C; font-weight: 600; }
     .v-mixed, .v-too-few-posts { color: #999; }
     @media (max-width: 900px) { .ps-slots { grid-template-columns: repeat(2, 1fr); } }
+    .ps-listhead { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin: 14px 0 6px; }
+    .ps-list { width: 100%; border-collapse: collapse; }
+    .ps-row td { padding: 8px 8px; border-bottom: 1px solid #f0ecf6; vertical-align: middle; }
+    .ps-row.rejected { opacity: .45; }
+    .ps-row.scheduled { background: #fbfffb; }
+    .ps-img { width: 56px; }
+    .ps-img img { width: 52px; height: 52px; object-fit: cover; border-radius: 8px; display: block; background: #f0f0f0; }
+    .ps-prod { width: 26%; max-width: 280px; }
+    .ps-prod .ps-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 280px; font-size: 13.5px; }
+    .ps-prod .ps-meta { margin: 2px 0 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 280px; }
+    .ps-type { width: 150px; }
+    .ps-type .ps-tag { display: inline-block; margin: 1px 0; }
+    .ps-tag.cat-lvl { background: #E0F2F1; color: #00695C; }
+    .ps-why1 { font-size: 13px; color: #333; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; cursor: help; }
+    .ps-chips { margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px; }
+    .ps-chipn { font-size: 11px; background: #f1eef7; color: #4a2d70; padding: 2px 7px; border-radius: 6px; white-space: nowrap; }
+    .ps-chipn.good { background: #E8F5E9; color: #1B5E20; }
+    .ps-chipn.weak { background: #FFEBEE; color: #B71C1C; }
+    .ps-chipn.new { background: #FFF8E1; color: #8a6d00; }
+    .ps-chipn.mut { color: #999; }
+    .ps-act { width: 270px; white-space: nowrap; text-align: right; }
+    .ps-act .ps-btn { padding: 6px 12px; }
+    .ps-day-sel { padding: 6px 8px; border-radius: 8px; border: 1px solid #cfc3e3; font-size: 12.5px; max-width: 150px; }
+    .ps-act .ps-outcome { display: block; }
+    .ps-foot { margin-top: 6px; font-size: 12px; }
   </style>
 </head>
 <body>
@@ -1431,6 +1456,7 @@
         <button class="tab-btn active" onclick="switchTab('requests')">📋 Campaign Requests</button>
         <button class="tab-btn" onclick="switchTab('content')">📅 Content Calendar Approval</button>
         <button class="tab-btn" onclick="switchTab('studio')">🎬 Studio Calendar</button>
+        <button class="tab-btn" onclick="switchTab('promos')">✨ Promo Suggestions</button>
         <button class="tab-btn" onclick="switchTab('hotproducts')">🔥 Hot Products</button>
         <button class="tab-btn" onclick="switchTab('departments')">🏢 Department Config</button>
         <button class="tab-btn" onclick="switchTab('postingcal')">🗓️ Posting Calendar</button>
@@ -1647,31 +1673,6 @@
 
       <!-- STUDIO CALENDAR TAB -->
       <div id="tab-studio" class="tab-content">
-        <!-- Promo suggestions: Claude Code on the marketing PC researches products
-             for this week's free slots (js/promo-suggestions.js). -->
-        <div class="card" id="promoPanel">
-          <div class="calendar-header">
-            <h2 style="margin:0;">✨ Promo Suggestions <span class="ps-sub">Claude + Kapruka MCP + sales learnings</span></h2>
-            <button class="btn btn-primary" id="promoRefresh" type="button">🔄 Refresh</button>
-          </div>
-          <div id="promoServiceStatus" class="ps-status">Checking the suggestion service…</div>
-          <div class="ps-weekbar">
-            <button type="button" class="ps-nav" id="promoPrev" aria-label="Previous week">◀</button>
-            <b id="promoWeekLabel"></b>
-            <button type="button" class="ps-nav" id="promoNext" aria-label="Next week">▶</button>
-            <span class="ps-mut"><b id="promoFreeCount">0</b> free slots (3 posts a day, minus booked posts and the weekly App Promotion / Corporate slots still owed)</span>
-          </div>
-          <div class="ps-slots" id="promoSlots"></div>
-          <button type="button" class="btn btn-success ps-go" id="promoSuggestBtn" disabled>✨ Suggest products</button>
-          <div id="promoProgress" hidden></div>
-          <div class="ps-context" id="promoContext"></div>
-          <div id="promoItems"></div>
-          <details id="promoLearnWrap" class="ps-learn">
-            <summary>📊 What kind of promotion sells — learned from every post</summary>
-            <div id="promoLearnings"><p class="ps-mut">Loading…</p></div>
-          </details>
-        </div>
-
         <div class="card">
           <div class="calendar-header">
             <h2 style="margin:0;">🎬 Studio Calendar</h2>
@@ -2008,6 +2009,34 @@
       </div>
 
       <!-- HOT PRODUCTS TAB -->
+      <!-- Promo Suggestions tab (js/promo-suggestions.js) -->
+      <div id="tab-promos" class="tab-content">
+        <!-- Promo suggestions: Claude Code on the marketing PC researches products
+             for this week's free slots (js/promo-suggestions.js). -->
+        <div class="card" id="promoPanel">
+          <div class="calendar-header">
+            <h2 style="margin:0;">✨ Promo Suggestions <span class="ps-sub">Claude + Kapruka MCP + sales learnings</span></h2>
+            <button class="btn btn-primary" id="promoRefresh" type="button">🔄 Refresh</button>
+          </div>
+          <div id="promoServiceStatus" class="ps-status">Checking the suggestion service…</div>
+          <div class="ps-weekbar">
+            <button type="button" class="ps-nav" id="promoPrev" aria-label="Previous week">◀</button>
+            <b id="promoWeekLabel"></b>
+            <button type="button" class="ps-nav" id="promoNext" aria-label="Next week">▶</button>
+            <span class="ps-mut"><b id="promoFreeCount">0</b> free slots (3 posts a day, minus booked posts and the weekly App Promotion / Corporate slots still owed)</span>
+          </div>
+          <div class="ps-slots" id="promoSlots"></div>
+          <button type="button" class="btn btn-success ps-go" id="promoSuggestBtn" disabled>✨ Suggest products</button>
+          <div id="promoProgress" hidden></div>
+          <div class="ps-context" id="promoContext"></div>
+          <div id="promoItems"></div>
+          <details id="promoLearnWrap" class="ps-learn">
+            <summary>📊 What kind of promotion sells — learned from every post</summary>
+            <div id="promoLearnings"><p class="ps-mut">Loading…</p></div>
+          </details>
+        </div>
+      </div>
+
       <div id="tab-hotproducts" class="tab-content">
         <div class="card">
           <h2>🔥 Hot Products Management</h2>
@@ -2818,7 +2847,7 @@
 
         setTimeout(() => {
           const hash = window.location.hash.substring(1);
-          if (hash && ['requests', 'products', 'content', 'studio', 'dmapprovals', 'hotproducts', 'departments', 'postingcal', 'seo', 'users'].includes(hash)) {
+          if (hash && ['requests', 'products', 'content', 'studio', 'promos', 'dmapprovals', 'hotproducts', 'departments', 'postingcal', 'seo', 'users'].includes(hash)) {
             switchTab(hash);
           }
         }, 300);
@@ -2836,7 +2865,7 @@
     function setupStudioOnlyView() {
       document.querySelectorAll('.tab-btn').forEach(btn => {
         const text = btn.textContent.toLowerCase();
-        const isStudio = text.includes('studio');
+        const isStudio = text.includes('studio') || text.includes('promo suggestions');
         const isLogout = text.includes('logout');
         if (!isStudio && !isLogout) {
           btn.style.display = 'none';
@@ -2844,17 +2873,19 @@
       });
 
       document.querySelectorAll('.tab-content').forEach(tab => {
+        if (tab.id === 'tab-promos') return;   // reachable, switchTab toggles it
         if (tab.id !== 'tab-studio') {
           tab.style.display = 'none';
         } else {
+          // No inline display: it would keep Studio showing after switching to
+          // the Promo Suggestions tab. The .active class already shows it.
           tab.classList.add('active');
-          tab.style.display = 'block';
         }
       });
     }
 
     function switchTab(tab) {
-      if (isSuperAdmin && tab !== 'studio') {
+      if (isSuperAdmin && tab !== 'studio' && tab !== 'promos') {
         tab = 'studio';
       }
 
@@ -2874,6 +2905,7 @@
             (tab === 'dmapprovals' && btnText.includes('dm')) ||
             (tab === 'postingcal' && btnText.includes('posting')) ||
             (tab === 'creativestrategy' && btnText.includes('creative strategy')) ||
+            (tab === 'promos' && btnText.includes('promo suggestions')) ||
             (tab === 'users' && btnText.includes('user management'))) {
           btn.classList.add('active');
         }
@@ -2883,10 +2915,11 @@
 
       if (tab === 'studio') {
         startStudioAutoRefresh();
-        if (window.initPromoSuggestions) initPromoSuggestions();
       } else {
         stopStudioAutoRefresh();
       }
+
+      if (tab === 'promos' && window.initPromoSuggestions) initPromoSuggestions();
 
       if (tab === 'content') {
         loadContentData();
