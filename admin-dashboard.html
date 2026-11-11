@@ -943,13 +943,13 @@
       border-color: #039BE5;
     }
 
-    .slot-label.label-fixed-linkedin {
+    .slot-label.label-fixed-corporate {
       background: #E8EAF6;
       color: #1A237E;
       border-color: #3949AB;
     }
 
-    /* ── Fixed weekly slot placeholders (App Promotion ×2, LinkedIn ×1) ──
+    /* ── Fixed weekly slot placeholders (App Promotion Wed ×1, Corporate Fri ×1) ──
        Dashed rail so they read as "owed work", not as real booked content. */
     .slot-item.fixed-weekly {
       background: #FAFAFF;
@@ -959,7 +959,7 @@
     }
 
     .slot-item.fixed-weekly.fixed-app-promotion { border-left-color: #039BE5; }
-    .slot-item.fixed-weekly.fixed-linkedin { border-left-color: #3949AB; }
+    .slot-item.fixed-weekly.fixed-corporate { border-left-color: #3949AB; }
 
     /* The type name IS the content of a placeholder, so it must never be
        ellipsised the way a booked slot's page name is. */
@@ -1695,7 +1695,7 @@
                   <option value="postedunverified">⏳ Pending verification (claims Posted, no proof)</option>
                   <option value="rejecteddm">Rejected by DM</option>
                   <option value="fixed_app_promotion">📱 App Promotion content (fixed weekly)</option>
-                  <option value="fixed_linkedin">💼 LinkedIn content (fixed weekly)</option>
+                  <option value="fixed_corporate">💼 Corporate content (fixed weekly)</option>
                 </select>
                 <label style="color:#5e3a8e;font-weight:600;margin-right:10px;margin-left:20px;">Filter by Person:</label>
                 <select id="studioPersonFilter" onchange="applyStudioFilters()" style="padding:10px;border-radius:8px;border:2px solid #e8e8e8;font-size:14px;" aria-label="Filter by person">
@@ -1747,7 +1747,7 @@
                 </div>
               </div>
 
-              <!-- Hard-coded weekly quota: App Promotion ×2, LinkedIn ×1.
+              <!-- Hard-coded weekly quota: App Promotion ×1 (Wed), Corporate ×1 (Fri); 3 posts per day.
                    Filled in by renderFixedWeeklySlotSummary(). -->
               <div class="fixed-weekly-panel" id="fixedWeeklySummary"></div>
 
@@ -2534,7 +2534,7 @@
     // can re-render instantly without re-fetching.
     let studioMonthRawData = [];
     // Same rows padded by a week either side of the month — only used to decide
-    // whether the hard-coded weekly slots (App Promotion ×2, LinkedIn ×1) are
+    // whether the hard-coded weekly slots (App Promotion Wed ×1, Corporate Fri ×1) are
     // already covered in weeks that straddle the month boundary.
     let studioPaddedRawData = [];
     let studioMonthThemes = [];
@@ -3834,7 +3834,7 @@
         const filterValue = document.getElementById('studioFilter')?.value || 'all';
         if (filterValue !== 'all') {
           data = data.filter(item => {
-            // Fixed weekly types (App Promotion / LinkedIn) — matched by
+            // Fixed weekly types (App Promotion / Corporate) — matched by
             // keyword, same rule the weekly coverage count uses.
             if (filterValue.indexOf('fixed_') === 0) {
               const matched = getFixedWeeklySlotType(item);
@@ -3948,14 +3948,14 @@
       return `<span class="slot-labels">${pills}</span>`;
     }
 
-    // ── FIXED WEEKLY SLOTS (App Promotion ×2, LinkedIn ×1) ──────────
+    // ── FIXED WEEKLY SLOTS (App Promotion Wed ×1, Corporate Fri ×1) ──────────
     // Definitions + the coverage maths live in js/supabase-api.js
     // (FIXED_WEEKLY_SLOT_TYPES / buildFixedWeeklySlotPlan). This is only the
     // rendering: a per-week coverage strip above the grid, and a placeholder
     // card in each day cell that still owes one.
     const FIXED_SLOT_LABEL_CLASSES = {
       app_promotion: 'label-fixed-app-promotion',
-      linkedin: 'label-fixed-linkedin'
+      corporate: 'label-fixed-corporate'
     };
 
     function fixedWeeklyRuleText() {
@@ -4101,11 +4101,24 @@
           dayDiv.appendChild(themeName);
         }
 
+        // Daily target: DAILY_POSTS_PER_DAY (3) posts per day. Counted from the
+        // same studio rows the booking calendar writes, so the two stay in sync.
+        const postsToday = (studioMonthRawData || []).filter(d => d.date === dateStr
+          && d.booking_status !== 'empty'
+          && (d.source_type === 'content_calendar' || getFixedWeeklySlotType(d))).length;
+        const dailyBadge = document.createElement('div');
+        dailyBadge.className = 'daily-post-count';
+        dailyBadge.style.cssText = 'font-size:10px;font-weight:700;text-align:center;margin-bottom:4px;color:' +
+          (postsToday >= DAILY_POSTS_PER_DAY ? '#2E7D32' : '#8d6e00') + ';';
+        dailyBadge.textContent = '📅 ' + postsToday + '/' + DAILY_POSTS_PER_DAY + ' posts';
+        dailyBadge.title = DAILY_POSTS_PER_DAY + ' posts per day target';
+        dayDiv.appendChild(dailyBadge);
+
         const slotsContainer = document.createElement('div');
         slotsContainer.className = 'day-slots';
 
         // Hard-coded weekly slots this day still owes (App Promotion on
-        // Tue/Fri, LinkedIn on Wed). Rendered FIRST so they stay visible in a
+        // Wed, Corporate on Fri). Rendered FIRST so they stay visible in a
         // busy day cell (.day-slots scrolls, so anything appended last can sit
         // below the fold). Clicking opens Add Extra Content pre-filled for that
         // type, and filling it creates ordinary content the matcher counts.

@@ -30,6 +30,8 @@
 //   --name "..."        theme name (default "Daily Post")
 //   --color #RRGGBB     theme colour (default #422B73, the portal purple)
 //   --no-theme          only write category_slots, skip the theme_config row
+//   --fix-weekly        also retro-fit App Promotion (Wed) / Corporate (Fri) onto
+//                       existing unbooked slot-1 rows
 //   --dry-run           print what would be written, write nothing
 //
 // Credentials: reads the project URL + anon key straight out of
@@ -115,6 +117,11 @@ function eachDate(from, to) {
   return out;
 }
 // Same week_number rule generateCategorySlots() in js/supabase-api.js uses.
+// Fixed weekly rule — keep in sync with FIXED_WEEKLY_SLOT_TYPES in
+// js/supabase-api.js: slot 1 on Wed = App Promotion, slot 1 on Fri = Corporate.
+const FIXED_BY_DOW = { 3: 'App Promotion', 5: 'Corporate' };
+const fixedCategory = (dateStr, n) =>
+  n === 1 ? (FIXED_BY_DOW[new Date(dateStr + 'T00:00:00Z').getUTCDay()] || null) : null;
 const weekNumber = dateStr => Math.floor((Number(dateStr.slice(8, 10)) - 1) / 7) + 1;
 
 // ── run ───────────────────────────────────────────────────────
@@ -155,7 +162,7 @@ for (const date of dates) {
   for (let n = 1; n <= SLOTS; n++) {
     if (taken.has(`${date}#${n}`)) continue;
     toInsert.push({
-      date, slot_number: n, category: 'Any Category',
+      date, slot_number: n, category: fixedCategory(date, n) || 'Any Category',
       week_number: weekNumber(date), month_year: date.slice(0, 7)
     });
   }
@@ -176,6 +183,25 @@ if (!toInsert.length) {
     process.stdout.write(`\r  slots: inserted ${written}/${toInsert.length}`);
   }
   console.log('');
+}
+
+// 2b. --fix-weekly: retro-fit the fixed weekly rule onto slots that already
+//     exist (slot 1 on Wed → App Promotion, Fri → Corporate). Only touches
+//     slots that are still "Any Category" AND have no booking, so nothing a
+//     person has already booked changes meaning.
+if (has('fix-weekly')) {
+  const bookings = await sb(`content_calendar?date=gte.${FROM}&date=lte.${TO}&select=date,slot_number,status`);
+  const booked = new Set(bookings.filter(b => b.status !== 'Rejected').map(b => `${b.date}#${b.slot_number}`));
+  const rows = await sb(`category_slots?date=gte.${FROM}&date=lte.${TO}&slot_number=eq.1&select=id,date,category`);
+  let fixed = 0;
+  for (const r of rows) {
+    const want = fixedCategory(r.date, 1);
+    if (!want || r.category === want || r.category !== 'Any Category') continue;
+    if (booked.has(`${r.date}#1`)) continue;
+    fixed++;
+    if (!DRY_RUN) await sb(`category_slots?id=eq.${r.id}`, 'PATCH', { category: want });
+  }
+  console.log(`  fix-weekly: ${DRY_RUN ? 'would update' : 'updated'} ${fixed} slot(s)`);
 }
 
 // 3. Read back what the calendar will actually see.

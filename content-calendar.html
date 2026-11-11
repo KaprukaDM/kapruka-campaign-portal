@@ -1361,7 +1361,12 @@
         return;
       }
 
-      const productCode = document.getElementById('productCode').value.trim();
+      // App Promotion (Wed) / Corporate (Fri) slots are fixed weekly content,
+      // not product posts — no product code needed; a placeholder keeps the
+      // studio row's product_code populated.
+      const fixedDef = FIXED_WEEKLY_SLOT_TYPES.find(d => d.slotCategory === selectedSlot.category);
+      let productCode = document.getElementById('productCode').value.trim();
+      if (!productCode && fixedDef) productCode = fixedDef.key.toUpperCase().replace(/_/g, '-');
       if (!productCode) {
         alert('Please enter product code');
         return;

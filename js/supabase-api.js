@@ -95,8 +95,12 @@ function getStudioSlotLabels(row) {
 // Two content types have to be produced EVERY week no matter what else is
 // booked, so they are hard-coded here instead of relying on someone
 // remembering to add them:
-//   • App Promotion      — twice a week (Tuesday + Friday)
-//   • LinkedIn Content   — once a week  (Wednesday)
+//   • App Promotion      — once a week  (Wednesday)
+//   • Corporate Content  — once a week  (Friday)
+// Every day carries DAILY_POSTS_PER_DAY (3) posts; on those two weekdays one
+// of the 3 is the fixed type. category_slots (content-calendar booking) is
+// generated from the same table via fixedWeeklyCategoryForSlot(), so the
+// booking front-end and the Studio calendar cannot disagree.
 //
 // They are NOT extra studio_calendar rows: nothing is inserted, so there is
 // no migration, no duplicate-row risk on re-render, and no cleanup if the
@@ -109,14 +113,19 @@ function getStudioSlotLabels(row) {
 // Content form pre-filled for that type.
 //
 // To change the cadence, edit perWeek/days here — nothing else needs touching.
+const DAILY_POSTS_PER_DAY = 3;
+
 const FIXED_WEEKLY_SLOT_TYPES = [
   {
     key: 'app_promotion',
     name: 'App Promotion',
     emoji: '📱',
-    perWeek: 2,
-    days: [2, 5],            // JS getDay(): Tue, Fri
+    perWeek: 1,
+    days: [3],               // JS getDay(): Wed
     tag: '[App Promotion]',
+    // category_slots.category written for this type's slot on its day — it
+    // must itself satisfy `match` so a booking of that slot counts as covered.
+    slotCategory: 'App Promotion',
     match: /\bapp\s*(promo|promotion|promotions|download|downloads|install|installs)\b|\bmobile\s*app\b|\bapp\s*campaign\b/i,
     cssClass: 'fixed-app-promotion',
     defaults: {
@@ -127,14 +136,15 @@ const FIXED_WEEKLY_SLOT_TYPES = [
     }
   },
   {
-    key: 'linkedin',
-    name: 'LinkedIn Content',
+    key: 'corporate',
+    name: 'Corporate Content',
     emoji: '💼',
     perWeek: 1,
-    days: [3],               // JS getDay(): Wed
-    tag: '[LinkedIn]',
-    match: /\blinked\s*-?\s*in\b/i,
-    cssClass: 'fixed-linkedin',
+    days: [5],               // JS getDay(): Fri
+    tag: '[Corporate]',
+    slotCategory: 'Corporate',
+    match: /\bcorporate\b|\blinked\s*-?\s*in\b/i,
+    cssClass: 'fixed-corporate',
     defaults: {
       department: 'Corporate Marketing',
       page_name: 'Kapruka FB',
@@ -143,6 +153,16 @@ const FIXED_WEEKLY_SLOT_TYPES = [
     }
   }
 ];
+
+// category_slots.category forced by the fixed weekly rule for this date's
+// slot, or null when it is a normal slot. Slot 1 carries the fixed type.
+function fixedWeeklyCategoryForSlot(dateStr, slotNum) {
+  if (Number(slotNum) !== 1) return null;
+  const day = new Date(`${dateStr}T00:00:00`).getDay();
+  const def = FIXED_WEEKLY_SLOT_TYPES.find(d => d.days.includes(day));
+  return def ? def.slotCategory : null;
+}
+
 
 // Text a fixed-slot keyword is matched against. Deliberately narrow: only
 // human-written descriptive fields, so an unrelated product code or a
@@ -2176,9 +2196,11 @@ async function generateCategorySlots(startDate, endDate, slotsPerDay, isSeasonal
         weekNumber++;
       }
       for (let slotNum = 1; slotNum <= slotsPerDay; slotNum++) {
+        // Fixed weekly rule (App Promotion Wed / Corporate Fri) owns slot 1.
+        const fixedCategory = fixedWeeklyCategoryForSlot(dateStr, slotNum);
         slots.push({
           date: dateStr, slot_number: slotNum,
-          category: categoriesToUse[categoryIndex % categoriesToUse.length],
+          category: fixedCategory || categoriesToUse[categoryIndex % categoriesToUse.length],
           week_number: weekNumber, month_year: monthYear
         });
         categoryIndex++;
