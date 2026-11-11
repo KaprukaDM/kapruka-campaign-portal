@@ -2785,6 +2785,13 @@
     // a separate failure from the expired-ad-set one, on exactly the rows
     // whose caption happens to contain a quote. &quot;/&#39; render as the
     // plain characters in text content too, so this is safe everywhere.
+    // Escaped text with http(s) links made clickable (Pinterest inspiration
+    // lines in a post's details). Escape first, then link, so nothing injected.
+    function linkifyDetails(str) {
+      return escapeHtml(str).replace(/(https?:\/\/[^\s<)]+)/g,
+        '<a href="$1" target="_blank" rel="noopener" style="color:#5e3a8e;font-weight:600;">$1</a>');
+    }
+
     function escapeHtml(str) {
       if (str === null || str === undefined) return '';
       return String(str)
@@ -4744,7 +4751,7 @@
             <div>
               <strong style="color:#5e3a8e;">Content:</strong>
               <button type="button" id="editContentBtn" style="margin-left:8px;font-size:11px;padding:2px 8px;border:1px solid #5e3a8e;background:#fff;color:#5e3a8e;border-radius:6px;cursor:pointer;">✏️ Edit</button>
-              <div id="contentDisplay" style="white-space:pre-wrap;word-break:break-word;margin-top:6px;">${escapeHtml(slotData.content_details) || '-'}</div>
+              <div id="contentDisplay" style="white-space:pre-wrap;word-break:break-word;margin-top:6px;">${linkifyDetails(slotData.content_details) || '-'}</div>
               <div id="editContentGroup" style="display:none;margin-top:8px;">
                 <textarea id="editContentText" rows="4" style="width:100%;">${escapeHtml(slotData.content_details)}</textarea>
                 <input type="password" id="editContentPassword" placeholder="Password to save" style="margin-top:6px;width:100%;">

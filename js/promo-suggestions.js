@@ -77,7 +77,12 @@
     const keys = [item.code, item.id, item.name, item.category_path]
       .filter(Boolean).map(k => String(k).toLowerCase());
     const lower = Object.fromEntries(Object.entries(pinRefs).map(([k, v]) => [k.toLowerCase(), v]));
+    // Exact key first (code, id, full name or category path)...
     for (const k of keys) if (Array.isArray(lower[k]) && lower[k].length) return lower[k];
+    // ...then "*fragment" keys, which match when any of the pick's names contains the fragment.
+    for (const [k, v] of Object.entries(lower)) {
+      if (k.charAt(0) === '*' && Array.isArray(v) && v.length && keys.some(n => n.includes(k.slice(1)))) return v;
+    }
     return [];
   }
   function pinsHtml(it) {
