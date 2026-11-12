@@ -135,25 +135,29 @@
     return getFixedWeeklySlotType({ content_details: t }) ? t.replace(/app|corporate/gi, '') : t;
   }
 
+  // Ends every Studio post body. Appended after safeDetails so it is never reworded.
+  const NL = String.fromCharCode(10);
+  const STUDIO_BRAND_BLOCK = NL + NL + [
+    'Ensure the logo is not placed too far down. Keep it within a maximum of 110px from the top.',
+    "Strictly follow Kapruka's brand guidelines.",
+    'Ensure the product looks exactly the same as the original in the post, without any changes.',
+    'Maintain a 100px margin on all sides (top, bottom, left, and right).'
+  ].join(NL);
+
   function detailsFor(item) {
     if (isCat(item)) {
       return safeDetails([
         `[Promo pick: ${LEVEL_LABEL[item.category_level] || 'Category'}] ${item.category_path}`,
         `Page: ${item.category_url}`,
         `Show: ${(item.examples || []).map(e => `${e.name} (${e.code})`).join(', ')}`,
-        `Hook: ${item.angle || ''}`,
-        `Why promote: ${item.reason || ''}`,
         `${TIER_LABEL[item.tier] || item.tier} · ${item.intent === 'self' ? 'Self-purchase' : 'Gift'} · ${item.format || 'Carousel'}`
-      ].join('\n')) + pinLines(item);
+      ].join('\n')) + pinLines(item) + STUDIO_BRAND_BLOCK;
     }
     const lines = [
       `[Promo pick] ${item.name} (${item.code})${item.price ? ' — ' + money(item.price) : ''}`,
-      `Hook: ${item.angle || ''}`,
-      `Why promote: ${item.reason || ''}`,
-      `Evidence: ${(item.evidence || []).join(' ')}`,
       `${TIER_LABEL[item.tier] || item.tier} · ${item.intent === 'self' ? 'Self-purchase' : 'Gift'} · ${item.format || 'Post'}`
     ];
-    return safeDetails(lines.join('\n')) + pinLines(item);
+    return safeDetails(lines.join('\n')) + pinLines(item) + STUDIO_BRAND_BLOCK;
   }
 
   // ---------------------------------------------------------------- render
@@ -278,9 +282,13 @@
     } else if (st === 'rejected') {
       action = `<span class="ps-mut">Rejected</span> <button class="ps-link" data-act="undo" data-id="${esc(it.id)}">Undo</button>`;
     } else {
+      const id = esc(it.id);
+      const approved = st === 'approved';
       action = `${daySelect(it)}
-        <button class="ps-btn ok" data-act="add" data-id="${esc(it.id)}">Add</button>
-        <button class="ps-btn no" data-act="reject" data-id="${esc(it.id)}" title="Reject">✕</button>`;
+        <button class="ps-btn ok" data-act="add" data-id="${id}" title="Approve and put it in Studio on the chosen day">${approved ? 'Add' : '✓ Approve &amp; add'}</button>
+        ${approved ? `<button class="ps-link" data-act="unapprove" data-id="${id}">Un-approve</button>` : `<button class="ps-btn" data-act="approve" data-id="${id}" title="Approve now, add to Studio later">Approve</button>`}
+        <button class="ps-btn" data-act="replace" data-id="${id}" title="Reject this pick and find a better one for the same slot">⟳ Replace</button>
+        <button class="ps-btn no" data-act="reject" data-id="${id}" title="Reject">✕ Reject</button>`;
     }
     return `<tr class="ps-row ${st}">
       <td class="ps-img">${it.image ? `<a href="${esc(it.url)}" target="_blank" rel="noopener"><img src="${esc(it.image)}" alt="" loading="lazy"></a>` : ''}</td>
@@ -459,6 +467,29 @@
     await place(id, date);
   }
 
+  // Swap one pick for a better one in the same slot. The service re-searches
+  // (8-10 candidates) and returns the new pick; an older service without the
+  // endpoint just rejects the weak pick.
+  async function replaceItem(id) {
+    const item = state.items.find(i => i.id === id);
+    if (!item) return;
+    try {
+      state.run = await api(`/suggestions/${id}/replace`, { method: 'POST', body: {
+        studio_codes: state.rows.map(r => r.product_code).filter(Boolean) } });
+      renderAll();
+      startPolling(state.run.id);          // the old pick is rejected once the new one is verified
+    } catch (err) {
+      if (/\(404\)/.test(err.message)) {   // older service without /replace
+        await api(`/suggestions/${id}/decide`, { method: 'POST', body: { status: 'rejected' } });
+        alert('Rejected. The suggestion service has no Replace yet, so press "New suggestions" for a fresh set.');
+        await refreshItems();
+        renderAll();
+      } else {
+        alert('Could not replace it: ' + err.message);
+      }
+    }
+  }
+
   async function addAll() {
     const open = state.items.filter(i => i.week_start === state.weekStart && (i.status === 'suggested' || i.status === 'approved'));
     if (!open.length || !confirm(`Add ${open.length} posts to the Studio calendar on their suggested days?`)) return;
@@ -486,7 +517,10 @@
         return;
       }
       if (act === 'addall') { await addAll(); await refreshItems(); renderAll(); return; }
-      if (act === 'reject') await api(`/suggestions/${id}/decide`, { method: 'POST', body: { status: 'rejected' } });
+      if (act === 'approve') await api(`/suggestions/${id}/decide`, { method: 'POST', body: { status: 'approved' } });
+      else if (act === 'unapprove') await api(`/suggestions/${id}/decide`, { method: 'POST', body: { status: 'suggested' } });
+      else if (act === 'replace') { await replaceItem(id); return; }
+      else if (act === 'reject') await api(`/suggestions/${id}/decide`, { method: 'POST', body: { status: 'rejected' } });
       else if (act === 'undo') await api(`/suggestions/${id}/decide`, { method: 'POST', body: { status: 'suggested' } });
       await refreshItems();
       renderItems();
