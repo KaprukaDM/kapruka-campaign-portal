@@ -99,10 +99,10 @@
   function pinsHtml(it) {
     const pins = livePins(it);
     const id = esc(it.id), editable = it.status !== 'scheduled';
-    const add = editable && pins.length < PINS_PER_POST
+    const add = editable
       ? '<button class="ps-pin-add" data-act="pin-add" data-id="' + id + '" title="Paste a Pinterest link">+ Add link</button>' : '';
     if (!pins.length) return '<div class="ps-pins ps-pins-missing">📌 0/' + PINS_PER_POST + ' references yet ' + add + '</div>';
-    return '<div class="ps-pins">📌 ' + pins.length + '/' + PINS_PER_POST + ' · ' + pins.map(p => {
+    return '<div class="ps-pins">📌 ' + pins.length + (pins.length >= PINS_PER_POST ? '' : '/' + PINS_PER_POST) + ' · ' + pins.map(p => {
       const u = esc(p.url);
       return '<span class="ps-pin' + (p.approved ? ' ok' : '') + '"><a href="' + u + '" target="_blank" rel="noopener" title="' + esc(p.note || '') + '">' + esc(p.style || 'Pin') + '</a>' +
         (editable ? '<button data-act="pin-ok" data-id="' + id + '" data-url="' + u + '" title="' + (p.approved ? 'Approved (click to undo)' : 'Approve this link') + '">' + (p.approved ? '✅' : '✓') + '</button>' +
