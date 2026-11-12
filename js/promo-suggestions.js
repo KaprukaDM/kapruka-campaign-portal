@@ -65,7 +65,7 @@
   // ------------------------------------------------------- pinterest refs
   // Hand-picked inspiration pins (data/pinterest-refs.json), looked up by
   // product code, then pick id, then lower-cased name / category path.
-  const PINS_PER_POST = 3;
+  const PINS_PER_POST = 5;
   let pinRefs = {};
   async function loadPinRefs() {
     try {
