@@ -1023,6 +1023,25 @@ async function assertStudioDayHasRoom(date, ignoreStudioId = null) {
   }
 }
 
+// Every Studio post body ends with the brand block and never carries the
+// promo-planning lines (Hook / Why promote / Evidence). Applied in one place
+// (every row written to studio_calendar) and idempotent.
+const STUDIO_BRAND_LINES = [
+  'Ensure the logo is not placed too far down. Keep it within a maximum of 110px from the top.',
+  "Strictly follow Kapruka's brand guidelines.",
+  'Ensure the product looks exactly the same as the original in the post, without any changes.',
+  'Maintain a 100px margin on all sides (top, bottom, left, and right).'
+];
+function normalizeStudioContent(text, bookingStatus) {
+  const nl = String.fromCharCode(10);
+  const kept = String(text || '').split(/\r?\n/)
+    .filter(l => !/^\s*(Hook|Why promote|Evidence)\s*:/i.test(l));
+  const body = kept.join(nl).replace(/\n{3,}/g, nl + nl).trim();
+  if (bookingStatus === 'empty' || !body) return body;
+  if (body.includes(STUDIO_BRAND_LINES[3])) return body;     // already has the block
+  return body + nl + nl + STUDIO_BRAND_LINES.join(nl);
+}
+
 async function upsertStudioCalendarEntry(entry) {
   const payload = {
     date: entry.date,
@@ -1031,7 +1050,7 @@ async function upsertStudioCalendarEntry(entry) {
     source_id: entry.source_id || null,
     page_name: entry.page_name || null,
     format: entry.format || null,
-    content_details: entry.content_details || '',
+    content_details: normalizeStudioContent(entry.content_details, entry.booking_status),
     reference_links: entry.reference_links || '',
     slot_number: entry.slot_number || null,
     slot_type: entry.slot_type || 'content_calendar',
@@ -1197,6 +1216,7 @@ async function updateSlotContentDetails(id, contentDetails, password) {
   const rows = await supabaseQuery(`studio_calendar?id=eq.${id}`);
   const slot = rows.length ? rows[0] : null;
 
+  contentDetails = normalizeStudioContent(contentDetails, slot && slot.booking_status);
   await supabaseQuery(`studio_calendar?id=eq.${id}`, 'PATCH', {
     content_details: contentDetails,
     updated_at: new Date().toISOString()
