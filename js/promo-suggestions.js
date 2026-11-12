@@ -85,15 +85,34 @@
     }
     return [];
   }
+  // The pins a pick really has: the file's pins plus any the team added, minus
+  // any they removed. Edits live on the pick (item.pin_edits) so every teammate sees them.
+  function livePins(item) {
+    const e = item.pin_edits || {};
+    const gone = new Set(e.removed || []), ok = new Set(e.approved || []);
+    const seen = new Set();
+    return pinsFor(item).concat(e.added || []).filter(p => {
+      if (gone.has(p.url) || seen.has(p.url)) return false;
+      seen.add(p.url); return true;
+    }).map(p => ({ ...p, approved: ok.has(p.url) }));
+  }
   function pinsHtml(it) {
-    const pins = pinsFor(it);
-    if (!pins.length) return '<div class="ps-pins ps-pins-missing">📌 0/' + PINS_PER_POST + ' references yet</div>';
-    return '<div class="ps-pins">📌 ' + pins.length + '/' + PINS_PER_POST + ' · ' + pins.map(p =>
-      '<a href="' + esc(p.url) + '" target="_blank" rel="noopener" title="' + esc(p.note || '') + '">' + esc(p.style || 'Pin') + '</a>').join(' · ') + '</div>';
+    const pins = livePins(it);
+    const id = esc(it.id), editable = it.status !== 'scheduled';
+    const add = editable && pins.length < PINS_PER_POST
+      ? '<button class="ps-pin-add" data-act="pin-add" data-id="' + id + '" title="Paste a Pinterest link">+ Add link</button>' : '';
+    if (!pins.length) return '<div class="ps-pins ps-pins-missing">📌 0/' + PINS_PER_POST + ' references yet ' + add + '</div>';
+    return '<div class="ps-pins">📌 ' + pins.length + '/' + PINS_PER_POST + ' · ' + pins.map(p => {
+      const u = esc(p.url);
+      return '<span class="ps-pin' + (p.approved ? ' ok' : '') + '"><a href="' + u + '" target="_blank" rel="noopener" title="' + esc(p.note || '') + '">' + esc(p.style || 'Pin') + '</a>' +
+        (editable ? '<button data-act="pin-ok" data-id="' + id + '" data-url="' + u + '" title="' + (p.approved ? 'Approved (click to undo)' : 'Approve this link') + '">' + (p.approved ? '✅' : '✓') + '</button>' +
+          '<button data-act="pin-rp" data-id="' + id + '" data-url="' + u + '" title="Replace with another link">⟳</button>' +
+          '<button class="rm" data-act="pin-rm" data-id="' + id + '" data-url="' + u + '" title="Remove this link">✕</button>' : '') + '</span>';
+    }).join('') + add + '</div>';
   }
   // Appended after safeDetails so the URLs are never reworded.
   function pinLines(item) {
-    const pins = pinsFor(item);
+    const pins = livePins(item);
     if (!pins.length) return '';
     return String.fromCharCode(10) + 'Pinterest inspiration:' + String.fromCharCode(10) +
       pins.map(p => '- ' + (p.style || 'Pin') + ': ' + p.url + (p.note ? ' (' + p.note + ')' : '')).join(String.fromCharCode(10));
@@ -456,8 +475,8 @@
 
   async function addItem(id, date, silent) {
     const item = state.items.find(i => i.id === id);
-    if (!silent && item && pinsFor(item).length < PINS_PER_POST &&
-        !confirm(`"${item.name}" has ${pinsFor(item).length} of ${PINS_PER_POST} Pinterest references. Add it to the Studio calendar anyway?`)) {
+    if (!silent && item && livePins(item).length < PINS_PER_POST &&
+        !confirm(`"${item.name}" has ${livePins(item).length} of ${PINS_PER_POST} Pinterest references. Add it to the Studio calendar anyway?`)) {
       return;
     }
     if (item && item.status !== 'approved') {
@@ -508,6 +527,10 @@
     const b = e.target.closest('[data-act]');
     if (!b) return;
     const { act, id } = b.dataset;
+    if (act.startsWith('pin-')) {
+      try { await pinAction(act, id, b.dataset.url); } catch (err) { alert('Could not save the link change: ' + err.message); }
+      return;
+    }
     b.disabled = true;
     try {
       if (act === 'add') {
@@ -525,6 +548,43 @@
       await refreshItems();
       renderItems();
     } catch (err) { alert(err.message); b.disabled = false; }
+  }
+
+  // ---- reference-link edits (approve / replace / remove / add), saved on the pick
+  const PIN_URL = /^https?:\/\/((?:[a-z]{2,3}|www)\.)?(pinterest\.[a-z.]+\/pin\/\d+|pin\.it\/\w+)/i;
+  async function savePinEdits(id, mutate) {
+    const item = state.items.find(i => i.id === id);
+    if (!item) return;
+    const e = item.pin_edits || {};
+    const next = { removed: [...(e.removed || [])], approved: [...(e.approved || [])], added: [...(e.added || [])] };
+    mutate(next);
+    const saved = await api(`/suggestions/${id}/pins`, { method: 'POST', body: next });
+    item.pin_edits = saved.pin_edits || next;
+    renderItems();
+  }
+  const dropUrl = (arr, url) => arr.filter(x => (x.url || x) !== url);
+  function askPin() {
+    const url = (prompt('Paste the Pinterest pin link (https://www.pinterest.com/pin/...):') || '').trim();
+    if (!url) return null;
+    if (!PIN_URL.test(url)) { alert('That does not look like a Pinterest pin link.'); return null; }
+    const style = (prompt('Style of this reference (e.g. Poster, Flat-lay, Editorial, Lifestyle):', 'Reference') || 'Reference').trim();
+    return { url, style, note: '' };
+  }
+  async function pinAction(act, id, url) {
+    if (act === 'pin-ok') return savePinEdits(id, n => {
+      n.approved = n.approved.includes(url) ? n.approved.filter(u => u !== url) : n.approved.concat(url);
+    });
+    if (act === 'pin-rm') return savePinEdits(id, n => {
+      n.removed = n.removed.concat(url); n.approved = n.approved.filter(u => u !== url); n.added = dropUrl(n.added, url);
+    });
+    const p = askPin();
+    if (!p) return;
+    return savePinEdits(id, n => {
+      if (act === 'pin-rp') { n.removed = n.removed.concat(url); n.approved = n.approved.filter(u => u !== url); n.added = dropUrl(n.added, url); }
+      n.removed = n.removed.filter(u => u !== p.url);
+      n.added = dropUrl(n.added, p.url).concat(p);
+      n.approved = n.approved.concat(p.url);
+    });
   }
 
   async function toggleLearnings() {
