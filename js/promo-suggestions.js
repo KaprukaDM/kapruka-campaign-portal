@@ -65,7 +65,7 @@
   // ------------------------------------------------------- pinterest refs
   // Hand-picked inspiration pins (data/pinterest-refs.json), looked up by
   // product code, then pick id, then lower-cased name / category path.
-  const PINS_PER_POST = 5;
+  const PINS_PER_POST = 6;
   let pinRefs = {};
   async function loadPinRefs() {
     try {
@@ -91,7 +91,7 @@
     const e = item.pin_edits || {};
     const gone = new Set(e.removed || []), ok = new Set(e.approved || []);
     const seen = new Set();
-    return pinsFor(item).concat(e.added || []).filter(p => {
+    return pinsFor(item).concat(item.pin_refs || [], e.added || []).filter(p => {
       if (gone.has(p.url) || seen.has(p.url)) return false;
       seen.add(p.url); return true;
     }).map(p => ({ ...p, approved: ok.has(p.url) }));
@@ -105,8 +105,7 @@
     return '<div class="ps-pins">📌 ' + pins.length + (pins.length >= PINS_PER_POST ? '' : '/' + PINS_PER_POST) + ' · ' + pins.map(p => {
       const u = esc(p.url);
       return '<span class="ps-pin' + (p.approved ? ' ok' : '') + '"><a href="' + u + '" target="_blank" rel="noopener" title="' + esc(p.note || '') + '">' + esc(p.style || 'Pin') + '</a>' +
-        (editable ? '<button data-act="pin-ok" data-id="' + id + '" data-url="' + u + '" title="' + (p.approved ? 'Approved (click to undo)' : 'Approve this link') + '">' + (p.approved ? '✅' : '✓') + '</button>' +
-          '<button data-act="pin-rp" data-id="' + id + '" data-url="' + u + '" title="Replace with another link">⟳</button>' +
+        (editable ? '<button data-act="pin-rp" data-id="' + id + '" data-url="' + u + '" title="Edit: replace with another link">✎</button>' +
           '<button class="rm" data-act="pin-rm" data-id="' + id + '" data-url="' + u + '" title="Remove this link">✕</button>' : '') + '</span>';
     }).join('') + add + '</div>';
   }
@@ -305,8 +304,7 @@
       const approved = st === 'approved';
       action = `${daySelect(it)}
         <button class="ps-btn ok" data-act="add" data-id="${id}" title="Approve and put it in Studio on the chosen day">${approved ? 'Add' : '✓ Approve &amp; add'}</button>
-        ${approved ? `<button class="ps-link" data-act="unapprove" data-id="${id}">Un-approve</button>` : `<button class="ps-btn" data-act="approve" data-id="${id}" title="Approve now, add to Studio later">Approve</button>`}
-        <button class="ps-btn" data-act="replace" data-id="${id}" title="Reject this pick and find a better one for the same slot">⟳ Replace</button>
+                <button class="ps-btn" data-act="replace" data-id="${id}" title="Reject this pick and find a better one for the same slot">⟳ Replace</button>
         <button class="ps-btn no" data-act="reject" data-id="${id}" title="Reject">✕ Reject</button>`;
     }
     return `<tr class="ps-row ${st}">
@@ -409,6 +407,17 @@
       state.items = []; state.run = null;
     }
     renderAll();
+    fillPins();
+  }
+  let pinFill = false;
+  async function fillPins() {
+    if (pinFill || !state.online) return;
+    pinFill = true;
+    try {
+      for (const it of state.items.filter(i => i.week_start === state.weekStart && i.status !== 'scheduled' && i.status !== 'rejected' && !i.pin_state && livePins(i).length < PINS_PER_POST)) {
+        await api(`/suggestions/${it.id}/find-pins`, { method: 'POST' }).catch(() => {});
+      }
+    } finally { pinFill = false; }
   }
 
   function startPolling(runId) {
