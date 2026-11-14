@@ -1023,6 +1023,31 @@ async function assertStudioDayHasRoom(date, ignoreStudioId = null) {
   }
 }
 
+// Corporate content goes out ONCE a week (Mon-Sun). Throws when `entry` is
+// corporate content (matched like the fixed weekly slot, so promo picks that
+// carry the [Corporate] tag count too) and another corporate post already sits
+// in that week. Called with the same entry the Studio row is built from, before
+// any insert, so nothing is orphaned.
+async function assertStudioWeekHasCorporateRoom(entry, ignoreStudioId = null) {
+  if (!entry || !entry.date) return;
+  const corp = getFixedWeeklySlotTypeByKey('corporate');
+  const text = fixedSlotHaystack(entry);
+  if (!corp || !corp.match.test(text)) return;
+  const weekStart = fixedSlotWeekStart(entry.date);
+  const d = new Date(`${weekStart}T00:00:00`); d.setDate(d.getDate() + 6);
+  const weekEnd = localDateString(d);
+  const rows = await supabaseQuery(
+    `studio_calendar?date=gte.${weekStart}&date=lte.${weekEnd}` +
+    `&select=id,date,booking_status,content_details,notes,format,page_name,campaign_name`
+  );
+  const clash = rows.find(r => r.id !== ignoreStudioId && r.booking_status !== 'empty' && corp.match.test(fixedSlotHaystack(r)));
+  if (clash) {
+    throw new Error(
+      `The week of ${weekStart} already has its corporate post (${clash.date}). Corporate content is limited to one per week.`
+    );
+  }
+}
+
 // Every Studio post body ends with the brand block and never carries the
 // promo-planning lines (Hook / Why promote / Evidence). Applied in one place
 // (every row written to studio_calendar) and idempotent.
@@ -1081,13 +1106,17 @@ async function upsertStudioCalendarEntry(entry) {
     if (existing.length > 0) {
       const id = existing[0].id;
       // Moving a post to another date must respect that date's cap too.
-      if (existing[0].date !== entry.date) await assertStudioDayHasRoom(entry.date, id);
+      if (existing[0].date !== entry.date) {
+        await assertStudioDayHasRoom(entry.date, id);
+        await assertStudioWeekHasCorporateRoom(entry, id);
+      }
       await supabaseQuery(`studio_calendar?id=eq.${id}`, 'PATCH', payload);
       return id;
     }
   }
 
   await assertStudioDayHasRoom(entry.date);
+  await assertStudioWeekHasCorporateRoom(entry);
   const result = await supabaseQuery('studio_calendar', 'POST', payload);
   const newId = result[0].id;
   const label = entry.content_details || entry.page_name || entry.product_code || entry.slot_type || 'slot';
@@ -1228,6 +1257,28 @@ async function updateSlotContentDetails(id, contentDetails, password) {
 
   const oldText = (slot && slot.content_details) || '(empty)';
   await logStudioActivity(id, 'content_edited', `Content description edited\n  From: ${oldText}\n  To: ${contentDetails}`, 'Admin');
+  return { success: true };
+}
+
+// Password-protected edit of a slot's reference link(s). Same password and
+// audit trail as the content edit; an empty value clears the link.
+async function updateSlotReferenceLinks(id, referenceLinks, password) {
+  if (password !== CONTENT_EDIT_PASSWORD) throw new Error('Incorrect password');
+  const rows = await supabaseQuery(`studio_calendar?id=eq.${id}`);
+  const slot = rows.length ? rows[0] : null;
+  const value = String(referenceLinks || '').trim();
+
+  await supabaseQuery(`studio_calendar?id=eq.${id}`, 'PATCH', {
+    reference_links: value,
+    updated_at: new Date().toISOString()
+  });
+
+  if (slot && slot.source_id && slot.source_type === 'extra_content') {
+    await supabaseQuery(`extra_content?id=eq.${slot.source_id}`, 'PATCH', { reference_links: value });
+  }
+
+  const oldLinks = (slot && slot.reference_links) || '(empty)';
+  await logStudioActivity(id, 'reference_link_edited', `Reference link edited\n  From: ${oldLinks}\n  To: ${value || '(empty)'}`, 'Admin');
   return { success: true };
 }
 
@@ -1661,6 +1712,7 @@ async function addExtraContent(extra) {
     reference_links: extra.reference_links || '', created_by: extra.created_by || ''
   };
   await assertStudioDayHasRoom(extra.date);
+  await assertStudioWeekHasCorporateRoom(extra);
   const result = await supabaseQuery('extra_content', 'POST', row);
   const saved = result[0];
 

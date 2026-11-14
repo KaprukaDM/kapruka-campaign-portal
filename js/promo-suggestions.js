@@ -162,6 +162,17 @@
     'Maintain a 100px margin on all sides (top, bottom, left, and right).'
   ].join(NL);
 
+  // Corporate picks (corporate gifting, offices, staff, B2B) are limited to ONE
+  // a week. The pick that is placed carries the [Corporate] tag so it counts as
+  // the week's corporate post everywhere (Studio calendar, weekly slot, the
+  // one-a-week guard in addExtraContent).
+  const CORPORATE_RE = /\bcorporate\b|\bb2b\b|\bbusiness\s+gift|\bstaff\s+gift|\boffice\s+gift/i;
+  const isCorporatePick = it => CORPORATE_RE.test([it.group, it.name, it.category_path].filter(Boolean).join(' | '));
+  const corporateTag = it => (isCorporatePick(it) ? '\n[Corporate]' : '');
+  // Is the week's corporate post already taken (a real post, or a pick placed earlier)?
+  const weekHasCorporate = rows => (rows || []).some(r => r.booking_status !== 'empty' && FIXED_WEEKLY_SLOT_TYPES
+    .find(d => d.key === 'corporate').match.test([r.content_details, r.notes, r.format, r.page_name, r.campaign_name].filter(Boolean).join(' | ')));
+
   function detailsFor(item) {
     if (isCat(item)) {
       return safeDetails([
@@ -169,13 +180,13 @@
         `Page: ${item.category_url}`,
         `Show: ${(item.examples || []).map(e => `${e.name} (${e.code})`).join(', ')}`,
         `${TIER_LABEL[item.tier] || item.tier} · ${item.intent === 'self' ? 'Self-purchase' : 'Gift'} · ${item.format || 'Carousel'}`
-      ].join('\n')) + pinLines(item) + STUDIO_BRAND_BLOCK;
+      ].join('\n')) + corporateTag(item) + pinLines(item) + STUDIO_BRAND_BLOCK;
     }
     const lines = [
       `[Promo pick] ${item.name} (${item.code})${item.price ? ' — ' + money(item.price) : ''}`,
       `${TIER_LABEL[item.tier] || item.tier} · ${item.intent === 'self' ? 'Self-purchase' : 'Gift'} · ${item.format || 'Post'}`
     ];
-    return safeDetails(lines.join('\n')) + pinLines(item) + STUDIO_BRAND_BLOCK;
+    return safeDetails(lines.join('\n')) + corporateTag(item) + pinLines(item) + STUDIO_BRAND_BLOCK;
   }
 
   // ---------------------------------------------------------------- render
@@ -321,15 +332,19 @@
   function renderItems() {
     const box = $('promoItems');
     if (!box) return;
-    const week = state.items.filter(i => i.week_start === state.weekStart);
+    // A pick leaves the list once it is added to Studio (it then lives on the calendar).
+    const allWeek = state.items.filter(i => i.week_start === state.weekStart);
+    const week = allWeek.filter(i => i.status !== 'scheduled');
     if (!week.length) {
-      box.innerHTML = state.online ? '<p class="ps-mut">No suggestions for this week yet. Press the button above.</p>' : '';
+      box.innerHTML = !state.online ? '' : allWeek.length
+        ? `<p class="ps-mut">All ${allWeek.length} picks for this week are added to Studio.</p>`
+        : '<p class="ps-mut">No suggestions for this week yet. Press the button above.</p>';
       return;
     }
     const order = { approved: 0, suggested: 0, scheduled: 1, rejected: 2 };
     week.sort((a, b) => (order[a.status] - order[b.status]) || (a.best_day || '').localeCompare(b.best_day || ''));
     const open = week.filter(i => i.status === 'suggested' || i.status === 'approved');
-    const placed = week.filter(i => i.status === 'scheduled').length;
+    const placed = allWeek.filter(i => i.status === 'scheduled').length;
     const live = week.filter(i => i.status !== 'rejected');
     const self = live.filter(i => i.intent === 'self').length;
     box.innerHTML = `
@@ -451,7 +466,8 @@
     const btn = $('promoSuggestBtn');
     btn.disabled = true;
     try {
-      state.run = await api('/runs', { method: 'POST', body: { week_start: state.weekStart, slots, studio_codes: studioCodes } });
+      state.run = await api('/runs', { method: 'POST', body: { week_start: state.weekStart, slots, studio_codes: studioCodes,
+        max_corporate: weekHasCorporate(state.rows) ? 0 : 1 } });
       renderProgress();
       startPolling(state.run.id);
     } catch (e) {
@@ -466,6 +482,10 @@
     await loadSlots();
     const slot = state.slots.find(s => s.date === date);
     if (!slot || slot.free <= 0) { alert(`${fmtDate(date)} has no free slot any more. Pick another day.`); renderAll(); return; }
+    if (isCorporatePick(item) && weekHasCorporate(state.rows)) {
+      alert('This week already has its corporate post. Corporate promotions are limited to one per week, so this pick was not added.');
+      return;
+    }
     try {
       const saved = await addExtraContent({
         date, department: 'Digital Marketing', page_name: 'Kapruka FB', format: item.format || 'Post',
@@ -524,12 +544,14 @@
     await loadSlots();
     const left = Object.fromEntries(state.slots.map(s => [s.date, s.free]));
     let added = 0, skipped = 0;
+    let corpTaken = weekHasCorporate(state.rows);
     for (const it of open) {
+      if (isCorporatePick(it)) { if (corpTaken) { skipped++; continue; } corpTaken = true; }
       const day = left[it.best_day] > 0 ? it.best_day : Object.keys(left).find(d => left[d] > 0);
       if (!day) { skipped++; continue; }
       try { await addItem(it.id, day, true); left[day]--; added++; } catch (e) { skipped++; }
     }
-    if (skipped) alert(`Added ${added}. ${skipped} could not be added (no free day left).`);
+    if (skipped) alert(`Added ${added}. ${skipped} could not be added (no free day left, or a second corporate pick this week).`);
   }
 
   async function onClick(e) {

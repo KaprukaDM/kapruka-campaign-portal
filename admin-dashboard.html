@@ -4764,8 +4764,18 @@
             </div>
             ${slotData.booking_note ? `<div style="margin-top:6px;padding:10px 12px;background:#f5f0ff;border-left:3px solid #5e3a8e;border-radius:6px;"><strong style="color:#5e3a8e;">📝 Booking Note:</strong><div style="margin-top:4px;color:#333;font-size:13px;line-height:1.5;white-space:pre-line;">${slotData.booking_note}</div></div>` : ''}
             <div>
-              <strong style="color:#5e3a8e;">Reference Link:</strong> 
-              ${slotData.reference_links ? `<a href="${slotData.reference_links}" target="_blank" style="color:#5e3a8e;">View</a>` : '-'}
+              <strong style="color:#5e3a8e;">Reference Link:</strong>
+              <button type="button" id="editRefLinkBtn" style="margin-left:8px;font-size:11px;padding:2px 8px;border:1px solid #5e3a8e;background:#fff;color:#5e3a8e;border-radius:6px;cursor:pointer;">✏️ Edit</button>
+              <div id="refLinkDisplay" style="white-space:pre-wrap;word-break:break-all;margin-top:6px;">${linkifyDetails(slotData.reference_links) || '-'}</div>
+              <div id="editRefLinkGroup" style="display:none;margin-top:8px;">
+                <textarea id="editRefLinkText" rows="3" placeholder="https://... (one link per line; leave empty to remove)" style="width:100%;">${escapeHtml(slotData.reference_links)}</textarea>
+                <input type="password" id="editRefLinkPassword" placeholder="Password to save" style="margin-top:6px;width:100%;">
+                <div style="display:flex;gap:8px;margin-top:6px;">
+                  <button type="button" id="saveRefLinkBtn" class="btn btn-primary" style="padding:6px 14px;">Save</button>
+                  <button type="button" id="cancelRefLinkBtn" class="btn" style="padding:6px 14px;background:#eee;color:#333;">Cancel</button>
+                </div>
+                <div id="editRefLinkMsg" style="color:#d32f2f;font-size:12px;margin-top:4px;"></div>
+              </div>
             </div>
             ${slotData.assigned_to ? `<div><strong style="color:#5e3a8e;">👤 Assigned To:</strong> <span style="background:#E3F2FD;padding:5px 12px;border-radius:20px;font-weight:600;">${slotData.assigned_to}</span></div>` : ''}
             <div>
@@ -4898,6 +4908,38 @@
             hideLoading();
             closeModal();
             alert('✅ Content description updated!');
+            studioCalendarData = [];
+            await loadStudioCalendar();
+          } catch (err) {
+            hideLoading();
+            msg.textContent = err.message === 'Incorrect password' ? 'Incorrect password.' : ('Error: ' + err.message);
+          }
+        });
+      }
+
+      // ── Password-protected inline edit of the reference link(s) ──
+      const editRefLinkBtn = document.getElementById('editRefLinkBtn');
+      if (editRefLinkBtn) {
+        editRefLinkBtn.addEventListener('click', () => {
+          document.getElementById('editRefLinkGroup').style.display = 'block';
+          editRefLinkBtn.style.display = 'none';
+        });
+        document.getElementById('cancelRefLinkBtn').addEventListener('click', () => {
+          document.getElementById('editRefLinkGroup').style.display = 'none';
+          document.getElementById('editRefLinkMsg').textContent = '';
+          document.getElementById('editRefLinkPassword').value = '';
+          editRefLinkBtn.style.display = '';
+        });
+        document.getElementById('saveRefLinkBtn').addEventListener('click', async () => {
+          const msg = document.getElementById('editRefLinkMsg');
+          const newLinks = document.getElementById('editRefLinkText').value.trim();
+          const pwd = document.getElementById('editRefLinkPassword').value;
+          try {
+            showLoading();
+            await updateSlotReferenceLinks(slotData.id, newLinks, pwd);
+            hideLoading();
+            closeModal();
+            alert('✅ Reference link updated!');
             studioCalendarData = [];
             await loadStudioCalendar();
           } catch (err) {
