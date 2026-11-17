@@ -480,11 +480,19 @@
     const item = state.items.find(i => i.id === id);
     if (!item) return;
     await loadSlots();
-    const slot = state.slots.find(s => s.date === date);
-    if (!slot || slot.free <= 0) { alert(`${fmtDate(date)} has no free slot any more. Pick another day.`); renderAll(); return; }
-    if (isCorporatePick(item) && weekHasCorporate(state.rows)) {
-      alert('This week already has its corporate post. Corporate promotions are limited to one per week, so this pick was not added.');
-      return;
+    if (isCorporatePick(item)) {
+      if (weekHasCorporate(state.rows)) {
+        alert('This week already has its corporate post. Corporate promotions are limited to one per week, so this pick was not added.');
+        return;
+      }
+      // Corporate content goes out on Friday only; it may use Friday's reserved corporate slot.
+      const fri = state.slots.find(s => new Date(`${s.date}T00:00:00`).getDay() === 5);
+      if (!fri || fri.past) { alert('This week\'s Friday has passed, and corporate content is Friday only, so this pick was not added.'); return; }
+      date = fri.date;
+      if (fri.free <= 0 && !fri.reserved.includes('Corporate')) { alert(`${fmtDate(date)} has no free slot any more.`); renderAll(); return; }
+    } else {
+      const slot = state.slots.find(s => s.date === date);
+      if (!slot || slot.free <= 0) { alert(`${fmtDate(date)} has no free slot any more. Pick another day.`); renderAll(); return; }
     }
     try {
       const saved = await addExtraContent({
@@ -547,9 +555,11 @@
     let corpTaken = weekHasCorporate(state.rows);
     for (const it of open) {
       if (isCorporatePick(it)) { if (corpTaken) { skipped++; continue; } corpTaken = true; }
-      const day = left[it.best_day] > 0 ? it.best_day : Object.keys(left).find(d => left[d] > 0);
+      const corp = isCorporatePick(it);
+      const friday = Object.keys(left).find(d => new Date(`${d}T00:00:00`).getDay() === 5);
+      const day = corp ? friday : (left[it.best_day] > 0 ? it.best_day : Object.keys(left).find(d => left[d] > 0));
       if (!day) { skipped++; continue; }
-      try { await addItem(it.id, day, true); left[day]--; added++; } catch (e) { skipped++; }
+      try { await addItem(it.id, day, true); if (!corp) left[day]--; added++; } catch (e) { skipped++; }
     }
     if (skipped) alert(`Added ${added}. ${skipped} could not be added (no free day left, or a second corporate pick this week).`);
   }
