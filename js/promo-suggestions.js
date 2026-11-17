@@ -110,12 +110,14 @@
     if (grp) out.push(grp);
     return [...new Set(out)];
   }
-  const pinSearchUrl = q => 'https://www.pinterest.com/search/pins/?q=' + encodeURIComponent(q);
+  // Every reference search ends with "instagram post" so the results are real post designs.
+  const withPostWords = q => /instagram post$/i.test(q.trim()) ? q.trim() : q.trim() + ' instagram post';
+  const pinSearchUrl = q => 'https://www.pinterest.com/search/pins/?q=' + encodeURIComponent(withPostWords(q));
   function findRefHtml(it) {
     if (it.status === 'scheduled') return '';
     const id = esc(it.id);
     return '<span class="ps-find">🔎 Find reference: ' + refQueries(it).map(q =>
-      '<button class="ps-pin-add" data-act="pin-find" data-id="' + id + '" data-q="' + esc(q) + '" title="Open Pinterest search for ' + esc(q) + '">' + esc(q) + '</button>').join('') +
+      '<button class="ps-pin-add" data-act="pin-find" data-id="' + id + '" data-q="' + esc(q) + '" title="Open Pinterest search for ' + esc(withPostWords(q)) + '">' + esc(q) + '</button>').join('') +
       '<button class="ps-pin-add" data-act="pin-find" data-id="' + id + '" data-q="" title="Type your own search">other…</button></span>';
   }
   function pinsHtml(it) {
