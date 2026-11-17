@@ -110,15 +110,16 @@
     if (grp) out.push(grp);
     return [...new Set(out)];
   }
-  // Every reference search ends with "instagram post" so the results are real post designs.
-  const withPostWords = q => /instagram post$/i.test(q.trim()) ? q.trim() : q.trim() + ' instagram post';
-  const pinSearchUrl = q => 'https://www.pinterest.com/search/pins/?q=' + encodeURIComponent(withPostWords(q));
+  // Every term is searched twice, as two separate Pinterest searches: "<term> instagram" and "<term> post".
+  const REF_SUFFIXES = ['instagram', 'post'];
+  const pinSearchUrl = q => 'https://www.pinterest.com/search/pins/?q=' + encodeURIComponent(q);
   function findRefHtml(it) {
     if (it.status === 'scheduled') return '';
     const id = esc(it.id);
-    return '<span class="ps-find">🔎 Find reference: ' + refQueries(it).map(q =>
-      '<button class="ps-pin-add" data-act="pin-find" data-id="' + id + '" data-q="' + esc(q) + '" title="Open Pinterest search for ' + esc(withPostWords(q)) + '">' + esc(q) + '</button>').join('') +
-      '<button class="ps-pin-add" data-act="pin-find" data-id="' + id + '" data-q="" title="Type your own search">other…</button></span>';
+    const btn = (q, label) => '<button class="ps-pin-add" data-act="pin-find" data-id="' + id + '" data-q="' + esc(q) + '" title="Open Pinterest search for ' + esc(q) + '">' + esc(label) + '</button>';
+    const terms = refQueries(it).flatMap(q => REF_SUFFIXES.map(x => btn(q + ' ' + x, q + ' ' + x)));
+    const other = REF_SUFFIXES.map(x => '<button class="ps-pin-add" data-act="pin-find" data-id="' + id + '" data-q="" data-suffix="' + x + '" title="Type your own search term (searched with ' + x + ')">other… ' + x + '</button>');
+    return '<span class="ps-find">🔎 Find reference: ' + terms.join('') + other.join('') + '</span>';
   }
   function pinsHtml(it) {
     const pins = livePins(it);
@@ -594,7 +595,7 @@
     const { act, id } = b.dataset;
     if (act === 'pin-find') {   // open Pinterest in the user's own browser (their signed-in session)
       let q = b.dataset.q;
-      if (!q) q = (prompt('Search Pinterest for:') || '').trim();
+      if (!q) { const t = (prompt('Search Pinterest for (the word "' + b.dataset.suffix + '" is added):') || '').trim(); q = t ? t + ' ' + b.dataset.suffix : ''; }
       if (q) window.open(pinSearchUrl(q), '_blank', 'noopener');
       return;
     }
