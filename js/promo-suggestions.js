@@ -96,18 +96,40 @@
       seen.add(p.url); return true;
     }).map(p => ({ ...p, approved: ok.has(p.url) }));
   }
+  // "Find reference" searches: generic product-type / category words, never the exact product name.
+  const REF_STOP = new Set(['the', 'and', 'with', 'for', 'of', 'a', 'an', 'in', 'premium', 'special', 'golden', 'royal', 'classic',
+    'deluxe', 'eggless', 'new', 'best', 'items', 'item', 'combo', 'combos', 'pack', 'set']);
+  function refQueries(it) {
+    const words = s => (String(s || '').match(/[A-Za-z]{3,}/g) || []).map(w => w.toLowerCase()).filter(w => !REF_STOP.has(w));
+    const path = String(it.category_path || '').split('>').map(x => x.trim()).filter(Boolean);
+    const nm = isCat(it) ? words(path[path.length - 1]) : words(it.name);
+    const type = nm.slice(-2).join(' ');
+    const grp = isCat(it) ? '' : (words(it.group).find(w => w !== 'gift' && !type.includes(w) && !type.includes(w.replace(/s$/, ''))) || '');
+    const out = [];
+    if (type) out.push(type + ' ideas');
+    if (grp) out.push(grp + ' gift ideas');
+    return [...new Set(out)];
+  }
+  const pinSearchUrl = q => 'https://www.pinterest.com/search/pins/?q=' + encodeURIComponent(q);
+  function findRefHtml(it) {
+    if (it.status === 'scheduled') return '';
+    const id = esc(it.id);
+    return '<span class="ps-find">🔎 Find reference: ' + refQueries(it).map(q =>
+      '<button class="ps-pin-add" data-act="pin-find" data-id="' + id + '" data-q="' + esc(q) + '" title="Open Pinterest search for ' + esc(q) + '">' + esc(q) + '</button>').join('') +
+      '<button class="ps-pin-add" data-act="pin-find" data-id="' + id + '" data-q="" title="Type your own search">other…</button></span>';
+  }
   function pinsHtml(it) {
     const pins = livePins(it);
     const id = esc(it.id), editable = it.status !== 'scheduled';
     const add = editable
       ? '<button class="ps-pin-add" data-act="pin-add" data-id="' + id + '" title="Paste a Pinterest link">+ Add link</button>' : '';
-    if (!pins.length) return '<div class="ps-pins ps-pins-missing">📌 0/' + PINS_PER_POST + ' references yet ' + add + '</div>';
+    if (!pins.length) return '<div class="ps-pins ps-pins-missing">📌 0/' + PINS_PER_POST + ' references yet ' + add + findRefHtml(it) + '</div>';
     return '<div class="ps-pins">📌 ' + pins.length + (pins.length >= PINS_PER_POST ? '' : '/' + PINS_PER_POST) + ' · ' + pins.map(p => {
       const u = esc(p.url);
       return '<span class="ps-pin' + (p.approved ? ' ok' : '') + '"><a href="' + u + '" target="_blank" rel="noopener" title="' + esc(p.note || '') + '">' + esc(p.style || 'Pin') + '</a>' +
         (editable ? '<button data-act="pin-rp" data-id="' + id + '" data-url="' + u + '" title="Edit: replace with another link">✎</button>' +
           '<button class="rm" data-act="pin-rm" data-id="' + id + '" data-url="' + u + '" title="Remove this link">✕</button>' : '') + '</span>';
-    }).join('') + add + '</div>';
+    }).join('') + add + findRefHtml(it) + '</div>';
   }
   // Appended after safeDetails so the URLs are never reworded.
   function pinLines(item) {
@@ -568,6 +590,12 @@
     const b = e.target.closest('[data-act]');
     if (!b) return;
     const { act, id } = b.dataset;
+    if (act === 'pin-find') {   // open Pinterest in the user's own browser (their signed-in session)
+      let q = b.dataset.q;
+      if (!q) q = (prompt('Search Pinterest for:') || '').trim();
+      if (q) window.open(pinSearchUrl(q), '_blank', 'noopener');
+      return;
+    }
     if (act.startsWith('pin-')) {
       try { await pinAction(act, id, b.dataset.url); } catch (err) { alert('Could not save the link change: ' + err.message); }
       return;
