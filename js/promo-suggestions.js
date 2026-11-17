@@ -106,8 +106,8 @@
     const type = nm.slice(-2).join(' ');
     const grp = isCat(it) ? '' : (words(it.group).find(w => w !== 'gift' && !type.includes(w) && !type.includes(w.replace(/s$/, ''))) || '');
     const out = [];
-    if (type) out.push(type + ' ideas');
-    if (grp) out.push(grp + ' gift ideas');
+    if (type) out.push(type);   // broad on purpose: general searches surface designs that can be adapted
+    if (grp) out.push(grp);
     return [...new Set(out)];
   }
   const pinSearchUrl = q => 'https://www.pinterest.com/search/pins/?q=' + encodeURIComponent(q);
