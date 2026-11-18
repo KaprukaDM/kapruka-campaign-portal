@@ -91,7 +91,8 @@
     const e = item.pin_edits || {};
     const gone = new Set(e.removed || []), ok = new Set(e.approved || []);
     const seen = new Set();
-    return pinsFor(item).concat(item.pin_refs || [], e.added || []).filter(p => {
+    return pinsFor(item).concat(e.added || [])   // service auto-found pins (item.pin_refs) are not shown: they let stock photos through
+      .filter(p => {
       if (gone.has(p.url) || seen.has(p.url)) return false;
       seen.add(p.url); return true;
     }).map(p => ({ ...p, approved: ok.has(p.url) }));
