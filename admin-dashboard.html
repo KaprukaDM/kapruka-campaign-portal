@@ -3840,7 +3840,15 @@
         const lastDay = new Date(currentStudioYear, currentStudioMonth, 0).getDate();
         const endDate = `${currentStudioYear}-${String(currentStudioMonth).padStart(2, '0')}-${lastDay}`;
         const themes = await getAllThemes();
-        studioMonthThemes = themes.filter(t => t.start_date <= endDate && t.end_date >= startDate);
+        // Include occasions just after the month too: a short seasonal theme's
+        // content is spread over the days leading up to it
+        // (seasonalPlacementWindow), so a 1st-of-next-month occasion puts its
+        // placeholders in this month's last days. dailyPostCap only looks at
+        // themes that actually cover a date, so the extra rows don't change caps.
+        const leadEnd = new Date(`${endDate}T00:00:00`);
+        leadEnd.setDate(leadEnd.getDate() + SEASONAL_THEME_CONTENT_TYPES.length - 1);
+        const leadEndStr = localDateString(leadEnd);
+        studioMonthThemes = themes.filter(t => t.start_date <= leadEndStr && t.end_date >= startDate);
 
         applyStudioFilters();
 
@@ -4079,7 +4087,7 @@
           ${SEASONAL_THEME_CONTENT_TYPES.map(d => `${d.emoji} <strong>${escapeHtml(d.name)}</strong>`).join(' · ')}
         </div>
         <div class="fixed-weekly-note">
-          One of each per seasonal theme, counted from real content inside the theme dates whose details mention the type.
+          One of each per seasonal theme, spread one per day over the run-up to the occasion (never all on one day), counted from real content in that run-up whose details mention the type.
           Empty ones show as a placeholder card in the calendar; click it to create the content.
         </div>
         ${rows}`;

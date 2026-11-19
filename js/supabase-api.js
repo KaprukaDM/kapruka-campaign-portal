@@ -315,14 +315,14 @@ function buildFixedWeeklySlotPlan(year, month, rows, todayStr = localDateString(
 //   • Gift Ideas        — "{Seasonal} Gift Ideas"
 //   • Poll / Quiz       — interactive engagement post
 //   • Tag a Friend      — "Tag a Friend – {Seasonal} Edition"
-// `at` is where in the theme window (0 = first day, 1 = last day) the
-// placeholder sits, so the four don't all pile onto one day.
+// The four are spread one per day, in this order, across the run-up to the
+// occasion (see seasonalPlacementWindow): never all on one day, and for a
+// long season like Christmas (6-25 Dec) all of them land before the big day.
 const SEASONAL_THEME_CONTENT_TYPES = [
   {
     key: 'new_arrivals',
     name: 'New Arrivals',
     emoji: '🆕',
-    at: 0,
     tag: '[New Arrivals]',
     title: s => `New Arrivals for ${s}`,
     match: /\bnew\s*arrivals?\b/i,
@@ -333,7 +333,6 @@ const SEASONAL_THEME_CONTENT_TYPES = [
     key: 'gift_ideas',
     name: 'Gift Ideas',
     emoji: '🎁',
-    at: 0.25,
     tag: '[Gift Ideas]',
     title: s => `${s} Gift Ideas`,
     match: /\bgift\s*ideas?\b/i,
@@ -344,7 +343,6 @@ const SEASONAL_THEME_CONTENT_TYPES = [
     key: 'poll_quiz',
     name: 'Poll / Quiz',
     emoji: '📊',
-    at: 0.5,
     tag: '[Poll Quiz]',
     title: s => `${s} Poll / Quiz`,
     match: /\b(poll|quiz)\b/i,
@@ -355,7 +353,6 @@ const SEASONAL_THEME_CONTENT_TYPES = [
     key: 'tag_a_friend',
     name: 'Tag a Friend',
     emoji: '🏷️',
-    at: 0.75,
     tag: '[Tag a Friend]',
     title: s => `Tag a Friend – ${s} Edition`,
     match: /\btag\s*a\s*friend\b/i,
@@ -366,6 +363,32 @@ const SEASONAL_THEME_CONTENT_TYPES = [
 
 function getSeasonalContentTypeByKey(key) {
   return SEASONAL_THEME_CONTENT_TYPES.find(def => def.key === key) || null;
+}
+
+// Days the four seasonal content types are spread over for one theme.
+// Normally the theme's own dates. A theme shorter than four days (most
+// occasions are a single day) is stretched BACK so it ends on the occasion
+// and starts enough days earlier to give each type its own day: the posts
+// lead up to the occasion instead of stacking on it. Type i sits at
+// first + floor(i * days / 4), so with Christmas 6-25 Dec they fall on
+// 6, 11, 16 and 21 Dec. Content anywhere in the window counts as covering it.
+function seasonalPlacementWindow(theme) {
+  const n = SEASONAL_THEME_CONTENT_TYPES.length;
+  const end = new Date(`${theme.end_date}T00:00:00`);
+  let start = new Date(`${theme.start_date}T00:00:00`);
+  const minStart = new Date(end);
+  minStart.setDate(minStart.getDate() - (n - 1));
+  if (minStart < start) start = minStart;
+  const days = Math.round((end - start) / 86400000) + 1;
+  return {
+    first: localDateString(start),
+    last: theme.end_date,
+    dateFor(i) {
+      const d = new Date(start);
+      d.setDate(d.getDate() + Math.floor(i * days / n));
+      return localDateString(d);
+    }
+  };
 }
 
 /**
@@ -383,16 +406,12 @@ function buildSeasonalThemeSlotPlan(themes, rows, monthFirst, monthLast, todaySt
   const out = [];
 
   (themes || []).filter(t => t && t.is_seasonal).forEach(theme => {
-    const start = new Date(`${theme.start_date}T00:00:00`);
-    const end = new Date(`${theme.end_date}T00:00:00`);
-    const spanDays = Math.max(0, Math.round((end - start) / 86400000));
-    const themeRows = (rows || []).filter(r => r && r.date >= theme.start_date && r.date <= theme.end_date);
+    const win = seasonalPlacementWindow(theme);
+    const themeRows = (rows || []).filter(r => r && r.date >= win.first && r.date <= win.last);
 
-    const types = SEASONAL_THEME_CONTENT_TYPES.map(def => {
+    const types = SEASONAL_THEME_CONTENT_TYPES.map((def, i) => {
       const done = themeRows.some(r => def.match.test(fixedSlotHaystack(r))) ? 1 : 0;
-      const d = new Date(start);
-      d.setDate(d.getDate() + Math.round(spanDays * def.at));
-      const dateStr = localDateString(d);
+      const dateStr = win.dateFor(i);
       const missing = done ? 0 : 1;
       // Only placeholder what can be drawn in this month's cells.
       if (missing && dateStr >= monthFirst && dateStr <= monthLast) {
