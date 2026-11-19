@@ -118,9 +118,28 @@ function getStudioSlotLabels(row) {
 const DAILY_POSTS_PER_DAY = 2;
 const SEASONAL_POSTS_PER_DAY = 3;
 
+// Peak-season date ranges that carry a set number of posts per day, beating
+// both numbers above. Inclusive YYYY-MM-DD bounds. The matching
+// category_slots rows (slot_number up to `cap`) must exist in Supabase for the
+// booking page to offer them; generateCategorySlots() creates them at this
+// size when a month is refreshed from the admin side.
+const DAILY_POST_CAP_OVERRIDES = [
+  // Christmas 2026 ramp-up
+  { start: '2026-12-06', end: '2026-12-12', cap: 3 },
+  { start: '2026-12-13', end: '2026-12-19', cap: 4 },
+  { start: '2026-12-20', end: '2026-12-24', cap: 5 },
+];
+
+function dailyPostCapOverride(date) {
+  const o = DAILY_POST_CAP_OVERRIDES.find(r => date >= r.start && date <= r.end);
+  return o ? o.cap : null;
+}
+
 // themes: theme_config rows (any that overlap the date). Seasonal if any
-// seasonal theme covers the date.
+// seasonal theme covers the date. A DAILY_POST_CAP_OVERRIDES range wins.
 function dailyPostCap(date, themes) {
+  const override = dailyPostCapOverride(date);
+  if (override !== null) return override;
   const seasonal = (themes || []).some(t => t.is_seasonal && t.start_date <= date && t.end_date >= date);
   return seasonal ? SEASONAL_POSTS_PER_DAY : DAILY_POSTS_PER_DAY;
 }
@@ -2377,7 +2396,8 @@ async function generateCategorySlots(startDate, endDate, slotsPerDay, isSeasonal
         categoryIndex = 0;
         weekNumber++;
       }
-      const perDay = Math.min(parseInt(slotsPerDay), isSeasonal ? SEASONAL_POSTS_PER_DAY : DAILY_POSTS_PER_DAY);
+      const perDay = dailyPostCapOverride(dateStr)
+        ?? Math.min(parseInt(slotsPerDay), isSeasonal ? SEASONAL_POSTS_PER_DAY : DAILY_POSTS_PER_DAY);
       for (let slotNum = 1; slotNum <= perDay; slotNum++) {
         // Fixed weekly rule (App Promotion Wed / Corporate Fri) owns slot 1.
         const fixedCategory = fixedWeeklyCategoryForSlot(dateStr, slotNum);

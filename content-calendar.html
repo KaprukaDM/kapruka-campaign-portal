@@ -216,6 +216,27 @@
       background: #fff5f8;
       border-color: rgba(236,72,153,0.25);
     }
+    /* Christmas: any day covered by a theme whose name says "Christmas"
+       (theme_config). Red/green with a candy-cane strip and a faint snowflake. */
+    .day-cell.christmas {
+      background: linear-gradient(160deg, #fff4f4 0%, #fdfaf6 55%, #eef8f0 100%);
+      border-color: rgba(193,18,31,0.45);
+      padding-top: 11px;
+    }
+    .day-cell.christmas::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+      background: repeating-linear-gradient(135deg,
+        #C1121F 0 6px, #ffffff 6px 10px, #1B7F3B 10px 16px, #ffffff 16px 20px);
+    }
+    .day-cell.christmas::after {
+      content: '❄'; position: absolute; right: 6px; bottom: 2px;
+      font-size: 26px; line-height: 1; color: #1B7F3B; opacity: 0.12;
+      pointer-events: none;
+    }
+    .day-cell.christmas .day-number { color: #C1121F; }
+    .day-cell.christmas .day-theme  { color: #1B7F3B; }
+    .day-cell.christmas:hover { border-color: #C1121F; }
+    .day-cell.christmas.fully-booked { border-color: #1B7F3B; }
     .day-cell.fully-booked {
       background: var(--green-bg);
       border-color: rgba(22,163,74,0.3);
@@ -479,6 +500,7 @@
     .legend-dot.posted    { background: var(--studio-posted-col); }
     .legend-dot.unverified{ background: var(--unverified-col); }
     .legend-dot.seasonal  { background: #ec4899; }
+    .legend-dot.christmas { background: linear-gradient(135deg, #C1121F 50%, #1B7F3B 50%); }
     .legend-dot.blocked   { background: var(--text-muted); }
 
     /* ── RESPONSIVE ──────────────────────────────────────────── */
@@ -543,6 +565,7 @@
         <div class="legend-item"><div class="legend-dot posted"></div> Posted (live post confirmed)</div>
         <div class="legend-item" title="Set to Posted by hand with no link to the live post and no confirmation from the posting sheet."><div class="legend-dot unverified"></div> Pending verification</div>
         <div class="legend-item"><div class="legend-dot seasonal"></div> Seasonal</div>
+        <div class="legend-item"><div class="legend-dot christmas"></div> Christmas</div>
         <div class="legend-item"><div class="legend-dot blocked"></div> Studio Prep (blocked)</div>
       </div>
     </div>
@@ -930,7 +953,12 @@
       const themes = calendarData.themes.filter(t => dateStr >= t.start_date && dateStr <= t.end_date);
 
       const hasSeasonal = themes.some(t => t.is_seasonal);
-      if (hasSeasonal) {
+      // A Christmas theme gets its own festive look instead of the plain
+      // theme_color tint (it also wins over other seasonal days it overlaps).
+      const isChristmas = themes.some(t => /christmas/i.test(t.theme_name || ''));
+      if (isChristmas) {
+        cell.classList.add('seasonal', 'christmas');
+      } else if (hasSeasonal) {
         cell.classList.add('seasonal');
         const seasonalTheme = themes.find(t => t.is_seasonal);
         if (seasonalTheme && seasonalTheme.theme_color) {
@@ -939,11 +967,15 @@
         }
       }
 
-      const themeNames = themes.map(t => t.theme_name).join(' + ');
+      // Label order: Christmas, then other seasonal themes, then the rest, so
+      // the narrow cell shows the festive theme before it truncates.
+      const labelRank = t => /christmas/i.test(t.theme_name || '') ? 0 : (t.is_seasonal ? 1 : 2);
+      const themeNames = [...themes].sort((a, b) => labelRank(a) - labelRank(b))
+        .map(t => t.theme_name).join(' + ');
 
       cell.innerHTML = `
         <div class="day-number">${day}</div>
-        ${themes.length > 0 ? `<div class="day-theme" title="${themeNames}">${themeNames}</div>` : ''}
+        ${themes.length > 0 ? `<div class="day-theme" title="${themeNames}">${isChristmas ? '🎄 ' : ''}${themeNames}</div>` : ''}
       `;
 
       const availableSlots = calendarData.categorySlots.filter(s => s.date === dateStr);
